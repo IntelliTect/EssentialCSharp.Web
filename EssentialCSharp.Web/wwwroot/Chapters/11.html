@@ -1,0 +1,2820 @@
+<html>
+<head>
+
+<style>
+
+    body {
+        font-family: 'Times New Roman';
+        margin: 0;
+    }
+
+    .press-ready-page {
+        width: calc(9in - 4px - 0px);
+        height: calc(11.13in - 4px - 1px);
+        border: 2px solid;
+        page-break-after: always;
+    }
+
+    .cut-page {
+        width: calc(7in);
+        height: calc(9.13in);
+        margin-top: calc(1in);
+        border: 2px solid;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .content-height {
+        height: calc(7.32in);
+        margin-top: calc(0.75in);
+        margin-bottom: calc(1.06in);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .page-width {
+        width: calc(7in);
+        margin: auto;
+        border: solid;
+        border-left-width: 2px;
+        border-right-width: 2px;
+        border-top-width: 0;
+        border-bottom-width: 0;
+    }
+
+    .page-left-larger-side-margins {
+        margin-left: calc(1.25in);
+        margin-right: calc(0.75in);
+    }
+
+    .page-right-larger-side-margins {
+        margin-right: calc(1.25in);
+        margin-left: calc(0.75in);
+    }
+
+    .footnotes-top-section {
+        height: 10px;
+        margin-top: calc(30px - 10px);
+    }
+
+    .footnotes-top-line {
+        margin: 0;
+    }
+
+    .element-section {
+        overflow-y: hidden;
+    }
+
+    .chapter-number-container {
+        height: 0.39in;
+    }
+
+    .chapter-number-squares {
+        position: absolute;
+        height: 37px;
+    }
+
+    .chapter-number {
+        position: absolute;
+        width: 60px;
+        margin-left: 0.45in;
+        font-size: 36pt;
+        font-weight: bold;
+        margin-top: -7px;
+        text-align: left;
+    }
+
+    .double-digit-chapter .chapter-number {
+        margin-left: 0.45in
+    }
+
+    .chapter-title {
+        font-size: 22pt;
+        margin-block-start: 10px;
+        margin-block-end: 0px;
+        letter-spacing: -1.0pt;
+    }
+
+    .chapter-title-underline {
+        border-bottom: solid silver 3pt;
+        padding: 0 0 7pt 0;
+        margin-bottom: 66pt;
+    }
+
+    p {
+        font-size: 10.5pt;
+        text-align: justify;
+        text-indent: 0.21in;
+        line-height: 15.5pt;
+        margin-block-start: 0;
+        margin-block-end: 0;
+    }
+
+    .section-heading {
+        font-family: 'Arial Black';
+        font-weight: bold;
+    }
+
+    .H1 {
+        line-height: 15.5pt;
+        margin-top: 23.25pt;
+        margin-bottom: 7.75pt;
+        font-size: 12pt;
+    }
+
+    .H1 .CITchapbm {
+        font-size: 12pt
+    }
+
+    .H2 {
+        line-height: 15.5pt;
+        margin-top: 15.5pt;
+        margin-bottom: 3pt;
+        font-size: 10.5pt;
+    }
+
+    .H3 {
+        line-height: 15pt;
+        margin-top: 15pt;
+        margin-bottom: 2pt;
+        font-size: 10pt;
+        font-style: italic;
+    }
+
+    .SummaryHead {
+        font-size: 12pt;
+        border-bottom: 1.5pt solid black;
+        margin-top: 23.25pt;
+        margin-bottom: 7.75pt;
+        line-height: 15.5pt;
+    }
+
+    .HEADFIRST, .CHAPBMFIRST {
+        text-indent: 0;
+    }
+
+    .DCAP {
+        font-variant: small-caps;
+    }
+
+    .code-block-top-section {
+        margin-top: calc(15px);
+    }
+
+    .code-block-bottom-section {
+        
+        margin-bottom: calc(15px);
+        border-bottom: solid black calc(1px);
+        padding-bottom: calc(5px);
+    }
+
+    .code-block-section, .TableCDT1, .TableCDT, .TableCDTX, .CDTMID, .NLDPGMONLY, .DPGMONLY, .TableDPGMFIRST, .TableDPGM, .TableDPGMLAST, .CITchapbm, .SF1DPGMONLY, .CPComment, .TABLEDPGMMID, .DPGMFIRST, .DPGMMID, .DPGMLAST {
+        font-family: 'Courier New';
+        font-size: 8pt;
+    }
+
+    .DPGMFIRST {
+        margin-top: 8px;
+    }
+
+    .DPGMFIRST, .DPGMMID, .DPGMLAST {
+        line-height: 10pt;
+    }
+
+    .DPGMLAST {
+        margin-bottom: 8px;
+    }
+
+    .code-block-heading {
+        line-height: 12.0pt;
+        font-weight: bold;
+        border-bottom: solid black calc(1px);
+        font-family: 'Arial';
+        margin-bottom: 6pt;
+    }
+
+    .code-line {
+        margin-left: 15pt;
+        line-height: 11pt;
+        word-break: break-all;
+    }
+
+    .CDThighlight {
+        background: #ededed;
+    }
+
+    .CDTNUM {
+        font-family: "Arial";
+        font-variant: small-caps;
+    }
+
+    .CPKeyword {
+        color: blue;
+        letter-spacing: 0pt;
+        font-weight: bold;
+    }
+
+    .Maroon {
+        color: #A31515;
+    }
+
+    .Teal {
+        color: #2B91AF;
+    }
+
+    .disable-indent {
+        text-indent: 0 !important;
+    }
+
+    .justify-last {
+        text-align-last: justify;
+    }
+
+    .output-block-heading {
+        font-family: Arial;
+        color: black;
+        font-size: 8pt;
+        margin-bottom: 5pt;
+        font-weight: 600;
+        font-variant: small-caps;
+    }
+
+    .output-line {
+        word-break: break-word;
+    }
+
+    .output-block-section .output-block-lines {
+        font-family: courier new;
+        font-size: 8pt;
+        background : #e9e9e9;
+        color: #36454f;
+        padding-left: calc(9px);
+        padding-right: calc(9px);
+    }
+
+    .output-block-top-section {
+        margin-top: calc(11px);
+    }
+
+    .output-block-top-section .output-block-lines {
+        padding-top: calc(9px);
+    }
+
+    .first-element .output-block-section .output-block-lines {
+        padding-top: calc(9px);
+    }
+
+    .output-block-bottom-section {
+        margin-bottom: calc(11px);
+    }
+
+    .output-block-bottom-section .output-block-lines {
+        padding-bottom: calc(9px);
+    }
+
+    .last-element .output-block-section .output-block-lines {
+        padding-bottom: calc(9px);
+    }
+
+    .BOLD {
+        font-weight: bolder;
+        color: black;
+    }
+
+    .figure-image {
+        width: 100%;
+    }
+
+    .figure-heading {
+        margin-top: 12pt;
+        margin-right: 0;
+        margin-bottom: 0.25in;
+        margin-left: 0;
+        line-height: 12.0pt;
+        font-size: 8pt;
+        font-family: "Arial",sans-serif;
+        font-weight: bold;
+    }
+
+    .FIGNUM {
+        font-variant: small-caps;
+    }
+
+    .footnote-block {
+        font-size: 9pt;
+    }
+
+    .Superscript {
+        position: relative;
+        top: -3pt;
+        font-size: 8pt;
+    }
+
+    .ordered-list-item-paragraph {
+        line-height: 12.0pt;
+        padding-bottom: 8pt;
+        font-size: 10.5pt;
+    }
+
+    .ordered-list-item-paragraph:last-child {
+        padding-bottom: 0;
+    }
+
+    .ordered-list-item {
+        display: flex;
+        margin-top: 7px;
+        margin-left: 15px;
+    }
+
+    .ordered-list-item-content {
+        flex: 25;
+    }
+
+    .ordered-list-item-number {
+       flex: 1;
+    }
+
+    .DPGMONLY {
+        text-indent: unset;
+        padding-left: 20px;
+    }
+
+    .skill-topic-heading {
+        font-family: "Arial Narrow";
+        font-size: 10.5pt;
+        letter-spacing: 2pt;
+        font-weight: bold;
+        text-transform: uppercase;
+        margin-bottom: 6pt;
+        margin-left: .17in;
+    }
+
+    .skill-topic-block-top {
+        margin-top: calc(20px);
+    }
+
+    .skill-topic-block-bottom {
+        margin-bottom: calc(20px);
+    }
+
+    .page-right-larger-side-margins .skill-topic-block{
+        border-left: 6pt solid silver;
+        padding-left: 10pt;
+    }
+
+    .page-left-larger-side-margins .skill-topic-block{
+        border-right: 6pt solid silver;
+        padding-right: 10pt;
+    }
+
+    .skill-topic-sub-heading {
+        font-size: 10.5pt;
+        font-family: "Arial Black";
+        font-weight: bold;
+        padding-top: 6px;
+    }
+
+    .skill-topic-block .paragraph{
+        text-indent: 0;
+        margin-top: 6pt;
+    }
+
+    .skill-topic-block .first-line{
+        text-indent: 0;
+    }
+
+    .skill-topic-overlayed-squares{
+        position: absolute;
+        height: 12px;
+        margin-top: .03in;
+    }
+
+    .guidelines-block {
+        background : #eaeaea;
+        font-family: Arial;
+        margin-top: 10pt;
+        margin-bottom: 4pt;
+        margin-left: auto;
+        margin-right: auto;
+        width: 80%
+    }
+    
+    .inside-guidelines-block {
+        margin-left: 11pt;
+        margin-bottom: 6pt;
+        margin-right: 10pt;
+        margin-top: -2pt;
+    }
+
+    .guidelines-block-heading {
+        font-family: Arial black;
+        font-size: 12pt;
+        padding-bottom: 7pt;
+    }
+
+    .guidelines-block-lines {
+        font-size: 9pt;
+        line-height: 1.4;
+    }
+
+    .guidelines-block-line {
+        margin-bottom: 2pt;
+    }
+
+    .language-contrast-block {
+        background : #eaeaea;
+        font-family: Arial;
+        margin-top: 10pt;
+        margin-bottom: 10pt;
+    }
+
+    .inside-language-contrast-block {
+        margin-left: 11pt;
+        margin-bottom: 10pt;
+        margin-right: 10pt;
+        margin-top: -2pt;
+    }
+
+    .language-contrast-heading {
+        font-family: Arial black;
+        font-size: 12pt;
+        padding-bottom: 7pt;
+    }
+
+    .language-contrast-lines {
+        font-size: 9pt;
+        line-height: 1.4;
+    }
+
+    .language-contrast-line {
+        margin-bottom: 2pt;
+    }
+
+    .upper-left-square {
+        width: 11px;
+        height: 11px;
+    }
+
+    .light-gray-square {
+        background: #cbcbcb;
+    }
+
+    .dark-gray-square {
+        background: #6b6f72;
+    }
+
+    .table-row {
+        margin-bottom: -2px;
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    .table-cell {
+        margin: 0;
+    }
+
+    .CITTBL {
+        font-family: 'Courier New';
+        font-size: 8pt;   
+        margin-top: 5.5pt;
+        margin-bottom: 5.5pt;
+        padding: 0in 2.9pt 0in 2.9pt;
+        text-indent:unset;
+    }
+
+    .TBL {
+        margin: 0px;
+        line-height: 11.0pt;
+        font-size: 9.0pt;
+        font-family: "Times New Roman",serif;
+        color: black;
+        text-indent: unset;
+    }
+
+    .table-heading {
+        margin-right: 0in;
+        margin-bottom: 3pt;
+        margin-left: 0in;
+        line-height: 15.5pt;
+        font-size: 8.0pt;
+        font-family: "Arial",sans-serif;
+        color: black;
+        font-weight: bold;
+        margin-top: 20px;
+    }
+
+    .table-top-row .table-row-container{
+        border-top: 1px solid black;
+    }
+
+    .table-bottom-row{
+        border-bottom: 1px solid black;
+    }
+
+    .left-table-cell {
+        border-left: 1px solid black;
+    }
+
+    .right-table-cell {
+        border-right: 1px solid black;
+    }
+
+    .standard-table-cell {
+        padding: 6px;
+        border-top: 1px black solid;
+        border-bottom: 1px black solid;
+        vertical-align: top;
+    }
+
+    .table-top-row .standard-table-cell {
+        border-top: none;
+    }
+
+    .table-header-row .standard-table-cell {
+        border-top: none;
+        vertical-align: bottom;
+    }
+
+    .standard-table-cell p {
+        text-align: left;
+        text-indent: unset;
+        line-height: 10pt;
+    }
+    .non-standard-cell {
+        padding-bottom: 6px;
+    }
+
+    .final-row {
+        background: #e9e9e9;
+        border: 1px solid black;
+        height: 8px;
+    }
+
+    .final-row .standard-table-cell {
+        padding: 0;
+    }
+
+    .TBLCOLHD {
+        line-height: 10pt ;
+        font-size: 8pt;
+        font-family: "Arial",sans-serif;
+        color: black;
+        font-weight: bold;
+        text-align: left;
+        text-indent: unset;
+    }
+
+    .header-row
+    {
+        background: #E6E6E6;
+    }
+
+    .table-final-row {
+        margin-bottom: 20px;
+    }
+
+    .note-block {
+        border-style: solid;
+        border-width:5px;
+        border-color: #808080; 
+        background : #EAEAEA;
+        font-family: Arial;
+        margin-top: 10pt;
+        margin-bottom: 4pt;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .inside-note-block {
+        margin-left: 11pt;
+        margin-bottom: 6pt;
+        margin-right: 10pt;
+        margin-top: -2pt;
+    }
+    .table-top-row .standard-table-cell p {
+        margin-left: -4px;
+        margin-right: -4px;
+    }
+    .note-block {
+        border-style: solid;
+        border-width:5px;
+        border-color: #808080; 
+        background : #EAEAEA;
+        font-family: Arial;
+        margin-top: 10pt;
+        margin-bottom: 4pt;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .inside-note-block {
+        margin-left: 11pt;
+        margin-bottom: 6pt;
+        margin-right: 10pt;
+        margin-top: -2pt;
+    }
+
+
+    .note-block-heading {
+        position: relative;
+        font-family: Arial black;
+        font-size: 12pt;
+        padding-bottom: 7pt;
+        padding-top: 3pt;
+        text-transform: uppercase;
+        margin-left: .17in;
+    }
+
+    .note-block-lines {
+        font-family: "Times New Roman",Serif;
+        font-size: 11pt;
+        line-height: 1.4;
+    }
+
+    .note-block-line {
+        margin-bottom: 2pt;
+    }
+
+    .note-block-heading {
+        position: relative;
+        font-family: Arial black;
+        font-size: 12pt;
+        padding-bottom: 7pt;
+        padding-top: 3pt;
+        text-transform: uppercase;
+        margin-left: .17in;
+    }
+    .note-block-line-bold {
+        margin-bottom: 2pt;
+        font-weight: bold;
+    }
+
+    .note-block-lines {
+        font-family: "Times New Roman",Serif;
+        font-size: 11pt;
+        line-height: 1.4;
+    }
+
+    .note-block-line {
+        margin-bottom: 2pt;
+    }
+
+    .note-block-line-bold {
+        margin-bottom: 2pt;
+        font-weight: bold;
+    }
+
+    .note-block-overlayed-squares {
+        position: absolute;
+        height: 12px;
+        margin-top: .11in;
+    }
+
+    .CPComment {
+        color: green;
+        font-style: italic;
+    }
+
+    .ITAL {
+        font-style: italic;
+    }
+
+</style><script>
+
+    // https://stackoverflow.com/questions/10787782/full-height-of-a-html-element-div-including-border-padding-and-margin
+    function getAbsoluteHeight(el) {
+        // Get the DOM Node if you pass in a string
+        el = (typeof el === 'string') ? document.querySelector(el) : el;
+
+        const styles = window.getComputedStyle(el);
+        const margin = parseFloat(styles['marginTop']) +
+            parseFloat(styles['marginBottom']);
+
+        return Math.ceil(el.offsetHeight + margin);
+    }
+
+     function getAbsoluteWidth(el) {
+        // Get the DOM Node if you pass in a string
+        el = (typeof el === 'string') ? document.querySelector(el) : el;
+
+        const styles = window.getComputedStyle(el);
+        const margin = parseFloat(styles['marginLeft']) +
+            parseFloat(styles['marginRight']);
+
+        const width = el.offsetWidth + margin;
+
+        return width;
+    }
+
+    function measureSingleSectionElement(id) {
+
+        const element = document.querySelector(`[data-element-id='${id}']`);
+
+        const heightInPixels = getAbsoluteHeight(element);
+
+        return {
+            id,
+            heightInPixels
+        };
+    }
+
+    function measureLinesInElement(id) {
+        const element = document.querySelector(`[data-element-id='${id}']`);
+
+        const heightInPixels = getAbsoluteHeight(element);
+
+        const wordElements = element.getElementsByTagName('fakeTag');
+
+        const lineHeight = parseFloat(document.defaultView.getComputedStyle(element, null).getPropertyValue("line-height"));
+
+        const lines = [];
+        let line = null;
+        let lineWords = [];
+        let lineLeft = 0;
+
+        for (const word of wordElements) {
+            if ((line == null) || word.getBoundingClientRect().left < lineLeft) {
+                if (line != null) {
+
+                    line.heightInPixels = measureLineHeight(lineWords);
+                    lineWords = [];
+
+                    lines.push(line);
+                }
+                line = {
+                    firstWordId: word.dataset.taggedWordId,
+                    heightInPixelsOld: lineHeight
+                };
+            }
+
+            lineWords.push(word);
+            line.lastWordId = word.dataset.taggedWordId;
+            lineLeft = word.getBoundingClientRect().left;
+        }
+
+        if (line != null) {
+            line.heightInPixels = measureLineHeight(lineWords);
+            lines.push(line);
+        }
+
+        if(lines.length > 0){
+            const styles = window.getComputedStyle(element)
+            const topLineExtra = parseFloat(styles['marginTop']) + parseFloat(styles['paddingTop']);
+            const bottomLineExtra = parseFloat(styles['marginBottom']) + parseFloat(styles['paddingBottom']);
+            lines[0].heightInPixels += topLineExtra;
+            lines[lines.length - 1].heightInPixels += bottomLineExtra;
+        }
+
+        return {
+            id,
+            heightInPixels,
+            lines
+        };
+    }
+
+    function measureLineHeight(lineWords){
+        let lineWrapper = document.createElement('fakeLine');
+
+        lineWords[0].parentNode.insertBefore(lineWrapper, lineWords[0]);
+
+        for (const lineWord of lineWords){
+            lineWrapper.appendChild(lineWord);
+        }
+
+        lineWrapper.style.display = 'block';
+        lineWrapper.style.textIndent = 0;
+
+        const lineHeight = getAbsoluteHeight(lineWrapper);
+
+        lineWrapper.style.display = null;
+        lineWrapper.style.textIndent = null;
+
+
+        return lineHeight;
+    }
+
+    function highlightSizeMiscalculations(threshold = 2){
+        const elements = document.querySelectorAll(`[data-calculated-height]`);
+
+        let pixelsOverEstimated = 0;
+        let pixelsUnderEstimated = 0;
+
+        for (const element of elements){
+            const calculatedHeight = element.dataset.calculatedHeight;
+
+            element.style.overflowY = 'hidden';
+            
+            const actualHeight = getAbsoluteHeight(element);
+
+            const heightDifference = calculatedHeight - actualHeight;
+            const absoluteHeightDifference = Math.abs(heightDifference);
+
+            element.dataset.heightDifference = heightDifference;
+
+            // ignoring a small difference due to rounding issues
+            if(absoluteHeightDifference < threshold) {
+                element.style.backgroundColor = 'transparent';
+                continue;
+            }
+
+            for(const child of element.children){
+                child.style.position = 'relative';
+                child.style.zIndex = -1;
+            }
+
+            const clampedColorDifference = Math.max(0, 220 - absoluteHeightDifference * 10);
+
+            if(heightDifference > 1){                    
+                pixelsOverEstimated += absoluteHeightDifference;
+                element.style.backgroundColor = `rgba(${clampedColorDifference}, 255, ${clampedColorDifference}, 0.4)`;
+            }else  if(heightDifference < -1){
+                
+                pixelsUnderEstimated += absoluteHeightDifference;
+                element.style.backgroundColor = `rgba(255, ${clampedColorDifference}, ${clampedColorDifference}, 0.4)`;
+            } 
+        }
+
+        console.log(`Over estimated: ${pixelsOverEstimated} pixels`);
+        console.log(`Under estimated: ${pixelsUnderEstimated} pixels`);
+        console.log(`Total miscalulation: ${pixelsOverEstimated - pixelsUnderEstimated} pixels`);
+    }
+
+    function measureCellWidth(id){
+       const element = document.querySelector(`[data-element-id='${id}']`);
+
+       const widthInPixels = getAbsoluteWidth(element);
+
+       return {
+           id,
+           widthInPixels
+       };
+    }
+</script></head>
+
+<body>
+    <div class="page-width">
+        <div class="page-left-larger-side-margins">
+
+
+
+<div data-element-id="b8dbb73f-11c1-4d5b-8921-50311e8de29d" class="element-section CHAPTTL">
+    
+        <div class="chapter-number-container double-digit-chapter">
+            <img class="chapter-number-squares" src="data:image/svg&#x2B;xml;base64,PHN2ZyB3aWR0aD0iMzcwIiBoZWlnaHQ9IjEyMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgb3ZlcmZsb3c9ImhpZGRlbiI&#x2B;PGRlZnM&#x2B;PGNsaXBQYXRoIGlkPSJjbGlwMCI&#x2B;PHJlY3QgeD0iNDEzIiB5PSIyNzkiIHdpZHRoPSIzNzAiIGhlaWdodD0iMTIyIi8&#x2B;PC9jbGlwUGF0aD48L2RlZnM&#x2B;PGcgY2xpcC1wYXRoPSJ1cmwoI2NsaXAwKSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTQxMyAtMjc5KSI&#x2B;PHJlY3QgeD0iNDE1IiB5PSIyNzkiIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iI0IyQjJCMiIvPjxyZWN0IHg9IjQxMyIgeT0iMzQ2IiB3aWR0aD0iNTUiIGhlaWdodD0iNTUiIGZpbGw9IiMzMzMzMzMiLz48cmVjdCB4PSI0NjgiIHk9IjI3OSIgd2lkdGg9IjU1IiBoZWlnaHQ9IjU1IiBmaWxsPSIjRUFFQUVBIi8&#x2B;PHJlY3QgeD0iNzI3IiB5PSIzNDUiIHdpZHRoPSI1Ni4wMDAxIiBoZWlnaHQ9IjU2IiBmaWxsPSIjOTY5Njk2Ii8&#x2B;PC9nPjwvc3ZnPg=="/>
+            <div class="chapter-number">11</div>
+        </div>
+
+    <div class="chapter-title-underline">
+        <h1 class="chapter-title">Exception Handling</h1>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="bbf954d0-d3b3-4c5f-a00c-e0407a9f5bec" class="element-section paragraph CHAPBMFIRST" >
+<span class="SCAP">Chapter 5 discussed using the try/catch/finally blocks</span> for standard exception handling. In that chapter, the catch block always caught exceptions of type <span class="CITchapbm">System.Exception</span>. This chapter defines some additional details of exception handling&#x2014;specifically, details surrounding additional exception types, defining custom exceptions, and multiple catch blocks for handling each type. This chapter also details exceptions because of their reliance on inheritance.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="b5f9af10-5864-42e9-b27d-e1bb1d44a9a1" class="element-section section-heading H1">
+Multiple Exception Types</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="fbe49df5-1aa5-4e1f-86bb-0f4c6f0c9b5d" class="element-section paragraph HEADFIRST" >
+Listing 11.1 throws a <span class="CITchapbm">System.ArgumentException</span>, not the <span class="CITchapbm">System.Exception</span> type demonstrated in Chapter 5. C# allows code to throw any type that derives (perhaps indirectly) from <span class="CITchapbm">System.Exception</span>. To throw an exception, you simply prefix the exception instance with the keyword <span class="CITchapbm">throw</span>. The type of exception used is obviously the type that best describes the circumstances surrounding the error that caused the exception. For example, consider the <span class="CITchapbm">TextNumberParser.Parse()</span> method in Listing 11.1.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="c6b89b14-3c2d-4386-9dae-087932a720ff" class="element-section code-block-top-section code-block-bottom-section code-block-section">
+
+    <div class="code-block-heading">
+<span class="CDTNUM">Listing 11.1:</span>&#x2002;Throwing an Exception    </div>
+
+    <div class="code-block-lines">
+            <div class='code-line '>
+<span class="CPKeyword">public</span> <span class="CPKeyword">sealed</span> <span class="CPKeyword">class</span> TextNumberParser            </div>
+            <div class='code-line '>
+{            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  <span class="CPKeyword">public</span> <span class="CPKeyword">static</span> <span class="CPKeyword">int</span> Parse(<span class="CPKeyword">string</span> textDigit)            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  {            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPKeyword">string</span>[] digitTexts =            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          { <span class="Maroon">&quot;zero&quot;</span>, <span class="Maroon">&quot;one&quot;</span>, <span class="Maroon">&quot;two&quot;</span>, <span class="Maroon">&quot;three&quot;</span>, <span class="Maroon">&quot;four&quot;</span>,            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;              <span class="Maroon">&quot;five&quot;</span>, <span class="Maroon">&quot;six&quot;</span>, <span class="Maroon">&quot;seven&quot;</span>, <span class="Maroon">&quot;eight&quot;</span>, <span class="Maroon">&quot;nine&quot;</span> };            </div>
+            <div class='code-line '>
+            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPKeyword">int</span> result = Array.IndexOf(            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          digitTexts,            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            <span class="CPComment">// Leveraging C# 2.0&#x2019;s null-coalescing operator</span>            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          (textDigit??            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            <span class="CPComment">// Leveraging C# 7.0&#x2019;s throw expression</span>            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            <span class="CPKeyword">throw</span> <span class="CPKeyword">new</span> ArgumentNullException(<span class="CPKeyword">nameof</span>(textDigit))            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          ).ToLower());            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPKeyword">if</span> (result &lt; 0)            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      {            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          <span class="CPComment">// Leveraging C# 6.0&#x2019;s nameof operator</span>            </div>
+            <div class='code-line CDThighlight'>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          <span class="CPKeyword">throw</span> <span class="CPKeyword">new</span> ArgumentException(            </div>
+            <div class='code-line CDThighlight'>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;              <span class="Maroon">&quot;The argument did not represent a digit&quot;</span>,            </div>
+            <div class='code-line CDThighlight'>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;              <span class="CPKeyword">nameof</span>(textDigit));            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      }            </div>
+            <div class='code-line '>
+            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPKeyword">return</span> result;            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  }            </div>
+            <div class='code-line '>
+}            </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="9c212909-e0f9-4cdb-84d2-c1782d6ae7eb" class="element-section paragraph CHAPBMCON" >
+In the call to <span class="CITchapbm">Array.IndexOf()</span>, we leverage a C# 7.0 <span class="CITchapbm">throw</span> expression when the <span class="CITchapbm">textDigit</span> argument is <span class="CITchapbm">null</span>. Prior to C# 7.0, <span class="CITchapbm">throw</span> expressions were not allowed; only <span class="CITchapbm">throw</span> statements were allowed. As a result, two separate statements were required: one checking for <span class="CITchapbm">null</span> and the other to throw the exception. You could not embed the <span class="CITchapbm">throw</span> within the same statement as a null-coalescing operator, for example.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="30ba9e73-6d1f-4b1e-ab50-a20c42e04a06" class="element-section paragraph CHAPBM" >
+Instead of throwing <span class="CITchapbm">System.Exception</span>, it is more appropriate to throw <span class="CITchapbm">ArgumentException</span> because the type itself indicates what went wrong and includes special parameters for identifying which parameter was at fault.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="043a485a-257e-44e1-9771-dc1ec47d927e" class="element-section paragraph CHAPBM" >
+Two similar exceptions are <span class="CITchapbm">ArgumentNullException</span> and <span class="CITchapbm">NullReferenceException</span>. <span class="CITchapbm">ArgumentNullException</span> should be thrown for the inappropriate passing of <span class="CITchapbm">null</span> arguments. This is a special case of an invalid parameter exception that would more generally (when it isn&#x2019;t <span class="CITchapbm">null</span>) be thrown as an <span class="CITchapbm">ArgumentException</span> or an <span class="CITchapbm">ArgumentOutOfRangeException</span>. <span class="CITchapbm">NullReferenceException</span> is generally an exception that the underlying runtime will throw only with an attempt to dereference a <span class="CITchapbm">null</span> value&#x2014;that is, an attempt to call a member on an object whose value is <span class="CITchapbm">null</span>. Instead of triggering a <span class="CITchapbm">NullReferenceException</span> to be thrown, programmers should check parameters for <span class="CITchapbm">null</span> before accessing them and then throw an <span class="CITchapbm">ArgumentNullException</span>, which can provide more contextual information, such as the parameter name. If there is an innocuous way to proceed even if an argument is <span class="CITchapbm">null</span>, be sure to use the C# 6.0 null-conditional operator when dereferencing to avoid the runtime throwing a <span class="CITchapbm">NullReferenceException</span>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="59461d9a-eaa3-4642-99f8-08ff57854b60" class="element-section paragraph CHAPBM" >
+One important characteristic of the argument exception types (including <span class="CITchapbm">ArgumentException</span>, <span class="CITchapbm">ArgumentNullException</span>, and <span class="CITchapbm">ArgumentOutOfRangeException</span>) is that each has a constructor parameter that allows identification of the argument name as a string. Prior to C# 6.0, this meant hardcoding a magic string (e.g., &#x201C;textDigit&#x201D;) to identify the parameter name. The problem with this approach is that if the parameter name ever changed, developers had to remember to update the magic string. Fortunately, C# 6.0 and later provide a <span class="CITchapbm">nameof</span> operator, which takes the parameter name identifier and generates the parameter name string at compile time (see <span class="CITchapbm">nameof(textDigit)</span> in Listing 11.1). The advantage of this approach is that now the IDE can use refactoring tools (such as automatic renaming) to change the identifier everywhere, including when it is used as an argument to the <span class="CITchapbm">nameof</span> operator. Additionally, if the parameter name changes (without the use of a refactoring tool), the compiler will generate an error if the identifier passed to the <span class="CITchapbm">nameof</span> operator no longer exists. Moving forward, with C# 6.0 and later, the general guideline is to always use the <span class="CITchapbm">nameof</span> operator for the parameter name of an argument type exception. Chapter 18 provides a full explanation for the <span class="CITchapbm">nameof</span> operator. Until then, it is sufficient to understand that <span class="CITchapbm">nameof</span> simply returns the name of the argument identified.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="1459f557-d82e-4ece-831d-7b553c6aa80b" class="element-section paragraph CHAPBM" >
+Several other exceptions are intended only for the runtime and derive (sometimes indirectly) from <span class="CITchapbm">System.SystemException</span>. They include <span class="CITchapbm">System.StackOverflowException</span>, <span class="CITchapbm">System.OutOfMemoryException</span>, <span class="CITchapbm">System.Runtime.InteropServices.COMException</span>, <span class="CITchapbm">System.ExecutionEngineException</span>, and <span class="CITchapbm">System.Runtime.InteropServices.SEHException</span>. Do not throw exceptions of these types. Similarly, you should avoid throwing a <span class="CITchapbm">System.Exception</span> or <span class="CITchapbm">System.ApplicationException</span>, as these exceptions are so general that they provide little indication of the cause of or resolution to the problem. Instead, throw the most derived exception that fits the scenario. Obviously, developers should avoid creating APIs that could potentially result in a system failure. However, if the executing code reaches a certain state such that continuing to execute is unsafe or unrecoverable, it should call <span class="CITchapbm">System.Environment.FailFast()</span>. This will immediately terminate the process after potentially writing a message to standard error and, on Microsoft Windows, the Windows Application event log.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="f7e27f11-9a47-450a-813f-1c406a11b135" class="element-section guidelines-block">
+
+    <div class="upper-left-square dark-gray-square"></div>
+
+    <div class=inside-guidelines-block> 
+        <div class="guidelines-block-heading">
+Guidelines        </div>
+
+        <div class="guidelines-block-lines">
+        
+                <div class="guidelines-block-line">
+<span class="BOLD">DO</span> throw an <span class="CITchapbm">ArgumentException</span> or one of its subtypes if bad arguments are passed to a member. Prefer the most derived exception type (e.g., <span class="CITchapbm">ArgumentNullException</span>), if applicable.                </div>
+                <div class="guidelines-block-line">
+<span class="BOLD">DO NOT</span> throw a <span class="CITchapbm">System.SystemException</span> or an exception type that derives from it.                </div>
+                <div class="guidelines-block-line">
+<span class="BOLD">DO NOT</span> throw a <span class="CITchapbm">System.Exception, System.NullReferenceException,</span> or <span class="CITchapbm">System.ApplicationException</span>.                </div>
+                <div class="guidelines-block-line">
+<span class="BOLD">CONSIDER</span> terminating the process by calling <span class="CITchapbm">System.Environment.FailFast()</span> if the program encounters a scenario where it is unsafe to continue execution.                </div>
+                <div class="guidelines-block-line">
+<span class="BOLD">DO</span> use <span class="CITchapbm">nameof</span> for the <span class="CITchapbm">paramName</span> argument passed into argument exception types that take such a parameter. Examples of such exceptions include <span class="CITchapbm">ArgumentException</span>, <span class="CITchapbm">ArgumentOutOfRangeException</span>, and <span class="CITchapbm">ArgumentNullException</span>.                </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="cdf8b450-b115-48f8-9a60-a5d9c21c7d78" class="element-section section-heading H1">
+Catching Exceptions</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="6679b17f-9c52-4721-94b1-900cdcc39577" class="element-section paragraph HEADFIRST" >
+Throwing a particular exception type enables the catcher to use the exception&#x2019;s type itself to identify the problem. It is not necessary, in other words, to catch the exception and use a <span class="CITchapbm">switch</span> statement on the exception message to determine which action to take in light of the exception. Instead, C# allows for multiple catch blocks, each targeting a specific exception type, as Listing 11.2 shows.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="adb34aaf-b4e7-4d43-9fc3-5c7fd4c1acb5" class="element-section code-block-top-section code-block-bottom-section code-block-section">
+
+    <div class="code-block-heading">
+<span class="CDTNUM">Listing 11.2:&#x2002;</span>Catching Different Exception Types    </div>
+
+    <div class="code-block-lines">
+            <div class='code-line '>
+<span class="CPKeyword">using</span> System;            </div>
+            <div class='code-line '>
+            </div>
+            <div class='code-line '>
+<span class="CPKeyword">public</span> <span class="CPKeyword">sealed</span> <span class="CPKeyword">class</span> Program            </div>
+            <div class='code-line '>
+{            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  <span class="CPKeyword">public</span> <span class="CPKeyword">static</span> <span class="CPKeyword">void</span> Main(string[] args)            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  {            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPKeyword">try</span>            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      {            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;              <span class="CPComment">// ...</span>            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;              <span class="CPKeyword">throw</span> <span class="CPKeyword">new</span> InvalidOperationException(            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;                  <span class="Maroon">&quot;Arbitrary exception&quot;</span>);            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;              <span class="CPComment">// ...</span>            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      }            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPKeyword">catch</span>(Win32Exception exception)            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          <span class="CPKeyword">when</span>(exception.NativeErrorCode == 42)            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      {            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          <span class="CPComment">// Handle Win32Exception where</span>            </div>
+            <div class='code-line '>
+<span class="CPComment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          // ErrorCode is 42</span>            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      }            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPKeyword">catch</span> (ArgumentException exception)            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      {            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          <span class="CPComment">// Handle ArgumentException</span>            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      }            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPKeyword">catch</span> (InvalidOperationException exception)            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      {            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;         <span class="CPKeyword">bool</span> exceptionHandled=<span class="CPKeyword">false</span>;            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          <span class="CPComment">// Handle InvalidOperationException</span>            </div>
+            <div class='code-line '>
+<span class="CPComment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;         // ...</span>            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          <span class="CPKeyword">if</span>(!exceptionHandled)            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          {            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;               <span class="CPKeyword">throw</span>;            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          }            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;       }            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPKeyword">catch</span> (Exception exception)            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      {            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          <span class="CPComment">// Handle Exception</span>            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      }            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPKeyword">finally</span>            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      {            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          <span class="CPComment">// Handle any cleanup code here as it runs</span>            </div>
+            <div class='code-line '>
+<span class="CPComment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          // regardless of whether there is an exception</span>            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      }            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  }            </div>
+            <div class='code-line '>
+}            </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="13e7b78f-2c4b-43f8-8178-304cbf638da9" class="element-section paragraph CHAPBM" >
+Listing 11.2 includes five catch blocks, each handling a different type of exception. When an exception occurs, the execution will jump to the catch block with the exception type that most closely matches the exception. The closeness of a match is determined by the inheritance chain. For example, even though the exception thrown is of type <span class="CITchapbm">System.Exception</span>, this &#x201C;is a&#x201D; relationship occurs through inheritance because <span class="CITchapbm">System.InvalidOperationException</span> ultimately derives from <span class="CITchapbm">System.Exception</span>. Since the exception type <span class="CITchapbm">InvalidOperationException</span> most closely matches the exception thrown, the <span class="CITchapbm">catch(InvalidOperationException...)</span> block will catch the exception and not the <span class="CITchapbm">catch(Exception...)</span> block.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="2875ad6f-c9b9-4647-b2ff-a580c7e8f763" class="element-section paragraph CHAPBM" >
+Starting with C# 6.0, an additional conditional expression is available for catch blocks. Instead of limiting whether a catch block matches based only on an exception type match, there is also a conditional clause. This <span class="CITchapbm">when</span> clause allows you to supply a Boolean expression; the catch block handles the exception only if the condition is true. In Listing 11.2, this is an equality comparison operator. For more complex logic, you could make a method call to check for a condition.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="bebd6136-a550-40af-b73a-3625696d349d" class="element-section paragraph CHAPBM" >
+Of course, you could also simply place the conditional check as an <span class="CITchapbm">if</span> block within the catch body. However, doing so causes the catch block to become the handler for the exception before the condition is checked. It is difficult to write code that allows a different catch block to handle the exception in the scenario where the condition is not met. However, with the <span class="BOLD">exception condition</span>, it is now possible to examine the program state (including the exception) without having to catch and rethrow the exception.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="bf59eb15-661a-46ac-ae9c-9b67d6392475" class="element-section paragraph CHAPBM" >
+Use conditional clauses with caution: If the conditional expression itself throws an exception, then that new exception will be ignored and the condition will be treated as false. For this reason, you should avoid throwing exceptions for the exception conditional expression.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="b1f02c1d-03f2-4563-868a-dd37fd259be8" class="element-section paragraph CHAPBM" >
+Catch blocks must appear in order, from most specific to most general, to avoid a compile-time error. For example, moving the <span class="CITchapbm">catch(Exception...)</span> block before any of the other exceptions will result in a compile error, since all prior exceptions derive from <span class="CITchapbm">System.Exception</span> at some point in their inheritance chain.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="5571b0b0-61b1-470c-b9a8-a8d998b4cc4d" class="element-section paragraph CHAPBM" >
+As shown with the catch (<span class="CITchapbm">SystemException){ }</span>) block, a named parameter for the catch block is not required. In fact, a final catch without even the type parameter is allowable, as you will see in the next section.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="7a289267-f00a-4a9f-8e3e-af6eb352a9ce" class="element-section section-heading H1">
+Rethrowing an Existing Exception</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="e4a2129a-a785-4526-95f7-c9f05d9cbd68" class="element-section paragraph HEADFIRST" >
+In the <span class="CITchapbm">InvalidOperationException</span> catch block, a <span class="CITchapbm">throw</span> statement appears without any identification of the exception to <span class="CITchapbm">throw</span> (<span class="CITchapbm">throw</span> is on its own), even though an exception instance (<span class="CITchapbm">exception</span>) appears in the catch block scope that could be rethrown. Throwing a specific exception would update all the stack information to match the new throw location. As a result, all the stack information indicating the call site where the exception originally occurred would be lost, making it significantly more difficult to diagnose the problem. For this reason, C# supports a <span class="CITchapbm">throw</span> statement or expression (C# 7.0 or later) without the explicit exception reference as long as it occurs within a catch block. This way, code can examine the exception to determine if it is possible to fully handle it and, if not, rethrow the exception (even though not specified explicitly) as though it was never caught and without replacing any stack information.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="57fc77fe-0ac1-497e-a500-b42dbb0def33" class="element-section skill-topic-block skill-topic-block-top skill-topic-block-bottom">
+    <img class="skill-topic-overlayed-squares" src="data:image/svg&#x2B;xml;base64,PHN2ZyB3aWR0aD0iMjk2IiBoZWlnaHQ9IjEyMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgb3ZlcmZsb3c9ImhpZGRlbiI&#x2B;DQogICAgPGRlZnM&#x2B;DQogICAgICAgIDxjbGlwUGF0aCBpZD0iY2xpcDAiPg0KICAgICAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSIyOTYiIGhlaWdodD0iMTIxIiAvPg0KICAgICAgICA8L2NsaXBQYXRoPg0KICAgIDwvZGVmcz4NCiAgICA8ZyBjbGlwLXBhdGg9InVybCgjY2xpcDApIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNDEzIC0yNzIpIj4NCiAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzMzMzMzMyIgLz4NCiAgICAgICAgPHJlY3QgeD0iNDY4IiB5PSIzMjciIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzgwODA4MCIgLz4NCiAgICA8L2c&#x2B;DQo8L3N2Zz4="/>
+    <div class="skill-topic-heading">AdVanced/Beginner Topic</div>
+    <div class="skill-topic-sub-heading">Throwing Existing Exceptions without Replacing Stack Information</div>
+
+
+
+
+
+<p data-element-id="bbe37380-750d-4c21-a08c-12136599656c" class="element-section paragraph SF1FIRST" >
+In C# 5.0, a mechanism was added that enables the throwing of a previously thrown exception without losing the stack trace information in the original exception. This allows you to rethrow exceptions, for example, even from outside a catch block and, therefore, without using <span class="CITchapbm">throw;</span>. Although it is fairly rare to need to do this, occasionally exceptions are wrapped or saved until the program execution moves outside the catch block. For example, multithreaded code might wrap an exception with an <span class="CITchapbm">AggregateException</span>. The <span class="CITchapbm">System.Runtime.ExceptionServices.ExceptionDispatchInfo</span> class is specifically designed to handle this scenario through the use of its static <span class="CITchapbm">Capture()</span> and instance <span class="CITchapbm">Throw()</span> methods. Listing 11.3 demonstrates rethrowing the exception without resetting the stack trace information or using an empty <span class="CITchapbm">throw</span> statement.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="8ae2fafa-9740-4b0e-9efc-735d059f4a16" class="element-section code-block-top-section code-block-bottom-section code-block-section">
+
+    <div class="code-block-heading">
+<span class="CDTNUM">Listing 11.3:&#x2002;</span>Using <span class="CITchapbm">ExceptionDispatchInfo</span> to Rethrow an Exception    </div>
+
+    <div class="code-block-lines">
+            <div class='code-line '>
+<span class="CPKeyword">using</span> System            </div>
+            <div class='code-line '>
+<span class="CPKeyword">using</span> System.Runtime.ExceptionServices;            </div>
+            <div class='code-line '>
+<span class="CPKeyword">using</span><span class="CITchapbm"> </span>System.Threading.Tasks;            </div>
+            <div class='code-line '>
+Task task = WriteWebRequestSizeAsync(url);            </div>
+            <div class='code-line '>
+<span class="CPKeyword">try</span>            </div>
+            <div class='code-line '>
+{            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  <span class="CPKeyword">while</span> (!task.Wait(100))            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  {            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      Console.Write(&quot;.&quot;);            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  }            </div>
+            <div class='code-line '>
+}            </div>
+            <div class='code-line '>
+<span class="CPKeyword">catch</span>(AggregateException exception)            </div>
+            <div class='code-line '>
+{            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  exception = exception.Flatten();            </div>
+            <div class='code-line CDThighlight'>
+&nbsp;&nbsp;  ExceptionDispatchInfo.Capture(            </div>
+            <div class='code-line CDThighlight'>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      exception.InnerException??exception).Throw();            </div>
+            <div class='code-line '>
+}            </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="df2a9f67-7dc2-44fa-bab2-142d0e630c09" class="element-section paragraph SF1LAST" >
+With the <span class="CITchapbm">ExceptionDispatchInfo.Throw()</span> method, the compiler doesn&#x2019;t treat the code as a return statement in the same way that it might a normal <span class="CITchapbm">throw</span> statement. For example, if the method signature returned a value but no value was returned from the code path with <span class="CITchapbm">ExceptionDispatchInfo.Throw()</span>, the compiler would issue an error indicating no value was returned. On occasion, therefore, developers may be forced to follow <span class="CITchapbm">ExceptionDispatchInfo.Throw()</span> with a return statement even though such a statement would never execute at runtime&#x2014;the exception would be thrown instead.</p>
+
+
+
+
+
+
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="9d338955-0b41-4186-b9f4-d8a5aa5575be" class="element-section language-contrast-block">
+
+    <div class="upper-left-square light-gray-square"></div>
+
+    <div class=inside-language-contrast-block> 
+        <div class="language-contrast-heading">
+Language Contrast: Java&#x2014;Exception Specifiers        </div>
+
+        <div class="language-contrast-lines">
+        
+                <div class="language-contrast-line">
+C# has no equivalent to Java&#x2019;s exception specifiers. With exception specifiers, the Java compiler is able to verify that all possible exceptions thrown within a function (or a function&#x2019;s call hierarchy) are either caught or declared as possibly rethrown. The C# team considered this option and concluded that the maintenance burden that it imposed was not worth the perceived benefit. Therefore, it is not necessary to maintain a list of all possible exceptions throughout a particular call stack, but neither is it feasible to easily determine the possible exceptions. (As it turns out, this wasn&#x2019;t possible for Java, either. Calling virtual methods or using late binding, such as reflection, made it impossible to fully resolve at compile time which exceptions a method could possibly throw.)                </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="fa8303a1-b468-4a9b-9a0d-3a07b8475a0c" class="element-section section-heading H1">
+General Catch Block</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="5c9c0ac1-4dfe-4cc0-a452-0d549d4a8429" class="element-section paragraph HEADFIRST" >
+C# requires that any object that code throws must derive from <span class="CITchapbm">System.Exception</span>. However, this requirement is not universal to all languages. C&#x2B;&#x2B;, for example, allows any object type to be thrown, including managed exceptions that don&#x2019;t derive from <span class="CITchapbm">System.Exception</span>. All exceptions,<span class="FootnoteReference">1</span> whether derived from <span class="CITchapbm">System.Exception</span> or not, will propagate into C# assemblies as derived from <span class="CITchapbm">System.Exception</span>. The result is that <span class="CITchapbm">System.Exception</span> catch blocks will catch all exceptions not caught by earlier blocks.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="bbab8fbe-3c27-4956-894e-8580a0a31464" class="element-section paragraph CHAPBM" >
+C# also supports a <span class="BOLD">general catch block</span> (<span class="CITchapbm">catch{ }</span>) that behaves identically to the <span class="CITchapbm">catch(System.Exception exception)</span> block, except that there is no type or variable name. Also, the general catch block must appear last within the list of catch blocks. Since the general catch block is identical to the <span class="CITchapbm">catch(System.Exception exception)</span> block and the general catch block must appear last, the compiler issues a warning if both exist within the same try/catch statement because the general catch block will never be invoked.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="27ab584d-21fb-4517-865a-0924f33c81fb" class="element-section section-heading H1">
+Guidelines for Exception Handling</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="da4db97b-b7fd-42f5-8f59-f01016fd2a20" class="element-section paragraph HEADFIRST" >
+Exception handling provides much-needed structure to the error-handling mechanisms that preceded it. However, it can still lead to some unwieldy results if used haphazardly. The following guidelines offer some best practices for exception handling.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="422747da-5f68-4e48-8508-cfd8ec195f4d" class="element-section guidelines-block">
+
+    <div class="upper-left-square dark-gray-square"></div>
+
+    <div class=inside-guidelines-block> 
+        <div class="guidelines-block-heading">
+Guidelines        </div>
+
+        <div class="guidelines-block-lines">
+        
+                <div class="guidelines-block-line">
+<span class="BOLD">AVOID</span> exception reporting or logging lower in the call stack.                </div>
+                <div class="guidelines-block-line">
+<span class="BOLD">DO NOT</span> over-catch. Exceptions should be allowed to propagate up the call stack unless it is clearly understood how to programmatically address those errors lower in the stack.                </div>
+                <div class="guidelines-block-line">
+<span class="BOLD">CONSIDER</span> catching a specific exception when you understand why it was thrown in a given context and can respond to the failure programmatically.                </div>
+                <div class="guidelines-block-line">
+<span class="BOLD">AVOID</span> catching <span class="CITchapbm">System.Exception</span> or <span class="CITchapbm">System.SystemException</span> except in top-level exception handlers that perform final cleanup operations before rethrowing the exception.                </div>
+                <div class="guidelines-block-line">
+<span class="BOLD">DO</span> use <span class="CITchapbm">throw;</span> rather than <span class="CITchapbm">throw &lt;exception object&gt;</span> inside a catch block.                </div>
+                <div class="guidelines-block-line">
+<span class="BOLD">DO</span> use exception filters to avoid rethrowing an exception from within a catch block.                </div>
+                <div class="guidelines-block-line">
+<span class="BOLD">DO</span> use caution when rethrowing different exceptions.                </div>
+                <div class="guidelines-block-line">
+<span class="BOLD">AVOID</span> throwing exceptions from exception filters.                </div>
+                <div class="guidelines-block-line">
+<span class="BOLD">AVOID</span> exception filters with logic that might implicitly change over time.                </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+<div data-element-id="97bb4e6c-c422-4a64-88aa-754d055178d4" class="element-section section-heading H1">
+Defining Custom Exceptions</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="78a324e2-8b86-4862-b5f3-2616db1b8c0c" class="element-section paragraph HEADFIRST" >
+Once throwing an exception becomes the best course of action, it is preferable to use framework exceptions because they are well established and understood. Instead of throwing a custom invalid argument exception, for example, it is preferable to use the <span class="CITchapbm">System.ArgumentException</span> type. However, if the developers using a particular API will take special action&#x2014;the exception-handling logic will vary to handle a custom exception type, for instance&#x2014;it is appropriate to define a custom exception. For example, if a mapping API receives an address for which the ZIP code is invalid, instead of throwing <span class="CITchapbm">System.ArgumentException</span>, it may be better to throw a custom <span class="CITchapbm">InvalidAddressException</span>. The key is whether the caller is likely to write a specific <span class="CITchapbm">InvalidAddressException</span> catch block with special handling rather than just a generic <span class="CITchapbm">System.ArgumentException</span> catch block.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="9c9f6b59-9d2b-47be-af46-ff182d07b069" class="element-section paragraph CHAPBM" >
+Defining a custom exception simply involves deriving from <span class="CITchapbm">System.Exception</span> or some other exception type. Listing 11.4 provides an example.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="cb52ac1c-d12a-404f-851b-9c93793018d5" class="element-section code-block-top-section code-block-bottom-section code-block-section">
+
+    <div class="code-block-heading">
+<span class="CDTNUM">Listing 11.4:&#x2002;</span>Creating a Custom Exception    </div>
+
+    <div class="code-block-lines">
+            <div class='code-line '>
+<span class="CPKeyword">class</span> DatabaseException : System.Exception            </div>
+            <div class='code-line '>
+{            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  <span class="CPKeyword">public</span> DatabaseException(            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPKeyword">string</span>? message,            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      System.Data.SqlClient.SQLException? exception)            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      : <span class="CPKeyword">base</span>(message, innerException: exception)            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  {            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPComment">// ...</span>            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  }            </div>
+            <div class='code-line '>
+            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  <span class="CPKeyword">public</span> DatabaseException(            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPKeyword">string</span>? message,            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      System.Data.OracleClient.OracleException? exception)            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      : <span class="CPKeyword">base</span>(message, innerException: exception)            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  {            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPComment">// ...</span>            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  }            </div>
+            <div class='code-line '>
+            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  <span class="CPKeyword">public</span> DatabaseException()            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  {            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPComment">// ...</span>            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  }            </div>
+            <div class='code-line '>
+            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  <span class="CPKeyword">public</span> DatabaseException(string message)            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  {            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPComment">// ...</span>            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  }            </div>
+            <div class='code-line '>
+            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  <span class="CPKeyword">public</span> DatabaseException(            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPKeyword">string</span>? message, Exception? exception)            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      : <span class="CPKeyword">base</span>(message, innerException: exception)            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  {            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPComment">// ...</span>            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  }            </div>
+            <div class='code-line '>
+}            </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="cbb0aa41-2743-4aa0-a39b-aed9f13d834f" class="element-section paragraph CHAPBM" >
+This custom exception might be created to wrap proprietary database exceptions. Since Oracle and SQL Server (for example) throw different exceptions for similar errors, an application could define a custom exception that standardizes the database-specific exceptions into a common exception wrapper that the application can handle in a standard manner. That way, whether the application was using an Oracle or a SQL Server back-end database, the same catch block could be used to handle the error higher up the stack.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="933096bd-776b-4ff4-b58a-fe32c6eb7276" class="element-section paragraph CHAPBM" >
+The only requirement for a custom exception is that it derives from <span class="CITchapbm">System.Exception</span> or one of its descendants. However, other good practices for custom exceptions are as follows:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="5b5e90e1-6e96-4140-b82e-76c0dced3de1" class="element-section paragraph CHAPBM" >
+The inner exception serves an important purpose when rethrowing an exception that is different from the one that was caught. For example, if a <span class="CITchapbm">System.Data.SqlClient.SqlException</span> is thrown by a database call but is caught within the data access layer and will be rethrown as a <span class="CITchapbm">DatabaseException</span>, the <span class="CITchapbm">DatabaseException</span> constructor that takes the <span class="CITchapbm">SqlException</span> (or inner exception) will save the original <span class="CITchapbm">SqlException</span> in the <span class="CITchapbm">InnerException</span> property. That way, if they require additional details about the original exception, developers can retrieve the exception from the <span class="CITchapbm">InnerException</span> property (e.g., <span class="CITchapbm">exception.InnerException</span>).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="5e9cb9a6-1492-45e0-af67-e0bfe7ac09c2" class="element-section guidelines-block">
+
+    <div class="upper-left-square dark-gray-square"></div>
+
+    <div class=inside-guidelines-block> 
+        <div class="guidelines-block-heading">
+Guidelines        </div>
+
+        <div class="guidelines-block-lines">
+        
+                <div class="guidelines-block-line">
+<span class="BOLD">AVOID</span> deep exception hierarchies.                </div>
+                <div class="guidelines-block-line">
+<span class="BOLD">DO NOT</span> create a new exception type if the exception would not be handled differently than an existing CLR exception. Throw the existing framework exception instead.                </div>
+                <div class="guidelines-block-line">
+<span class="BOLD">DO</span> create a new exception type to communicate a unique program error that cannot be communicated using an existing CLR exception and that can be programmatically handled in a different way than any other existing CLR exception type.                </div>
+                <div class="guidelines-block-line">
+<span class="BOLD">DO</span> provide a parameterless constructor on all custom exception types. Also provide constructors that take a message and an inner exception.                </div>
+                <div class="guidelines-block-line">
+<span class="BOLD">DO</span> name an exception classes with the &#x201C;Exception&#x201D; suffix.                </div>
+                <div class="guidelines-block-line">
+<span class="BOLD">DO</span> make exceptions runtime-serializable.                </div>
+                <div class="guidelines-block-line">
+<span class="BOLD">CONSIDER</span> providing exception properties for programmatic access to extra information relevant to the exception.                </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="215d1a98-1f25-411b-9f67-c6ebd6283f17" class="element-section skill-topic-block skill-topic-block-top skill-topic-block-bottom">
+    <img class="skill-topic-overlayed-squares" src="data:image/svg&#x2B;xml;base64,PHN2ZyB3aWR0aD0iMjk2IiBoZWlnaHQ9IjEyMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgb3ZlcmZsb3c9ImhpZGRlbiI&#x2B;DQogICAgPGRlZnM&#x2B;DQogICAgICAgIDxjbGlwUGF0aCBpZD0iY2xpcDAiPg0KICAgICAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSIyOTYiIGhlaWdodD0iMTIxIiAvPg0KICAgICAgICA8L2NsaXBQYXRoPg0KICAgIDwvZGVmcz4NCiAgICA8ZyBjbGlwLXBhdGg9InVybCgjY2xpcDApIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNDEzIC0yNzIpIj4NCiAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzMzMzMzMyIgLz4NCiAgICAgICAgPHJlY3QgeD0iNDY4IiB5PSIzMjciIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzgwODA4MCIgLz4NCiAgICA8L2c&#x2B;DQo8L3N2Zz4="/>
+    <div class="skill-topic-heading">AdVanced Topic</div>
+    <div class="skill-topic-sub-heading">Serializable Exceptions</div>
+
+
+
+
+
+<p data-element-id="8d911424-a033-4637-9561-a9ee0e0aa3ce" class="element-section paragraph SF1FIRST" >
+<span class="BOLD">Serializable objects</span> are objects that the runtime can persist into a stream&#x2014;a file stream, for example&#x2014;and that can then be reinstantiated out of the stream. In the case of exceptions, this behavior may be necessary for certain distributed communication technologies. To support serialization, exception declarations should either include the <span class="CITchapbm">System.SerializableAttribute</span> attribute or implement <span class="CITchapbm">ISerializable</span>. Furthermore, they must include a constructor that takes <span class="CITchapbm">System.Runtime.Serialization.SerializationInfo</span> and <span class="CITchapbm">System.Runtime.Serialization.StreamingContext</span>. Listing 11.5 shows an example of using <span class="CITchapbm">System.SerializableAttribute</span>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="c0e2d5d3-af4e-4ff5-a9c4-de56baf242d2" class="element-section code-block-top-section code-block-bottom-section code-block-section">
+
+    <div class="code-block-heading">
+<span class="CDTNUM">Listing 11.5:&#x2002;</span>Defining a Serializable Exception    </div>
+
+    <div class="code-block-lines">
+            <div class='code-line '>
+<span class="CPComment">// Supporting serialization via an attribute</span>            </div>
+            <div class='code-line CDThighlight'>
+[Serializable]            </div>
+            <div class='code-line '>
+<span class="CPKeyword">class</span> DatabaseException : System.Exception            </div>
+            <div class='code-line '>
+{            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  <span class="CPComment">// ...</span>            </div>
+            <div class='code-line '>
+            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  <span class="CPComment">// Used for deserialization of exceptions</span>            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  <span class="CPKeyword">public</span> DatabaseException(            </div>
+            <div class='code-line CDThighlight'>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      SerializationInfo serializationInfo,            </div>
+            <div class='code-line CDThighlight'>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      StreamingContext context)            </div>
+            <div class='code-line CDThighlight'>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          : <span class="CPKeyword">base</span>(serializationInfo, context)            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  {            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPComment">//...</span>            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  }            </div>
+            <div class='code-line '>
+            </div>
+            <div class='code-line '>
+}            </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="5eef1724-c987-42fa-a17f-43001dd2ab96" class="element-section paragraph SF1MID" >
+The preceding <span class="CITchapbm">DatabaseException</span> example demonstrates both the attribute and the constructor requirement for making an exception serializable.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="76c1fc31-31a0-4c7a-9b26-44abf3f7e4f0" class="element-section paragraph SF1LAST" >
+For .NET Core, <span class="CITchapbm">System.SerializableAttribute</span> was not available until .NET Standard 2.0. If you are writing code that will compile across multiple frameworks including a .NET Standard version prior to 2.0, consider defining your own <span class="CITchapbm">System.SerializableAttribute</span> as a <span class="BOLD">polyfill</span>. A polyfill is code that fills a hole in a particular version of technology, thereby adding the functionality or at least providing a shim for what is missing.</p>
+
+
+
+
+
+
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+<div data-element-id="85fe8224-2eb2-4f10-87ea-9a9a025e2358" class="element-section section-heading H1">
+Rethrowing a Wrapped Exception</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="4a1d5d0f-f313-41ff-9b9f-248d73b11e18" class="element-section paragraph HEADFIRST" >
+On occasion, an exception thrown at a lower level in the stack will no longer make sense when caught at a higher level. For example, consider a <span class="CITchapbm">System.IO.IOException</span> that occurs because a system is out of disk space on the server. A client catching such an exception would not necessarily be able to understand the context of why there was even I/O activity. Similarly, consider a geographic coordinate request API that throws a <span class="CITchapbm">System.UnauthorizedAccessException</span> (an exception totally unrelated to the API called). In this second example, the caller has no context for understanding what the API call has to do with security. From the perspective of the code that invokes the API, these exceptions cause more confusion than they help diagnose. Instead of exposing such exceptions to the client, it might make sense to first catch the exception and then throw a different exception, such as <span class="CITchapbm">InvalidOperationException</span> (or even perhaps a custom exception), as a means of communicating that the system is in an invalid state. In such scenarios, be sure to set the <span class="CITchapbm">InnerException</span> property of the wrapping exception (generally via a constructor call such as <span class="CITchapbm">new InvalidOperationException(string, Exception)</span>) so that there is additional context that can be used for diagnostic purposes by someone closer to the framework that was invoked.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="ffe69df5-e411-41de-bfb0-a1bc77f3aa3e" class="element-section paragraph CHAPBM" >
+An important detail to remember when considering whether to wrap and rethrow an exception is the fact that the original stack trace&#x2014;which provides the context of where the exception was thrown&#x2014;will be replaced with the new stack trace of where the wrapping exception is thrown (assuming <span class="CITchapbm">ExceptionDispatchInfo</span> is not used). Fortunately, when the original exception is embedded into the wrapping exception, the original stack trace is still available.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="7e1550e6-5929-4788-ad2a-86576f580c9d" class="element-section paragraph CHAPBM" >
+Ultimately, the intended recipient of the exception is the programmer writing code that calls your API&#x2014;possibly incorrectly. Therefore, you should provide as much information to her that indicates both what the programmer did wrong and&#x2014;perhaps more important&#x2014;how to fix it. The exception type is a critical piece of the communication mechanism, so you must choose it wisely.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="ba1f0b27-cbfa-40a6-86e1-5454c970e9df" class="element-section guidelines-block">
+
+    <div class="upper-left-square dark-gray-square"></div>
+
+    <div class=inside-guidelines-block> 
+        <div class="guidelines-block-heading">
+Guidelines        </div>
+
+        <div class="guidelines-block-lines">
+        
+                <div class="guidelines-block-line">
+<span class="BOLD">CONSIDER</span> wrapping specific exceptions thrown from the lower layer in a more appropriate exception if the lower-layer exception does not make sense in the context of the higher-layer operation.                </div>
+                <div class="guidelines-block-line">
+<span class="BOLD">DO</span> specify the inner exception when wrapping exceptions.                </div>
+                <div class="guidelines-block-line">
+<span class="BOLD">DO</span> target developers as the audience for exceptions, identifying both the problem and the mechanism to resolve it, where possible.                </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="af55ce42-9da9-453c-90a3-be6e13c41a50" class="element-section skill-topic-block skill-topic-block-top skill-topic-block-bottom">
+    <img class="skill-topic-overlayed-squares" src="data:image/svg&#x2B;xml;base64,PHN2ZyB3aWR0aD0iMjk2IiBoZWlnaHQ9IjEyMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgb3ZlcmZsb3c9ImhpZGRlbiI&#x2B;DQogICAgPGRlZnM&#x2B;DQogICAgICAgIDxjbGlwUGF0aCBpZD0iY2xpcDAiPg0KICAgICAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSIyOTYiIGhlaWdodD0iMTIxIiAvPg0KICAgICAgICA8L2NsaXBQYXRoPg0KICAgIDwvZGVmcz4NCiAgICA8ZyBjbGlwLXBhdGg9InVybCgjY2xpcDApIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNDEzIC0yNzIpIj4NCiAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzMzMzMzMyIgLz4NCiAgICAgICAgPHJlY3QgeD0iNDY4IiB5PSIzMjciIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzgwODA4MCIgLz4NCiAgICA8L2c&#x2B;DQo8L3N2Zz4="/>
+    <div class="skill-topic-heading">Beginner Topic</div>
+    <div class="skill-topic-sub-heading">Checked and Unchecked Conversions</div>
+
+
+
+
+
+<p data-element-id="56b4281f-29be-4d22-b96d-2a2662798b78" class="element-section paragraph SF1FIRST" >
+As we first discussed in a Chapter 2 Advanced Topic, C# provides special keywords for marking a code block with instructions to the runtime for what should happen if the target data type is too small to contain the assigned data. By default, if the target data type cannot contain the assigned data, the data will be truncated during assignment. For an example, see Listing 11.6.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="960df4d8-88e9-40b4-b4ca-c2864faf11af" class="element-section code-block-top-section code-block-bottom-section code-block-section">
+
+    <div class="code-block-heading">
+<span class="CDTNUM">Listing 11.6:&#x2002;</span>Overflowing an Integer Value    </div>
+
+    <div class="code-block-lines">
+            <div class='code-line '>
+<span class="CPKeyword">using</span> System;            </div>
+            <div class='code-line '>
+            </div>
+            <div class='code-line '>
+<span class="CPKeyword">public</span> <span class="CPKeyword">class</span> Program            </div>
+            <div class='code-line '>
+{            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  <span class="CPKeyword">public</span> <span class="CPKeyword">static</span> <span class="CPKeyword">void</span> Main()            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  {            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPComment">// int.MaxValue equals 2147483647</span>            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPKeyword">int</span> n = <span class="CPKeyword">int</span>.MaxValue;            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      n = n &#x2B; 1 ;            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      System.Console.WriteLine(n);            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  }            </div>
+            <div class='code-line '>
+}            </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="facd72f7-28cd-4c0c-a382-7d4c9083a716" class="element-section paragraph SF1MID" >
+The results of Listing 11.6 appear in Output 11.1.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="459780f6-dcd9-4655-bf18-2d8c9b015c4e" class="element-section output-block-section output-block-top-section output-block-bottom-section">
+
+    <div class="output-block-heading">
+Output 11.1    </div>
+
+    <div class="output-block-lines">
+            <div class="output-line">
+-2147483648            </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="c0693970-1559-4621-b368-f41029822478" class="element-section paragraph SF1MID" >
+The code in Listing 11.6 writes the value <span class="CITchapbm">-2147483648</span> to the console. However, placing the code within a checked block or using the <span class="CITchapbm">checked</span> option when running the compiler will cause the runtime to throw an exception of type <span class="CITchapbm">System.OverflowException</span>. The syntax for a checked block uses the <span class="CITchapbm">checked</span> keyword, as shown in Listing 11.7.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="130aedd0-1532-4dfb-8c68-9a22a03c7703" class="element-section code-block-top-section code-block-bottom-section code-block-section">
+
+    <div class="code-block-heading">
+<span class="CDTNUM">Listing 11.7:&#x2002;</span>A Checked Block Example    </div>
+
+    <div class="code-block-lines">
+            <div class='code-line '>
+<span class="CPKeyword">using</span> System;            </div>
+            <div class='code-line '>
+            </div>
+            <div class='code-line '>
+<span class="CPKeyword">public</span> <span class="CPKeyword">class</span> Program            </div>
+            <div class='code-line '>
+{            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  <span class="CPKeyword">public</span> <span class="CPKeyword">static</span> <span class="CPKeyword">void</span> Main()            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  {            </div>
+            <div class='code-line CDThighlight'>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPKeyword">checked</span>            </div>
+            <div class='code-line CDThighlight'>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      {            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          <span class="CPComment">// int.MaxValue equals 2147483647</span>            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          <span class="CPKeyword">int</span> n = <span class="CPKeyword">int</span>.MaxValue;            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          n = n &#x2B; 1 ;            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          System.Console.WriteLine(n);            </div>
+            <div class='code-line CDThighlight'>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      }            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  }            </div>
+            <div class='code-line '>
+}            </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="df851b2c-1a16-4a77-8a0f-e8f90efa4706" class="element-section paragraph SF1MID" >
+If the calculation involves only constants, the calculation will be checked by default. The results of Listing 11.7 appear in Output 11.2.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="d8a263da-1b90-432a-9535-f852fd1df1cf" class="element-section output-block-section output-block-top-section output-block-bottom-section">
+
+    <div class="output-block-heading">
+Output 11.2    </div>
+
+    <div class="output-block-lines">
+            <div class="output-line">
+Unhandled Exception: System.OverflowException: Arithmetic operation            </div>
+            <div class="output-line">
+resulted in an overflow. at Program.Main() in ...Program.cs:line 12            </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="84acc58e-4a51-4da7-b2cc-bf855b3c59d8" class="element-section paragraph SF1MID" >
+As shown in Output 11.2, an exception is thrown if, within the checked block, an overflow assignment occurs at runtime.<span class="FootnoteReference">3</span> Note that the location information in Output 11.2 (<span class="CITchapbm">Program.cs:line X</span>) will appear only in debug compilations&#x2014;that is, compilations using the <span class="CITchapbm">/Debug</span> option of the compiler. </p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="26b450c9-d02c-46d7-af65-9b0060aae70c" class="element-section paragraph SF1MID" >
+To change an entire project to be unchecked or checked, set the <span class="CITchapbm">CheckForOverflowUnderflow</span> property to <span class="CITchapbm">false</span> or <span class="CITchapbm">true</span>, respectively. </p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="cbac6f78-d203-4004-86e5-b80a5c9e0e87" class="element-section paragraph SF1MID" >
+C# also supports an unchecked <span class="E2">block</span> that truncates the data instead of throwing an exception for assignments within the block (see Listing 11.8).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="9d42dca5-3346-4629-9431-5c6c1498c2c2" class="element-section code-block-top-section code-block-bottom-section code-block-section">
+
+    <div class="code-block-heading">
+<span class="CDTNUM">Listing 11.8:&#x2002;</span>An Unchecked Block Example    </div>
+
+    <div class="code-block-lines">
+            <div class='code-line '>
+<span class="CPKeyword">using</span> System;            </div>
+            <div class='code-line '>
+            </div>
+            <div class='code-line '>
+<span class="CPKeyword">public</span> <span class="CPKeyword">class</span> Program            </div>
+            <div class='code-line '>
+{            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  <span class="CPKeyword">public</span> <span class="CPKeyword">static</span> <span class="CPKeyword">void</span> Main()            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  {            </div>
+            <div class='code-line CDThighlight'>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      <span class="CPKeyword">unchecked</span>            </div>
+            <div class='code-line CDThighlight'>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      {            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          <span class="CPComment">// int.MaxValue equals 2147483647</span>            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          <span class="CPKeyword">int</span> n = <span class="CPKeyword">int</span>.MaxValue;            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          n = n &#x2B; 1 ;            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          System.Console.WriteLine(n);            </div>
+            <div class='code-line CDThighlight'>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      }            </div>
+            <div class='code-line '>
+&nbsp;&nbsp;  }            </div>
+            <div class='code-line '>
+}            </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="2da70bd5-6ba9-46ee-9bd8-8ecf9593e9e7" class="element-section paragraph SF1MID" >
+The results of Listing 11.8 appear in Output 11.3.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="aac6ad99-c2ee-47cf-90f2-c3a7074e88dc" class="element-section output-block-section output-block-top-section output-block-bottom-section">
+
+    <div class="output-block-heading">
+Output 11.3    </div>
+
+    <div class="output-block-lines">
+            <div class="output-line">
+-2147483648            </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="e6cb802f-7711-4cca-ba10-dc73275516c1" class="element-section paragraph SF1MID" >
+Even if the checked option is on during compilation, the <span class="CITchapbm">unchecked</span> keyword in the code in Listing 11.8 will prevent the runtime from throwing an exception during execution.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="fa366460-22ea-4d9b-b532-b5f0823b070f" class="element-section paragraph SF1MID" >
+Equivalent <span class="CITchapbm">checked</span> and <span class="CITchapbm">unchecked</span> expressions are available for cases where statements are not allowed. For example, a field initializer may consist of an expression rather than a statement:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="5a371411-9905-41ec-9632-e319c4590acb" class="element-section paragraph SF1DPGMONLY" >
+<span class="CITchapbm">int number = unchecked(int.MaxValue &#x2B; 1);</span></p>
+
+
+
+
+
+
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+<div data-element-id="94d3a40e-d06a-4721-b9a1-ae1d742ac1d6" class="element-section section-heading SummaryHead">
+Summary</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="abf461bf-0a04-4784-9ac0-75f5e2e7fbb0" class="element-section paragraph HEADFIRST" >
+Throwing an exception produces a significant performance hit. A single exception causes lots of runtime stack information to be loaded and processed&#x2014;data that would not otherwise be loaded&#x2014;and it takes a considerable amount of time to handle. As pointed out in Chapter 5, you should use exceptions only to handle exceptional circumstances; APIs should provide mechanisms to check whether an exception will be thrown instead of forcing a particular API to be called to determine whether an exception will be thrown.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="bfa03fbc-3829-4e75-a5fc-0b8248b7eef7" class="element-section paragraph CHAPBM" >
+The next chapter introduces generics&#x2014;a C# 2.0 feature that significantly enhances code written in C# 1.0. In fact, it essentially deprecates any use of the <span class="CITchapbm">System.Collections</span> namespace, which was formerly used in nearly every project.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="1c12bc3d-1a65-4a2b-a621-62f10dc3a750" class="element-section footnote-block">
+    1
+<span class="FootnoteReference"></span> Starting with C# 2.0.</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="1196b5c8-255a-4870-b888-2993a5111d33" class="element-section footnote-block">
+    2
+<span class="FootnoteReference"></span> Starting with Common Language Runtime (CLR) 4. Prior to CLR 4, code should catch such exceptions only to run cleanup or emergency code (such as saving any volatile data) before shutting down the application or rethrowing the exception with <span class="CITchapbm">throw;</span>.</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="dfbb02f4-5848-49ed-b71d-9cde31855516" class="element-section footnote-block">
+    3
+<span class="FootnoteReference"></span> In addition to Output 11.2, if the .NET Framework debugger is installed, a dialog may appear that prompts the user to send an error message to Microsoft, check for a solution, or debug the application.</div>
+
+
+
+
+
+        </div>
+    </div>
+</body>
+</html>
