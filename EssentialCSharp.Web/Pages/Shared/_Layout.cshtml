@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/EssentialCSharp.Web.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/styles.css"/>
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -14,12 +15,13 @@
     <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="theme-color" content="#ffffff">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">EssentialCSharp</a>
+    <header class="banner">
+         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow">
+            <div class="container banner">
+                <a class="navbar-brand text-light" asp-area="" asp-page="/Index">EssentialCSharp.Web</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -27,26 +29,93 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
+                            <a class="nav-link text-light" asp-area="" asp-page="/Index">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" runat="server" target="_blank" rel="noreferrer noopener" href="https://github.com/IntelliTect/EssentialCSharp/discussions/new?category=feedback-and-ideas">Feedback</a>
+                            <a class="nav-link text-light" runat="server" target="_blank" rel="noreferrer noopener" href="https://github.com/IntelliTect/EssentialCSharp/discussions/new?category=feedback-and-ideas">Feedback</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Terms-Of-Service">Terms Of Service</a>
+                            <a class="nav-link text-light" asp-area="" asp-page="/Terms-Of-Service">Terms Of Service</a>
                         </li>
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted">
+    <div class="layout">
+        <div class="toc-window">
+
+             <div class="toc-menu"> 
+                <button class="toc-label" onclick="showTOC()" id="toc-btn">
+                    CONTENTS
+                    <div class="bottom-border" id="toc-border"></div>
+                </button>
+
+                <button class="toc-label" onclick="showSearchBar()" id="search-btn">
+                    SEARCH
+                    <div class="bottom-border hide" id="search-border"></div>
+                </button>
+            </div>
+
+            <div class="toc-tree" id="toc">
+                <ul class="tree">
+                    <li>
+                        <details open>
+                            <summary class="toc-content">1: Introducing C#</summary>
+                        </details>
+                    </li>
+                    <li>
+                        <details open>
+                            <summary class="toc-content">2: Data Types</summary>
+                        </details>
+                    </li>
+                    <li>
+                        <details open>
+                            <summary class="toc-content">3: More with Data Types</summary>
+                            <ul>
+                                <li>
+                                    <details>
+                                        <summary class="toc-content">Categories of Types</summary>
+                                        <ul>
+                                            <li class="toc-content">Values Types</li>
+                                            <li class="toc-content">Reference Types</li>
+                                        </ul>
+                                    </details>
+                                </li>
+                                <li>
+                                    <details>
+                                        <summary class="toc-content">Declaring Types that Allow Null</summary>
+                                        <ul>
+                                            <li class="toc-content">Dereferencing a null</li>
+                                            <li class="toc-content">Checking for Null</li>
+                                        </ul>
+                                    </details>
+                                </li>
+                            </ul>
+                        </details>
+                    </li>
+                </ul>
+            </div>
+            <div id="searchBar" class="search-window hide">
+                <div class="input">
+                <input type="text"/>
+                    <button class="search-btn">
+                        <i class="fas fa-search icon-color"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+            <div>
+                @RenderBody()
+            </div>
+
+           <div class="compiler-window"></div>
+
+        </div>
+
+    <footer class="border-top footer text-muted" position="fixed" left="0" bottom="0" height="100px" width="100%">
         <div class="container">
             &copy; IntelliTect 2022 - <a runat="server" target="_blank" rel="noreferrer noopener" href="https://intellitect.com/about/privacy-policy/">Privacy</a>
         </div>
@@ -57,5 +126,32 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
+
+     <script>
+        function showTOC() {
+            var a = document.getElementById("toc-border");
+            a.style.display = "block";
+            var b = document.getElementById("toc");
+            b.style.display = "block";
+
+            var c = document.getElementById("searchBar");
+            c.style.display = "none";
+            var d = document.getElementById("search-border");
+            d.style.display = "none";
+            
+        }
+
+        function showSearchBar() {
+             var a = document.getElementById("toc-border");
+            a.style.display = "none";
+            var b = document.getElementById("toc");
+            b.style.display = "none";
+
+            var c = document.getElementById("searchBar");
+            c.style.display = "block";
+            var d = document.getElementById("search-border");
+            d.style.display = "block";
+        }
+    </script>
 </body>
 </html>

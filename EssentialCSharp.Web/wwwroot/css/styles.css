@@ -1,0 +1,213 @@
+﻿    .compiler-window {
+        width: 580px;
+        min-width: 580px;
+        height: 100vh;
+        border-left: solid #CCCCCC 1px;
+        background-color: #F0F1F1;
+        float: right;
+    }
+
+    .search-window {
+        width: 325px;
+        min-width: 325px;
+        height: 80vh;
+        padding-top: 20px;
+    }
+
+    .search-window .input {
+        background: #FFFFFF;
+        border: 1px solid #7E7D7E;
+        border-radius: 2px;
+        height: 28px;
+        width: 265px;
+        margin: 5px;
+    }
+
+    .search-window .input .search-btn {
+        background: #095540;
+        height: 26px;
+        width: 29px;
+        float: right;
+        border: none;
+    }
+
+    .search-window .icon-color {
+        color: #ffffff;
+    }
+
+    .search-window input {
+        border: none;
+    }
+
+    .search-window input:focus {
+        outline: none;
+    }
+
+    .toc-window {
+        width: 325px;
+        min-width: 325px;
+        height: 80vh;
+    }
+
+    .toc-menu {
+        color: black;
+        background-color: white;
+    }
+
+    .toc-tree {
+        padding-top: 20px;
+    }
+
+    .toc-label {
+        color: black;
+        background-color: white;
+        text-align: left;
+        font-size: 16px;
+        font-family: 'Palatino Linotype';
+        margin-top: 5px;
+        cursor: pointer;
+        border: none;
+    }
+
+    .bottom-border {
+        color: black;
+        border-bottom: 2px solid;
+        border-right-width: 0px;
+        border-left-width: 0px;
+        border-top-width: 0px;
+        cursor: pointer;
+    }
+
+    .toc-content {
+        color: black;
+        text-align: left;
+        padding-left: 25px;
+        font-family: 'Palatino Linotype';
+        font-style: normal;
+        font-weight: 400;
+        font-size: 18px;
+        line-height: 140%;
+        cursor: pointer;
+    }
+
+    .toc-list {
+        list-style-type: none;
+        padding-left: 20px;
+        margin: 0;
+    }
+
+    .toc-window .hide {
+        display: none
+    }
+
+    .tree {
+        margin-left: -25px;
+    }
+
+    .tree li {
+        display: block;
+        position: relative;
+        padding-left: 0px;
+    }
+
+    .tree ul {
+        margin-left: 25px;
+        padding-left: 0;
+    }
+
+    .tree summary {
+        display: block;
+        cursor: pointer;
+    }
+
+    .tree summary:focus {
+        outline: none;
+    }
+
+    .tree summary:focus-visible {
+        outline: 1px dotted #000;
+    }
+
+    .tree li::after,
+    .tree summary::before {
+    }
+
+    .tree summary::before {
+        content: "";
+        display: block;
+        box-sizing: border-box;
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        border-bottom: 2px solid;
+        border-right: 2px solid;
+        transform: rotate(45deg);
+        left: 4px;
+        top: 2px
+    }
+
+    .tree details[open] > summary::before {
+        content: "";
+        display: block;
+        box-sizing: border-box;
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        border-bottom: 2px solid;
+        border-right: 2px solid;
+        transform: rotate(-135deg);
+        left: 4px;
+        top: 8px
+    }
+
+    .layout {
+        display: grid;
+        grid-template-columns: 325px auto 580px;
+        width: 100%;
+        margin-top: 60px;
+    }
+
+    .layout > div {
+        padding: 25px;
+    }
+
+    .banner {
+        background: #095540;
+        display: grid;
+        grid-template-columns: 325px auto 580px;
+        height: 60px;
+        width: 100%;
+        position: fixed;
+        top: 0;
+        z-index: 5;
+    }
+
+    .banner .nav-btn {
+        color: white;
+        font-style: normal;
+        font-weight: 700;
+        font-size: 18px;
+        text-decoration: none;
+        cursor: pointer;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        text-align: center;
+    }
+
+    .right {
+        float: right;
+    }
+
+    .banner-section-label {
+        font-family: 'Palatino Linotype';
+        font-style: normal;
+        font-weight: 300;
+        font-size: 24px;
+        color: white;
+        text-align: center;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
