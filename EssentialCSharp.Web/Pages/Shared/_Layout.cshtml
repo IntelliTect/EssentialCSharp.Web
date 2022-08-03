@@ -18,33 +18,17 @@
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </head>
 <body>
-    <header class="banner">
-         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow">
-            <div class="container banner">
-                <a class="navbar-brand text-light" asp-area="" asp-page="/Index">
-                    <img width="60" height="auto" src="~/images/inverted_icon_transparent.png" title="Essential C#" alt="Essential C# Icon">
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-light" runat="server" target="_blank" rel="noreferrer noopener" href="https://github.com/IntelliTect/EssentialCSharp/discussions/new?category=feedback-and-ideas">Feedback</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-light" asp-area="" asp-page="/Terms-Of-Service">Terms Of Service</a>
-                        </li>
-                    </ul>
-                </div>
+    <header class="header-height">
+        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow header-height">
+            <div class="banner">
+                <a class="navbar-brand text-light banner-main-label" asp-area="" asp-page="/Index">Essential C#</a>
+                <a class="nav-link text-light banner-section-label right" runat="server" target="_blank" rel="noreferrer noopener" href="https://github.com/IntelliTect/EssentialCSharp/discussions/new?category=feedback-and-ideas">Feedback</a>
             </div>
         </nav>
     </header>
 
     <div class="layout">
-        <div class="toc-window">
-
+        <div class="sidebar">
              <div class="toc-menu"> 
                 <button class="toc-label" onclick="showTOC()" id="toc-btn">
                     CONTENTS
@@ -96,6 +80,7 @@
                     </li>
                 </ul>
             </div>
+
             <div id="searchBar" class="search-window hide">
                 <div class="input">
                 <input type="text"/>
@@ -106,17 +91,15 @@
             </div>
         </div>
 
-            <div>
-                @RenderBody()
-            </div>
-
-           <div class="compiler-window"></div>
-
+        <div>
+            @RenderBody()
         </div>
+    </div>
 
-    <footer class="border-top footer text-muted" position="fixed" left="0" bottom="0" height="100px" width="100%">
-        <div class="container">
-            &copy; IntelliTect 2022 - <a runat="server" target="_blank" rel="noreferrer noopener" href="https://intellitect.com/about/privacy-policy/">Privacy</a>
+    <footer class="border-top dense-footer text-muted" position="fixed" left="0" bottom="0" width="100%">
+        <div class="dense-footer-content">
+            &copy; IntelliTect 2022 - <a class="link-color" runat="server" target="_blank" rel="noreferrer noopener" href="https://intellitect.com/about/privacy-policy/">Privacy</a>  - 
+            <a class="link-color" asp-area="" asp-page="/Terms-Of-Service">Terms Of Service</a>
         </div>
     </footer>
 
