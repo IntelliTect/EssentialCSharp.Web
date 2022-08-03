@@ -1,13 +1,4 @@
-﻿    .compiler-window {
-        width: 580px;
-        min-width: 580px;
-        height: 100vh;
-        border-left: solid #CCCCCC 1px;
-        background-color: #F0F1F1;
-        float: right;
-    }
-
-    .search-window {
+﻿    .search-window {
         width: 325px;
         min-width: 325px;
         height: 80vh;
@@ -43,7 +34,7 @@
         outline: none;
     }
 
-    .toc-window {
+    .sidebar {
         width: 325px;
         min-width: 325px;
         height: 80vh;
@@ -96,7 +87,7 @@
         margin: 0;
     }
 
-    .toc-window .hide {
+    .sidebar .hide {
         display: none
     }
 
@@ -162,9 +153,8 @@
 
     .layout {
         display: grid;
-        grid-template-columns: 325px auto 580px;
+        grid-template-columns: 325px auto;
         width: 100%;
-        margin-top: 60px;
     }
 
     .layout > div {
@@ -173,13 +163,10 @@
 
     .banner {
         background: #095540;
-        display: grid;
-        grid-template-columns: 325px auto 580px;
         height: 60px;
         width: 100%;
-        position: fixed;
-        top: 0;
-        z-index: 5;
+        display: flex;
+        justify-content: space-between;
     }
 
     .banner .nav-btn {
@@ -196,18 +183,45 @@
     }
 
     .right {
-        float: right;
+        margin-right: auto;
+    }
+
+    .banner-main-label {
+        font-family: 'Palatino Linotype';
+        font-style: normal;
+        font-weight: 300;
+        font-size: 24px;
+        margin-top: 5px;
+        margin-bottom: 5px;
+        margin-right: 5px;
+        margin-left: 25px;
     }
 
     .banner-section-label {
         font-family: 'Palatino Linotype';
         font-style: normal;
         font-weight: 300;
-        font-size: 24px;
-        color: white;
-        text-align: center;
+        font-size: 18px;
+        margin: 8px;
+    }
+
+    .header-height {
+        height: 60px;
+        top: 0;
+    }
+
+    .link-color {
+        color:#0077cc;
+    }
+
+    .dense-footer {
         position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+        bottom: 0;
+        width: 100%;
+        white-space: nowrap;
+        line-height: 40px;
+    }
+
+    .dense-footer > .dense-footer-content {
+        margin-left: 25px;
     }
