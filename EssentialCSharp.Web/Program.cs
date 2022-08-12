@@ -1,10 +1,23 @@
+using EssentialCSharp.Web;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
 
-var app = builder.Build();
+builder.Services.AddSingleton<IList<SiteMapping>>(sp => {
+    IWebHostEnvironment _HostingEnvironment = sp.GetRequiredService<IWebHostEnvironment>();
+    string path = Path.Combine(_HostingEnvironment.ContentRootPath,"Chapters","sitemap.json");
+    List<SiteMapping>? siteMappings = System.Text.Json.JsonSerializer.Deserialize<List<SiteMapping>>(File.OpenRead(path));
+    if (siteMappings is null)
+    {
+        throw new InvalidOperationException("No table of contents found");
+    }
+    return siteMappings;
+});
 
+var app = builder.Build();
+_= app.Services.GetRequiredService<IList<SiteMapping>>();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -17,9 +30,16 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
-
 app.UseAuthorization();
 
-app.MapRazorPages();
+app.UseEndpoints(endpoint =>
+{
+    endpoint.MapDefaultControllerRoute();
+    endpoint.MapControllerRoute(
+        name: "slug",
+        pattern: "{*key}",
+        defaults: new { controller = "Home", action = "Index" });
+});
+
 
 app.Run();

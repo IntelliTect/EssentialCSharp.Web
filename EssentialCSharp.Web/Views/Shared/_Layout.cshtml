@@ -1,3 +1,4 @@
+@inject IList<SiteMapping> _SiteMappings
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,7 +22,7 @@
     <header class="header-height">
         <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow header-height">
             <div class="banner">
-                <a class="navbar-brand text-light banner-main-label" asp-area="" asp-page="/Index">Essential C#</a>
+                <a class="navbar-brand text-light banner-main-label" asp-area="" asp-controller="Home" asp-action="Index">Essential C#</a>
                 <a class="nav-link text-light banner-section-label right" runat="server" target="_blank" rel="noreferrer noopener" href="https://github.com/IntelliTect/EssentialCSharp/discussions/new?category=feedback-and-ideas">Feedback</a>
             </div>
         </nav>
@@ -45,7 +46,10 @@
                 <ul class="tree">
                     <li>
                         <details open>
-                            <summary class="toc-content">1: Introducing C#</summary>
+                            <summary class="toc-content">
+                                @_SiteMappings.Count
+                                1: Introducing C#
+                                </summary>
                         </details>
                     </li>
                     <li>
@@ -99,7 +103,7 @@
     <footer class="border-top dense-footer text-muted" position="fixed" left="0" bottom="0" width="100%">
         <div class="dense-footer-content">
             &copy; IntelliTect 2022 - <a class="link-color" runat="server" target="_blank" rel="noreferrer noopener" href="https://intellitect.com/about/privacy-policy/">Privacy</a>  - 
-            <a class="link-color" asp-area="" asp-page="/Terms-Of-Service">Terms Of Service</a>
+            <a class="link-color" asp-area="" asp-controller="Home" asp-action="TermsOfService">Terms Of Service</a>
         </div>
     </footer>
 
