@@ -30,7 +30,7 @@ public class HomeController : Controller
         SiteMapping? siteMapping = _SiteMappings.FirstOrDefault(x => x.Heading == key);
         if (siteMapping != null)
         {
-            string filePath = Path.Combine(_HostingEnvironment.ContentRootPath, siteMapping.PagePath);
+            string filePath = Path.Combine(_HostingEnvironment.ContentRootPath,Path.Combine(siteMapping.PagePath));
             HtmlDocument doc = new();
             doc.Load(filePath);
             html = doc.DocumentNode.InnerHtml;
