@@ -7,6 +7,11 @@ a.navbar-brand {
   word-break: break-all;
 }
 
+link-button-color {
+  text-decoration: none;
+  color: white;
+}
+
 a {
   color: #0077cc;
 }
