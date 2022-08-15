@@ -25,4 +25,10 @@ public static class StringExtensions
         }
         return sb.ToString();
     }
+
+    // Makes a heading key (ex: hello-world) good for a heading display (ex: Hello World)
+    public static string KeyToHeading(this string str)
+    {
+        return System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(str.Trim().ToLowerInvariant().Replace('-', ' '));
+    }
 }

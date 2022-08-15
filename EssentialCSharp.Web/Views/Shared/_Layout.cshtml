@@ -1,3 +1,4 @@
+@using EssentialCSharp.Web.Extensions
 @inject IList<SiteMapping> _SiteMappings
 <!DOCTYPE html>
 <html lang="en">
@@ -44,44 +45,22 @@
 
             <div class="toc-tree" id="toc">
                 <ul class="tree">
-                    <li>
-                        <details open>
-                            <summary class="toc-content">
-                                @_SiteMappings.Count
-                                1: Introducing C#
-                                </summary>
-                        </details>
-                    </li>
-                    <li>
-                        <details open>
-                            <summary class="toc-content">2: Data Types</summary>
-                        </details>
-                    </li>
-                    <li>
-                        <details open>
-                            <summary class="toc-content">3: More with Data Types</summary>
+                    @foreach (int chapterNumber in _SiteMappings.Select(x=>x.ChapterNumber).Distinct().OrderBy(x => x))
+                    {
+                        <li>
+                            <details>
+                            <summary class="toc-content">Chapter @chapterNumber</summary>
                             <ul>
-                                <li>
-                                    <details>
-                                        <summary class="toc-content">Categories of Types</summary>
-                                        <ul>
-                                            <li class="toc-content">Values Types</li>
-                                            <li class="toc-content">Reference Types</li>
-                                        </ul>
-                                    </details>
-                                </li>
-                                <li>
-                                    <details>
-                                        <summary class="toc-content">Declaring Types that Allow Null</summary>
-                                        <ul>
-                                            <li class="toc-content">Dereferencing a null</li>
-                                            <li class="toc-content">Checking for Null</li>
-                                        </ul>
-                                    </details>
-                                </li>
+                                @foreach (SiteMapping siteMapping in _SiteMappings.Where(x=>x.ChapterNumber == @chapterNumber))
+                                {  
+                                            <li class="toc-content">
+                                                <a class="link-button-color" runat="server" href="@siteMapping.Heading">@siteMapping.Heading.KeyToHeading()</a>
+                                            </li>
+                                }
                             </ul>
                         </details>
-                    </li>
+                        </li>
+                    }
                 </ul>
             </div>
 
