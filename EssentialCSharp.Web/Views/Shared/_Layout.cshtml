@@ -81,7 +81,7 @@
 
     <footer class="border-top dense-footer text-muted" position="fixed" left="0" bottom="0" width="100%">
         <div class="dense-footer-content">
-            &copy; IntelliTect 2022 - <a class="link-color" runat="server" target="_blank" rel="noreferrer noopener" href="https://intellitect.com/about/privacy-policy/">Privacy</a>  - 
+            &copy; IntelliTect 2005-<span class="currentyear">Year</span> - <a class="link-color" runat="server" target="_blank" rel="noreferrer noopener" href="https://intellitect.com/about/privacy-policy/">Privacy</a>  - 
             <a class="link-color" asp-area="" asp-controller="Home" asp-action="TermsOfService">Terms Of Service</a>
         </div>
     </footer>
@@ -91,6 +91,13 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+        jQuery(document).ready( function($) {
+            currentyear = new Date().getFullYear();
+            $('.currentyear').text(currentyear);
+        });
+    </script>
 
      <script>
         function showTOC() {
