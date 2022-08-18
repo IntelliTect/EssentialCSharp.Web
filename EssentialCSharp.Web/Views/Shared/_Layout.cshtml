@@ -49,12 +49,12 @@
                     {
                         <li>
                             <details>
-                            <summary class="toc-content">Chapter @chapterNumber</summary>
+                            <summary class="toc-content">Chapter @chapterNumber: @_SiteMappings.First(x=>x.ChapterNumber == chapterNumber).ChapterTitle</summary>
                             <ul>
                                 @foreach (SiteMapping siteMapping in _SiteMappings.Where(x=>x.ChapterNumber == @chapterNumber))
                                 {  
                                             <li class="toc-content">
-                                                <a class="link-button-color" runat="server" href="@siteMapping.Heading">@siteMapping.Heading.KeyToHeading()</a>
+                                                <a class="link-button-color" runat="server" href="@siteMapping.Heading">@siteMapping.RawHeading</a>
                                             </li>
                                 }
                             </ul>
@@ -66,8 +66,8 @@
 
             <div id="searchBar" class="search-window hide">
                 <div class="input">
-                <input type="text"/>
-                    <button class="search-btn">
+                <input type="text" />
+                    <button class="search-btn" >
                         <i class="fas fa-search icon-color"></i>
                     </button>
                 </div>
