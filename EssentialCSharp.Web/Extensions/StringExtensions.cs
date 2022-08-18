@@ -13,7 +13,9 @@ public static class StringExtensions
         {
             switch (character)
             {
-                case char c when c == '_' || c == ' ':
+                // this second '-' here is different than a normal - in terms of key code
+                // so we replace it with a normal -
+                case char c when c == '_' || c == ' ' || c == '–':
                     sb.Append('-');
                     break;
                 case char r2d2 when (r2d2 >= '0' && r2d2 <= '9') || (r2d2 >= 'a' && r2d2 <= 'z') || r2d2 == '.' || r2d2 == '-':
