@@ -25,9 +25,9 @@ public class HomeController : Controller
          string? html = null;
 
         // if no key (default case), then load up first page
-        key ??= _SiteMappings.First().Heading;
+        key ??= _SiteMappings.First().Key;
         key = key.SanitizeKey();
-        SiteMapping? siteMapping = _SiteMappings.FirstOrDefault(x => x.Heading == key);
+        SiteMapping? siteMapping = _SiteMappings.FirstOrDefault(x => x.Key == key);
         if (siteMapping != null)
         {
             string filePath = Path.Combine(_HostingEnvironment.ContentRootPath,Path.Combine(siteMapping.PagePath));
