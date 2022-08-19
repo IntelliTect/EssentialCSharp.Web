@@ -54,7 +54,7 @@
                                 @foreach (SiteMapping siteMapping in _SiteMappings.Where(x=>x.ChapterNumber == @chapterNumber))
                                 {  
                                             <li class="toc-content">
-                                                <a class="link-button-color" runat="server" href="@siteMapping.Heading">@siteMapping.RawHeading</a>
+                                                <a class="link-button-color" runat="server" href="@siteMapping.Key">@siteMapping.RawHeading</a>
                                             </li>
                                 }
                             </ul>
