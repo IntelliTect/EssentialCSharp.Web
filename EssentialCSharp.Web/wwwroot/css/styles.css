@@ -37,7 +37,7 @@
     .sidebar {
         width: 325px;
         min-width: 325px;
-        height: 80vh;
+        height: 100%;
     }
 
     .toc-menu {
@@ -91,12 +91,16 @@
         display: none
     }
 
+    .link-hide {
+        visibility: hidden
+    }
+
     .tree {
         margin-left: -25px;
     }
 
     .tree li {
-        display: block;
+        list-style: none;
         position: relative;
         padding-left: 0px;
     }
@@ -134,7 +138,7 @@
         border-right: 2px solid;
         transform: rotate(45deg);
         left: 4px;
-        top: 2px
+        top: 5px
     }
 
     .tree details[open] > summary::before {
@@ -148,13 +152,30 @@
         border-right: 2px solid;
         transform: rotate(-135deg);
         left: 4px;
-        top: 8px
+        top: 10px
+    }
+
+    .section-link {
+        font-family: 'Palatino Linotype';
+        font-style: normal;
+        font-weight: 400;
+        font-size: 18px;
+        line-height: 140%;
+        text-decoration: none;
+        color: black;
+    }
+
+    .current-section {
+        font-weight: bold;
+        text-decoration: underline;
+        color: #0077cc;
     }
 
     .layout {
         display: grid;
         grid-template-columns: 325px auto;
         width: 100%;
+        scroll-padding-bottom: 45px;
     }
 
     .layout > div {
@@ -167,6 +188,8 @@
         width: 100%;
         display: flex;
         justify-content: space-between;
+        position: fixed;
+        z-index: 1;
     }
 
     .banner .nav-btn {
@@ -215,7 +238,7 @@
     }
 
     .dense-footer {
-        position: absolute;
+        position:relative;
         bottom: 0;
         width: 100%;
         white-space: nowrap;
