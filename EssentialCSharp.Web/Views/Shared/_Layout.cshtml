@@ -5,7 +5,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Essential C#</title>
+    <title id="page-title">Essential C#</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/EssentialCSharp.Web.styles.css" asp-append-version="true" />
@@ -24,6 +24,9 @@
         <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow header-height">
             <div class="banner">
                 <a class="navbar-brand text-light banner-main-label" asp-area="" asp-controller="Home" asp-action="Index">Essential C#</a>
+                <a id="prev-section" class="navbar-brand text-light banner-section-label">&lt &lt Previous</a>
+                <a id="section-title" class="navbar-brand text-light banner-main-label"></a>
+                <a id="next-section" class="navbar-brand text-light banner-section-label">Next &gt &gt</a>
                 <a class="nav-link text-light banner-section-label right" runat="server" target="_blank" rel="noreferrer noopener" href="https://github.com/IntelliTect/EssentialCSharp/discussions/new?category=feedback-and-ideas">Feedback</a>
             </div>
         </nav>
@@ -37,7 +40,7 @@
                     <div class="bottom-border" id="toc-border"></div>
                 </button>
 
-                <button class="toc-label" onclick="showSearchBar()" id="search-btn">
+                <button class="toc-label hide" onclick="showSearchBar()" id="search-btn">
                     SEARCH
                     <div class="bottom-border hide" id="search-border"></div>
                 </button>
@@ -47,19 +50,19 @@
                 <ul class="tree">
                     @foreach (int chapterNumber in _SiteMappings.Select(x=>x.ChapterNumber).Distinct().OrderBy(x => x))
                     {
-                        <li>
-                            <details>
+                    <li>
+                        <details>
                             <summary class="toc-content">Chapter @chapterNumber: @_SiteMappings.First(x=>x.ChapterNumber == chapterNumber).ChapterTitle</summary>
                             <ul>
                                 @foreach (SiteMapping siteMapping in _SiteMappings.Where(x=>x.ChapterNumber == @chapterNumber))
                                 {  
-                                            <li class="toc-content">
-                                                <a class="link-button-color" runat="server" href="@siteMapping.Key">@siteMapping.RawHeading</a>
-                                            </li>
+                                    <li class="toc-content">
+                                        <a class="link-button-color section-link" id="section-link" runat="server" href="@siteMapping.Key">@siteMapping.RawHeading</a>
+                                    </li>
                                 }
                             </ul>
                         </details>
-                        </li>
+                    </li>
                     }
                 </ul>
             </div>
@@ -116,6 +119,65 @@
             c.style.display = "block";
             var d = document.getElementById("search-border");
             d.style.display = "block";
+        }
+        
+        window.onload = openTOC;
+        
+        function openTOC()
+        {
+            var links = document.getElementsByClassName("section-link");
+
+            let pageTitle = document.getElementById("page-title");
+            let title = document.getElementById("section-title");
+            let prev = document.getElementById("prev-section")
+            let next = document.getElementById("next-section");
+
+            if (window.location.origin + "/" == window.location.href) {
+                let link = links[0];
+                
+                pageTitle.textContent = link.innerHTML + " | Essential C#";
+                title.innerHTML = link.innerHTML;
+                prev.classList.add("link-hide");
+
+                next.classList.remove("link-hide");
+                next.href = links[1];
+            }
+            else {
+                for (let i = 0; i < links.length; i++) {
+                    let link = links[i];
+                    if (window.location.href.includes(link.href) && Boolean(link.innerHTML)) {
+                        
+                        //Update title and next/prev section hrefs 
+                        pageTitle.textContent = link.innerHTML + " | Essential C#";
+                        title.innerHTML = link.innerHTML;
+
+                        if (i == 0) {
+                            prev.classList.add("link-hide");
+                        }
+                        else {
+                            prev.classList.remove("link-hide");
+                            prev.href = links[i - 1];
+                        }
+
+                        if (i - 1 == links.length) {
+                            next.classList.add("link-hide");
+                        }
+                        else {
+                            next.classList.remove("link-hide");
+                            next.href = links[i + 1];
+                        }
+
+                        //Expand the chapter header in TOC and indicate the selected section
+                        link.classList.add("current-section");
+                        var listItem = link.parentElement;
+                        var chapterlist = listItem.parentElement;
+                        var chapterHeading = chapterlist.previousElementSibling;
+                        chapterHeading.click();
+
+                        break;
+                    }
+                }
+            }
         }
     </script>
 </body>
