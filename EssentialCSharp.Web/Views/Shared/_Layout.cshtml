@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/EssentialCSharp.Web.styles.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/styles.css"/>
+    <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -52,11 +52,11 @@
                     {
                     <li>
                         <details>
-                            <summary class="toc-content">Chapter @chapterNumber: @_SiteMappings.First(x=>x.ChapterNumber == chapterNumber).ChapterTitle</summary>
+                             <summary class="toc-content">Chapter @chapterNumber: @_SiteMappings.First(x=>x.ChapterNumber == chapterNumber).ChapterTitle</summary>
                             <ul>
                                 @foreach (SiteMapping siteMapping in _SiteMappings.Where(x=>x.ChapterNumber == @chapterNumber))
                                 {  
-                                    <li class="toc-content">
+                                    <li >
                                         <a class="link-button-color section-link" id="section-link" runat="server" href="@siteMapping.Key">@siteMapping.RawHeading</a>
                                     </li>
                                 }
@@ -106,7 +106,6 @@
             c.style.display = "none";
             var d = document.getElementById("search-border");
             d.style.display = "none";
-            
         }
 
         function showSearchBar() {
@@ -145,7 +144,8 @@
             else {
                 for (let i = 0; i < links.length; i++) {
                     let link = links[i];
-                    if (window.location.href.includes(link.href) && Boolean(link.innerHTML)) {
+                    
+                    if (window.location.href.endsWith(link.href) && Boolean(link.innerHTML)) {
                         
                         //Update title and next/prev section hrefs 
                         pageTitle.textContent = link.innerHTML + " | Essential C#";
