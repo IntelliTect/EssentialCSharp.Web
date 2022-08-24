@@ -56,8 +56,9 @@
                             <ul>
                                 @foreach (SiteMapping siteMapping in _SiteMappings.Where(x=>x.ChapterNumber == @chapterNumber))
                                 {  
-                                    <li >
-                                        <a class="link-button-color section-link" id="section-link" runat="server" href="@siteMapping.Key">@siteMapping.RawHeading</a>
+                                    string fullHref = $"{siteMapping.Key}#{siteMapping.AnchorId}";
+                                    <li>
+                                        <a class="link-button-color section-link" id="section-link" runat="server" href="@fullHref">@siteMapping.RawHeading</a>
                                     </li>
                                 }
                             </ul>

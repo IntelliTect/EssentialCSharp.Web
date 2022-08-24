@@ -22,15 +22,13 @@ public class HomeController : Controller
 
     public IActionResult Index(string key)
     {
-         string? html = null;
+        string? html = null;
 
         // if no key (default case), then load up first page
-        key ??= _SiteMappings.First().Key;
-        key = key.SanitizeKey();
-        SiteMapping? siteMapping = _SiteMappings.FirstOrDefault(x => x.Key == key);
+        SiteMapping? siteMapping = SiteMapping.Find(key, _SiteMappings);
         if (siteMapping != null)
         {
-            string filePath = Path.Combine(_HostingEnvironment.ContentRootPath,Path.Combine(siteMapping.PagePath));
+            string filePath = Path.Combine(_HostingEnvironment.ContentRootPath, Path.Combine(siteMapping.PagePath));
             HtmlDocument doc = new();
             doc.Load(filePath);
             html = doc.DocumentNode.InnerHtml;
