@@ -1,31 +1,46 @@
-﻿using System.Text;
+using System.Text;
 
 namespace EssentialCSharp.Web.Extensions;
 
 public static class StringExtensions
 {
     // Removes special characters, sets to lowercase, replaces ' ' and '_' with '-', and trims the string
-    public static string SanitizeKey(this string str)
+    public static IEnumerable<string> GetPotentialMatches(this string str)
+    {
+        string[] temp = str.Split("#");
+        if (temp.Length > 1) yield return string.Join("", temp.Take(temp.Length - 1)).Sanitize();
+
+        yield return str.Sanitize();
+    }
+
+    public static string Sanitize(this string str)
     {
         str = str.ToLowerInvariant().Trim();
         StringBuilder sb = new();
+        const char separatorCharacter = '-';
+        bool allowSeparator = false;
         foreach (char character in str)
         {
             switch (character)
             {
                 // this second '-' here is different than a normal - in terms of key code
                 // so we replace it with a normal -
-                case char c when c == '_' || c == ' ' || c == '–':
-                    sb.Append('-');
+                case char c when (c == '_' || c == ' ' || c == '–' || c == '-'):
+                    if (allowSeparator)
+                    {
+                        sb.Append(separatorCharacter);
+                        allowSeparator = false;
+                    }
                     break;
-                case char r2d2 when (r2d2 >= '0' && r2d2 <= '9') || (r2d2 >= 'a' && r2d2 <= 'z') || r2d2 == '.' || r2d2 == '-':
+                case char c when (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || c == '.':
                     sb.Append(character);
+                    allowSeparator = true;
                     break;
                 default:
                     break;
             }
         }
-        return sb.ToString();
+        return sb.ToString().TrimEnd(separatorCharacter);
     }
 
     // Makes a heading key (ex: hello-world) good for a heading display (ex: Hello World)
