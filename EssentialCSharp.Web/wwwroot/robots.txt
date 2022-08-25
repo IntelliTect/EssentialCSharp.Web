@@ -1,0 +1,4 @@
+User-agent: * # match all bots
+Allow: / # user agents are allowed to crawl the entire site
+
+Sitemap: https://essentialcsharp.com/sitemap.xml
