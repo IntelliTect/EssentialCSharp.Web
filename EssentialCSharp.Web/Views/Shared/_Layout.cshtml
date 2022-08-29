@@ -24,10 +24,10 @@
         <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow header-height">
             <div class="banner">
                 <a class="navbar-brand text-light banner-main-label" asp-area="" asp-controller="Home" asp-action="Index">Essential C#</a>
-                <a id="prev-section" class="navbar-brand text-light banner-section-label">&lt &lt Previous</a>
+                <a id="prev-section" class="navbar-brand text-light banner-section-label">&lt &lt <span class="underline">P</span>revious</a>
                 <a id="section-title" class="navbar-brand text-light banner-main-label"></a>
-                <a id="next-section" class="navbar-brand text-light banner-section-label">Next &gt &gt</a>
-                <a class="nav-link text-light banner-section-label right" runat="server" target="_blank" rel="noreferrer noopener" href="https://github.com/IntelliTect/EssentialCSharp/discussions/new?category=feedback-and-ideas">Feedback</a>
+                <a id="next-section" class="navbar-brand text-light banner-section-label"> <span class="underline">N</span>ext &gt &gt</a>
+                <a id="feedback" class="nav-link text-light banner-section-label right" runat="server" target="_blank" rel="noreferrer noopener" href="https://github.com/IntelliTect/EssentialCSharp/discussions/new?category=feedback-and-ideas"> <span class="underline">F</span>eedback</a>
             </div>
         </nav>
     </header>
@@ -180,6 +180,27 @@
                 }
             }
         }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'f') {
+                let fb = document.getElementById("feedback");
+                fb.click();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'n' || e.key == "ArrowRight" ) {
+                let next = document.getElementById("next-section");
+                next.click();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'p' || e.key == "ArrowLeft" ) {
+                let prev = document.getElementById("prev-section");
+                prev.click();
+            }
+        });
     </script>
 </body>
 </html>

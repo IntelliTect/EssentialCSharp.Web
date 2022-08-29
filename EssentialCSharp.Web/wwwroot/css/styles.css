@@ -228,6 +228,11 @@
         margin: 8px;
     }
 
+    span.underline {
+        font-size: 20px;
+        text-decoration: underline;
+    }
+
     .header-height {
         height: 60px;
         top: 0;
