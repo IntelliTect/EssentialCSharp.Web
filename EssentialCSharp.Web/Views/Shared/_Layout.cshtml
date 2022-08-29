@@ -7,9 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title id="page-title">Essential C#</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/EssentialCSharp.Web.styles.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true"/>
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -21,15 +20,13 @@
 </head>
 <body>
     <header class="header-height">
-        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow header-height">
-            <div class="banner">
-                <a class="navbar-brand text-light banner-main-label" asp-area="" asp-controller="Home" asp-action="Index">Essential C#</a>
-                <a id="prev-section" class="navbar-brand text-light banner-section-label">&lt &lt <span class="underline">P</span>revious</a>
-                <a id="section-title" class="navbar-brand text-light banner-main-label"></a>
-                <a id="next-section" class="navbar-brand text-light banner-section-label"> <span class="underline">N</span>ext &gt &gt</a>
-                <a id="feedback" class="nav-link text-light banner-section-label right" runat="server" target="_blank" rel="noreferrer noopener" href="https://github.com/IntelliTect/EssentialCSharp/discussions/new?category=feedback-and-ideas"> <span class="underline">F</span>eedback</a>
-            </div>
-        </nav>
+        <div class="banner">
+            <a class="navbar-brand text-light banner-main-label" asp-area="" asp-controller="Home" asp-action="Index">Essential C#</a>
+            <a id="prev-section" class="navbar-brand text-light banner-section-label">&lt &lt Previous</a>
+            <a id="section-title" class="navbar-brand text-light banner-main-label banner-main-label-center"></a>
+            <a id="next-section" class="navbar-brand text-light banner-section-label">Next &gt &gt</a>
+            <a class="nav-link text-light banner-section-label right" runat="server" target="_blank" rel="noreferrer noopener" href="https://github.com/IntelliTect/EssentialCSharp/discussions/new?category=feedback-and-ideas">Feedback</a>
+        </div>
     </header>
 
     <div class="layout">
@@ -145,7 +142,7 @@
             else {
                 for (let i = 0; i < links.length; i++) {
                     let link = links[i];
-                    
+
                     if (window.location.href.endsWith(link.href) && Boolean(link.innerHTML)) {
                         
                         //Update title and next/prev section hrefs 
