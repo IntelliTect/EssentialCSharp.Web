@@ -5,9 +5,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorPages();
 
-builder.Services.AddSingleton<IList<SiteMapping>>(sp => {
+builder.Services.AddSingleton<IList<SiteMapping>>(sp =>
+{
     IWebHostEnvironment _HostingEnvironment = sp.GetRequiredService<IWebHostEnvironment>();
-    string path = Path.Combine(_HostingEnvironment.ContentRootPath,"Chapters","sitemap.json");
+    string path = Path.Combine(_HostingEnvironment.ContentRootPath, "Chapters", "sitemap.json");
     List<SiteMapping>? siteMappings = System.Text.Json.JsonSerializer.Deserialize<List<SiteMapping>>(File.OpenRead(path));
     if (siteMappings is null)
     {
@@ -17,7 +18,7 @@ builder.Services.AddSingleton<IList<SiteMapping>>(sp => {
 });
 
 var app = builder.Build();
-_= app.Services.GetRequiredService<IList<SiteMapping>>();
+_ = app.Services.GetRequiredService<IList<SiteMapping>>();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {

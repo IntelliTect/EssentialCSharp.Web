@@ -1,9 +1,6 @@
-﻿using System.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
-using EssentialCSharp.Web.Models;
-using EssentialCSharp.Web.Extensions;
+﻿using EssentialCSharp.Web.Models;
 using HtmlAgilityPack;
-using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
 
 namespace EssentialCSharp.Web.Controllers;
 

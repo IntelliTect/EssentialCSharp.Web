@@ -9,7 +9,7 @@ public record class SiteMapping(string Key, string[] PagePath, int ChapterNumber
         key ??= siteMappings[0].Key;
         foreach (string? potentialMatch in key.GetPotentialMatches())
         {
-            if(siteMappings.FirstOrDefault(x => x.Key == potentialMatch) is {} siteMap)
+            if (siteMappings.FirstOrDefault(x => x.Key == potentialMatch) is { } siteMap)
             {
                 return siteMap;
             }
