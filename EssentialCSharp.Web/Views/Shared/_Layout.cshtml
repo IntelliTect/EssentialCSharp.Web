@@ -186,7 +186,7 @@
         }
 
         document.addEventListener('keydown', (e) => {
-            if (e.key.toLowerCase() === 'f') {
+            if (!event.ctrlKey && e.key.toLowerCase() === 'f') {
                 let fb = document.getElementById("feedback");
                 fb.click();
             }
