@@ -65,11 +65,4 @@ public class SiteMappingTests
         Assert.NotNull(foundSiteMap);
         Assert.Equal(CSyntaxFundamentalsSiteMapping, foundSiteMap!);
     }
-    [Fact]
-    public void FindHelloWorldWithControllerNameReturnsCorrectSiteMap()
-    {
-        SiteMapping? foundSiteMap = SiteMapping.Find("Home/hello-world#hello-world", GetSiteMap());
-        Assert.NotNull(foundSiteMap);
-        Assert.Equal(HelloWorldSiteMapping, foundSiteMap!);
-    }
 }

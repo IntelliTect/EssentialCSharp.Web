@@ -55,7 +55,7 @@
                                 {  
                                     string fullHref = $"{siteMapping.Key}#{siteMapping.AnchorId}";
                                     <li>
-                                        <a class="link-button-color section-link" runat="server" href="@fullHref">@siteMapping.RawHeading</a>
+                                        <a class="link-button-color section-link" asp-route="slug" asp-route-key="@siteMapping.Key" asp-fragment="@siteMapping.AnchorId">@siteMapping.RawHeading</a>
                                     </li>
                                 }
                             </ul>
@@ -83,7 +83,7 @@
     <footer class="border-top dense-footer text-muted" position="fixed" left="0" bottom="0" width="100%">
         <div class="dense-footer-content">
             &copy; IntelliTect 2005-@DateTime.Now.Year - <a class="link-color" runat="server" target="_blank" rel="noreferrer noopener" href="https://intellitect.com/about/privacy-policy/">Privacy</a>  - 
-            <a class="link-color" asp-area="" asp-controller="Home" asp-action="TermsOfService">Terms Of Service</a>
+            <a class="link-color" asp-route="TermsOfService">Terms Of Service</a>
         </div>
     </footer>
 

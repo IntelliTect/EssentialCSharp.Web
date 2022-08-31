@@ -42,9 +42,10 @@ public class HomeController : Controller
         return View();
     }
 
+    [Route("/TermsOfService",
+       Name = "TermsOfService")]
     public IActionResult TermsOfService()
     {
-
         return View();
     }
 
