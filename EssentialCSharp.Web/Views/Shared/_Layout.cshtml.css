@@ -47,3 +47,91 @@ button.accept-policy {
   white-space: nowrap;
   line-height: 60px;
 }
+
+.tooltip-text {
+    visibility: hidden;
+    position: absolute;
+    z-index: 2;
+    width: 100px;
+    color: white;
+    font-size: 12px;
+    background-color: #192733;
+    border-radius: 10px;
+    padding: 10px 15px 10px 15px;
+    word-break: break-word;
+    white-space: normal;
+}
+
+.tooltip-text::before {
+    content: "";
+    position: absolute;
+    transform: rotate(45deg);
+    background-color: #192733;
+    padding: 5px;
+    z-index: 1;
+}
+
+.hover-text:hover .tooltip-text {
+    visibility: visible;
+}
+
+#top {
+    top: -40px;
+    left: -50%;
+}
+
+#top::before {
+    top: 80%;
+    left: 45%;
+}
+
+#bottom {
+    top: 35px;
+    left: -50%;
+}
+
+#bottomright {
+    top: 35px;
+    left: -10%;
+}
+
+#bottomright::before {
+    top: -5%;
+    left: 45%;
+}
+
+#bottom::before {
+    top: -5%;
+    left: 45%;
+}
+
+#left {
+    top: -8px;
+    right: 120%;
+}
+
+#left::before {
+    top: 35%;
+    left: 94%;
+}
+
+#right {
+    top: -8px;
+    left: 120%;
+}
+
+#right::before {
+    top: 35%;
+    left: -2%;
+}
+
+.hover-text {
+    position: relative;
+    display: inline-block;
+    margin: 40px;
+    font-family: Avenir;
+    text-align: center;
+    margin-top: 12px;
+    margin-right: 5px;
+    margin-left: 5px;
+}
