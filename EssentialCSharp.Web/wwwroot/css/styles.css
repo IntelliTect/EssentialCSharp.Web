@@ -200,12 +200,17 @@
 
     .layout {
         display: grid;
+        scroll-padding-top: 60px;
         grid-template-columns: 325px auto;
         scroll-padding-bottom: 45px;
     }
 
-    .layout > div {
+    .medium-padding {
         padding: 15px;
+    }
+
+    .min-padding {
+        padding: 5px;
     }
 
     .banner {
