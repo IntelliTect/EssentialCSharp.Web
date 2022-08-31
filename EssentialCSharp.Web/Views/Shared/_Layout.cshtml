@@ -30,7 +30,7 @@
     </header>
 
     <div class="layout">
-        <div class="sidebar">
+        <div class="sidebar medium-padding">
              <div class="toc-menu"> 
                 <button class="toc-label" onclick="showTOC()" id="toc-btn">
                     CONTENTS
@@ -55,7 +55,7 @@
                                 {  
                                     string fullHref = $"{siteMapping.Key}#{siteMapping.AnchorId}";
                                     <li>
-                                        <a class="link-button-color section-link" id="section-link" runat="server" href="@fullHref">@siteMapping.RawHeading</a>
+                                        <a class="link-button-color section-link" runat="server" href="@fullHref">@siteMapping.RawHeading</a>
                                     </li>
                                 }
                             </ul>
@@ -75,7 +75,7 @@
             </div>
         </div>
 
-        <div>
+        <div class="less-padding">
             @RenderBody()
         </div>
     </div>
@@ -198,6 +198,21 @@
                 prev.click();
             }
         });
+
+        jQuery(document).ready(function(){
+            var target = window.location.hash;
+
+            if ( target != '' ){
+                var $target = jQuery(target); 
+                jQuery('html, body').stop().animate({
+                'scrollTop': $target.offset().top - 80},
+                900, 
+                'swing',function () {
+                window.location.hash = target - 40 ;
+                });
+            }
+        });
+ 
     </script>
 </body>
 </html>
