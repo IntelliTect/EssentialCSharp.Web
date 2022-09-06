@@ -18,8 +18,8 @@
     <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="theme-color" content="#ffffff">
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-L4EMHSKG36"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
@@ -30,7 +30,8 @@
 <body>
     <header class="header-height">
         <div class="banner">
-            <a class="navbar-brand text-light banner-main-label" asp-area="" asp-controller="Home" asp-action="Index">Essential C#</a>
+            <button class="menu-position" onclick="toggleSideBar()"><i class="fa fa-bars fa-lg icon-color"></i></button>
+            <a class="navbar-brand text-light banner-main-label banner-home" asp-area="" asp-controller="Home" asp-action="Index">Essential C#</a>
             <span class="hover-text"><a id="prev-section" class="navbar-brand text-light banner-section-label">&lt &lt <span class="tooltip-text" id="bottomright">Previous Page (P or left-arrow)</span><span class="underline">P</span>revious</a></span>
             <a id="section-title" class="navbar-brand text-light banner-main-label banner-main-label-center"></a>
             <span class="hover-text"><a id="next-section" class="navbar-brand text-light banner-section-label"><span class="tooltip-text" id="bottom">Next Page (N or right-arrow)</span><span class="underline">N</span>ext &gt &gt</a></span>
@@ -39,7 +40,7 @@
     </header>
 
     <div class="layout">
-        <div class="sidebar medium-padding">
+        <div class="sidebar medium-padding" id="sidebar">
              <div class="toc-menu"> 
                 <button class="toc-label" onclick="showTOC()" id="toc-btn">
                     CONTENTS
@@ -78,7 +79,7 @@
                 <div class="input">
                 <input type="text" />
                     <button class="search-btn" >
-                        <i class="fas fa-search icon-color"></i>
+                        <i class="fa fa-search icon-color"></i>
                     </button>
                 </div>
             </div>
@@ -103,6 +104,29 @@
     @await RenderSectionAsync("Scripts", required: false)
 
      <script>
+        window.addEventListener('resize', setTOCVis);
+
+        function setTOCVis(){
+            if (window.innerWidth > 768) {
+                var a = document.getElementById("sidebar");
+                if (a.style.display == "none") {
+                    toggleSideBar();
+                }
+            }
+        }
+
+        function toggleSideBar()
+        {
+            var a = document.getElementById("sidebar");
+            if (a.style.display == "block") {
+                a.style.display = "none";
+            }
+            else
+            {
+                a.style.display = "block";
+            }
+        }
+
         function showTOC() {
             var a = document.getElementById("toc-border");
             a.style.display = "block";
