@@ -30,8 +30,10 @@
 <body>
     <header class="header-height">
         <div class="banner">
-            <button class="menu-position" onclick="toggleSideBar()"><i class="fa fa-bars fa-lg icon-color"></i></button>
-            <a class="navbar-brand text-light banner-main-label banner-home" asp-area="" asp-controller="Home" asp-action="Index">Essential C#</a>
+            <div class="menu-position">
+                <button class="menu-btn" onclick="toggleSideBar()"><i class="fa fa-bars fa-lg icon-color"></i></button>
+                <a class="navbar-brand text-light banner-main-label banner-home" asp-area="" asp-controller="Home" asp-action="Index">Essential C#</a>
+            </div>
             <span class="hover-text"><a id="prev-section" class="navbar-brand text-light banner-section-label">&lt &lt <span class="tooltip-text" id="bottomright">Previous Page (P or left-arrow)</span><span class="underline">P</span>revious</a></span>
             <a id="section-title" class="navbar-brand text-light banner-main-label banner-main-label-center"></a>
             <span class="hover-text"><a id="next-section" class="navbar-brand text-light banner-section-label"><span class="tooltip-text" id="bottom">Next Page (N or right-arrow)</span><span class="underline">N</span>ext &gt &gt</a></span>
@@ -40,7 +42,7 @@
     </header>
 
     <div class="layout">
-        <div class="sidebar medium-padding" id="sidebar">
+        <div class="sidebar toc-padding" id="sidebar">
              <div class="toc-menu"> 
                 <button class="toc-label" onclick="showTOC()" id="toc-btn">
                     CONTENTS
@@ -85,7 +87,7 @@
             </div>
         </div>
 
-        <div class="less-padding">
+        <div class="content-padding">
             @RenderBody()
         </div>
     </div>
@@ -104,17 +106,6 @@
     @await RenderSectionAsync("Scripts", required: false)
 
      <script>
-        window.addEventListener('resize', setTOCVis);
-
-        function setTOCVis(){
-            if (window.innerWidth > 768) {
-                var a = document.getElementById("sidebar");
-                if (a.style.display == "none") {
-                    toggleSideBar();
-                }
-            }
-        }
-
         function toggleSideBar()
         {
             var a = document.getElementById("sidebar");
