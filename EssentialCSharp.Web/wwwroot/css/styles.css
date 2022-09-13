@@ -42,13 +42,20 @@
     .menu-btn {
         margin-top: 8px;
         margin-bottom: 10px;
-        margin-right: 0px;
+        margin-right: 10px;
         margin-left: 10px;
         display: inline-block;
         outline: none;
         color: transparent;
         border: none;
         background-color: transparent;
+    }
+
+    @media only screen and (max-width: 768px) {
+        [class*="menu-btn"] {
+            margin-right: 4px;
+            margin-left: 4px;
+        }
     }
 
     .sidebar {
@@ -145,8 +152,9 @@
         padding-left: 0;
     }
 
-    summary::marker {
-        display: none
+    summary {
+        text-decoration: none;
+        -webkit-text-decoration: none;
     }
 
     .tree summary {
@@ -298,12 +306,16 @@
         margin-bottom: 5px;
         margin-right: 5px;
         margin-left: 5px;
+        text-decoration: none;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
     }
 
     .banner-main-label-center {
+        margin-top: 10px;
         margin-right: 5px;
         margin-left: 5px;
-        overflow: clip;
     }
 
     .banner-section-label {
@@ -314,8 +326,31 @@
         margin-top: 9px;
         margin-right: 5px;
         margin-left: 5px;
-        overflow: clip;
-        min-width: fit-content
+        text-decoration: none;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    .feedback-link {
+        margin-top: 0px;
+        display: block;
+    }
+
+    @media only screen and (max-width: 768px) {
+        [class*="feedback-link"] {
+            display: none;
+        }
+    }
+
+    .feedback-icon {
+        display: display;
+    }
+
+    @media only screen and (min-width: 768px) {
+        [class*="feedback-icon"] {
+            display: none;
+        }
     }
 
     span.underline {
