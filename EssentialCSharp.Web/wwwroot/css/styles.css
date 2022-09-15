@@ -51,6 +51,33 @@
         background-color: transparent;
     }
 
+    .nav-mobile-btn {
+        display: block;
+        border: solid;
+        border-radius: 17.5px;
+        color: white;
+        background-color: #095540;
+        background: #095540;
+        position: fixed;
+        width: 60px;
+        height: 40px;
+        bottom: 15px;
+        align-content: center;
+        font-weight: 700;
+        font-size: 22px;
+        font-style: normal;
+        font-stretch: narrower;
+        font-family: "Courier New";
+    }
+
+    .previous-mobile-btn {
+        left: 15px;
+    }
+
+    .next-mobile-btn {
+        right: 15px;
+    }
+
     @media only screen and (max-width: 768px) {
         [class*="menu-btn"] {
             margin-right: 4px;
@@ -61,6 +88,7 @@
     .sidebar {
         width: 325px;
         height: 100%;
+        display: block;
     }
 
     @media only screen and (max-width: 768px) {
@@ -153,8 +181,11 @@
     }
 
     summary {
-        text-decoration: none;
-        -webkit-text-decoration: none;
+        display: block;
+    }
+
+    summary::marker {
+        display: none
     }
 
     .tree summary {
@@ -287,16 +318,6 @@
         margin-right: auto;
     }
 
-    .banner-home {
-        display: block;
-    }
-
-    @media only screen and (max-width: 768px) {
-        [class*="banner-home"] {
-            display: none
-        }
-    }
-
     .banner-main-label {
         font-family: 'Palatino Linotype';
         font-style: normal;
@@ -323,7 +344,7 @@
         font-style: normal;
         font-weight: 300;
         font-size: 18px;
-        margin-top: 9px;
+        margin-top: 0px;
         margin-right: 5px;
         margin-left: 5px;
         text-decoration: none;
@@ -334,23 +355,30 @@
 
     .feedback-link {
         margin-top: 0px;
+    }
+
+    .hide-on-mobile {
         display: block;
     }
 
     @media only screen and (max-width: 768px) {
-        [class*="feedback-link"] {
+        [class*="hide-on-mobile"] {
             display: none;
+        }
+    }
+
+    .show-on-mobile {
+        display: none;
+    }
+
+    @media only screen and (max-width: 768px) {
+        [class*="show-on-mobile"] {
+            display: block;
         }
     }
 
     .feedback-icon {
         display: display;
-    }
-
-    @media only screen and (min-width: 768px) {
-        [class*="feedback-icon"] {
-            display: none;
-        }
     }
 
     span.underline {
