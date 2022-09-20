@@ -180,8 +180,8 @@
                 prevBtn.classList.add("link-hide");
 
                 next.classList.remove("link-hide");
+                next.href = window.location.origin + "/@ViewBag.NextPage";
                 nextBtn.classList.remove("link-hide");
-                next.href = links[1];
             }
             else {
                 for (let i = 0; i < links.length; i++) {
@@ -199,8 +199,8 @@
                         }
                         else {
                             prev.classList.remove("link-hide");
+                            prev.href = window.location.origin + "/@ViewBag.PreviousPage";
                             prevBtn.classList.remove("link-hide");
-                            prev.href = links[i - 1];
                         }
 
                         // The last content page is second to last in the link list
@@ -211,8 +211,8 @@
                         }
                         else {
                             next.classList.remove("link-hide");
+                            next.href = window.location.origin + "/@ViewBag.NextPage";
                             nextBtn.classList.remove("link-hide");
-                            next.href = links[i + 1];
                         }
 
                         //Expand the chapter header in TOC and indicate the selected section
@@ -227,6 +227,7 @@
                 }
             }
         }
+
 
         document.addEventListener('keydown', (e) => {
             if (!event.ctrlKey && e.key.toLowerCase() === 'f') {
@@ -261,7 +262,7 @@
                 });
             }
         });
- 
+
     </script>
 </body>
 </html>
