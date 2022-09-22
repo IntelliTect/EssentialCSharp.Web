@@ -1,4 +1,4 @@
-﻿using EssentialCSharp.Web.Models;
+using EssentialCSharp.Web.Models;
 using HtmlAgilityPack;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -21,13 +21,11 @@ public class HomeController : Controller
     public IActionResult Index(string key)
     {
         string? html = null;
-        SiteMapping currentSiteMapping;
 
         // if no key (default case), then load up first page
         SiteMapping? siteMapping = SiteMapping.Find(key, _SiteMappings);
         if (siteMapping != null)
         {
-            currentSiteMapping = siteMapping;
             string filePath = Path.Combine(_HostingEnvironment.ContentRootPath, Path.Combine(siteMapping.PagePath));
             HtmlDocument doc = new();
             doc.Load(filePath);
@@ -41,8 +39,8 @@ public class HomeController : Controller
         {
             return RedirectToAction(nameof(Error), new { errorMessage = "Unexpected Exception; html being rendered is null" });
         }
-        ViewBag.NextPage = FlipPage(currentSiteMapping, true);
-        ViewBag.PreviousPage = FlipPage(currentSiteMapping, false);
+        ViewBag.NextPage = FlipPage(siteMapping.ChapterNumber, siteMapping.PageNumber, true);
+        ViewBag.PreviousPage = FlipPage(siteMapping.ChapterNumber, siteMapping.PageNumber, false);
         ViewBag.Contents = html;
         return View();
     }
@@ -54,14 +52,12 @@ public class HomeController : Controller
         return View();
     }
 
-    private string FlipPage(SiteMapping currentSiteMapping, bool next)
+    private string FlipPage(int currentChapter, int currentPage , bool next)
     {
         if(_SiteMappings.Count == 0)
         {
             return "";
         }
-        int currentChapter = currentSiteMapping.ChapterNumber;
-        int currentPage    = currentSiteMapping.PageNumber;
 
         int page = -1;
         if (next)
@@ -71,16 +67,20 @@ public class HomeController : Controller
 
         SiteMapping? siteMap = _SiteMappings.FirstOrDefault(f => f.ChapterNumber == currentChapter && f.PageNumber == currentPage + page);
         
-        if(siteMap == null)
+        if(siteMap is null)
         {
             if (next)
             {
-                siteMap = _SiteMappings.FirstOrDefault(f => f.ChapterNumber == currentChapter + 1 && f.PageNumber == 1) ?? _SiteMappings.Last();
+                siteMap = _SiteMappings.FirstOrDefault(f => f.ChapterNumber == currentChapter + 1 && f.PageNumber == 1);
             }
             else
             {
                 int? previousPage = _SiteMappings.LastOrDefault(f => f.ChapterNumber == currentChapter - 1)?.PageNumber;
-                siteMap = _SiteMappings.FirstOrDefault(f => f.ChapterNumber == currentChapter - 1 && f.PageNumber == previousPage) ?? _SiteMappings.First();
+                siteMap = _SiteMappings.FirstOrDefault(f => f.ChapterNumber == currentChapter - 1 && f.PageNumber == previousPage);
+            }
+            if (siteMap is null)
+            {
+                return "";
             }
         }
         return $"{siteMap.Key}#{siteMap.AnchorId}";
