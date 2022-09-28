@@ -3,10 +3,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    @{
+        const string imageUrl = "https://essentialcsharp.com/images/icon.png";
+        const string description = "Welcome to one of the most venerable and trusted franchises you could dream of in the world of C# books and probably far beyond! -Mads Torgersen, C# Lead Designer, Microsoft";
+    }
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta property="og:image" content="https://essentialcsharp.com/images/icon.png" />
-    <meta property="og:description" content="Welcome to one of the most venerable and trusted franchises you could dream of in the world of C# books and probably far beyond! -Mads Torgersen, C# Lead Designer, Microsoft" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://essentialcsharp.com/" />
+    <meta property="og:image:secure_url" content="@imageUrl" />
+    <meta property="og:image" content="@imageUrl" />
+    <meta name="twitter:image" content="@imageUrl" />
+    <meta property="og:image:type" content="image/png" />
+    <meta name="description" property="og:description" content="@description" />
+    <meta name="twitter:description" content="@description" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:site" content="@@IntelliTect" />
+    <meta property="og:image:width" content="500" />
+    <meta property="og:image:height" content="500" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta name="twitter:title" property="og:title" content="Essential C#" />
     <title id="page-title">Essential C#</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/EssentialCSharp.Web.styles.css" asp-append-version="true" />
