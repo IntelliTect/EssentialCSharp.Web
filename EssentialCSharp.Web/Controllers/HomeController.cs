@@ -1,7 +1,6 @@
 using EssentialCSharp.Web.Models;
 using HtmlAgilityPack;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace EssentialCSharp.Web.Controllers;
 
@@ -52,9 +51,9 @@ public class HomeController : Controller
         return View();
     }
 
-    private string FlipPage(int currentChapter, int currentPage , bool next)
+    private string FlipPage(int currentChapter, int currentPage, bool next)
     {
-        if(_SiteMappings.Count == 0)
+        if (_SiteMappings.Count == 0)
         {
             return "";
         }
@@ -66,8 +65,8 @@ public class HomeController : Controller
         }
 
         SiteMapping? siteMap = _SiteMappings.FirstOrDefault(f => f.ChapterNumber == currentChapter && f.PageNumber == currentPage + page);
-        
-        if(siteMap is null)
+
+        if (siteMap is null)
         {
             if (next)
             {
@@ -85,7 +84,7 @@ public class HomeController : Controller
         }
         return $"{siteMap.Key}#{siteMap.AnchorId}";
     }
-    
+
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error(string? errorMessage = null)
     {
