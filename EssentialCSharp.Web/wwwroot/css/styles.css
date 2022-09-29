@@ -53,14 +53,13 @@
 
     .nav-mobile-btn {
         display: block;
-        border: solid;
-        border-radius: 17.5px;
-        color: white;
+        border: none;
+        border-radius: 25px;
         background-color: #095540;
         background: #095540;
         position: fixed;
-        width: 60px;
-        height: 40px;
+        width: 50px;
+        height: 50px;
         bottom: 15px;
         align-content: center;
         font-weight: 700;
@@ -68,6 +67,8 @@
         font-style: normal;
         font-stretch: narrower;
         font-family: "Courier New";
+        align-items: center;
+        justify-content: center;
     }
 
     .previous-mobile-btn {
