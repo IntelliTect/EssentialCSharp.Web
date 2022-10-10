@@ -181,17 +181,8 @@
         padding-left: 0;
     }
 
-    summary {
-        display: block;
-    }
-
-    summary::marker {
+    summary::-webkit-details-marker {
         display: none
-    }
-
-    .tree summary {
-        display: block;
-        cursor: pointer;
     }
 
     .tree summary:focus {
