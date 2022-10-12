@@ -71,6 +71,13 @@
         justify-content: center;
     }
 
+    .nav-mobile-btn-icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%)
+    }
+
     .previous-mobile-btn {
         left: 15px;
     }
@@ -181,8 +188,12 @@
         padding-left: 0;
     }
 
-    summary::-webkit-details-marker {
-        display: none
+    details > summary {
+        list-style: none;
+    }
+
+    details > summary::-webkit-details-marker {
+        display: none;
     }
 
     .tree summary:focus {
@@ -210,33 +221,21 @@
     }
 
     .tree summary::before {
-        content: "";
+        font: var(--fa-font-solid);
+        content: "\f054";
         display: block;
-        box-sizing: border-box;
         position: absolute;
-        width: 10px;
-        height: 10px;
-        border-bottom: 2px solid;
-        border-right: 2px solid;
-        transform: rotate(45deg);
-        left: 4px;
-        top: 5px;
-        background-color: white;
-        z-index: 1;
+        left: 1px;
+        top: 4px;
     }
 
     .tree details[open] > summary::before {
-        content: "";
-        display: block;
-        box-sizing: border-box;
+        font: var(--fa-font-solid);
+        content: "\f078";
+        display: block;       
         position: absolute;
-        width: 10px;
-        height: 10px;
-        border-bottom: 2px solid;
-        border-right: 2px solid;
-        transform: rotate(-135deg);
-        left: 4px;
-        top: 10px
+        left: 0px;
+        top: 3px
     }
 
     .section-link {
@@ -403,3 +402,10 @@
     .dense-footer > .dense-footer-content {
         margin-left: 25px;
     }
+
+.icon::before {
+    /* removed font- based rules */
+    display: inline-block;
+    text-rendering: auto;
+    -webkit-font-smoothing: antialiased;
+}
