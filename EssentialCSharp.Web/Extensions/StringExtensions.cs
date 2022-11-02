@@ -25,14 +25,14 @@ public static class StringExtensions
             {
                 // this second '-' here is different than a normal - in terms of key code
                 // so we replace it with a normal -
-                case char c when (c == '_' || c == ' ' || c == '–' || c == '-'):
+                case char c when (c == '_' || c == ' ' || c == '–' || c == '-' || c == '.'):
                     if (allowSeparator)
                     {
                         sb.Append(separatorCharacter);
                         allowSeparator = false;
                     }
                     break;
-                case char c when (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || c == '.':
+                case char c when (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z'):
                     sb.Append(character);
                     allowSeparator = true;
                     break;

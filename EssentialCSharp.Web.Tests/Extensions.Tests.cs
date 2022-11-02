@@ -11,6 +11,8 @@ public class StringExtenstionsTests
     [InlineData("C#_Syntax_Fundamentals", "c-syntax-fundamentals")]
     [InlineData("C# Syntax_Fundamentals-for-me", "c-syntax-fundamentals-for-me")]
     [InlineData("Bitwise Operators (<<, >>, |, &, ^, ~)", "bitwise-operators")]
+    [InlineData(".NET Standard", "net-standard")]
+    [InlineData("Working with System.Threading", "working-with-system-threading")]
     public void SanitizeStringToOnlyHaveDashesAndLowerCase(string actual, string sanitized)
     {
         Assert.Equal(sanitized, actual.Sanitize());
@@ -22,6 +24,8 @@ public class StringExtenstionsTests
     [InlineData("C#Syntax#hello-world", "csyntax")]
     [InlineData("C#Syntax", "csyntax")]
     [InlineData("cSyntax", "csyntax")]
+    [InlineData(".NET", "net")]
+    [InlineData("System.Threading", "system-threading")]
     public void GetPotentialMatches(string actual, string match)
     {
         var matches = actual.GetPotentialMatches().ToList();
