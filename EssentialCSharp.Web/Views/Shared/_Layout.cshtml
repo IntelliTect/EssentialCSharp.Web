@@ -271,12 +271,14 @@
             var target = window.location.hash;
 
             if ( target != '' ){
-                var $target = jQuery(target); 
-                jQuery('html, body').stop().animate({
-                'scrollTop': $target.offset().top - 80},
-                900, 
-                'swing',function () {
-                });
+                var $target = jQuery(target);
+                if($target.length){
+                    jQuery('html, body').stop().animate({
+                    'scrollTop': $target.offset().top - 80},
+                    900, 
+                    'swing',function () {
+                    });
+                }
             }
         });
 

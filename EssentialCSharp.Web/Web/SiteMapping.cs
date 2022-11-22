@@ -2,7 +2,7 @@
 
 namespace EssentialCSharp.Web;
 
-public record class SiteMapping(string Key, string[] PagePath, int ChapterNumber, int PageNumber, string ChapterTitle, string RawHeading, string? AnchorId)
+public record class SiteMapping(string Key, string[] PagePath, int ChapterNumber, int PageNumber, string ChapterTitle, string RawHeading, string? AnchorId, int IndentLevel)
 {
     public static SiteMapping? Find(string key, IList<SiteMapping> siteMappings)
     {
