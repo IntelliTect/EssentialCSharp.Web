@@ -21,9 +21,17 @@ public class HomeController : Controller
     {
         string? html = null;
 
-        // if no key (default case), then load up first page
+        // if no key (default case), then load up home page
         SiteMapping? siteMapping = SiteMapping.Find(key, _SiteMappings);
-        if (siteMapping != null)
+
+        if (key is null)
+        {
+            string filePath = Path.Combine(_HostingEnvironment.ContentRootPath, "Views", "Home", "Home.cshtml");
+            HtmlDocument doc = new();
+            doc.Load(filePath);
+            html = doc.DocumentNode.InnerHtml;
+        }
+        else if (siteMapping is not null)
         {
             string filePath = Path.Combine(_HostingEnvironment.ContentRootPath, Path.Combine(siteMapping.PagePath));
             HtmlDocument doc = new();
@@ -34,11 +42,12 @@ public class HomeController : Controller
         {
             return RedirectToAction(nameof(Error), new { errorMessage = "Specified page not found, please check your spelling and try again" });
         }
+        
         if (html is null)
         {
             return RedirectToAction(nameof(Error), new { errorMessage = "Unexpected Exception; html being rendered is null" });
         }
-        ViewBag.NextPage = FlipPage(siteMapping.ChapterNumber, siteMapping.PageNumber, true);
+        ViewBag.NextPage = FlipPage(siteMapping!.ChapterNumber, siteMapping.PageNumber, true);
         ViewBag.PreviousPage = FlipPage(siteMapping.ChapterNumber, siteMapping.PageNumber, false);
         ViewBag.Contents = html;
         return View();
@@ -47,6 +56,13 @@ public class HomeController : Controller
     [Route("/TermsOfService",
        Name = "TermsOfService")]
     public IActionResult TermsOfService()
+    {
+        return View();
+    }
+
+    [Route("/home",
+        Name = "home")]
+    public IActionResult Home()
     {
         return View();
     }
