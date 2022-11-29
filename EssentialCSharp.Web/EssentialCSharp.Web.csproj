@@ -11,6 +11,11 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
   </ItemGroup>
   <ItemGroup>
-      <Content Include="Chapters\**\*.html" CopyToPublishDirectory="PreserveNewest"/>
+      <Content Include="Chapters\**\*.html" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Update="wwwroot\images\00mindmap.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 </Project>

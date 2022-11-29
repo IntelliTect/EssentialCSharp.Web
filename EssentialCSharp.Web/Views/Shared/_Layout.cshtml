@@ -49,13 +49,15 @@
         <div class="banner">
             <div class="menu-position">
                 <button class="menu-btn" onclick="toggleSideBar()"><i class="fa fa-bars fa-lg icon-color"></i></button>
-                <a class="navbar-brand text-light banner-main-label hide-on-mobile" asp-area="" asp-controller="Home" asp-action="Index">Essential C#</a>
+                <a class="navbar-brand text-light banner-main-label hide-on-mobile" asp-route="home">Essential C#</a>
             </div>
             <span class="hover-text"><a id="prev-section" class="text-light banner-section-label hide-on-mobile"><i class="fa fa-solid fa-arrow-left icon-color"></i> <span class="tooltip-text" id="bottomright">Previous Page (P or left-arrow)</span><span class="underline">P</span>revious</a></span>
             <a id="section-title" class="text-light banner-main-label banner-main-label-center"></a>
             <span class="hover-text"><a id="next-section" class="text-light banner-section-label hide-on-mobile"><span class="tooltip-text" id="bottom">Next Page (N or right-arrow)</span><span class="underline">N</span>ext <i class="fa fa-solid fa-arrow-right icon-color"></i></a> </span>
-            <span class="hover-text"><a id="feedback" class="text-light banner-section-label feedback-link hide-on-mobile" runat="server" target="_blank" rel="noreferrer noopener" href="https://github.com/IntelliTect/EssentialCSharp/discussions/new?category=feedback-and-ideas"><span class="tooltip-text" id="bottom">Give feedback to us! (F key)</span><span class="underline">F</span>eedback</a></span>
-            <button class="menu-btn feedback-icon show-on-mobile" onclick="window.location='https://github.com/IntelliTect/EssentialCSharp/discussions/new?category=feedback-and-ideas'"><i class="fa fa-regular fa-comments fa-lg icon-color"></i></button>
+            <div class="menu-position">
+                <span class="hover-text"><a id="feedback" class="text-light banner-section-label banner-link hide-on-mobile" runat="server" target="_blank" rel="noreferrer noopener" href="https://github.com/IntelliTect/EssentialCSharp/discussions/new?category=feedback-and-ideas"><span class="tooltip-text" id="bottom">Give feedback to us! (F key)</span><span class="underline">F</span>eedback</a></span>
+                <button class="menu-btn feedback-icon show-on-mobile" onclick="window.location='https://github.com/IntelliTect/EssentialCSharp/discussions/new?category=feedback-and-ideas'"><i class="fa fa-regular fa-comments fa-lg icon-color"></i></button>
+            </div>
         </div>
     </header>
 
@@ -188,17 +190,18 @@
             let prevBtn = document.getElementById("prev-btn")
             let nextBtn = document.getElementById("next-btn");
 
-            if (window.location.origin + "/" == window.location.href) {
+            if (((window.location.origin + "/home").toLowerCase() == window.location.href.toLowerCase()) 
+                || ((window.location.origin).toLowerCase() + "/"  == window.location.href.toLowerCase())) 
+            {
                 let link = links[0];
                 
-                pageTitle.textContent = link.innerHTML + " | Essential C#";
-                title.innerHTML = link.innerHTML;
+                pageTitle.textContent = "Home | Essential C#";
+                title.innerHTML = "";
                 prev.classList.add("link-hide");
                 prevBtn.classList.add("link-hide");
 
-                next.classList.remove("link-hide");
-                next.href = window.location.origin + "/@ViewBag.NextPage";
-                nextBtn.classList.remove("link-hide");
+                next.classList.add("link-hide");
+                nextBtn.classList.add("link-hide");
             }
             else {
                 for (let i = 0; i < links.length; i++) {
