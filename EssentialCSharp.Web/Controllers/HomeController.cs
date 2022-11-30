@@ -24,12 +24,9 @@ public class HomeController : Controller
         // if no key (default case), then load up home page
         SiteMapping? siteMapping = SiteMapping.Find(key, _SiteMappings);
 
-        if (key is null)
+        if (string.IsNullOrEmpty(key))
         {
-            string filePath = Path.Combine(_HostingEnvironment.ContentRootPath, "Views", "Home", "Home.cshtml");
-            HtmlDocument doc = new();
-            doc.Load(filePath);
-            html = doc.DocumentNode.InnerHtml;
+            return RedirectToAction(nameof(Home)); 
         }
         else if (siteMapping is not null)
         {
