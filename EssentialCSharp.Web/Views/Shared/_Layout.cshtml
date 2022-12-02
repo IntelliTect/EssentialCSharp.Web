@@ -127,7 +127,16 @@
 
     @await RenderSectionAsync("Scripts", required: false)
 
-     <script>
+    <script type="text/javascript">
+        function copyToClipboard(copyText) {
+            /* Copy the text inside the text field */
+            navigator.clipboard.writeText(window.location.origin + "/" + copyText).then(function () {
+            /* Success */
+            }, function (err) {
+                console.error('Could not copy text: ', err);
+            });
+        }
+        
          function goToPrevious(){
              let link = document.getElementById("prev-section")
             
