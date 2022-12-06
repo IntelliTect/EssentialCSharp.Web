@@ -1,9 +1,9 @@
-    .search-window {
-        width: 325px;
-        min-width: 325px;
-        height: 80vh;
-        padding-top: 20px;
-    }
+.search-window {
+    width: 325px;
+    min-width: 325px;
+    height: 80vh;
+    padding-top: 20px;
+}
 
     .search-window .input {
         background: #FFFFFF;
@@ -14,156 +14,156 @@
         margin: 5px;
     }
 
-    .search-window .input .search-btn {
-        background: #095540;
-        height: 26px;
-        width: 29px;
-        float: right;
-        border: none;
-    }
+        .search-window .input .search-btn {
+            background: #095540;
+            height: 26px;
+            width: 29px;
+            float: right;
+            border: none;
+        }
 
-    .icon-color {
-        color: #ffffff;
-    }
+.icon-color {
+    color: #ffffff;
+}
 
-    .search-window input {
-        border: none;
-    }
+.search-window input {
+    border: none;
+}
 
     .search-window input:focus {
         outline: none;
     }
 
-    .menu-position {
-        display: flex;
-        justify-content:flex-start;
-    }
+.menu-position {
+    display: flex;
+    justify-content: flex-start;
+}
 
-    .menu-btn {
-        margin-top: 8px;
-        margin-bottom: 10px;
-        margin-right: 10px;
-        margin-left: 10px;
-        display: inline-block;
-        outline: none;
-        color: transparent;
-        border: none;
-        background-color: transparent;
-    }
+.menu-btn {
+    margin-top: 8px;
+    margin-bottom: 10px;
+    margin-right: 10px;
+    margin-left: 10px;
+    display: inline-block;
+    outline: none;
+    color: transparent;
+    border: none;
+    background-color: transparent;
+}
 
-    .nav-mobile-btn {
-        display: block;
-        border: none;
-        border-radius: 25px;
-        background-color: #095540;
-        background: #095540;
-        position: fixed;
-        width: 50px;
-        height: 50px;
-        bottom: 15px;
-        align-content: center;
-        font-weight: 700;
-        font-size: 22px;
-        font-style: normal;
-        font-stretch: narrower;
-        font-family: "Courier New";
-        align-items: center;
-        justify-content: center;
-    }
+.nav-mobile-btn {
+    display: block;
+    border: none;
+    border-radius: 25px;
+    background-color: #095540;
+    background: #095540;
+    position: fixed;
+    width: 50px;
+    height: 50px;
+    bottom: 15px;
+    align-content: center;
+    font-weight: 700;
+    font-size: 22px;
+    font-style: normal;
+    font-stretch: narrower;
+    font-family: "Courier New";
+    align-items: center;
+    justify-content: center;
+}
 
-    .nav-mobile-btn-icon {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%)
-    }
+.nav-mobile-btn-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%)
+}
 
-    .previous-mobile-btn {
-        left: 15px;
-    }
+.previous-mobile-btn {
+    left: 15px;
+}
 
-    .next-mobile-btn {
-        right: 15px;
-    }
+.next-mobile-btn {
+    right: 15px;
+}
 
-    @media only screen and (max-width: 768px) {
-        [class*="menu-btn"] {
-            margin-right: 4px;
-            margin-left: 4px;
-        }
+@media only screen and (max-width: 768px) {
+    [class*="menu-btn"] {
+        margin-right: 4px;
+        margin-left: 4px;
     }
+}
 
-    .sidebar {
-        width: 325px;
-        height: 100%;
-        display: block;
-    }
+.sidebar {
+    width: 325px;
+    height: 100%;
+    display: block;
+}
 
-    @media only screen and (max-width: 768px) {
-        [class*="sidebar"] {
-            display: none
-        }
-    }
-
-    .toc-menu {
-        color: black;
-        background-color: white;
-    }
-
-    .toc-tree {
-        padding-top: 20px;
-    }
-
-    .toc-label {
-        color: black;
-        background-color: white;
-        text-align: left;
-        font-size: 16px;
-        font-family: 'Palatino Linotype';
-        margin-top: 5px;
-        cursor: pointer;
-        border: none;
-    }
-
-    .bottom-border {
-        color: black;
-        border-bottom: 2px solid;
-        border-right-width: 0px;
-        border-left-width: 0px;
-        border-top-width: 0px;
-        cursor: pointer;
-    }
-
-    .toc-content {
-        color: black;
-        text-align: left;
-        padding-left: 25px;
-        font-family: 'Palatino Linotype';
-        font-style: normal;
-        font-weight: 400;
-        font-size: 18px;
-        line-height: 140%;
-        cursor: pointer;
-    }
-
-    .toc-list {
-        list-style-type: none;
-        padding-left: 20px;
-        margin: 0;
-    }
-
-    .sidebar .hide {
+@media only screen and (max-width: 768px) {
+    [class*="sidebar"] {
         display: none
     }
+}
 
-    .link-hide {
-        visibility: hidden
-    }
+.toc-menu {
+    color: black;
+    background-color: white;
+}
 
-    .tree {
-        margin-left: -25px;
-        --spacing: 1.6rem;
-    }
+.toc-tree {
+    padding-top: 20px;
+}
+
+.toc-label {
+    color: black;
+    background-color: white;
+    text-align: left;
+    font-size: 16px;
+    font-family: 'Palatino Linotype';
+    margin-top: 5px;
+    cursor: pointer;
+    border: none;
+}
+
+.bottom-border {
+    color: black;
+    border-bottom: 2px solid;
+    border-right-width: 0px;
+    border-left-width: 0px;
+    border-top-width: 0px;
+    cursor: pointer;
+}
+
+.toc-content {
+    color: black;
+    text-align: left;
+    padding-left: 25px;
+    font-family: 'Palatino Linotype';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 140%;
+    cursor: pointer;
+}
+
+.toc-list {
+    list-style-type: none;
+    padding-left: 20px;
+    margin: 0;
+}
+
+.sidebar .hide {
+    display: none
+}
+
+.link-hide {
+    visibility: hidden
+}
+
+.tree {
+    margin-left: -25px;
+    --spacing: 1.6rem;
+}
 
     .tree li {
         list-style: none;
@@ -179,119 +179,119 @@
         border-left: 2px solid #414042;
     }
 
-    .tree ul li:last-child {
-        border-color: transparent;
-    }
+        .tree ul li:last-child {
+            border-color: transparent;
+        }
 
     .tree ul {
         margin-left: 8px;
         padding-left: 0;
     }
 
-    details > summary {
-        list-style: none;
-    }
+details > summary {
+    list-style: none;
+}
 
     details > summary::-webkit-details-marker {
         display: none;
     }
 
-    .tree summary:focus {
-        outline: none;
-    }
+.tree summary:focus {
+    outline: none;
+}
 
-    .tree summary:focus-visible {
-        outline: none;
-    }
+.tree summary:focus-visible {
+    outline: none;
+}
 
-    .tree ul li::before {
-        content: '';
-        display: block;
-        position: absolute;
-        top: calc(var(--spacing) / -3);
-        left: -2px;
-        width: 18px;
-        height: calc(var(--spacing) - 3px);
-        border: solid #414042;
-        border-width: 0 0 2px 2px;
-    }
+.tree ul li::before {
+    content: '';
+    display: block;
+    position: absolute;
+    top: calc(var(--spacing) / -3);
+    left: -2px;
+    width: 18px;
+    height: calc(var(--spacing) - 3px);
+    border: solid #414042;
+    border-width: 0 0 2px 2px;
+}
 
-    .tree li::after,
-    .tree summary::before {
-    }
+.tree li::after,
+.tree summary::before {
+}
 
-    .tree summary::before {
-        font: var(--fa-font-solid);
-        content: "\f054";
-        display: block;
-        position: absolute;
-        left: 1px;
-        top: 4px;
-        margin-bottom: 5px;
-    }
+.tree summary::before {
+    font: var(--fa-font-solid);
+    content: "\f054";
+    display: block;
+    position: absolute;
+    left: 1px;
+    top: 4px;
+    margin-bottom: 5px;
+}
 
-    .tree details[open] > summary::before {
-        font: var(--fa-font-solid);
-        content: "\f078";
-        display: block;       
-        position: absolute;
-        left: 0px;
-        top: 3px
-    }
+.tree details[open] > summary::before {
+    font: var(--fa-font-solid);
+    content: "\f078";
+    display: block;
+    position: absolute;
+    left: 0px;
+    top: 3px
+}
 
-    .section-link {
-        font-family: 'Palatino Linotype';
-        font-style: normal;
-        font-weight: 400;
-        font-size: 18px;
-        line-height: 140%;
-        text-decoration: none;
-        color: black;
-    }
+.section-link {
+    font-family: 'Palatino Linotype';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 140%;
+    text-decoration: none;
+    color: black;
+}
 
-    .current-section {
-        font-weight: bold;
-        text-decoration: none;
-        color: #0077cc;
-    }
+.current-section {
+    font-weight: bold;
+    text-decoration: none;
+    color: #0077cc;
+}
 
-    .layout {
-        display: grid;
-        scroll-padding-top: 60px;
-        grid-template-columns: auto auto auto;
-        scroll-padding-bottom: 45px;
-    }
+.layout {
+    display: grid;
+    scroll-padding-top: 60px;
+    grid-template-columns: auto auto auto;
+    scroll-padding-bottom: 45px;
+}
 
-    .toc-padding {
-        padding-top: 15px;
-        padding-right: 0px;
-        padding-left: 15px;
-    }
+.toc-padding {
+    padding-top: 15px;
+    padding-right: 0px;
+    padding-left: 15px;
+}
 
-    .content-padding {
-        padding-top: 5px;
-        padding-right: 35px;
-        padding-left: 35px;
-    }
+.content-padding {
+    padding-top: 5px;
+    padding-right: 35px;
+    padding-left: 35px;
+}
 
-    @media only screen and (max-width: 1200px) {
-        [class*="content-padding"] {
-            padding-right: 5px;
-            padding-left: 5px;
-        }
+@media only screen and (max-width: 1200px) {
+    [class*="content-padding"] {
+        padding-right: 5px;
+        padding-left: 5px;
     }
+}
 
-    .banner {
-        background: #095540;
-        height: 60px;
-        display: flex;
-        justify-content: space-between;
-        position: fixed;
-        width: 100%;
-        top: 0;
-        left: 0;
-        z-index: 5;
-    }
+.banner {
+    background: #095540;
+    height: 60px;
+    display: flex;
+    justify-content: space-between;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    z-index: 5;
+}
 
     .banner .nav-btn {
         color: white;
@@ -306,193 +306,264 @@
         text-align: center;
     }
 
-    .right {
-        margin-right: auto;
-    }
+.right {
+    margin-right: auto;
+}
 
-    .banner-main-label {
-        font-family: 'Palatino Linotype';
-        font-style: normal;
-        font-weight: 300;
-        font-size: 24px;
-        margin-top: 5px;
-        margin-bottom: 5px;
-        margin-right: 5px;
-        margin-left: 5px;
-        text-decoration: none;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        overflow: hidden;
-    }
+.banner-main-label {
+    font-family: 'Palatino Linotype';
+    font-style: normal;
+    font-weight: 300;
+    font-size: 24px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-right: 5px;
+    margin-left: 5px;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
 
-    .banner-main-label-center {
-        margin-top: 10px;
-        margin-right: 5px;
-        margin-left: 5px;
-    }
+.banner-main-label-center {
+    margin-top: 10px;
+    margin-right: 5px;
+    margin-left: 5px;
+}
 
-    .banner-section-label {
-        font-family: 'Palatino Linotype';
-        font-style: normal;
-        font-weight: 300;
-        font-size: 18px;
-        margin-top: 0px;
-        margin-right: 5px;
-        margin-left: 5px;
-        text-decoration: none;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        overflow: hidden;
-    }
+.banner-section-label {
+    font-family: 'Palatino Linotype';
+    font-style: normal;
+    font-weight: 300;
+    font-size: 18px;
+    margin-top: 0px;
+    margin-right: 5px;
+    margin-left: 5px;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
 
-    .banner-link {
-        margin-top: 0px;
-    }
+.banner-link {
+    margin-top: 0px;
+}
 
-    .hide-on-mobile {
-        display: block;
-    }
+.hide-on-mobile {
+    display: block;
+}
 
-    @media only screen and (max-width: 768px) {
-        [class*="hide-on-mobile"] {
-            display: none;
-        }
-    }
-
-    .show-on-mobile {
+@media only screen and (max-width: 768px) {
+    [class*="hide-on-mobile"] {
         display: none;
     }
+}
 
-    @media only screen and (max-width: 768px) {
-        [class*="show-on-mobile"] {
-            display: block;
-        }
-    }
+.show-on-mobile {
+    display: none;
+}
 
-    .feedback-icon {
-        display: display;
+@media only screen and (max-width: 768px) {
+    [class*="show-on-mobile"] {
+        display: block;
     }
+}
 
-    span.underline {
-        font-size: 20px;
-        text-decoration: underline;
-    }
+.feedback-icon {
+    display: display;
+}
 
-    .header-height {
-        height: 60px;
-        width: 100%;
-        top: 0;
-    }
+span.underline {
+    font-size: 20px;
+    text-decoration: underline;
+}
 
-    .book-content {
-        width: auto;
-    }
+.header-height {
+    height: 60px;
+    width: 100%;
+    top: 0;
+}
 
-    .link-color {
-        color:#0000ff;
-        text-decoration: underline;
-    }
+.book-content {
+    width: auto;
+}
 
-    .dense-footer {
-        position:relative;
-        bottom: 0;
-        width: 100%;
-        white-space: nowrap;
-        line-height: 40px;
-    }
+.link-color {
+    color: #0000ff;
+    text-decoration: underline;
+}
+
+.dense-footer {
+    position: relative;
+    bottom: 0;
+    width: 100%;
+    white-space: nowrap;
+    line-height: 40px;
+}
 
     .dense-footer > .dense-footer-content {
         margin-left: 25px;
     }
 
-    .icon::before {
-        /* removed font- based rules */
-        display: inline-block;
-        text-rendering: auto;
-        -webkit-font-smoothing: antialiased;
+.icon::before {
+    /* removed font- based rules */
+    display: inline-block;
+    text-rendering: auto;
+    -webkit-font-smoothing: antialiased;
+}
+
+.home-icon {
+    margin-top: 0px;
+    padding-top: 0;
+    width: 100%;
+    max-height: 250px;
+    max-width: 250px;
+}
+
+.home-page {
+    display: block;
+    text-align: center;
+    align-content: center;
+    justify-content: center;
+}
+
+.home-title {
+    font-weight: bold;
+    font-size: 40px;
+    align-items: center;
+    text-align: center;
+    margin-top: -13px;
+    margin-bottom: 35px;
+}
+
+.home-author {
+    font-weight: 700;
+    font-size: 18px;
+    line-height: 16px;
+    align-items: center;
+    text-align: center;
+}
+
+.home-quote-author {
+    font-size: 18px;
+    text-align: right;
+    line-height: 16px;
+}
+
+.home-quote {
+    font-style: italic;
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 24px;
+    align-items: center;
+    text-align: left;
+    margin-top: 30px;
+}
+
+.home-header {
+    font-weight: 700;
+    font-size: 20px;
+    margin-bottom: -1px;
+}
+
+body {
+    font-family: 'Palatino Linotype ';
+    font-style: normal;
+    font-size: 20px;
+}
+
+.home-title-underline {
+    border-bottom: solid #414042 3pt;
+    padding: 0 0 7pt 0;
+    margin-bottom: 25pt;
+}
+
+.quote-block {
+    max-width: 730px;
+    display: inline-block;
+    margin-bottom: 2px;
+}
+
+.quote-author-block {
+    margin-top: -8px;
+}
+
+.mind-map {
+    width: 100%;
+    max-height: 800px;
+    margin: auto;
+}
+
+/* The snackbar - position it at the bottom and in the middle of the screen */
+#snackbar {
+    visibility: hidden; /* Hidden by default. Visible on click */
+    min-width: 250px; /* Set a default minimum width */
+    margin-left: -125px; /* Divide value of min-width by 2 */
+    background-color: #333; /* Black background color */
+    color: #fff; /* White text color */
+    text-align: center; /* Centered text */
+    border-radius: 2px; /* Rounded borders */
+    padding: 16px; /* Padding */
+    position: fixed; /* Sit on top of the screen */
+    z-index: 1; /* Add a z-index if needed */
+    left: 50%; /* Center the snackbar */
+    bottom: 30px; /* 30px from the bottom */
+}
+
+    /* Show the snackbar when clicking on a button (class added with JavaScript) */
+    #snackbar.show {
+        visibility: visible; /* Show the snackbar */
+        /* Add animation: Take 0.5 seconds to fade in and out the snackbar.
+  However, delay the fade out process for 2.5 seconds */
+        -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        animation: fadein 0.5s, fadeout 0.5s 2.5s;
     }
 
-    .home-icon {
-        margin-top: 0px;
-        padding-top: 0;
-        width: 100%;
-        max-height: 250px;
-        max-width: 250px;
+/* Animations to fade the snackbar in and out */
+@-webkit-keyframes fadein {
+    from {
+        bottom: 0;
+        opacity: 0;
     }
 
-    .home-page {
-        display: block;
-        text-align: center;
-        align-content: center;
-        justify-content: center;
+    to {
+        bottom: 30px;
+        opacity: 1;
+    }
+}
+
+@keyframes fadein {
+    from {
+        bottom: 0;
+        opacity: 0;
     }
 
-    .home-title {
-        font-weight: bold;
-        font-size: 40px;
-        align-items: center;
-        text-align: center;
-        margin-top: -13px;
-        margin-bottom: 35px;
+    to {
+        bottom: 30px;
+        opacity: 1;
+    }
+}
+
+@-webkit-keyframes fadeout {
+    from {
+        bottom: 30px;
+        opacity: 1;
     }
 
-    .home-author {
-        font-weight: 700;
-        font-size: 18px;
-        line-height: 16px;
-    
-        align-items: center;
-        text-align: center;
+    to {
+        bottom: 0;
+        opacity: 0;
+    }
+}
+
+@keyframes fadeout {
+    from {
+        bottom: 30px;
+        opacity: 1;
     }
 
-    .home-quote-author {
-        font-size: 18px;
-        text-align: right;
-        line-height: 16px;
+    to {
+        bottom: 0;
+        opacity: 0;
     }
-
-    .home-quote {
-        font-style: italic;
-        font-weight: 400;
-        font-size: 18px;
-        line-height: 24px;
-        align-items: center;
-        text-align: left;
-        margin-top: 30px;
-    }
-
-    .home-header {
-        font-weight: 700;
-        font-size: 20px;
-        margin-bottom: -1px;
-    }
-
-    body {
-        font-family: 'Palatino Linotype ';
-        font-style: normal;
-        font-size: 20px;
-    }
-
-    .home-title-underline {
-        border-bottom: solid #414042 3pt;
-        padding: 0 0 7pt 0;
-        margin-bottom: 25pt;
-    }
-
-    .quote-block {
-        max-width: 730px;
-        display: inline-block;
-        margin-bottom: 2px;
-    }
-
-    .quote-author-block {
-        margin-top: -8px;
-    }
-
-    .mind-map {
-        width: 100%;
-        max-height: 800px;
-        margin: auto;
-    }
-
-
+}

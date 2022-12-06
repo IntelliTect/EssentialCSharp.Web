@@ -25,7 +25,7 @@
     <title id="page-title">Essential C#</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/EssentialCSharp.Web.styles.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true"/>
+    <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -63,7 +63,7 @@
 
     <div class="layout">
         <div class="sidebar toc-padding" id="sidebar">
-             <div class="toc-menu"> 
+            <div class="toc-menu">
                 <button class="toc-label" onclick="showTOC()" id="toc-btn">
                     CONTENTS
                     <div class="bottom-border" id="toc-border"></div>
@@ -77,30 +77,30 @@
 
             <div class="toc-tree" id="toc">
                 <ul class="tree">
-                    @foreach (int chapterNumber in _SiteMappings.Select(x=>x.ChapterNumber).Distinct().OrderBy(x => x))
+                    @foreach (int chapterNumber in _SiteMappings.Select(x => x.ChapterNumber).Distinct().OrderBy(x => x))
                     {
-                    <li>
-                        <details>
-                             <summary class="toc-content">Chapter @chapterNumber: @_SiteMappings.First(x=>x.ChapterNumber == chapterNumber).ChapterTitle</summary>
-                            <ul>
-                                @foreach (SiteMapping siteMapping in _SiteMappings.Where(x=>x.ChapterNumber == @chapterNumber))
-                                {  
-                                    string fullHref = $"{siteMapping.Key}#{siteMapping.AnchorId}";
-                                    <li>
-                                        <a class="link-button-color section-link" asp-route="slug" asp-route-key="@siteMapping.Key" asp-fragment="@siteMapping.AnchorId">@siteMapping.RawHeading</a>
-                                    </li>
-                                }
-                            </ul>
-                        </details>
-                    </li>
+                        <li>
+                            <details>
+                                <summary class="toc-content">Chapter @chapterNumber: @_SiteMappings.First(x=>x.ChapterNumber == chapterNumber).ChapterTitle</summary>
+                                <ul>
+                                    @foreach (SiteMapping siteMapping in _SiteMappings.Where(x => x.ChapterNumber == @chapterNumber))
+                                    {
+                                        string fullHref = $"{siteMapping.Key}#{siteMapping.AnchorId}";
+                                        <li>
+                                            <a class="link-button-color section-link" asp-route="slug" asp-route-key="@siteMapping.Key" asp-fragment="@siteMapping.AnchorId">@siteMapping.RawHeading</a>
+                                        </li>
+                                    }
+                                </ul>
+                            </details>
+                        </li>
                     }
                 </ul>
             </div>
 
             <div id="searchBar" class="search-window hide">
                 <div class="input">
-                <input type="text" />
-                    <button class="search-btn" >
+                    <input type="text" />
+                    <button class="search-btn">
                         <i class="fa fa-search icon-color"></i>
                     </button>
                 </div>
@@ -113,10 +113,11 @@
             @RenderBody()
         </div>
     </div>
+    <div id="snackbar"></div>
 
     <footer class="border-top dense-footer text-muted" position="fixed" left="0" bottom="0" width="100%">
         <div class="dense-footer-content">
-            &copy; IntelliTect 2005-@DateTime.Now.Year - <a class="link-color" runat="server" target="_blank" rel="noreferrer noopener" href="https://intellitect.com/about/privacy-policy/">Privacy</a>  - 
+            &copy; IntelliTect 2005-@DateTime.Now.Year - <a class="link-color" runat="server" target="_blank" rel="noreferrer noopener" href="https://intellitect.com/about/privacy-policy/">Privacy</a>  -
             <a class="link-color" asp-route="TermsOfService">Terms Of Service</a>
         </div>
     </footer>
@@ -129,34 +130,40 @@
 
     <script type="text/javascript">
         function copyToClipboard(copyText) {
+            var snackbar = document.getElementById("snackbar");
             /* Copy the text inside the text field */
             navigator.clipboard.writeText(window.location.origin + "/" + copyText).then(function () {
-            /* Success */
+                /* Success */
+                snackbar.textContent = "Copied url to clipboard!";
             }, function (err) {
-                console.error('Could not copy text: ', err);
+                console.error('Could not copy text to clipboard: ', err);
+                snackbar.textContent = 'Error: Could not copy text to clipboard: ' + err;
+                snackbar.style = 'color:Red'
             });
+            // Add the "show" class to DIV
+            snackbar.className = "show";
+            // After 3 seconds, remove the show class from DIV
+            setTimeout(function () { snackbar.className = snackbar.className.replace("show", ""); }, 3000);
         }
-        
-         function goToPrevious(){
-             let link = document.getElementById("prev-section")
-            
-             link.click();
-         }
 
-         function goToNext(){
-             let link = document.getElementById("next-section")
-            
-             link.click();
-         }
+        function goToPrevious() {
+            let link = document.getElementById("prev-section")
 
-        function toggleSideBar()
-        {
+            link.click();
+        }
+
+        function goToNext() {
+            let link = document.getElementById("next-section")
+
+            link.click();
+        }
+
+        function toggleSideBar() {
             var a = document.getElementById("sidebar");
             if (a.style.display != "none") {
                 a.style.display = "none";
             }
-            else
-            {
+            else {
                 a.style.display = "block";
             }
         }
@@ -174,7 +181,7 @@
         }
 
         function showSearchBar() {
-             var a = document.getElementById("toc-border");
+            var a = document.getElementById("toc-border");
             a.style.display = "none";
             var b = document.getElementById("toc");
             b.style.display = "none";
@@ -184,11 +191,10 @@
             var d = document.getElementById("search-border");
             d.style.display = "block";
         }
-        
+
         window.onload = openTOC;
-        
-        function openTOC()
-        {
+
+        function openTOC() {
             var links = document.getElementsByClassName("section-link");
 
             let pageTitle = document.getElementById("page-title");
@@ -199,11 +205,10 @@
             let prevBtn = document.getElementById("prev-btn")
             let nextBtn = document.getElementById("next-btn");
 
-            if (((window.location.origin + "/home").toLowerCase() == window.location.href.toLowerCase()) 
-                || ((window.location.origin).toLowerCase() + "/"  == window.location.href.toLowerCase())) 
-            {
+            if (((window.location.origin + "/home").toLowerCase() == window.location.href.toLowerCase())
+                || ((window.location.origin).toLowerCase() + "/" == window.location.href.toLowerCase())) {
                 let link = links[0];
-                
+
                 pageTitle.textContent = "Home | Essential C#";
                 title.innerHTML = "";
                 prev.classList.add("link-hide");
@@ -217,8 +222,8 @@
                     let link = links[i];
 
                     if (window.location.href.endsWith(link.href) && Boolean(link.innerHTML)) {
-                        
-                        //Update title and next/prev section hrefs 
+
+                        //Update title and next/prev section hrefs
                         pageTitle.textContent = link.innerHTML + " | Essential C#";
                         title.innerHTML = link.innerHTML;
 
@@ -266,30 +271,31 @@
         });
 
         document.addEventListener('keydown', (e) => {
-            if (e.key.toLowerCase() === 'n' || e.key == "ArrowRight" ) {
+            if (e.key.toLowerCase() === 'n' || e.key == "ArrowRight") {
                 let next = document.getElementById("next-section");
                 next.click();
             }
         });
 
         document.addEventListener('keydown', (e) => {
-            if (e.key.toLowerCase() === 'p' || e.key == "ArrowLeft" ) {
+            if (e.key.toLowerCase() === 'p' || e.key == "ArrowLeft") {
                 let prev = document.getElementById("prev-section");
                 prev.click();
             }
         });
 
-        jQuery(document).ready(function(){
+        jQuery(document).ready(function () {
             var target = window.location.hash;
 
-            if ( target != '' ){
+            if (target != '') {
                 var $target = jQuery(target);
-                if($target.length){
+                if ($target.length) {
                     jQuery('html, body').stop().animate({
-                    'scrollTop': $target.offset().top - 80},
-                    900, 
-                    'swing',function () {
-                    });
+                        'scrollTop': $target.offset().top - 80
+                    },
+                        900,
+                        'swing', function () {
+                        });
                 }
             }
         });
