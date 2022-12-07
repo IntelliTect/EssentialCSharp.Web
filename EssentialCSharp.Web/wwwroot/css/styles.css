@@ -208,12 +208,13 @@ details > summary {
     content: '';
     display: block;
     position: absolute;
-    top: calc(var(--spacing) / -3);
+    top: calc(var(--spacing) / -2 + 3.2px);
     left: -2px;
     width: 18px;
-    height: calc(var(--spacing) - 3px);
+    height: calc(var(--spacing) - 2px);
     border: solid #414042;
     border-width: 0 0 2px 2px;
+    z-index: -1;
 }
 
 .tree li::after,
@@ -228,6 +229,82 @@ details > summary {
     left: 1px;
     top: 4px;
     margin-bottom: 5px;
+}
+
+.nested {
+    margin-left: 20px;
+}
+
+.tree summary.nested::before {
+    font: var(--fa-font-solid);
+    content: "\f054";
+    display: block;
+    position: absolute;
+    left: 18px;
+    top: 3px;
+    margin-bottom: 5px;
+}
+
+.tree details[open] > summary.nested::before {
+    font: var(--fa-font-solid);
+    content: "\f078";
+    display: block;
+    position: absolute;
+    left: 19px;
+    top: -1px;
+    width: 19px;
+    margin-bottom: 5px;
+}
+
+.tree summary.nested::after {
+    content: '';
+    display: block;
+    position: absolute;
+    left: 15px;
+    top: calc(var(--spacing) / -2 + 24.8px);
+    width: 14px;
+    border: solid #414042;
+    border-width: 0 0 2px 0;
+    z-index: -1;
+}
+
+.tree details[open] > summary::after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 16px;
+    left: 8px;
+    width: 18px;
+    height: calc(var(--height) + 5px);
+    border: solid #414042;
+    border-width: 0 0 0 2px;
+    z-index: -1;
+}
+
+.tree details[open] > summary.nested::after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 14px;
+    left: 28px;
+    width: 18px;
+    height: calc(var(--height) + 2px);
+    border: solid #414042;
+    border-width: 0 0 0 2px;
+    z-index: -1;
+}
+
+.tree details[open] > summary > a::before {
+    content: '';
+    display: block;
+    position: absolute;
+    left: 15px;
+    top: 4px;
+    width: 13px;
+    height: 10px;
+    border: solid #414042;
+    border-width: 0 0 2px 0;
+    z-index: -1;
 }
 
 .tree details[open] > summary::before {
