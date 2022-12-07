@@ -83,11 +83,52 @@
                             <details>
                                 <summary class="toc-content">Chapter @chapterNumber: @_SiteMappings.First(x=>x.ChapterNumber == chapterNumber).ChapterTitle</summary>
                                 <ul>
-                                    @foreach (SiteMapping siteMapping in _SiteMappings.Where(x => x.ChapterNumber == @chapterNumber))
+                                    @{
+                                        var siteMappings = _SiteMappings.Where(x => x.ChapterNumber == @chapterNumber).ToList();
+                                    }
+                                    @for (int i = 0; i < siteMappings.Count; i++)
                                     {
-                                        string fullHref = $"{siteMapping.Key}#{siteMapping.AnchorId}";
+                                        string fullHref = fullHref = $"{siteMappings[i].Key}#{siteMappings[i].AnchorId}";
                                         <li>
-                                            <a class="link-button-color section-link" asp-route="slug" asp-route-key="@siteMapping.Key" asp-fragment="@siteMapping.AnchorId">@siteMapping.RawHeading</a>
+                                            @if (!(i + 1 < siteMappings.Count && siteMappings[i + 1].IndentLevel > 1))
+                                            {
+                                                <a class="link-button-color section-link indent-level-1" style="--height: 25px" asp-route="slug" asp-route-key="@siteMappings[i].Key" asp-fragment="@siteMappings[i].AnchorId">@siteMappings[i].RawHeading</a>
+                                            }
+                                            else
+                                            {
+                                                <details>
+                                                    <summary class="nested"><a class="link-button-color section-link indent-level-1" style="--height: 25px" asp-route="slug" asp-route-key="@siteMappings[i].Key" asp-fragment="@siteMappings[i].AnchorId">@siteMappings[i].RawHeading</a></summary>
+                                                    <ul>
+                                                        @while (i + 1 < siteMappings.Count && siteMappings[i + 1].IndentLevel > 1)
+                                                        {
+                                                            i++;
+                                                            fullHref = $"{siteMappings[i].Key}#{siteMappings[i].AnchorId}";
+                                                            <li>
+                                                                @if (!(i + 1 < siteMappings.Count && siteMappings[i + 1].IndentLevel > 2))
+                                                                {
+                                                                    <a class="link-button-color section-link indent-level-2" style="--height: 25px" asp-route="slug" asp-route-key="@siteMappings[i].Key" asp-fragment="@siteMappings[i].AnchorId">@siteMappings[i].RawHeading</a>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <details>
+                                                                        <summary class="nested"><a class="link-button-color section-link indent-level-2" style="--height: 25px" asp-route="slug" asp-route-key="@siteMappings[i].Key" asp-fragment="@siteMappings[i].AnchorId">@siteMappings[i].RawHeading</a></summary>
+                                                                        <ul>
+                                                                            @while (i + 1 < siteMappings.Count && siteMappings[i + 1].IndentLevel > 2)
+                                                                            {
+                                                                                i++;
+                                                                                fullHref = $"{siteMappings[i].Key}#{siteMappings[i].AnchorId}";
+                                                                                <li>
+                                                                                    <a class="link-button-color section-link indent-level-3" style="--height: 25px" asp-route="slug" asp-route-key="@siteMappings[i].Key" asp-fragment="@siteMappings[i].AnchorId">@siteMappings[i].RawHeading</a>
+                                                                                </li>
+                                                                            }
+                                                                        </ul>
+                                                                    </details>
+                                                                }
+                                                            </li>
+                                                        }
+                                                    </ul>
+                                                </details>
+                                            }
                                         </li>
                                     }
                                 </ul>
@@ -129,12 +170,12 @@
     @await RenderSectionAsync("Scripts", required: false)
 
     <script type="text/javascript">
+
         function copyToClipboard(copyText) {
             var snackbar = document.getElementById("snackbar");
             /* Copy the text inside the text field */
             navigator.clipboard.writeText(window.location.origin + "/" + copyText).then(function () {
                 /* Success */
-                snackbar.textContent = "Copied url to clipboard!";
             }, function (err) {
                 console.error('Could not copy text to clipboard: ', err);
                 snackbar.textContent = 'Error: Could not copy text to clipboard: ' + err;
@@ -165,6 +206,7 @@
             }
             else {
                 a.style.display = "block";
+                this.calcNestedLinkHeights();
             }
         }
 
@@ -248,17 +290,89 @@
                             next.href = window.location.origin + "/@ViewBag.NextPage";
                             nextBtn.classList.remove("link-hide");
                         }
-
                         //Expand the chapter header in TOC and indicate the selected section
                         link.classList.add("current-section");
-                        var listItem = link.parentElement;
+
+                        var currentLink = link;
+                        if (link.classList.contains("indent-level-3")) {
+
+                            var h2listItem = currentLink.parentElement;
+                            var h2nestedList = h2listItem.parentElement;
+                            var heading2Item = h2nestedList.previousElementSibling;
+                            heading2Item.click();
+
+                            currentLink = h2nestedList.parentElement;
+                        }
+
+                        if (link.classList.contains("indent-level-2") || link.classList.contains("indent-level-3")) {
+
+                            var h1listItem;
+
+                            if (currentLink.parentElement.classList.contains("nested")) {
+                                var summeryItem = currentLink.parentElement;
+                                //Opening the list nested under this link
+                                summeryItem.click();
+                                var detailsItem = summeryItem.parentElement;
+                                h1listItem = detailsItem.parentElement;
+                            } else {
+                                h1listItem = currentLink.parentElement;
+                            }
+
+                            var h1nestedList = h1listItem.parentElement;
+                            var heading1Item = h1nestedList.previousElementSibling;
+                            heading1Item.click();
+
+                            currentLink = h1nestedList.parentElement;
+                        }
+
+                        var listItem;
+                        if (currentLink.parentElement.classList.contains("nested")) {
+                            //Opening the list nested under this link
+                            var summeryItem = currentLink.parentElement;
+                            summeryItem.click();
+                            var detailsItem = summeryItem.parentElement;
+                            listItem = detailsItem.parentElement;
+                        } else {
+                            listItem = currentLink.parentElement;
+                        }
+
                         var chapterlist = listItem.parentElement;
                         var chapterHeading = chapterlist.previousElementSibling;
                         chapterHeading.click();
-
                         break;
                     }
                 }
+            }
+            //After Opening Toc make sure heights have been calculated
+            this.calcNestedLinkHeights();
+        }
+
+        var heightsInitialized = false;
+
+        function calcNestedLinkHeights() {
+            if (heightsInitialized) {
+                return;
+            }
+
+            var links = document.getElementsByTagName("summary");
+            
+            if (links[0].clientHeight <= 0) {
+               return;
+            }
+            heightsInitialized = true;
+
+            for (let i = 0; i < links.length; i++) {
+                let link = links[i];
+                var height = link.clientHeight;
+                link.style.setProperty('--height', height + 'px');
+            }
+
+            var links = document.getElementsByClassName("nested");
+
+            for (let i = 0; i < links.length; i++) {
+                let link = links[i];
+                var height = link.clientHeight;
+                link.style.setProperty('--height', height + 'px');
             }
         }
 
