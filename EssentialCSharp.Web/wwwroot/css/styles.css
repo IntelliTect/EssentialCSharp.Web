@@ -5,22 +5,22 @@
     padding-top: 20px;
 }
 
-    .search-window .input {
-        background: #FFFFFF;
-        border: 1px solid #7E7D7E;
-        border-radius: 2px;
-        height: 28px;
-        width: 265px;
-        margin: 5px;
-    }
+.search-window .input {
+    background: #FFFFFF;
+    border: 1px solid #7E7D7E;
+    border-radius: 2px;
+    height: 28px;
+    width: 265px;
+    margin: 5px;
+}
 
-        .search-window .input .search-btn {
-            background: #095540;
-            height: 26px;
-            width: 29px;
-            float: right;
-            border: none;
-        }
+.search-window .input .search-btn {
+    background: #095540;
+    height: 26px;
+    width: 29px;
+    float: right;
+    border: none;
+}
 
 .icon-color {
     color: #ffffff;
@@ -30,9 +30,9 @@
     border: none;
 }
 
-    .search-window input:focus {
-        outline: none;
-    }
+.search-window input:focus {
+    outline: none;
+}
 
 .menu-position {
     display: flex;
@@ -105,6 +105,13 @@
     }
 }
 
+.comingSoonSidebar {
+    width: 325px;
+    height: 100%;
+    display: none;
+    border-left: 2px solid #414042;
+}
+
 .toc-menu {
     color: black;
     background-color: white;
@@ -160,41 +167,165 @@
     visibility: hidden
 }
 
+.cs-tree {
+    padding: 0;
+    width: auto;
+    border-bottom: 1px solid #414042;
+}
+
+.cs-tree li {
+    list-style: none;
+    position: relative;
+    padding-left: 0px;
+    background-color: #F0F1F1;
+    border-top: 1px solid #414042;
+}
+
+.cs-tree ul li {
+    margin-top: 0px;
+    margin-bottom: 0px;
+    padding-left: 24px;
+}
+
+.cs-tree ul {
+    margin-left: 0px;
+    padding-left: 0;
+}
+
+.cs-tree summary {
+    margin-left: 5px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.cs-tree summary:focus {
+    outline: none;
+}
+
+.cs-tree summary:focus-visible {
+    outline: 1px dotted #000;
+}
+
+.cs-tree summary::before {
+    font: var(--fa-font-solid);
+    content: "\f054";
+    display: block;
+    position: absolute;
+    left: 5px;
+    top: 6px;
+}
+
+.cs-tree summary::before {
+    font: var(--fa-font-solid);
+    content: "\f054";
+    display: block;
+    position: absolute;
+    left: 5px;
+    top: 6px;
+}
+
+.cs-tree details[open] > summary::before {
+    font: var(--fa-font-solid);
+    content: "\f078";
+    display: block;
+    position: absolute;
+    left: 4px;
+    top: 5px
+}
+
+.cs-section-link {
+    font-style: normal;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 140%;
+    text-decoration: none;
+    color: black;
+    margin-top: 2px;
+}
+
+.cs-description {
+    font-family: Arial;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 140%;
+    text-decoration: none;
+    color: #484848;
+    margin-top: 2px;
+    padding-bottom: 8px;
+    padding-left: 6px;
+}
+
+.cs-current-section {
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.no-border li {
+    list-style: none;
+    position: relative;
+    padding-left: 0px;
+    background-color: #F0F1F1;
+    border: none;
+}
+
+.no-icon ul li {
+    margin-top: 0px;
+    margin-bottom: 0px;
+    padding-left: 0px;
+}
+
+.no-icon summary:focus {
+    outline: none;
+}
+
+.no-icon summary::before {
+    content: "";
+    display: block;
+    position: absolute;
+}
+
+.no-icon details[open] > summary::before {
+    content: "";
+    display: block;
+    position: absolute;
+}
+
 .tree {
     margin-left: -25px;
     --spacing: 1.6rem;
 }
 
-    .tree li {
-        list-style: none;
-        position: relative;
-        padding-left: 0px;
-    }
+.tree li {
+    list-style: none;
+    position: relative;
+    padding-left: 0px;
+}
 
-    .tree ul li {
-        line-height: 100%;
-        margin-top: 5px;
-        margin-bottom: 5px;
-        padding-left: 20px;
-        border-left: 2px solid #414042;
-    }
+.tree ul li {
+    line-height: 100%;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    padding-left: 20px;
+    border-left: 2px solid #414042;
+}
 
-        .tree ul li:last-child {
-            border-color: transparent;
-        }
+.tree ul li:last-child {
+    border-color: transparent;
+}
 
-    .tree ul {
-        margin-left: 8px;
-        padding-left: 0;
-    }
+.tree ul {
+    margin-left: 8px;
+    padding-left: 0;
+}
 
 details > summary {
     list-style: none;
 }
 
-    details > summary::-webkit-details-marker {
-        display: none;
-    }
+details > summary::-webkit-details-marker {
+    display: none;
+}
 
 .tree summary:focus {
     outline: none;
@@ -229,6 +360,15 @@ details > summary {
     left: 1px;
     top: 4px;
     margin-bottom: 5px;
+}
+
+.tree details[open] > summary::before {
+    font: var(--fa-font-solid);
+    content: "\f078";
+    display: block;
+    position: absolute;
+    left: 0px;
+    top: 3px
 }
 
 .nested {
@@ -339,6 +479,10 @@ details > summary {
     scroll-padding-bottom: 45px;
 }
 
+.coming-soon-layout {
+    margin-top: 20px;
+}
+
 .toc-padding {
     padding-top: 15px;
     padding-right: 0px;
@@ -370,18 +514,18 @@ details > summary {
     z-index: 5;
 }
 
-    .banner .nav-btn {
-        color: white;
-        font-style: normal;
-        font-weight: 700;
-        font-size: 18px;
-        text-decoration: none;
-        cursor: pointer;
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        text-align: center;
-    }
+.banner .nav-btn {
+    color: white;
+    font-style: normal;
+    font-weight: 700;
+    font-size: 18px;
+    text-decoration: none;
+    cursor: pointer;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    text-align: center;
+}
 
 .right {
     margin-right: auto;
@@ -478,15 +622,183 @@ span.underline {
     line-height: 40px;
 }
 
-    .dense-footer > .dense-footer-content {
-        margin-left: 25px;
-    }
+.dense-footer > .dense-footer-content {
+    margin-left: 25px;
+}
 
 .icon::before {
     /* removed font- based rules */
     display: inline-block;
     text-rendering: auto;
     -webkit-font-smoothing: antialiased;
+}
+
+.feature-section {
+    height: 350px;
+    width: 100%;
+    max-width: 1050px;
+    background-color: #F0F1F1;
+    overflow-y: hidden;
+    display: block;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    scroll-padding: 25px;
+    margin-top: 0px;
+    margin-bottom: 20px;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+@media only screen and (max-width: 1500px) {
+    [class*="feature-section"] {
+        max-width: 700px;
+    }
+}
+
+@media only screen and (max-width: 1100px) {
+    [class*="feature-section"] {
+        max-width: 350px;
+    }
+}
+
+.feature-section-header {
+    height: 60px;
+    max-width: 1050px;
+    margin-top: 30px;
+    border-start-start-radius: 10px;
+    border-start-end-radius: 10px;
+    align-content: center;
+    justify-content: center;
+    display: flex;
+    margin: auto;
+}
+
+@media only screen and (max-width: 1500px) {
+    [class*="feature-section-header"] {
+        max-width: 700px;
+    }
+}
+
+@media only screen and (max-width: 1100px) {
+    [class*="feature-section-header"] {
+        max-width: 350px;
+    }
+}
+
+.feature-section-header-title {
+    height: 60px;
+    width: inherit;
+    margin-top: 10px;
+    font-family: 'Palatino Linotype';
+    font-style: normal;
+    font-weight: 300;
+    font-size: 24px;
+    text-align: center;
+}
+
+.feature-box {
+    width: 300px;
+    height: 300px;
+    margin-left: 23px;
+    margin-right: 23px;
+    display: inline-block;
+    text-align: center;
+    scroll-snap-align: start;
+    margin-top: 0px;
+}
+
+.feature-circle {
+    margin-top: 30px;
+    margin-bottom: 10px;
+    margin-left: 125px;
+    width: 50px;
+    height: 50px;
+    border: 1px solid;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Palatino Linotype';
+    font-style: normal;
+    font-weight: 700;
+    font-size: 24px;
+}
+
+.feature-content {
+    display: inline-block;
+    justify-content: center;
+    align-items: center;
+    height: 220px;
+    width: 300px;
+    padding: 10px;
+    position: relative;
+}
+
+.feature-content:hover {
+    background-color: white;
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    border-radius: 3px;
+}
+
+.feature-link {
+    position: absolute;
+    bottom: 0;
+    margin-bottom: 30px;
+    margin-left: 10px;
+    margin-left: -52px;
+}
+
+.feature-title {
+    font-family: 'Palatino Linotype';
+    font-style: normal;
+    font-weight: 700;
+    font-size: 24px;
+    width: 100%;
+    text-align: center;
+    height: 70px;
+    overflow: hidden;
+    white-space: pre-wrap;
+}
+
+.feature-description {
+    font-family: 'Arial';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 16px;
+    margin-top: 15px;
+    text-align: center;
+    width: 100%;
+    height: 140px;
+    overflow: hidden;
+    white-space: pre-wrap;
+}
+
+.code-text {
+    font-family: "Courier New";
+}
+
+.blue {
+    color: #003057;
+}
+
+.green {
+    color: #095540;
+}
+
+.background-blue {
+    background-color: #003057;
+}
+
+.background-green {
+    background-color: #095540;
+}
+
+.white-text {
+    color: white;
+    align-content: center;
+    justify-content: center;
+    width: 100%;
 }
 
 .home-icon {
@@ -587,14 +899,14 @@ body {
     bottom: 30px; /* 30px from the bottom */
 }
 
-    /* Show the snackbar when clicking on a button (class added with JavaScript) */
-    #snackbar.show {
-        visibility: visible; /* Show the snackbar */
-        /* Add animation: Take 0.5 seconds to fade in and out the snackbar.
-  However, delay the fade out process for 2.5 seconds */
-        -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
-        animation: fadein 0.5s, fadeout 0.5s 2.5s;
-    }
+/* Show the snackbar when clicking on a button (class added with JavaScript) */
+#snackbar.show {
+    visibility: visible; /* Show the snackbar */
+    /* Add animation: Take 0.5 seconds to fade in and out the snackbar.
+However, delay the fade out process for 2.5 seconds */
+    -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+    animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
 
 /* Animations to fade the snackbar in and out */
 @-webkit-keyframes fadein {
@@ -644,3 +956,5 @@ body {
         opacity: 0;
     }
 }
+
+
