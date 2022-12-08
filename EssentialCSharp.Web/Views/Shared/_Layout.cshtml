@@ -57,6 +57,7 @@
             <div class="menu-position">
                 <span class="hover-text"><a id="feedback" class="text-light banner-section-label banner-link hide-on-mobile" runat="server" target="_blank" rel="noreferrer noopener" href="https://github.com/IntelliTect/EssentialCSharp/discussions/new?category=feedback-and-ideas"><span class="tooltip-text" id="bottom">Give feedback to us! (F key)</span><span class="underline">F</span>eedback</a></span>
                 <button class="menu-btn feedback-icon show-on-mobile" onclick="window.location='https://github.com/IntelliTect/EssentialCSharp/discussions/new?category=feedback-and-ideas'"><i class="fa fa-regular fa-comments fa-lg icon-color"></i></button>
+                <button class="menu-btn feedback-icon" onclick="toggleComingSoonSideBar()"><i class="fa fa-solid fa-bullhorn fa-lg icon-color"></i></button>
             </div>
         </div>
     </header>
@@ -153,6 +154,176 @@
             <button id="next-btn" class="nav-mobile-btn next-mobile-btn show-on-mobile" onclick="goToNext()"><i class="fa fa-solid fa-arrow-right icon-color nav-mobile-btn-icon"></i></button>
             @RenderBody()
         </div>
+        
+        <div class="comingSoonSidebar" id="comingSoonSidebar">            
+            <ul class="cs-tree">
+                <li>
+                    <details>
+                        <summary class="toc-content">Web Features Coming Soon</summary>
+                        <ul class="no-icon">
+                            <li>
+                                <details class="no-border">
+                                    <summary class="cs-section-link no-icon">Client-side Compiler</summary>
+                                    <ul>
+                                        <li>
+                                            <div class="cs-description">Write, compile, and run code snippets right from your browser. Enjoy hands-on experience with the code as you go through the site.</div>
+                                               @* <a class="cs-description link-color">View on GitHub</a>*@
+                                        </li>
+                                    </ul>
+                                </details>
+                            </li>
+                            <li>
+                                 <details class="no-border">
+                                    <summary class="cs-section-link no-icon">Interactive Code Listings</summary>
+                                    <ul>
+                                        <li>
+                                            <div class="cs-description">Edit, compile, and run the code listings found throughout Essential C#.</div>
+                                                @*<a class="cs-description link-color">View on GitHub</a>*@
+                                        </li>
+                                    </ul>
+                                </details>
+                            </li>
+                            <li>
+                                <details class="no-border">
+                                    <summary class="cs-section-link no-icon">Full Text Search</summary>
+                                    <ul>
+                                        <li>
+                                            <div class="cs-description">Search for keywords and phrases to easily find relevant information.</div>
+                                               @* <a class="cs-description link-color">View on GitHub</a>*@
+                                        </li>
+                                    </ul>
+                                </details>
+                            </li>
+                            <li>
+                                <details class="no-border">
+                                <summary class="cs-section-link no-icon">Hyperlinking</summary>
+                                    <ul>
+                                        <li>
+                                            <div class="cs-description">Easily navigate to interesting and relevant sites as well as related sections in Essential C#.</div>
+                                               @* <a class="cs-description link-color">View on GitHub</a>*@
+                                        </li>
+                                    </ul>
+                                </details>
+                            </li>
+                            <li>
+                                <details class="no-border">
+                                    <summary class="cs-section-link no-icon">Table of Contents Filtering</summary>
+                                    <ul>
+                                        <li>
+                                            <div class="cs-description">The Table of Contents filter will let you narrow down the list of topics to help you quickly and easily find your destination.</div>
+                                                @*<a class="cs-description link-color">View on GitHub</a>*@
+                                        </li>
+                                    </ul>
+                                </details>
+                            </li>
+                        </ul>
+                    </details>
+                </li>
+                <li>
+                    <details>
+                        <summary class="toc-content">Content Coming Soon</summary>
+                        <ul class="no-icon">
+                            <li>
+                                <details class="no-border">
+                                    <summary class="cs-section-link no-icon"><span class="code-text">records</span></summary>
+                                    <ul>
+                                        <li>
+                                            <div class="cs-description">New feature from C# 9.</div>
+                                               @* <a class="cs-description link-color">View on GitHub</a>*@
+                                        </li>
+                                    </ul>
+                                </details>
+                            </li>
+                            <li>
+                                <details class="no-border">
+                                   <summary class="cs-section-link no-icon">File Scoped <span class="code-text">namespaces</span></summary>
+                                    <ul>
+                                        <li>
+                                            <div class="cs-description">New feature from C# 10.</div>
+                                                @*<a class="cs-description link-color">View on GitHub</a>*@
+                                        </li>
+                                    </ul>
+                                </details>
+                            </li>
+                            <li>
+                                <details class="no-border">
+                                    <summary class="cs-section-link no-icon"><span class="code-text">using</span> Statements Improvements</summary>
+                                    <ul>
+                                        <li>
+                                            <div class="cs-description">Feature improvements from C# 10.</div>
+                                                @*<a class="cs-description link-color">View on GitHub</a>*@
+                                        </li>
+                                    </ul>
+                                </details>
+                            </li>
+                            <li>
+                                <details class="no-border">
+                                    <summary class="cs-section-link no-icon">Pattern Matching Improvements</summary>
+                                    <ul>
+                                        <li>
+                                            <div class="cs-description">Feature improvements from C# 11.</div>
+                                                @*<a class="cs-description link-color">View on GitHub</a>*@
+                                        </li>
+                                    </ul>
+                                </details>
+                            </li>
+                            <li>
+                                <details class="no-border">
+                                    <summary class="cs-section-link no-icon"><span class="code-text">required</span> Members</summary>
+                                    <ul>
+                                        <li>
+                                            <div class="cs-description">New feature from C# 11.</div>
+                                                @*<a class="cs-description link-color">View on GitHub</a>*@
+                                        </li>
+                                    </ul>
+                                </details>
+                            </li>
+                        </ul>
+                    </details>
+                </li>
+                <li>
+                    <details>
+                        <summary class="toc-content">Recently Completed</summary>
+                        <ul class="no-icon">
+                            <li>
+                                <details class="no-border">
+                                    <summary class="cs-section-link no-icon">Copying Header Hyperlinks</summary>
+                                    <ul>
+                                        <li>
+                                            <div class="cs-description">Easily copy a header URL to link to a book section.</div>
+                                               @* <a class="cs-description link-color">View on GitHub</a>*@
+                                        </li>
+                                    </ul>
+                                </details>
+                            </li>
+                            <li>
+                                <details class="no-border">
+                                    <summary class="cs-section-link no-icon">Home Page</summary>
+                                    <ul>
+                                        <li>
+                                            <div class="cs-description">Add a home page that features a short description of the book and a high level mindmap.</div>
+                                              @*  <a class="cs-description link-color">View on GitHub</a>*@
+                                        </li>
+                                    </ul>
+                                </details>
+                            </li>
+                            <li>
+                                <details class="no-border">
+                                    <summary class="cs-section-link no-icon">Keyboard Shortcuts</summary>
+                                    <ul>
+                                        <li>
+                                            <div class="cs-description">Quickly navigate through the book via keyboard shortcuts (right/left arrows, 'n', 'p').</div>
+                                              @*  <a class="cs-description link-color">View on GitHub</a>*@
+                                        </li>
+                                    </ul>
+                                </details>
+                            </li>
+                            
+                        </ul>
+                    </details>
+                </li>
+            </ul>
+        </div>
     </div>
     <div id="snackbar"></div>
 
@@ -192,14 +363,27 @@
 
             link.click();
         }
-
         function goToNext() {
             let link = document.getElementById("next-section")
 
             link.click();
         }
 
-        function toggleSideBar() {
+        function toggleComingSoonSideBar()
+        {
+            var a = document.getElementById("comingSoonSidebar");
+
+            if (a.style.display != "block") {
+                a.style.display = "block";
+            }
+            else
+            {
+                a.style.display = "none";
+            }
+        }
+
+        function toggleSideBar()
+        {
             var a = document.getElementById("sidebar");
             if (a.style.display != "none") {
                 a.style.display = "none";
