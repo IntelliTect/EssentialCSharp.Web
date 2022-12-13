@@ -98,8 +98,11 @@
                                             else
                                             {
                                                 <details>
-                                                    <summary class="nested"><a class="link-button-color section-link indent-level-1" style="--height: 25px" asp-route="slug" asp-route-key="@siteMappings[i].Key" asp-fragment="@siteMappings[i].AnchorId">@siteMappings[i].RawHeading</a></summary>
+                                                    <summary class="nested">@siteMappings[i].RawHeading</summary>
                                                     <ul>
+                                                        <li>
+                                                            <a class="link-button-color section-link indent-level-2" style="--height: 25px" asp-route="slug" asp-route-key="@siteMappings[i].Key" asp-fragment="@siteMappings[i].AnchorId"> Introduction </a>
+                                                        </li>
                                                         @while (i + 1 < siteMappings.Count && siteMappings[i + 1].IndentLevel > 1)
                                                         {
                                                             i++;
@@ -112,8 +115,11 @@
                                                                 else
                                                                 {
                                                                     <details>
-                                                                        <summary class="nested"><a class="link-button-color section-link indent-level-2" style="--height: 25px" asp-route="slug" asp-route-key="@siteMappings[i].Key" asp-fragment="@siteMappings[i].AnchorId">@siteMappings[i].RawHeading</a></summary>
+                                                                        <summary class="nested">@siteMappings[i].RawHeading</summary>
                                                                         <ul>
+                                                                            <li>
+                                                                                <a class="link-button-color section-link indent-level-3" style="--height: 25px" asp-route="slug" asp-route-key="@siteMappings[i].Key" asp-fragment="@siteMappings[i].AnchorId"> Introduction </a>
+                                                                            </li>
                                                                             @while (i + 1 < siteMappings.Count && siteMappings[i + 1].IndentLevel > 2)
                                                                             {
                                                                                 i++;
@@ -489,19 +495,7 @@
                         }
 
                         if (link.classList.contains("indent-level-2") || link.classList.contains("indent-level-3")) {
-
-                            var h1listItem;
-
-                            if (currentLink.parentElement.classList.contains("nested")) {
-                                var summeryItem = currentLink.parentElement;
-                                //Opening the list nested under this link
-                                summeryItem.click();
-                                var detailsItem = summeryItem.parentElement;
-                                h1listItem = detailsItem.parentElement;
-                            } else {
-                                h1listItem = currentLink.parentElement;
-                            }
-
+                            var h1listItem = currentLink.parentElement;
                             var h1nestedList = h1listItem.parentElement;
                             var heading1Item = h1nestedList.previousElementSibling;
                             heading1Item.click();
@@ -509,20 +503,11 @@
                             currentLink = h1nestedList.parentElement;
                         }
 
-                        var listItem;
-                        if (currentLink.parentElement.classList.contains("nested")) {
-                            //Opening the list nested under this link
-                            var summeryItem = currentLink.parentElement;
-                            summeryItem.click();
-                            var detailsItem = summeryItem.parentElement;
-                            listItem = detailsItem.parentElement;
-                        } else {
-                            listItem = currentLink.parentElement;
-                        }
-
+                        var listItem = currentLink.parentElement;
                         var chapterlist = listItem.parentElement;
                         var chapterHeading = chapterlist.previousElementSibling;
                         chapterHeading.click();
+
                         break;
                     }
                 }
@@ -539,9 +524,9 @@
             }
 
             var links = document.getElementsByTagName("summary");
-            
+
             if (links[0].clientHeight <= 0) {
-               return;
+                return;
             }
             heightsInitialized = true;
 

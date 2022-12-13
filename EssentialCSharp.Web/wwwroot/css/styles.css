@@ -339,13 +339,12 @@ details > summary::-webkit-details-marker {
     content: '';
     display: block;
     position: absolute;
-    top: calc(var(--spacing) / -2 + 3.2px);
+    top: calc(var(--spacing) / -2 + 6.2px);
     left: -2px;
     width: 18px;
-    height: calc(var(--spacing) - 2px);
+    height: calc(var(--spacing) - 5px);
     border: solid #414042;
     border-width: 0 0 2px 2px;
-    z-index: -1;
 }
 
 .tree li::after,
@@ -357,8 +356,11 @@ details > summary::-webkit-details-marker {
     content: "\f054";
     display: block;
     position: absolute;
-    left: 1px;
-    top: 4px;
+    height: 18px;
+    width: 18px;
+    font-size: 18px;
+    left: 0px;
+    top: 2px;
     margin-bottom: 5px;
 }
 
@@ -380,7 +382,10 @@ details > summary::-webkit-details-marker {
     content: "\f054";
     display: block;
     position: absolute;
-    left: 18px;
+    height: 18px;
+    width: 18px;
+    font-size: 18px;
+    left: 20px;
     top: 3px;
     margin-bottom: 5px;
 }
@@ -390,61 +395,37 @@ details > summary::-webkit-details-marker {
     content: "\f078";
     display: block;
     position: absolute;
-    left: 19px;
-    top: -1px;
+    height: 18px;
+    width: 18px;
+    font-size: 18px;
+    left: 20px;
+    top: 0px;
     width: 19px;
     margin-bottom: 5px;
-}
-
-.tree summary.nested::after {
-    content: '';
-    display: block;
-    position: absolute;
-    left: 15px;
-    top: calc(var(--spacing) / -2 + 24.8px);
-    width: 14px;
-    border: solid #414042;
-    border-width: 0 0 2px 0;
-    z-index: -1;
 }
 
 .tree details[open] > summary::after {
     content: '';
     display: block;
     position: absolute;
-    top: 16px;
+    top: 20px;
     left: 8px;
     width: 18px;
-    height: calc(var(--height) + 5px);
+    height: calc(var(--height) + 1px);
     border: solid #414042;
     border-width: 0 0 0 2px;
-    z-index: -1;
 }
 
 .tree details[open] > summary.nested::after {
     content: '';
     display: block;
     position: absolute;
-    top: 14px;
+    top: 18px;
     left: 28px;
     width: 18px;
-    height: calc(var(--height) + 2px);
+    height: calc(var(--height) + 3px);
     border: solid #414042;
     border-width: 0 0 0 2px;
-    z-index: -1;
-}
-
-.tree details[open] > summary > a::before {
-    content: '';
-    display: block;
-    position: absolute;
-    left: 15px;
-    top: 4px;
-    width: 13px;
-    height: 10px;
-    border: solid #414042;
-    border-width: 0 0 2px 0;
-    z-index: -1;
 }
 
 .tree details[open] > summary::before {
@@ -452,8 +433,11 @@ details > summary::-webkit-details-marker {
     content: "\f078";
     display: block;
     position: absolute;
+    height: 18px;
+    width: 18px;
+    font-size: 18px;
     left: 0px;
-    top: 3px
+    top: 2px;
 }
 
 .section-link {
