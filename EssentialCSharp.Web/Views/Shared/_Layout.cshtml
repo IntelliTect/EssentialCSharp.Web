@@ -453,7 +453,7 @@
                 for (let i = 0; i < links.length; i++) {
                     let link = links[i];
 
-                    if (window.location.href.endsWith(link.href) && Boolean(link.innerHTML)) {
+                    if ((window.location.href.endsWith(link.href) || window.location.href.endsWith(link.pathname)) && Boolean(link.innerHTML)) {
 
                         //Update title and next/prev section hrefs
                         pageTitle.textContent = link.innerHTML + " | Essential C#";
