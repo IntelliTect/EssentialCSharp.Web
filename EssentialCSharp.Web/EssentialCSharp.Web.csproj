@@ -5,6 +5,11 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
+    <ItemGroup>
+      <AssemblyAttribute Include="EssentialCSharp.Web.ReleaseDate">
+        <_Parameter1>$([System.DateTime]::UtcNow.ToString("O"))</_Parameter1>
+      </AssemblyAttribute>
+    </ItemGroup>
   <ItemGroup>
     <PackageReference Include="HtmlAgilityPack" Version="1.11.46" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="6.0.10" />
