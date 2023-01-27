@@ -1,5 +1,6 @@
 @using EssentialCSharp.Web.Extensions
-@using System.Globalization;
+@using System.Globalization
+@using IntelliTect.Multitool
 @inject IList<SiteMapping> _SiteMappings
 <!DOCTYPE html>
 <html lang="en">
@@ -144,11 +145,10 @@
                         </li>
                     }
                 </ul>
-                <div>
-                    Build: @ReleaseDateAttribute.GetReleaseDate()?.ToString("M/d/yyyy h:mm:ss tt", CultureInfo.InvariantCulture)
-                </div>
             </div>
-
+            <div>
+                Build: @ReleaseDateAttribute.GetReleaseDate()?.ToString("M/d/yyyy h:mm:ss tt", CultureInfo.InvariantCulture)
+            </div>
             <div id="searchBar" class="search-window hide">
                 <div class="input">
                     <input type="text" />
