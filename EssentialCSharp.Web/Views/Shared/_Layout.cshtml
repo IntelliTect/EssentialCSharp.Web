@@ -147,7 +147,10 @@
                 </ul>
             </div>
             <div>
-                Build: @ReleaseDateAttribute.GetReleaseDate()?.ToString("M/d/yyyy h:mm:ss tt", CultureInfo.InvariantCulture)
+                Build: @if (ReleaseDateAttribute.GetReleaseDate() is DateTime date)
+                {
+                    <b>@TimeZoneInfo.ConvertTimeFromUtc(date, TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time")).ToString("d MMM, yyyy h:mm:ss tt", CultureInfo.InvariantCulture)</b>
+                }
             </div>
             <div id="searchBar" class="search-window hide">
                 <div class="input">
@@ -164,8 +167,8 @@
             <button id="next-btn" class="nav-mobile-btn next-mobile-btn show-on-mobile" onclick="goToNext()"><i class="fa fa-solid fa-arrow-right icon-color nav-mobile-btn-icon"></i></button>
             @RenderBody()
         </div>
-        
-        <div class="comingSoonSidebar" id="comingSoonSidebar">            
+
+        <div class="comingSoonSidebar" id="comingSoonSidebar">
             <ul class="cs-tree">
                 <li>
                     <details>
@@ -177,18 +180,18 @@
                                     <ul>
                                         <li>
                                             <div class="cs-description">Write, compile, and run code snippets right from your browser. Enjoy hands-on experience with the code as you go through the site.</div>
-                                               @* <a class="cs-description link-color">View on GitHub</a>*@
+                                            @* <a class="cs-description link-color">View on GitHub</a>*@
                                         </li>
                                     </ul>
                                 </details>
                             </li>
                             <li>
-                                 <details class="no-border">
+                                <details class="no-border">
                                     <summary class="cs-section-link no-icon">Interactive Code Listings</summary>
                                     <ul>
                                         <li>
                                             <div class="cs-description">Edit, compile, and run the code listings found throughout Essential C#.</div>
-                                                @*<a class="cs-description link-color">View on GitHub</a>*@
+                                            @*<a class="cs-description link-color">View on GitHub</a>*@
                                         </li>
                                     </ul>
                                 </details>
@@ -199,18 +202,18 @@
                                     <ul>
                                         <li>
                                             <div class="cs-description">Search for keywords and phrases to easily find relevant information.</div>
-                                               @* <a class="cs-description link-color">View on GitHub</a>*@
+                                            @* <a class="cs-description link-color">View on GitHub</a>*@
                                         </li>
                                     </ul>
                                 </details>
                             </li>
                             <li>
                                 <details class="no-border">
-                                <summary class="cs-section-link no-icon">Hyperlinking</summary>
+                                    <summary class="cs-section-link no-icon">Hyperlinking</summary>
                                     <ul>
                                         <li>
                                             <div class="cs-description">Easily navigate to interesting and relevant sites as well as related sections in Essential C#.</div>
-                                               @* <a class="cs-description link-color">View on GitHub</a>*@
+                                            @* <a class="cs-description link-color">View on GitHub</a>*@
                                         </li>
                                     </ul>
                                 </details>
@@ -221,7 +224,7 @@
                                     <ul>
                                         <li>
                                             <div class="cs-description">The Table of Contents filter will let you narrow down the list of topics to help you quickly and easily find your destination.</div>
-                                                @*<a class="cs-description link-color">View on GitHub</a>*@
+                                            @*<a class="cs-description link-color">View on GitHub</a>*@
                                         </li>
                                     </ul>
                                 </details>
@@ -239,18 +242,18 @@
                                     <ul>
                                         <li>
                                             <div class="cs-description">New feature from C# 9.</div>
-                                               @* <a class="cs-description link-color">View on GitHub</a>*@
+                                            @* <a class="cs-description link-color">View on GitHub</a>*@
                                         </li>
                                     </ul>
                                 </details>
                             </li>
                             <li>
                                 <details class="no-border">
-                                   <summary class="cs-section-link no-icon">File Scoped <span class="code-text">namespaces</span></summary>
+                                    <summary class="cs-section-link no-icon">File Scoped <span class="code-text">namespaces</span></summary>
                                     <ul>
                                         <li>
                                             <div class="cs-description">New feature from C# 10.</div>
-                                                @*<a class="cs-description link-color">View on GitHub</a>*@
+                                            @*<a class="cs-description link-color">View on GitHub</a>*@
                                         </li>
                                     </ul>
                                 </details>
@@ -261,7 +264,7 @@
                                     <ul>
                                         <li>
                                             <div class="cs-description">Feature improvements from C# 10.</div>
-                                                @*<a class="cs-description link-color">View on GitHub</a>*@
+                                            @*<a class="cs-description link-color">View on GitHub</a>*@
                                         </li>
                                     </ul>
                                 </details>
@@ -272,7 +275,7 @@
                                     <ul>
                                         <li>
                                             <div class="cs-description">Feature improvements from C# 11.</div>
-                                                @*<a class="cs-description link-color">View on GitHub</a>*@
+                                            @*<a class="cs-description link-color">View on GitHub</a>*@
                                         </li>
                                     </ul>
                                 </details>
@@ -283,7 +286,7 @@
                                     <ul>
                                         <li>
                                             <div class="cs-description">New feature from C# 11.</div>
-                                                @*<a class="cs-description link-color">View on GitHub</a>*@
+                                            @*<a class="cs-description link-color">View on GitHub</a>*@
                                         </li>
                                     </ul>
                                 </details>
@@ -301,7 +304,7 @@
                                     <ul>
                                         <li>
                                             <div class="cs-description">Easily copy a header URL to link to a book section.</div>
-                                               @* <a class="cs-description link-color">View on GitHub</a>*@
+                                            @* <a class="cs-description link-color">View on GitHub</a>*@
                                         </li>
                                     </ul>
                                 </details>
@@ -312,7 +315,7 @@
                                     <ul>
                                         <li>
                                             <div class="cs-description">Add a home page that features a short description of the book and a high level mindmap.</div>
-                                              @*  <a class="cs-description link-color">View on GitHub</a>*@
+                                            @*  <a class="cs-description link-color">View on GitHub</a>*@
                                         </li>
                                     </ul>
                                 </details>
@@ -323,12 +326,12 @@
                                     <ul>
                                         <li>
                                             <div class="cs-description">Quickly navigate through the book via keyboard shortcuts (right/left arrows, 'n', 'p').</div>
-                                              @*  <a class="cs-description link-color">View on GitHub</a>*@
+                                            @*  <a class="cs-description link-color">View on GitHub</a>*@
                                         </li>
                                     </ul>
                                 </details>
                             </li>
-                            
+
                         </ul>
                     </details>
                 </li>
@@ -379,21 +382,18 @@
             link.click();
         }
 
-        function toggleComingSoonSideBar()
-        {
+        function toggleComingSoonSideBar() {
             var a = document.getElementById("comingSoonSidebar");
 
             if (a.style.display != "block") {
                 a.style.display = "block";
             }
-            else
-            {
+            else {
                 a.style.display = "none";
             }
         }
 
-        function toggleSideBar()
-        {
+        function toggleSideBar() {
             var a = document.getElementById("sidebar");
             if (a.style.display != "none") {
                 a.style.display = "none";
