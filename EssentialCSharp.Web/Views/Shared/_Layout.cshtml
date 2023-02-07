@@ -26,7 +26,6 @@
     <meta name="twitter:title" property="og:title" content="Essential C#" />
     <title id="page-title">Essential C#</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/EssentialCSharp.Web.styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -45,548 +44,380 @@
         gtag('js', new Date());
         gtag('config', 'G-761B4BMK2R');
     </script>
+    <style>
+        [v-cloak] {
+            display: none;
+        }
+    </style>
+    @await RenderSectionAsync("HeadAppend", required: false)
 </head>
 <body>
-    <header class="header-height">
-        <div class="banner">
-            <div class="menu-position">
-                <button class="menu-btn" onclick="toggleSideBar()"><i class="fa fa-bars fa-lg icon-color"></i></button>
-                <a class="navbar-brand text-light banner-main-label hide-on-mobile" asp-route="home">Essential C#</a>
-            </div>
-            <span class="hover-text"><a id="prev-section" class="text-light banner-section-label hide-on-mobile"><i class="fa fa-solid fa-arrow-left icon-color"></i> <span class="tooltip-text" id="bottomright">Previous Page (P or left-arrow)</span><span class="underline">P</span>revious</a></span>
-            <a id="section-title" class="text-light banner-main-label banner-main-label-center"></a>
-            <span class="hover-text"><a id="next-section" class="text-light banner-section-label hide-on-mobile"><span class="tooltip-text" id="bottom">Next Page (N or right-arrow)</span><span class="underline">N</span>ext <i class="fa fa-solid fa-arrow-right icon-color"></i></a> </span>
-            <div class="menu-position">
-                <span class="hover-text"><a id="feedback" class="text-light banner-section-label banner-link hide-on-mobile" runat="server" target="_blank" rel="noreferrer noopener" href="https://github.com/IntelliTect/EssentialCSharp/discussions/new?category=feedback-and-ideas"><span class="tooltip-text" id="bottom">Give feedback to us! (F key)</span><span class="underline">F</span>eedback</a></span>
-                <button class="menu-btn feedback-icon show-on-mobile" onclick="window.location='https://github.com/IntelliTect/EssentialCSharp/discussions/new?category=feedback-and-ideas'"><i class="fa fa-regular fa-comments fa-lg icon-color"></i></button>
-                <button class="menu-btn feedback-icon" onclick="toggleComingSoonSideBar()"><i class="fa fa-solid fa-bullhorn fa-lg icon-color"></i></button>
-            </div>
-        </div>
-    </header>
+    <div id="app">
+        <header class="header-height">
+            <div class="banner">
+                <div class="menu-position">
+                    <button class="menu-btn" v-on:click="sidebarShown = !sidebarShown">
+                        <i class="fa fa-bars fa-lg icon-color"></i>
+                    </button>
+                    <a class="navbar-brand text-light banner-main-label hide-on-mobile" asp-route="home">Essential C#</a>
+                </div>
 
-    <div class="layout">
-        <div class="sidebar toc-padding" id="sidebar">
-            <div class="toc-menu">
-                <button class="toc-label" onclick="showTOC()" id="toc-btn">
-                    CONTENTS
-                    <div class="bottom-border" id="toc-border"></div>
-                </button>
+                <span  v-cloak class="hover-text">
+                    <a id="prev-section"
+                       class="text-light banner-section-label hide-on-mobile"
+                       :href="previousPageUrl">
+                        <i class="fa fa-solid fa-arrow-left icon-color"></i>
+                        <span class="tooltip-text">Previous Page (P or left-arrow)</span><span class="underline">P</span>revious
+                    </a>
+                </span>
 
-                <button class="toc-label hide" onclick="showSearchBar()" id="search-btn">
-                    SEARCH
-                    <div class="bottom-border hide" id="search-border"></div>
-                </button>
-            </div>
+                <a  v-cloak id="section-title"
+                   class="text-light banner-main-label banner-main-label-center">{{sectionTitle}}</a>
 
-            <div class="toc-tree" id="toc">
-                <ul class="tree">
-                    @foreach (int chapterNumber in _SiteMappings.Select(x => x.ChapterNumber).Distinct().OrderBy(x => x))
-                    {
-                        <li>
-                            <details>
-                                <summary class="toc-content">Chapter @chapterNumber: @_SiteMappings.First(x=>x.ChapterNumber == chapterNumber).ChapterTitle</summary>
-                                <ul>
-                                    @{
-                                        var siteMappings = _SiteMappings.Where(x => x.ChapterNumber == @chapterNumber).ToList();
-                                    }
-                                    @for (int i = 0; i < siteMappings.Count; i++)
-                                    {
-                                        string fullHref = fullHref = $"{siteMappings[i].Key}#{siteMappings[i].AnchorId}";
-                                        <li>
-                                            @if (!(i + 1 < siteMappings.Count && siteMappings[i + 1].IndentLevel > 1))
-                                            {
-                                                <a class="link-button-color section-link indent-level-1" style="--height: 25px" asp-route="slug" asp-route-key="@siteMappings[i].Key" asp-fragment="@siteMappings[i].AnchorId">@siteMappings[i].RawHeading</a>
-                                            }
-                                            else
-                                            {
-                                                <details>
-                                                    <summary class="nested">@siteMappings[i].RawHeading</summary>
-                                                    <ul>
-                                                        <li>
-                                                            <a class="link-button-color section-link indent-level-2" style="--height: 25px" asp-route="slug" asp-route-key="@siteMappings[i].Key" asp-fragment="@siteMappings[i].AnchorId"> Introduction </a>
-                                                        </li>
-                                                        @while (i + 1 < siteMappings.Count && siteMappings[i + 1].IndentLevel > 1)
-                                                        {
-                                                            i++;
-                                                            fullHref = $"{siteMappings[i].Key}#{siteMappings[i].AnchorId}";
-                                                            <li>
-                                                                @if (!(i + 1 < siteMappings.Count && siteMappings[i + 1].IndentLevel > 2))
-                                                                {
-                                                                    <a class="link-button-color section-link indent-level-2" style="--height: 25px" asp-route="slug" asp-route-key="@siteMappings[i].Key" asp-fragment="@siteMappings[i].AnchorId">@siteMappings[i].RawHeading</a>
-                                                                }
-                                                                else
-                                                                {
-                                                                    <details>
-                                                                        <summary class="nested">@siteMappings[i].RawHeading</summary>
-                                                                        <ul>
-                                                                            <li>
-                                                                                <a class="link-button-color section-link indent-level-3" style="--height: 25px" asp-route="slug" asp-route-key="@siteMappings[i].Key" asp-fragment="@siteMappings[i].AnchorId"> Introduction </a>
-                                                                            </li>
-                                                                            @while (i + 1 < siteMappings.Count && siteMappings[i + 1].IndentLevel > 2)
-                                                                            {
-                                                                                i++;
-                                                                                fullHref = $"{siteMappings[i].Key}#{siteMappings[i].AnchorId}";
-                                                                                <li>
-                                                                                    <a class="link-button-color section-link indent-level-3" style="--height: 25px" asp-route="slug" asp-route-key="@siteMappings[i].Key" asp-fragment="@siteMappings[i].AnchorId">@siteMappings[i].RawHeading</a>
-                                                                                </li>
-                                                                            }
-                                                                        </ul>
-                                                                    </details>
-                                                                }
-                                                            </li>
-                                                        }
-                                                    </ul>
-                                                </details>
-                                            }
-                                        </li>
-                                    }
-                                </ul>
-                            </details>
-                        </li>
-                    }
-                </ul>
-            </div>
-            <div>
-                Build: @if (ReleaseDateAttribute.GetReleaseDate() is DateTime date)
-                {
-                    <b>@TimeZoneInfo.ConvertTimeFromUtc(date, TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time")).ToString("d MMM, yyyy h:mm:ss tt", CultureInfo.InvariantCulture)</b>
-                }
-            </div>
-            <div id="searchBar" class="search-window hide">
-                <div class="input">
-                    <input type="text" />
-                    <button class="search-btn">
-                        <i class="fa fa-search icon-color"></i>
+                <span v-cloak class="hover-text">
+                    <a id="next-section"
+                       class="text-light banner-section-label hide-on-mobile"
+                       :href="nextPageUrl">
+                        <span class="tooltip-text">Next Page (N or right-arrow)</span><span class="underline">N</span>ext
+                        <i class="fa fa-solid fa-arrow-right icon-color"></i>
+                    </a>
+                </span>
+
+                <div class="menu-position">
+                    <span class="hover-text">
+                        <a id="feedback"
+                           class="text-light banner-section-label banner-link hide-on-mobile"
+                           target="_blank"
+                           rel="noreferrer noopener"
+                           href="https://github.com/IntelliTect/EssentialCSharp/discussions/new?category=feedback-and-ideas">
+                            <span class="tooltip-text">Give feedback to us! (F key)</span><span class="underline">F</span>eedback
+                        </a>
+                    </span>
+                    <button class="menu-btn feedback-icon show-on-mobile"
+                            onclick="window.location='https://github.com/IntelliTect/EssentialCSharp/discussions/new?category=feedback-and-ideas'">
+                        <i class="fa fa-regular fa-comments fa-lg icon-color"></i>
+                    </button>
+                    <button class="menu-btn feedback-icon"
+                            v-on:click="comingSoonSidebarShown = !comingSoonSidebarShown"
+                            >
+                        <i class="fa fa-solid fa-bullhorn fa-lg icon-color"></i>
                     </button>
                 </div>
             </div>
+        </header>
+
+        <div class="layout">
+            <div  v-show="sidebarShown" class="sidebar toc-padding" id="sidebar">
+                <div v-cloak class="toc-menu">
+                    <button class="toc-label" v-on:click="sidebarTab = 'toc'" id="toc-btn">
+                        CONTENTS
+                        <div v-if="sidebarTab == 'toc'" class="bottom-border" id="toc-border"></div>
+                    </button>
+
+                    <button class="toc-label hide" v-on:click="sidebarTab = 'search'" id="search-btn">
+                        SEARCH
+                        <div v-if="sidebarTab == 'search'" class="bottom-border" id="search-border"></div>
+                    </button>
+                </div>
+
+                <div v-cloak v-if="sidebarTab == 'toc'" class="toc-tree" id="toc">
+                    <ul class="tree">
+                        <toc-tree v-for="item in tocData" :item="item" :expanded-tocs="expandedTocs" :current-page="currentPage"></toc-tree>
+                    </ul>
+                </div>
+                <div v-cloak>
+                    Build: @if (ReleaseDateAttribute.GetReleaseDate() is DateTime date)
+                    {
+                        <b>@TimeZoneInfo.ConvertTimeFromUtc(date, TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time")).ToString("d MMM, yyyy h:mm:ss tt", CultureInfo.InvariantCulture)</b>
+                    }
+                </div>
+                <div v-cloak v-if="sidebarTab == 'search'" id="searchBar" class="search-window">
+                    <div class="input">
+                        <input type="text" />
+                        <button class="search-btn">
+                            <i class="fa fa-search icon-color"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div v-pre v-once class="content-padding">
+
+                <a id="prev-btn" class="nav-mobile-btn previous-mobile-btn show-on-mobile" :href="previousPageUrl"><i class="fa fa-solid fa-arrow-left icon-color nav-mobile-btn-icon"></i></a>
+                <a id="next-btn" class="nav-mobile-btn next-mobile-btn show-on-mobile" :href="nextPageUrl"><i class="fa fa-solid fa-arrow-right icon-color nav-mobile-btn-icon"></i></a>
+                @RenderBody()
+
+                <footer class="border-top dense-footer text-muted" >
+                    <div class="dense-footer-content">
+                        &copy; IntelliTect 2005-@DateTime.Now.Year - <a class="link-color" target="_blank" rel="noreferrer noopener" href="https://intellitect.com/about/privacy-policy/">Privacy</a>  -
+                        <a class="link-color" asp-route="TermsOfService">Terms Of Service</a>
+                    </div>
+                </footer>
+            </div>
+
+            <div v-cloak v-if="comingSoonSidebarShown" class="comingSoonSidebar" id="comingSoonSidebar">
+                <ul class="cs-tree">
+                    <li>
+                        <details>
+                            <summary class="toc-content">Web Features Coming Soon</summary>
+                            <ul class="no-icon">
+                                <li>
+                                    <details class="no-border">
+                                        <summary class="cs-section-link no-icon">Client-side Compiler</summary>
+                                        <ul>
+                                            <li>
+                                                <div class="cs-description">Write, compile, and run code snippets right from your browser. Enjoy hands-on experience with the code as you go through the site.</div>
+                                                @* <a class="cs-description link-color">View on GitHub</a>*@
+                                            </li>
+                                        </ul>
+                                    </details>
+                                </li>
+                                <li>
+                                    <details class="no-border">
+                                        <summary class="cs-section-link no-icon">Interactive Code Listings</summary>
+                                        <ul>
+                                            <li>
+                                                <div class="cs-description">Edit, compile, and run the code listings found throughout Essential C#.</div>
+                                                @*<a class="cs-description link-color">View on GitHub</a>*@
+                                            </li>
+                                        </ul>
+                                    </details>
+                                </li>
+                                <li>
+                                    <details class="no-border">
+                                        <summary class="cs-section-link no-icon">Full Text Search</summary>
+                                        <ul>
+                                            <li>
+                                                <div class="cs-description">Search for keywords and phrases to easily find relevant information.</div>
+                                                @* <a class="cs-description link-color">View on GitHub</a>*@
+                                            </li>
+                                        </ul>
+                                    </details>
+                                </li>
+                                <li>
+                                    <details class="no-border">
+                                        <summary class="cs-section-link no-icon">Hyperlinking</summary>
+                                        <ul>
+                                            <li>
+                                                <div class="cs-description">Easily navigate to interesting and relevant sites as well as related sections in Essential C#.</div>
+                                                @* <a class="cs-description link-color">View on GitHub</a>*@
+                                            </li>
+                                        </ul>
+                                    </details>
+                                </li>
+                                <li>
+                                    <details class="no-border">
+                                        <summary class="cs-section-link no-icon">Table of Contents Filtering</summary>
+                                        <ul>
+                                            <li>
+                                                <div class="cs-description">The Table of Contents filter will let you narrow down the list of topics to help you quickly and easily find your destination.</div>
+                                                @*<a class="cs-description link-color">View on GitHub</a>*@
+                                            </li>
+                                        </ul>
+                                    </details>
+                                </li>
+                            </ul>
+                        </details>
+                    </li>
+                    <li>
+                        <details>
+                            <summary class="toc-content">Content Coming Soon</summary>
+                            <ul class="no-icon">
+                                <li>
+                                    <details class="no-border">
+                                        <summary class="cs-section-link no-icon"><span class="code-text">records</span></summary>
+                                        <ul>
+                                            <li>
+                                                <div class="cs-description">New feature from C# 9.</div>
+                                                @* <a class="cs-description link-color">View on GitHub</a>*@
+                                            </li>
+                                        </ul>
+                                    </details>
+                                </li>
+                                <li>
+                                    <details class="no-border">
+                                        <summary class="cs-section-link no-icon">File Scoped <span class="code-text">namespaces</span></summary>
+                                        <ul>
+                                            <li>
+                                                <div class="cs-description">New feature from C# 10.</div>
+                                                @*<a class="cs-description link-color">View on GitHub</a>*@
+                                            </li>
+                                        </ul>
+                                    </details>
+                                </li>
+                                <li>
+                                    <details class="no-border">
+                                        <summary class="cs-section-link no-icon"><span class="code-text">using</span> Statements Improvements</summary>
+                                        <ul>
+                                            <li>
+                                                <div class="cs-description">Feature improvements from C# 10.</div>
+                                                @*<a class="cs-description link-color">View on GitHub</a>*@
+                                            </li>
+                                        </ul>
+                                    </details>
+                                </li>
+                                <li>
+                                    <details class="no-border">
+                                        <summary class="cs-section-link no-icon">Pattern Matching Improvements</summary>
+                                        <ul>
+                                            <li>
+                                                <div class="cs-description">Feature improvements from C# 11.</div>
+                                                @*<a class="cs-description link-color">View on GitHub</a>*@
+                                            </li>
+                                        </ul>
+                                    </details>
+                                </li>
+                                <li>
+                                    <details class="no-border">
+                                        <summary class="cs-section-link no-icon"><span class="code-text">required</span> Members</summary>
+                                        <ul>
+                                            <li>
+                                                <div class="cs-description">New feature from C# 11.</div>
+                                                @*<a class="cs-description link-color">View on GitHub</a>*@
+                                            </li>
+                                        </ul>
+                                    </details>
+                                </li>
+                            </ul>
+                        </details>
+                    </li>
+                    <li>
+                        <details>
+                            <summary class="toc-content">Recently Completed</summary>
+                            <ul class="no-icon">
+                                <li>
+                                    <details class="no-border">
+                                        <summary class="cs-section-link no-icon">Copying Header Hyperlinks</summary>
+                                        <ul>
+                                            <li>
+                                                <div class="cs-description">Easily copy a header URL to link to a book section.</div>
+                                                @* <a class="cs-description link-color">View on GitHub</a>*@
+                                            </li>
+                                        </ul>
+                                    </details>
+                                </li>
+                                <li>
+                                    <details class="no-border">
+                                        <summary class="cs-section-link no-icon">Home Page</summary>
+                                        <ul>
+                                            <li>
+                                                <div class="cs-description">Add a home page that features a short description of the book and a high level mindmap.</div>
+                                                @*  <a class="cs-description link-color">View on GitHub</a>*@
+                                            </li>
+                                        </ul>
+                                    </details>
+                                </li>
+                                <li>
+                                    <details class="no-border">
+                                        <summary class="cs-section-link no-icon">Keyboard Shortcuts</summary>
+                                        <ul>
+                                            <li>
+                                                <div class="cs-description">Quickly navigate through the book via keyboard shortcuts (right/left arrows, 'n', 'p').</div>
+                                                @*  <a class="cs-description link-color">View on GitHub</a>*@
+                                            </li>
+                                        </ul>
+                                    </details>
+                                </li>
+
+                            </ul>
+                        </details>
+                    </li>
+                </ul>
+            </div>
+
         </div>
-
-        <div class="content-padding">
-            <button id="prev-btn" class="nav-mobile-btn previous-mobile-btn show-on-mobile" onclick="goToPrevious()"><i class="fa fa-solid fa-arrow-left icon-color nav-mobile-btn-icon"></i></button>
-            <button id="next-btn" class="nav-mobile-btn next-mobile-btn show-on-mobile" onclick="goToNext()"><i class="fa fa-solid fa-arrow-right icon-color nav-mobile-btn-icon"></i></button>
-            @RenderBody()
-        </div>
-
-        <div class="comingSoonSidebar" id="comingSoonSidebar">
-            <ul class="cs-tree">
-                <li>
-                    <details>
-                        <summary class="toc-content">Web Features Coming Soon</summary>
-                        <ul class="no-icon">
-                            <li>
-                                <details class="no-border">
-                                    <summary class="cs-section-link no-icon">Client-side Compiler</summary>
-                                    <ul>
-                                        <li>
-                                            <div class="cs-description">Write, compile, and run code snippets right from your browser. Enjoy hands-on experience with the code as you go through the site.</div>
-                                            @* <a class="cs-description link-color">View on GitHub</a>*@
-                                        </li>
-                                    </ul>
-                                </details>
-                            </li>
-                            <li>
-                                <details class="no-border">
-                                    <summary class="cs-section-link no-icon">Interactive Code Listings</summary>
-                                    <ul>
-                                        <li>
-                                            <div class="cs-description">Edit, compile, and run the code listings found throughout Essential C#.</div>
-                                            @*<a class="cs-description link-color">View on GitHub</a>*@
-                                        </li>
-                                    </ul>
-                                </details>
-                            </li>
-                            <li>
-                                <details class="no-border">
-                                    <summary class="cs-section-link no-icon">Full Text Search</summary>
-                                    <ul>
-                                        <li>
-                                            <div class="cs-description">Search for keywords and phrases to easily find relevant information.</div>
-                                            @* <a class="cs-description link-color">View on GitHub</a>*@
-                                        </li>
-                                    </ul>
-                                </details>
-                            </li>
-                            <li>
-                                <details class="no-border">
-                                    <summary class="cs-section-link no-icon">Hyperlinking</summary>
-                                    <ul>
-                                        <li>
-                                            <div class="cs-description">Easily navigate to interesting and relevant sites as well as related sections in Essential C#.</div>
-                                            @* <a class="cs-description link-color">View on GitHub</a>*@
-                                        </li>
-                                    </ul>
-                                </details>
-                            </li>
-                            <li>
-                                <details class="no-border">
-                                    <summary class="cs-section-link no-icon">Table of Contents Filtering</summary>
-                                    <ul>
-                                        <li>
-                                            <div class="cs-description">The Table of Contents filter will let you narrow down the list of topics to help you quickly and easily find your destination.</div>
-                                            @*<a class="cs-description link-color">View on GitHub</a>*@
-                                        </li>
-                                    </ul>
-                                </details>
-                            </li>
-                        </ul>
-                    </details>
-                </li>
-                <li>
-                    <details>
-                        <summary class="toc-content">Content Coming Soon</summary>
-                        <ul class="no-icon">
-                            <li>
-                                <details class="no-border">
-                                    <summary class="cs-section-link no-icon"><span class="code-text">records</span></summary>
-                                    <ul>
-                                        <li>
-                                            <div class="cs-description">New feature from C# 9.</div>
-                                            @* <a class="cs-description link-color">View on GitHub</a>*@
-                                        </li>
-                                    </ul>
-                                </details>
-                            </li>
-                            <li>
-                                <details class="no-border">
-                                    <summary class="cs-section-link no-icon">File Scoped <span class="code-text">namespaces</span></summary>
-                                    <ul>
-                                        <li>
-                                            <div class="cs-description">New feature from C# 10.</div>
-                                            @*<a class="cs-description link-color">View on GitHub</a>*@
-                                        </li>
-                                    </ul>
-                                </details>
-                            </li>
-                            <li>
-                                <details class="no-border">
-                                    <summary class="cs-section-link no-icon"><span class="code-text">using</span> Statements Improvements</summary>
-                                    <ul>
-                                        <li>
-                                            <div class="cs-description">Feature improvements from C# 10.</div>
-                                            @*<a class="cs-description link-color">View on GitHub</a>*@
-                                        </li>
-                                    </ul>
-                                </details>
-                            </li>
-                            <li>
-                                <details class="no-border">
-                                    <summary class="cs-section-link no-icon">Pattern Matching Improvements</summary>
-                                    <ul>
-                                        <li>
-                                            <div class="cs-description">Feature improvements from C# 11.</div>
-                                            @*<a class="cs-description link-color">View on GitHub</a>*@
-                                        </li>
-                                    </ul>
-                                </details>
-                            </li>
-                            <li>
-                                <details class="no-border">
-                                    <summary class="cs-section-link no-icon"><span class="code-text">required</span> Members</summary>
-                                    <ul>
-                                        <li>
-                                            <div class="cs-description">New feature from C# 11.</div>
-                                            @*<a class="cs-description link-color">View on GitHub</a>*@
-                                        </li>
-                                    </ul>
-                                </details>
-                            </li>
-                        </ul>
-                    </details>
-                </li>
-                <li>
-                    <details>
-                        <summary class="toc-content">Recently Completed</summary>
-                        <ul class="no-icon">
-                            <li>
-                                <details class="no-border">
-                                    <summary class="cs-section-link no-icon">Copying Header Hyperlinks</summary>
-                                    <ul>
-                                        <li>
-                                            <div class="cs-description">Easily copy a header URL to link to a book section.</div>
-                                            @* <a class="cs-description link-color">View on GitHub</a>*@
-                                        </li>
-                                    </ul>
-                                </details>
-                            </li>
-                            <li>
-                                <details class="no-border">
-                                    <summary class="cs-section-link no-icon">Home Page</summary>
-                                    <ul>
-                                        <li>
-                                            <div class="cs-description">Add a home page that features a short description of the book and a high level mindmap.</div>
-                                            @*  <a class="cs-description link-color">View on GitHub</a>*@
-                                        </li>
-                                    </ul>
-                                </details>
-                            </li>
-                            <li>
-                                <details class="no-border">
-                                    <summary class="cs-section-link no-icon">Keyboard Shortcuts</summary>
-                                    <ul>
-                                        <li>
-                                            <div class="cs-description">Quickly navigate through the book via keyboard shortcuts (right/left arrows, 'n', 'p').</div>
-                                            @*  <a class="cs-description link-color">View on GitHub</a>*@
-                                        </li>
-                                    </ul>
-                                </details>
-                            </li>
-
-                        </ul>
-                    </details>
-                </li>
-            </ul>
+        <div v-cloak v-if="clipboardError" id="snackbar" class="show" style="color: red">
+            {{clipboardError}}
         </div>
     </div>
-    <div id="snackbar"></div>
-
-    <footer class="border-top dense-footer text-muted" position="fixed" left="0" bottom="0" width="100%">
-        <div class="dense-footer-content">
-            &copy; IntelliTect 2005-@DateTime.Now.Year - <a class="link-color" runat="server" target="_blank" rel="noreferrer noopener" href="https://intellitect.com/about/privacy-policy/">Privacy</a>  -
-            <a class="link-color" asp-route="TermsOfService">Terms Of Service</a>
-        </div>
-    </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
-
-    <script type="text/javascript">
-
-        function copyToClipboard(copyText) {
-            var snackbar = document.getElementById("snackbar");
-            /* Copy the text inside the text field */
-            navigator.clipboard.writeText(window.location.origin + "/" + copyText).then(function () {
-                /* Success */
-            }, function (err) {
-                console.error('Could not copy text to clipboard: ', err);
-                snackbar.textContent = 'Error: Could not copy text to clipboard: ' + err;
-                snackbar.style = 'color:Red'
+    <environment include="Development">
+        <script type="importmap">
+            {
+                "imports": {
+                    "vue": "https://unpkg.com/vue@3.2.45/dist/vue.esm-browser.js"
+                }
+            }
+        </script>
+    </environment>
+    <environment exclude="Development">
+        <script type="importmap">
+            {
+                "imports": {
+                    "vue": "https://unpkg.com/vue@3.2.45/dist/vue.esm-browser.prod.js"
+                }
+            }
+        </script>
+    </environment>
+    <script>
+        @{
+            object GetItems(IEnumerable<SiteMapping> chapterItems, int indentLevel) => chapterItems
+                // Skip the chapter entry itself
+                .Skip(1)
+                // Examine all items up until we move up to a level higher than where we're starting,
+                // which would indicate that we've reached the end of the entries nested under `indentationLevel`
+                .TakeWhile(i => i.IndentLevel >= indentLevel)
+                // Of all the multi-level descendants we found, take only those at the curent level that we're wanting to render.
+                .Where(i => i.IndentLevel == indentLevel)
+                .Select(i => new
+                {
+                    Level = indentLevel,
+                    Key = i.Key,
+                    Href = $"{i.Key}#{i.AnchorId}",
+                    Title = i.RawHeading,
+                    // Any children of this node will be /after/ this node,
+                    // so skip any items that are /before/ the current node.
+                    Items = GetItems(chapterItems.SkipWhile(q => i.Key != q.Key), indentLevel + 1)
+                });
+            var tocData = _SiteMappings.GroupBy(x => x.ChapterNumber).OrderBy(x => x.Key).Select(x => new
+            {
+                Level = 0,
+                Key = x.First().Key,
+                Href = $"{x.First().Key}#{x.First().AnchorId}",
+                Title = $"Chapter {x.Key}: {x.First().ChapterTitle}",
+                Items = GetItems(x, 1)
             });
-            // Add the "show" class to DIV
-            snackbar.className = "show";
-            // After 3 seconds, remove the show class from DIV
-            setTimeout(function () { snackbar.className = snackbar.className.replace("show", ""); }, 3000);
         }
-
-        function goToPrevious() {
-            let link = document.getElementById("prev-section")
-
-            link.click();
-        }
-        function goToNext() {
-            let link = document.getElementById("next-section")
-
-            link.click();
-        }
-
-        function toggleComingSoonSideBar() {
-            var a = document.getElementById("comingSoonSidebar");
-
-            if (a.style.display != "block") {
-                a.style.display = "block";
-            }
-            else {
-                a.style.display = "none";
-            }
-        }
-
-        function toggleSideBar() {
-            var a = document.getElementById("sidebar");
-            if (a.style.display != "none") {
-                a.style.display = "none";
-            }
-            else {
-                a.style.display = "block";
-                this.calcNestedLinkHeights();
-            }
-        }
-
-        function showTOC() {
-            var a = document.getElementById("toc-border");
-            a.style.display = "block";
-            var b = document.getElementById("toc");
-            b.style.display = "block";
-
-            var c = document.getElementById("searchBar");
-            c.style.display = "none";
-            var d = document.getElementById("search-border");
-            d.style.display = "none";
-        }
-
-        function showSearchBar() {
-            var a = document.getElementById("toc-border");
-            a.style.display = "none";
-            var b = document.getElementById("toc");
-            b.style.display = "none";
-
-            var c = document.getElementById("searchBar");
-            c.style.display = "block";
-            var d = document.getElementById("search-border");
-            d.style.display = "block";
-        }
-
-        window.onload = openTOC;
-
-        function openTOC() {
-            var links = document.getElementsByClassName("section-link");
-
-            let pageTitle = document.getElementById("page-title");
-            let title = document.getElementById("section-title");
-            let prev = document.getElementById("prev-section")
-            let next = document.getElementById("next-section");
-
-            let prevBtn = document.getElementById("prev-btn")
-            let nextBtn = document.getElementById("next-btn");
-
-            if (((window.location.origin + "/home").toLowerCase() == window.location.href.toLowerCase())
-                || ((window.location.origin).toLowerCase() + "/" == window.location.href.toLowerCase())) {
-                let link = links[0];
-
-                pageTitle.textContent = "Home | Essential C#";
-                title.innerHTML = "";
-                prev.classList.add("link-hide");
-                prevBtn.classList.add("link-hide");
-
-                next.classList.add("link-hide");
-                nextBtn.classList.add("link-hide");
-            }
-            else {
-                for (let i = 0; i < links.length; i++) {
-                    let link = links[i];
-
-                    if ((window.location.href.endsWith(link.href) || window.location.href.endsWith(link.pathname)) && Boolean(link.innerHTML)) {
-
-                        //Update title and next/prev section hrefs
-                        pageTitle.textContent = link.innerHTML + " | Essential C#";
-                        title.innerHTML = link.innerHTML;
-
-                        if (i == 0) {
-                            prev.classList.add("link-hide");
-                            prevBtn.classList.add("link-hide");
-                        }
-                        else {
-                            prev.classList.remove("link-hide");
-                            prev.href = window.location.origin + "/@ViewBag.PreviousPage";
-                            prevBtn.classList.remove("link-hide");
-                        }
-
-                        // The last content page is second to last in the link list
-                        // because the generic "error" page is the last link
-                        if (i == links.length - 1) {
-                            next.classList.add("link-hide");
-                            nextBtn.classList.add("link-hide");
-                        }
-                        else {
-                            next.classList.remove("link-hide");
-                            next.href = window.location.origin + "/@ViewBag.NextPage";
-                            nextBtn.classList.remove("link-hide");
-                        }
-                        //Expand the chapter header in TOC and indicate the selected section
-                        link.classList.add("current-section");
-
-                        var currentLink = link;
-                        if (link.classList.contains("indent-level-3")) {
-
-                            var h2listItem = currentLink.parentElement;
-                            var h2nestedList = h2listItem.parentElement;
-                            var heading2Item = h2nestedList.previousElementSibling;
-                            heading2Item.click();
-
-                            currentLink = h2nestedList.parentElement;
-                        }
-
-                        if (link.classList.contains("indent-level-2") || link.classList.contains("indent-level-3")) {
-                            var h1listItem = currentLink.parentElement;
-                            var h1nestedList = h1listItem.parentElement;
-                            var heading1Item = h1nestedList.previousElementSibling;
-                            heading1Item.click();
-
-                            currentLink = h1nestedList.parentElement;
-                        }
-
-                        var listItem = currentLink.parentElement;
-                        var chapterlist = listItem.parentElement;
-                        var chapterHeading = chapterlist.previousElementSibling;
-                        chapterHeading.click();
-
-                        break;
-                    }
-                }
-            }
-            //After Opening Toc make sure heights have been calculated
-            this.calcNestedLinkHeights();
-        }
-
-        var heightsInitialized = false;
-
-        function calcNestedLinkHeights() {
-            if (heightsInitialized) {
-                return;
-            }
-
-            var links = document.getElementsByTagName("summary");
-
-            if (links[0].clientHeight <= 0) {
-                return;
-            }
-            heightsInitialized = true;
-
-            for (let i = 0; i < links.length; i++) {
-                let link = links[i];
-                var height = link.clientHeight;
-                link.style.setProperty('--height', height + 'px');
-            }
-
-            var links = document.getElementsByClassName("nested");
-
-            for (let i = 0; i < links.length; i++) {
-                let link = links[i];
-                var height = link.clientHeight;
-                link.style.setProperty('--height', height + 'px');
-            }
-        }
-
-
-        document.addEventListener('keydown', (e) => {
-            if (!event.ctrlKey && e.key.toLowerCase() === 'f') {
-                let fb = document.getElementById("feedback");
-                fb.click();
-            }
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key.toLowerCase() === 'n' || e.key == "ArrowRight") {
-                let next = document.getElementById("next-section");
-                next.click();
-            }
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key.toLowerCase() === 'p' || e.key == "ArrowLeft") {
-                let prev = document.getElementById("prev-section");
-                prev.click();
-            }
-        });
-
-        jQuery(document).ready(function () {
-            var target = window.location.hash;
-
-            if (target != '') {
-                var $target = jQuery(target);
-                if ($target.length) {
-                    jQuery('html, body').stop().animate({
-                        'scrollTop': $target.offset().top - 80
-                    },
-                        900,
-                        'swing', function () {
-                        });
-                }
-            }
-        });
-
+        PREVIOUS_PAGE = @Json.Serialize(ViewBag.PreviousPage)
+        NEXT_PAGE = @Json.Serialize(ViewBag.NextPage)
+        TOC_DATA = @Json.Serialize(tocData)
     </script>
+
+    @* Recursive vue component template for rendering the table of contents. *@
+    <template id="toc-tree">
+        <li v-if="item.items.length">
+            <details 
+                :open="expandedTocs.has(item.key)"
+                v-on:toggle="!$event.target.open ? expandedTocs.delete(item.key) : expandedTocs.add(item.key)">
+                <summary :class="{
+                        'toc-content': item.level == 0,
+                        'nested': item.level > 0,
+                        'current-section': currentPage.some(p => p.key == item.key),
+                    }" :href="item.href">{{item.title}}</summary>
+                <ul>
+                    <li>
+                        <a class="link-button-color section-link" :class="{
+                            ['indent-level-' + (item.level+1)]: true,
+                            'current-section': currentPage.some(p => p.key == item.key) && !currentPage.some(p => p.level > item.level),
+                        }" :href="item.href"> Introduction </a>
+                    </li>
+                    <toc-tree v-for="childItem in item.items" :item="childItem" :expanded-tocs="expandedTocs" :current-page="currentPage"></toc-tree>
+                </ul>
+            </details>
+        </li>
+        <li v-else>
+            <a class="link-button-color section-link" :class="{
+                ['indent-level-' + (item.level)]: true,
+                'current-section': currentPage.some(p => p.key == item.key),
+            }" :href="item.href"> {{item.title}} </a>
+        </li>
+    </template>
+
+    <script src="~/js/site.js" type="module" asp-append-version="true"></script>
+
 </body>
 </html>

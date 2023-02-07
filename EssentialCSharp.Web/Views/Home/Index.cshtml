@@ -1,1 +1,4 @@
-﻿@Html.Raw(ViewBag.Contents)
+﻿@section HeadAppend{
+    @Html.Raw(ViewBag.HeadContents)
+}
+@Html.Raw(ViewBag.Contents)

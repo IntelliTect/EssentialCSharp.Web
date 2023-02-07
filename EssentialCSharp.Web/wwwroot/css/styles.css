@@ -1,3 +1,8 @@
+
+:root {
+    --toolbar-height: 60px
+}
+
 .search-window {
     width: 325px;
     min-width: 325px;
@@ -96,7 +101,10 @@
 .sidebar {
     width: 325px;
     height: 100%;
-    display: block;
+    overflow-y: auto;
+    position: sticky;
+    top: var(--toolbar-height);
+    max-height: calc(100vh - var(--toolbar-height));
 }
 
 @media only screen and (max-width: 768px) {
@@ -108,7 +116,6 @@
 .comingSoonSidebar {
     width: 325px;
     height: 100%;
-    display: none;
     border-left: 2px solid #414042;
 }
 
@@ -321,6 +328,7 @@
 
 details > summary {
     list-style: none;
+    position: relative;
 }
 
 details > summary::-webkit-details-marker {
@@ -385,7 +393,7 @@ details > summary::-webkit-details-marker {
     height: 18px;
     width: 18px;
     font-size: 18px;
-    left: 20px;
+    left: -20px;
     top: 3px;
     margin-bottom: 5px;
 }
@@ -398,7 +406,7 @@ details > summary::-webkit-details-marker {
     height: 18px;
     width: 18px;
     font-size: 18px;
-    left: 20px;
+    left: -20px;
     top: 0px;
     width: 19px;
     margin-bottom: 5px;
@@ -411,7 +419,7 @@ details > summary::-webkit-details-marker {
     top: 20px;
     left: 8px;
     width: 18px;
-    height: calc(var(--height) + 1px);
+    height: 100%;
     border: solid #414042;
     border-width: 0 0 0 2px;
 }
@@ -421,9 +429,9 @@ details > summary::-webkit-details-marker {
     display: block;
     position: absolute;
     top: 18px;
-    left: 28px;
+    left: -12px;
     width: 18px;
-    height: calc(var(--height) + 3px);
+    height: 100%;
     border: solid #414042;
     border-width: 0 0 0 2px;
 }
@@ -456,9 +464,12 @@ details > summary::-webkit-details-marker {
     color: #0077cc;
 }
 
+html {
+    scroll-padding-top: var(--toolbar-height);
+}
 .layout {
     display: grid;
-    scroll-padding-top: 60px;
+    /*scroll-padding-top: var(--toolbar-height);*/
     grid-template-columns: auto auto auto;
     scroll-padding-bottom: 45px;
 }
@@ -488,7 +499,7 @@ details > summary::-webkit-details-marker {
 
 .banner {
     background: #095540;
-    height: 60px;
+    height: var(--toolbar-height);
     display: flex;
     justify-content: space-between;
     position: fixed;
@@ -548,6 +559,7 @@ details > summary::-webkit-details-marker {
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
+    cursor: pointer;
 }
 
 .banner-link {
@@ -584,7 +596,7 @@ span.underline {
 }
 
 .header-height {
-    height: 60px;
+    height: var(--toolbar-height);
     width: 100%;
     top: 0;
 }
@@ -599,6 +611,7 @@ span.underline {
 }
 
 .dense-footer {
+    margin-top: 35px;
     position: relative;
     bottom: 0;
     width: 100%;
@@ -942,3 +955,95 @@ However, delay the fade out process for 2.5 seconds */
 }
 
 
+
+a.navbar-brand {
+    white-space: normal;
+    text-align: center;
+    word-break: break-all;
+}
+
+link-button-color {
+    text-decoration: none;
+    color: white;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #1b6ec2;
+    border-color: #1861ac;
+}
+
+.nav-pills .nav-link.active, .nav-pills .show > .nav-link {
+    color: #fff;
+    background-color: #1b6ec2;
+    border-color: #1861ac;
+}
+
+.border-top {
+    border-top: 1px solid #e5e5e5;
+}
+
+.border-bottom {
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.box-shadow {
+    box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
+}
+
+button.accept-policy {
+    font-size: 1rem;
+    line-height: inherit;
+}
+
+.footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    white-space: nowrap;
+    line-height: 60px;
+}
+
+.tooltip-text {
+    visibility: hidden;
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, 50%);
+    width: 100px;
+    color: white;
+    font-size: 12px;
+    background-color: #192733;
+    border-radius: 10px;
+    padding: 10px 15px 10px 15px;
+    word-break: break-word;
+    white-space: normal;
+}
+
+    .tooltip-text::before {
+        content: "";
+        position: absolute;
+        transform: rotate(45deg);
+        background-color: #192733;
+        padding: 5px;
+        z-index: 1;
+        top: -5%;
+        left: 45%;
+    }
+
+.hover-text:hover .tooltip-text {
+    visibility: visible;
+}
+
+
+.hover-text {
+    position: relative;
+    display: inline-block;
+    margin: 40px;
+    font-family: Avenir;
+    text-align: center;
+    margin-top: 12px;
+    margin-right: 5px;
+    margin-left: 5px;
+}
