@@ -4,15 +4,28 @@ namespace EssentialCSharp.Web.Extensions;
 
 public static class StringExtensions
 {
-    // Removes special characters, sets to lowercase, replaces ' ' and '_' with '-', and trims the string
+    /// <summary>
+    /// Prepares a string to be sanitized.
+    /// </summary>
+    /// <param name="str">Input string</param>
+    /// <returns>An IEnumberable of the input string</returns>
     public static IEnumerable<string> GetPotentialMatches(this string str)
     {
-        string[] temp = str.Split("#");
-        if (temp.Length > 1) yield return string.Join("", temp.Take(temp.Length - 1)).Sanitize();
+        string[] pathBeforeAnchorFragment = str.Split("#");
+        if (pathBeforeAnchorFragment.Length > 1) yield return string.Join("", pathBeforeAnchorFragment.Take(pathBeforeAnchorFragment.Length - 1)).Sanitize();
 
         yield return str.Sanitize();
     }
 
+    /// <summary>
+    /// Prepares a string for use in a URL. Allows for a user to type in a chapter heading
+    /// and have it converted to a URL friendly string that will hopefully get them to the
+    /// content they want, by translating the string to hopefully a match with a key
+    /// in the site mapping key. Ex: Allows https://essentialcsharp.com/All Classes Derive from System.Object
+    /// be converted to https://essentialcsharp.com/All%20Classes%20Derive%20from%20System.Object
+    /// </summary>
+    /// <param name="str">Input string</param>
+    /// <returns>String ready to match to a site mapping</returns>
     public static string Sanitize(this string str)
     {
         str = str.ToLowerInvariant().Trim();
@@ -43,7 +56,11 @@ public static class StringExtensions
         return sb.ToString().TrimEnd(separatorCharacter);
     }
 
-    // Makes a heading key (ex: hello-world) good for a heading display (ex: Hello World)
+    /// <summary>
+    /// Makes a heading key (ex: hello-world) good for a heading display (ex: Hello World)
+    /// </summary>
+    /// <param name="str">Input string (ex: hello-world)</param>
+    /// <returns>String appropriate for a heading (ex: Hello World)</returns>
     public static string KeyToHeading(this string str)
     {
         return System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(str.Trim().ToLowerInvariant().Replace('-', ' '));
