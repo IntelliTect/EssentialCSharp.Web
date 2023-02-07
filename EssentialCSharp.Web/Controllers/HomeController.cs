@@ -19,7 +19,6 @@ public class HomeController : Controller
 
     public IActionResult Index(string key)
     {
-        string? html = null;
 
         // if no key (default case), then load up home page
         SiteMapping? siteMapping = SiteMapping.Find(key, _SiteMappings);
@@ -33,21 +32,20 @@ public class HomeController : Controller
             string filePath = Path.Combine(_HostingEnvironment.ContentRootPath, Path.Combine(siteMapping.PagePath));
             HtmlDocument doc = new();
             doc.Load(filePath);
-            html = doc.DocumentNode.InnerHtml;
+            string headHtml = doc.DocumentNode.Element("html").Element("head").InnerHtml;
+            string html = doc.DocumentNode.Element("html").Element("body").InnerHtml;
+
+            ViewBag.NextPage = FlipPage(siteMapping!.ChapterNumber, siteMapping.PageNumber, true);
+            ViewBag.PreviousPage = FlipPage(siteMapping.ChapterNumber, siteMapping.PageNumber, false);
+            ViewBag.HeadContents = headHtml;
+            ViewBag.Contents = html;
+            return View();
         }
         else
         {
             return RedirectToAction(nameof(Error), new { errorMessage = "Specified page not found, please check your spelling and try again" });
         }
         
-        if (html is null)
-        {
-            return RedirectToAction(nameof(Error), new { errorMessage = "Unexpected Exception; html being rendered is null" });
-        }
-        ViewBag.NextPage = FlipPage(siteMapping!.ChapterNumber, siteMapping.PageNumber, true);
-        ViewBag.PreviousPage = FlipPage(siteMapping.ChapterNumber, siteMapping.PageNumber, false);
-        ViewBag.Contents = html;
-        return View();
     }
 
     [Route("/TermsOfService",
