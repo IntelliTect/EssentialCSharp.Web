@@ -34,6 +34,24 @@
     <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="theme-color" content="#ffffff">
+    <environment include="Development">
+        <script type="importmap">
+            {
+                "imports": {
+                    "vue": "https://unpkg.com/vue@3.2.45/dist/vue.esm-browser.js"
+                }
+            }
+        </script>
+    </environment>
+    <environment exclude="Development">
+        <script type="importmap">
+            {
+                "imports": {
+                    "vue": "https://unpkg.com/vue@3.2.45/dist/vue.esm-browser.prod.js"
+                }
+            }
+        </script>
+    </environment>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-L4EMHSKG36"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <!-- Google tag (gtag.js) -->
@@ -335,24 +353,6 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
-    <environment include="Development">
-        <script type="importmap">
-            {
-                "imports": {
-                    "vue": "https://unpkg.com/vue@3.2.45/dist/vue.esm-browser.js"
-                }
-            }
-        </script>
-    </environment>
-    <environment exclude="Development">
-        <script type="importmap">
-            {
-                "imports": {
-                    "vue": "https://unpkg.com/vue@3.2.45/dist/vue.esm-browser.prod.js"
-                }
-            }
-        </script>
-    </environment>
     <script>
         @{
             object GetItems(IEnumerable<SiteMapping> chapterItems, int indentLevel) => chapterItems
