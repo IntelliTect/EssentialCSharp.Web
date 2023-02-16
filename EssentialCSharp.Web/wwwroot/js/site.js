@@ -32,16 +32,25 @@ function findCurrentPage(path, items) {
 const app = createApp({
     setup() {
 
-        const clipboardError = ref();
+        let snackbarTimeoutId = null;
+        const snackbarMessage = ref();
+        const snackbarColor = ref();
         function copyToClipboard(copyText) {
             navigator.clipboard.writeText(window.location.origin + "/" + copyText).then(function () {
                 /* Success */
+                snackbarColor.value = "white";
+                snackbarMessage.value = "Copied url to clipboard!";
             }, function (err) {
                 console.error('Could not copy text to clipboard: ', err);
-                clipboardError.value = 'Error: Could not copy text to clipboard: ' + err;
+                snackbarColor.value = "red";
+                snackbarMessage.value = 'Error: Could not copy text to clipboard: ' + err;
             });
             // Hide after 3 seconds
-            setTimeout(() => clipboardError.value = null, 3000);
+            if (snackbarTimeoutId != null) {
+                clearTimeout(snackbarTimeoutId);
+                snackbarMessage.value = null;
+            }
+            snackbarTimeoutId = setTimeout(() => snackbarMessage.value = null, 3000);
         }
 
         function goToPrevious() {
@@ -90,7 +99,8 @@ const app = createApp({
             goToPrevious,
             goToNext,
 
-            clipboardError,
+            snackbarMessage,
+            snackbarColor,
             copyToClipboard,
 
             comingSoonSidebarShown,
