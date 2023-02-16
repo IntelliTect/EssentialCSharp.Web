@@ -159,7 +159,7 @@
                 </div>
             </div>
 
-            <div v-pre v-once class="content-padding">
+            <div v-once class="content-padding">
 
                 <a id="prev-btn" class="nav-mobile-btn previous-mobile-btn show-on-mobile" :href="previousPageUrl"><i class="fa fa-solid fa-arrow-left icon-color nav-mobile-btn-icon"></i></a>
                 <a id="next-btn" class="nav-mobile-btn next-mobile-btn show-on-mobile" :href="nextPageUrl"><i class="fa fa-solid fa-arrow-right icon-color nav-mobile-btn-icon"></i></a>
@@ -345,7 +345,7 @@
 
         </div>
         <div v-cloak v-if="clipboardError" id="snackbar" class="show" style="color: red">
-            {{clipboardError}}
+            {{ clipboardError }}
         </div>
     </div>
 
