@@ -29,7 +29,6 @@ function findCurrentPage(path, items) {
     }
 }
 
-
 const app = createApp({
     setup() {
 
@@ -53,11 +52,6 @@ const app = createApp({
         }
 
         document.addEventListener('keydown', (e) => {
-            if (!event.ctrlKey && e.key.toLowerCase() === 'f') {
-                let fb = document.getElementById("feedback");
-                fb.click();
-            }
-
             if (e.key.toLowerCase() === 'n' || e.key == "ArrowRight") {
                 goToNext()
             }
