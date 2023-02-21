@@ -1,4 +1,5 @@
-﻿import { createApp, ref, reactive, onMounted, markRaw } from 'vue'
+import { createApp, ref, reactive, onMounted, markRaw, watch, computed } from 'vue'
+import { useWindowSize } from 'vue-window-size';
 
 /**
  * @typedef {Object} TocItem 
@@ -29,12 +30,36 @@ function findCurrentPage(path, items) {
     }
 }
 
+function openSearch() {
+    const el = document.getElementById('docsearch').querySelector('.DocSearch-Button');
+    el.click();
+}
+
+const smallScreenSize = 768; 
+
+const removeHashPath = (path) => {
+    if (!path) {
+        return null;
+}
+    let index = path.indexOf("#");
+    index = index > 0 ? index : path.length;
+    return path.substring(0, index);
+}
+// v-bind dont like the # in the url
+const nextPagePath = removeHashPath(NEXT_PAGE);
+const previousPagePath = removeHashPath(PREVIOUS_PAGE);
+
 const app = createApp({
     setup() {
+        const { width: windowWidth } = useWindowSize();
+
+        const nextPageUrl = ref(nextPagePath);
+        const previousPageUrl = ref(previousPagePath);
 
         let snackbarTimeoutId = null;
         const snackbarMessage = ref();
         const snackbarColor = ref();
+
         function copyToClipboard(copyText) {
             navigator.clipboard.writeText(window.location.origin + "/" + copyText).then(function () {
                 /* Success */
@@ -61,43 +86,87 @@ const app = createApp({
         }
 
         document.addEventListener('keydown', (e) => {
-            if (e.key.toLowerCase() === 'n' || e.key == "ArrowRight") {
+            if ( e.key == "ArrowRight") {
                 goToNext()
             }
 
-            if (e.key.toLowerCase() === 'p' || e.key == "ArrowLeft") {
+            if (e.key == "ArrowLeft") {
                 goToPrevious()
             }
         });
 
         const comingSoonSidebarShown = ref(false);
-        const sidebarShown = ref(true);
+        const sidebarShown = ref(false);
+
+        const smallScreen = computed(() => {
+            return (windowWidth.value || 0) < smallScreenSize; 
+        })
 
         /** @type {import("vue").Ref<"toc" | "search">} */
         const sidebarTab = ref("toc");
 
         const currentPage = findCurrentPage([], tocData) ?? []
+
+        const chapterParentPage = currentPage.find(parent => parent.level === 0);
+
         const sectionTitle = ref(currentPage?.[0]?.title || "Essential C#")
         const expandedTocs = reactive(new Set());
         for (const item of currentPage) {
             expandedTocs.add(item.key)
         }
 
+        // hide the sidebar when resizing to small screen
+        // to do: make it re emerge when going from small to big
+        watch(windowWidth, (newWidth, oldWidth) => {
+            //+ 50 so that the side bar diappears before the css media class changes the sidebar to take
+            // over the full screen
+            if (newWidth < smallScreenSize) {
+                sidebarShown.value = false;
+            }
+            // when making screen bigger reveal sidebar
+            else {
+                if (!sidebarShown.value) {
+                    sidebarShown.value = true;
+                }
+            }
+        })
+
+        // prevent scrolling of the page when the sidebar is visible on small screens
+        watch(sidebarShown, (newValue, oldValue) => {
+            if (windowWidth.value <= smallScreenSize) {
+                if (newValue) {
+                    document.body.classList.add('noScrollOnSmallScreen');
+                }
+                else {
+                    document.body.classList.remove('noScrollOnSmallScreen');
+                }
+            }
+        });
+        
+
         onMounted(() => {
+            
+            if (windowWidth.value > smallScreenSize) {
+                sidebarShown.value = true;
+            }
+
             // Scroll the current selected page in the TOC into view of the TOC.
             [...document.querySelectorAll(".current-section")].reverse()[0]?.scrollIntoView({
                 behavior: 'auto',
                 block: 'center',
                 inline: 'center'
-            })
-        })
+            });
+
+ 
+        });
 
 
         return {
-            previousPageUrl: PREVIOUS_PAGE,
-            nextPageUrl: NEXT_PAGE,
+            previousPageUrl,
+            nextPageUrl,
             goToPrevious,
             goToNext,
+            openSearch,
 
             snackbarMessage,
             snackbarColor,
@@ -107,10 +176,13 @@ const app = createApp({
             sidebarShown,
             sidebarTab,
 
+            smallScreen,
+
             sectionTitle,
             tocData,
             expandedTocs,
-            currentPage
+            currentPage,
+            chapterParentPage
         }
 
     }
