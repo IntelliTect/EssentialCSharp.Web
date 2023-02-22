@@ -27,7 +27,7 @@ jobs:
         with:
           path: |
             ~/.nuget/packages
-            ${{ github.workspace }}/obj/project.assets.json
+            ${{ github.workspace }}/**/obj/project.assets.json
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
