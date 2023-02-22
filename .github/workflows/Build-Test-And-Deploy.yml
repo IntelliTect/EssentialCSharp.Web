@@ -107,5 +107,5 @@ jobs:
         with:
           app-name: essentialcsharp
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZURE_STAGING_PUBLISH_PROFILE }}
+          publish-profile: ${{ secrets.AZURE_PRODUCTION_PUBLISH_PROFILE }}
           package: .
