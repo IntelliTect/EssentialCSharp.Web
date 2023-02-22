@@ -33,7 +33,6 @@ jobs:
             ${{ runner.os }}-nuget-
           
       - name: Restore with dotnet
-        if: steps.nuget-cache.outputs.cache-hit != 'true'
         run: dotnet restore
           
       - name: Build with dotnet
