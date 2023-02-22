@@ -48,3 +48,7 @@ Utilities/EssentialCSharp.Web/Chapters/
 Utilities/EssentialCSharp.Web/wwwroot/sitemap.xml
 
 Utilities/EssentialCSharpUtilities.lutconfig
+
+EssentialCSharp.Web/Chapters/
+
+msbuild.binlog
