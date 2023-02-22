@@ -44,7 +44,7 @@ jobs:
 
       - name: dotnet publish
         if: github.event_name != 'pull_request'
-        run: dotnet publish -c Release -o ${{github.workspace}}/DeployEssentialCSharp.Web
+        run: dotnet publish -c Release -p:PublishDir=${{github.workspace}}/DeployEssentialCSharp.Web
 
       - name: Upload artifact for deployment job
         if: github.event_name != 'pull_request'
