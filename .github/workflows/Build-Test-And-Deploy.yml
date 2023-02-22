@@ -86,3 +86,26 @@ jobs:
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZURE_DEVELOPMENT_PUBLISH_PROFILE }}
           package: .
+          
+  deploy-production:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    needs: [build-and-test, deploy-development]
+    environment:
+      name: 'Production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v3
+        with:
+          name: .net-app
+
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: essentialcsharp
+          slot-name: 'Production'
+          publish-profile: ${{ secrets.AZURE_PRODUCTION_PUBLISH_PROFILE }}
+          package: .
