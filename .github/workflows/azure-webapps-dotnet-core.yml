@@ -23,14 +23,19 @@ jobs:
 
       - name: Set up dependency caching for faster builds
         uses: actions/cache@v3
+        id: nuget-cache
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
-
+          
+      - name: Restore with dotnet
+        if: steps.nuget-cache.outputs.cache-hit != 'true'
+        run: dotnet restore
+          
       - name: Build with dotnet
-        run: dotnet build --configuration Release
+        run: dotnet build --configuration Release --no-restore
         
       - name: Run .NET Tests
         run: dotnet test --no-build --configuration Release
