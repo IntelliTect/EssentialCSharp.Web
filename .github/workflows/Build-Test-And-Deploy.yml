@@ -30,6 +30,7 @@ jobs:
             ${{ github.workspace }}/**/obj/project.assets.json
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
           restore-keys: |
+            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
             ${{ runner.os }}-nuget-
           
       - name: Restore with dotnet
