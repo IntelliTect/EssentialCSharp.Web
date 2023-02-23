@@ -450,6 +450,7 @@
                     </li>
                     <toc-tree v-for="childItem in item.items" :item="childItem" :expanded-tocs="expandedTocs" :current-page="currentPage"></toc-tree>
                 </ul>
+                <hr class="divider" v-if="item.level === 0" />
             </details>
         </li>
         <li v-else>
