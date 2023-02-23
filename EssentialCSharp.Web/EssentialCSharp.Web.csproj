@@ -22,7 +22,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <Target Name="CopyPlaceholderContent" BeforeTargets="Build">
+  <Target Condition="!$(AccessToNugetFeed)" Name="CopyPlaceholderContent" BeforeTargets="Build">
     <Copy SourceFiles="@(PlaceholderJsonFile)" DestinationFolder="$(ProjectDir)/Chapters/" SkipUnchangedFiles="true" />
     <Copy SourceFiles="@(PlaceholderHtmlFile)" DestinationFolder="$(ProjectDir)/Chapters/01/Pages/" SkipUnchangedFiles="true" />
   </Target>
