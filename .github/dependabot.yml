@@ -1,6 +1,6 @@
 version: 2
 registries:
-  nuget-example:
+  nuget-azure-artifacts:
     type: nuget-feed
     url: https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json
     username: ${{secrets.AZURE_DEVOPS_PAT_USERNAME}}
@@ -8,6 +8,8 @@ registries:
 updates:
   - package-ecosystem: "nuget" # See documentation for possible values
     directory: "/" # Location of package manifests
+    registries:
+      - nuget-azure-artifacts
     schedule:
       interval: "daily"
 
