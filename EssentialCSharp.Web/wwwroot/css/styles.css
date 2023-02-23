@@ -1,9 +1,9 @@
-html * {
-    font-family: "Roboto", Arial, Helvetica, sans-serif;
-}
-
 :root {
   --toolbar-height: 45px;
+}
+
+body {
+  font-family: "Roboto", Arial, Helvetica, sans-serif;
 }
 
 @media (max-width: 768px) {
