@@ -1,9 +1,15 @@
 version: 2
+registries:
+  nuget-example:
+    type: nuget-feed
+    url: https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json
+    username: ${{secrets.AZURE_DEVOPS_PAT_USERNAME}}
+    password: ${{secrets.AZURE_DEVOPS_PAT}}
 updates:
   - package-ecosystem: "nuget" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
-      interval: "weekly"
+      interval: "daily"
 
   - package-ecosystem: "github-actions" # See documentation for possible values
     directory: "/" # Location of package manifests
