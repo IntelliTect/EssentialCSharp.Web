@@ -456,7 +456,12 @@ details > summary::-webkit-details-marker {
 .current-section {
   font-weight: bold;
   text-decoration: none;
-  color: #0077cc;
+  color: #11356a;
+}
+
+.current-li {
+  background-color: #e6e7e8;
+  border-radius: 15px;
 }
 
 html {
