@@ -6,5 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <PreserveCompilationContext>true</PreserveCompilationContext>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- https://aka.ms/vs-build-acceleration -->
+    <AccelerateBuildsInVisualStudio>True</AccelerateBuildsInVisualStudio>
   </PropertyGroup>
 </Project>
