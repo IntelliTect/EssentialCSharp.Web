@@ -8,7 +8,7 @@
     <PlaceholderJsonFile Include="$(ProjectDir)Placeholders/*.json" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Condition="$(AccessToNugetFeed)" Include="ContentFeedNuget" Version="2023.2.23.1" />
+    <PackageReference Condition="$(AccessToNugetFeed)" Include="ContentFeedNuget" Version="2023.2.26.1" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.46" />
     <PackageReference Include="IntelliTect.Multitool" Version="1.3.0" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="7.0.4" />
