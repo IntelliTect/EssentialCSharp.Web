@@ -1,6 +1,6 @@
-using EssentialCSharp.Web;
+namespace EssentialCSharp.Web;
 
-internal sealed class Program
+public sealed class Program
 {
     private static void Main(string[] args)
     {
