@@ -6,6 +6,8 @@ public class FunctionalTests
 {
     [Theory]
     [InlineData("/")]
+    [InlineData("/hello-world")]
+    [InlineData("/hello-world#hello-world")]
     public async Task WhenTheApplicationStarts_ItCanLoadLoadPages(string relativeUrl)
     {
         using WebApplicationFactory factory = new();
