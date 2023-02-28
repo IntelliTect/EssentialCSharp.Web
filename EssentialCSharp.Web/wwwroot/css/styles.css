@@ -177,6 +177,10 @@ body {
   margin: 0;
 }
 
+.toc-tree .divider {
+  margin: 0.5em 0 0.5em 0;
+}
+
 .sidebar .hide {
   display: none;
 }
@@ -322,11 +326,6 @@ body {
 
 .tree ul li {
   padding-left: 20px;
-  border-left: 2px solid #414042;
-}
-
-.tree ul li:last-child {
-  border-color: transparent;
 }
 
 .tree ul {
@@ -351,18 +350,6 @@ details > summary::-webkit-details-marker {
   outline: none;
 }
 
-.tree ul li::before {
-  content: "";
-  display: block;
-  position: absolute;
-  top: calc(var(--spacing) / -2 + 6.2px);
-  left: -2px;
-  width: 18px;
-  height: calc(var(--spacing) - 5px);
-  border: solid #414042;
-  border-width: 0 0 2px 2px;
-}
-
 .tree summary::before {
   font: var(--fa-font-solid);
   content: "\f054";
@@ -383,10 +370,6 @@ details > summary::-webkit-details-marker {
   position: absolute;
   left: 0px;
   top: 4px;
-}
-
-.nested {
-  margin-left: 20px;
 }
 
 .tree summary.nested::before {
@@ -416,30 +399,6 @@ details > summary::-webkit-details-marker {
   margin-bottom: 5px;
 }
 
-.tree details[open] > summary::after {
-  content: "";
-  display: block;
-  position: absolute;
-  top: 20px;
-  left: 8px;
-  width: 18px;
-  height: 100%;
-  border: solid #414042;
-  border-width: 0 0 0 2px;
-}
-
-.tree details[open] > summary.nested::after {
-  content: "";
-  display: block;
-  position: absolute;
-  top: 18px;
-  left: -12px;
-  width: 18px;
-  height: 100%;
-  border: solid #414042;
-  border-width: 0 0 0 2px;
-}
-
 .tree details[open] > summary::before {
   font: var(--fa-font-solid);
   content: "\f078";
@@ -461,7 +420,12 @@ details > summary::-webkit-details-marker {
 .current-section {
   font-weight: bold;
   text-decoration: none;
-  color: #0077cc;
+  color: #11356a;
+}
+
+.current-li {
+  background-color: #e6e7e8;
+  border-radius: 15px;
 }
 
 html {

@@ -440,7 +440,11 @@
                     }" :href="item.href">{{item.title}}
                 </summary>
                 <ul>
-                    <li>
+                    <li :class="{
+                           ['indent-level-' + (item.level+1)]: true,
+                           'current-li' : currentPage.some(p=>
+                            p.key == item.key) && !currentPage.some(p => p.level > item.level),
+                            }" >
                         <a class="link-button-color section-link" :class="{
                            ['indent-level-' + (item.level+1)]: true,
                            'current-section' : currentPage.some(p=>
@@ -450,9 +454,14 @@
                     </li>
                     <toc-tree v-for="childItem in item.items" :item="childItem" :expanded-tocs="expandedTocs" :current-page="currentPage"></toc-tree>
                 </ul>
+                <hr class="divider" v-if="item.level === 0" />
             </details>
         </li>
-        <li v-else>
+        <li v-else :class="{
+                           ['indent-level-' + (item.level+1)]: true,
+                           'current-li' : currentPage.some(p=>
+                            p.key == item.key) && !currentPage.some(p => p.level > item.level),
+                            }" >
             <a class="link-button-color section-link" :class="{
                ['indent-level-' + (item.level)]: true,
                'current-section' : currentPage.some(p=>
