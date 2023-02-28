@@ -1,5 +1,9 @@
 :root {
   --toolbar-height: 45px;
+  --primary-color: #11356a;
+  --secondary-color: #232732;
+  --accent-color-1: #7fc9ce;
+  --accent-color-2: #ffdd74;
 }
 
 body {
@@ -601,7 +605,7 @@ span.underline {
   width: 100%;
   display: flex;
   justify-content: center;
-  background: #095540;
+  background: var(--secondary-color);
   position: fixed;
   top: 0;
   z-index: 1;
