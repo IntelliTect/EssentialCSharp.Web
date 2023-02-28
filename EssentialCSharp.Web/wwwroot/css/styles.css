@@ -346,18 +346,6 @@ details > summary::-webkit-details-marker {
   outline: none;
 }
 
-/* .tree ul li::before {
-  content: "";
-  display: block;
-  position: absolute;
-  top: calc(var(--spacing) / -2 + 6.2px);
-  left: -2px;
-  width: 18px;
-  height: calc(var(--spacing) - 5px);
-  border: solid #414042;
-  border-width: 0 0 2px 2px;
-} */
-
 .tree summary::before {
   font: var(--fa-font-solid);
   content: "\f054";
@@ -379,10 +367,6 @@ details > summary::-webkit-details-marker {
   left: 0px;
   top: 4px;
 }
-
-/* .nested {
-  margin-left: 0px;
-} */
 
 .tree summary.nested::before {
   font: var(--fa-font-solid);
@@ -410,30 +394,6 @@ details > summary::-webkit-details-marker {
   width: 19px;
   margin-bottom: 5px;
 }
-
-/* .tree details[open] > summary::after {
-  content: "";
-  display: block;
-  position: absolute;
-  top: 20px;
-  left: 8px;
-  width: 18px;
-  height: 100%;
-  border: solid #414042;
-  border-width: 0 0 0 2px;
-} */
-/* 
-.tree details[open] > summary.nested::after {
-  content: "";
-  display: block;
-  position: absolute;
-  top: 18px;
-  left: -12px;
-  width: 18px;
-  height: 100%;
-  border: solid #414042;
-  border-width: 0 0 0 2px;
-} */
 
 .tree details[open] > summary::before {
   font: var(--fa-font-solid);
