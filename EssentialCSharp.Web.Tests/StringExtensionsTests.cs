@@ -1,6 +1,6 @@
 ﻿namespace EssentialCSharp.Web.Extensions.Tests;
 
-public class StringExtenstionsTests
+public class StringExtensionsTests
 {
     [Theory]
     [InlineData(" ExtraSpacing ", "extraspacing")]

@@ -1,4 +1,4 @@
-name: Build, Test, and Deploy EssentialCSharp
+name: Build, Test, and Deploy EssentialCSharp.Web
 
 on:
   push:
@@ -62,7 +62,7 @@ jobs:
       contents: write
 
     steps:
-      - uses: fastify/github-action-merge-dependabot@v3.6.0  
+      - uses: fastify/github-action-merge-dependabot@v3.6.1  
 
   deploy-development:
     if: github.event_name != 'pull_request'
