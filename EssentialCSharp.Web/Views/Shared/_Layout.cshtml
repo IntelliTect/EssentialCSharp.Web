@@ -81,7 +81,7 @@
 </head>
 <body>
     <div id="app">
-        <div class="app-container">
+        <div>
             <header class="header-background">
                 <div class="banner">
                     <div class="menu-position">
@@ -99,7 +99,7 @@
 
 
                     <div class="menu-position">
-                        <a id="feedback"
+                        <!-- <a id="feedback"
                            class="text-light banner-section-label banner-link hide-on-mobile"
                            target="_blank"
                            rel="noreferrer noopener"
@@ -110,9 +110,24 @@
                         <button class="menu-btn feedback-icon show-on-mobile"
                                 onclick="window.location='https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas'">
                             <i class="fa fa-regular fa-comments fa-lg icon-color"></i>
+                        </button> -->
+
+                        <button class="menu-btn" 
+                            onclick="window.location='https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas'">
+                            <i class="fa fa-solid fa-comment fa-lg icon-light" data-toggle="tooltip" data-placement="bottom" title="Feedback"></i>
                         </button>
 
-                        <a class="text-light banner-section-label banner-link hide-on-mobile"
+                        <button class="menu-btn" id="announcement-dropdown">
+                            <i class="fa fa-solid fa-bullhorn fa-lg icon-light" data-toggle="tooltip" data-placement="bottom" title="Announcements"></i>
+                        </button>
+
+                        <div class="dropdown-menu" aria-labelledby="announcement-dropdown">
+                            <a class="dropdown-item" href="#">Action</a>
+                            <a class="dropdown-item" href="#">Another action</a>
+                            <a class="dropdown-item" href="#">Something else here</a>
+                        </div>
+
+                        <!-- <a class="text-light banner-section-label banner-link hide-on-mobile"
                            style="margin-right: 1em; font-size:1em;"
                            v-on:click="comingSoonSidebarShown = !comingSoonSidebarShown">
                             Announcements
@@ -121,7 +136,7 @@
                         <button class="menu-btn feedback-icon show-on-mobile"
                                 v-on:click="comingSoonSidebarShown = !comingSoonSidebarShown">
                             <i class="fa fa-solid fa-bullhorn fa-lg icon-color"></i>
-                        </button>
+                        </button> -->
                     </div>
                 </div>
             </header>
@@ -173,7 +188,7 @@
                         </div>
                     </Transition>
                 </div>
-                <div class="content-padding">
+                <div class="container mt-4 pt-2">
 
                     <nav v-cloak class="page-nav-container">
                         <div class="hover-text">
@@ -190,7 +205,7 @@
 
                 </div>
 
-                <div v-cloak v-if="comingSoonSidebarShown" class="comingSoonSidebar" id="comingSoonSidebar">
+                <!-- <div v-cloak v-if="comingSoonSidebarShown" class="comingSoonSidebar" id="comingSoonSidebar">
                     <ul class="cs-tree">
                         <li>
                             <details>
@@ -364,7 +379,7 @@
                             Close
                         </button>
                     </div>
-                </div>
+                </div> -->
 
             </main>
 
