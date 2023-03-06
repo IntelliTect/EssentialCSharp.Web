@@ -3,7 +3,9 @@
   --primary-color: #11356a;
   --secondary-color: #232732;
   --accent-color-1: #7fc9ce;
+  --accent-color-1-light: #7fc9ce3d;
   --accent-color-2: #ffdd74;
+  --accent-color-2-light: #ffdd743d;
   --grey: #bcbec0;
   --grey-lighten-1: #e6e7e8;
   --grey-lighten-2: #f1f2f2;
@@ -34,6 +36,61 @@ h3 {
 
 .background-accent-2 {
   background-color: var(--accent-color-2);
+}
+
+.divider-blue {
+  border-top: 4px solid var(--accent-color-1);
+  margin: 2em 0 2em 0;
+  opacity: 1;
+}
+
+.divider-yellow {
+  border-top: 4px solid var(--accent-color-2);
+  margin: 2em 0 2em 0;
+  opacity: 1;
+}
+
+.blue-card {
+  border-radius: 0;
+  border-left: 8px solid var(--accent-color-1);
+  background-color: var(--grey-lighten-2);
+}
+
+:hover.blue-card {
+  background-color: var(--accent-color-1-light);
+}
+
+.yellow-card {
+  border-radius: 0;
+  border-left: 8px solid var(--accent-color-2);
+  background-color: var(--grey-lighten-2);
+}
+
+:hover.yellow-card {
+  background-color: var(--accent-color-2-light);
+}
+
+.card {
+  height: 100%;
+  cursor: pointer;
+}
+
+.card-title {
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+.button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.5em 1em 0.5em 1em;
+  text-transform: uppercase;
+  font-size: small;
+}
+
+:hover.button {
+  opacity: 75%;
 }
 
 @media (max-width: 768px) {
