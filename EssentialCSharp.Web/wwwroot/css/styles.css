@@ -38,6 +38,10 @@ h3 {
   background-color: var(--accent-color-2);
 }
 
+.background-grey-lighten-2 {
+  background-color: var(--grey-lighten-2);
+}
+
 .divider-blue {
   border-top: 4px solid var(--accent-color-1);
   margin: 2em 0 2em 0;
@@ -99,6 +103,10 @@ h3 {
     position: fixed !important;
   }
 }
+
+/* .DocSearch-Style {
+  border: 1px solid var(--accent-color-1);
+} */
 
 .DocSearch-Button {
   margin: 0 !important;
@@ -236,11 +244,9 @@ h3 {
 
 .toc-menu {
   color: black;
-  background-color: white;
 }
 
 .toc-tree {
-  padding-top: 20px;
   padding-right: 0.25em;
 }
 
