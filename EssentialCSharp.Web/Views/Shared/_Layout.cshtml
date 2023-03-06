@@ -62,6 +62,13 @@
             }
         </script>
     </environment>
+    <script type="text/javascript">
+        (function (c, l, a, r, i, t, y) {
+            c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments) };
+            t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i;
+            y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+        })(window, document, "clarity", "script", "g4keetzd2o");
+    </script>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-L4EMHSKG36"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <!-- Google tag (gtag.js) -->
@@ -441,10 +448,10 @@
                 </summary>
                 <ul>
                     <li :class="{
-                           ['indent-level-' + (item.level+1)]: true,
-                           'current-li' : currentPage.some(p=>
-                            p.key == item.key) && !currentPage.some(p => p.level > item.level),
-                            }" >
+                        ['indent-level-' + (item.level+1)]: true,
+                        'current-li' : currentPage.some(p=>
+                        p.key == item.key) && !currentPage.some(p => p.level > item.level),
+                        }" >
                         <a class="link-button-color section-link" :class="{
                            ['indent-level-' + (item.level+1)]: true,
                            'current-section' : currentPage.some(p=>
@@ -458,10 +465,10 @@
             </details>
         </li>
         <li v-else :class="{
-                           ['indent-level-' + (item.level+1)]: true,
-                           'current-li' : currentPage.some(p=>
-                            p.key == item.key) && !currentPage.some(p => p.level > item.level),
-                            }" >
+            ['indent-level-' + (item.level+1)]: true,
+            'current-li' : currentPage.some(p=>
+            p.key == item.key) && !currentPage.some(p => p.level > item.level),
+            }" >
             <a class="link-button-color section-link" :class="{
                ['indent-level-' + (item.level)]: true,
                'current-section' : currentPage.some(p=>
