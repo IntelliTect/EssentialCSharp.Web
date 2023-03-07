@@ -86,32 +86,19 @@
                 <div class="banner">
                     <div class="menu-position">
                         <button class="menu-btn" v-on:click="sidebarShown = !sidebarShown">
-                            <i class="fa fa-bars fa-lg icon-color"></i>
+                            <i class="fa fa-bars fa-lg icon-light"></i>
                         </button>
                         <div>
-                            <a class="navbar-brand text-light title hide-on-mobile" style="margin-left:1rem" asp-route="home">Essential C#</a>
+                            <a class="menu-brand text-light hide-on-mobile" asp-route="home">Essential C#</a>
                         </div>
                     </div>
 
-                    <a v-if="chapterParentPage" :href="chapterParentPage.href" style=" margin-left: 1rem; display:block; white-space: nowrap;" class="banner-section-label text-light">
+                    <a v-if="chapterParentPage" :href="chapterParentPage.href" class="menu-chapter-title text-light">
                         <span v-cloak>{{chapterParentPage.title}}</span>
                     </a>
 
 
                     <div class="menu-position">
-                        <!-- <a id="feedback"
-                           class="text-light banner-section-label banner-link hide-on-mobile"
-                           target="_blank"
-                           rel="noreferrer noopener"
-                           style="font-size:1em; margin-right: 1rem;"
-                           href="https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas">
-                            Feedback
-                        </a>
-                        <button class="menu-btn feedback-icon show-on-mobile"
-                                onclick="window.location='https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas'">
-                            <i class="fa fa-regular fa-comments fa-lg icon-color"></i>
-                        </button> -->
-
                         <button class="menu-btn" 
                             onclick="window.location='https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas'">
                             <i class="fa fa-solid fa-comment fa-lg icon-light" data-toggle="tooltip" data-placement="bottom" title="Feedback"></i>
@@ -120,23 +107,6 @@
                         <button class="menu-btn" id="announcement-dropdown">
                             <i class="fa fa-solid fa-bullhorn fa-lg icon-light" data-toggle="tooltip" data-placement="bottom" title="Announcements"></i>
                         </button>
-
-                        <div class="dropdown-menu" aria-labelledby="announcement-dropdown">
-                            <a class="dropdown-item" href="#">Action</a>
-                            <a class="dropdown-item" href="#">Another action</a>
-                            <a class="dropdown-item" href="#">Something else here</a>
-                        </div>
-
-                        <!-- <a class="text-light banner-section-label banner-link hide-on-mobile"
-                           style="margin-right: 1em; font-size:1em;"
-                           v-on:click="comingSoonSidebarShown = !comingSoonSidebarShown">
-                            Announcements
-                        </a>
-
-                        <button class="menu-btn feedback-icon show-on-mobile"
-                                v-on:click="comingSoonSidebarShown = !comingSoonSidebarShown">
-                            <i class="fa fa-solid fa-bullhorn fa-lg icon-color"></i>
-                        </button> -->
                     </div>
                 </div>
             </header>
@@ -175,10 +145,10 @@
                                         Contents
                                     </h5>
                                 </div>
-                                <button class="toc-label hide" v-on:click="sidebarTab = 'search'" id="search-btn">
+                                <!-- <button class="toc-label hide" v-on:click="sidebarTab = 'search'" id="search-btn">
                                     SEARCH
                                     <div v-if="sidebarTab == 'search'" class="bottom-border" id="search-border"></div>
-                                </button>
+                                </button> -->
                             </div>
 
                             <div v-cloak v-if="sidebarTab == 'toc'" class="toc-tree" id="toc">
@@ -196,7 +166,7 @@
                                 <div class="input">
                                     <input type="text" />
                                     <button class="search-btn">
-                                        <i class="fa fa-search icon-color"></i>
+                                        <i class="fa fa-search icon-light"></i>
                                     </button>
                                 </div>
                             </div>
@@ -207,11 +177,11 @@
 
                     <nav v-cloak class="page-nav-container">
                         <div class="hover-text">
-                            <a id="prev-btn" :href="previousPageUrl" v-if="previousPageUrl" class="nav-btn"><i class="fa fa-solid fa-arrow-left icon-color nav-btn-icon"></i></a>
+                            <a id="prev-btn" :href="previousPageUrl" v-if="previousPageUrl" class="nav-btn"><i class="fa fa-solid fa-arrow-left icon-light nav-btn-icon"></i></a>
                             <span class="tooltip-text tooltip-right">Previous Page (left-arrow)</span>
                         </div>
                         <div class="hover-text">
-                            <a id="next-btn" :href="nextPageUrl" v-if="nextPageUrl" class="nav-btn"><i class="fa fa-solid fa-arrow-right icon-color nav-btn-icon"></i></a>
+                            <a id="next-btn" :href="nextPageUrl" v-if="nextPageUrl" class="nav-btn"><i class="fa fa-solid fa-arrow-right icon-light nav-btn-icon"></i></a>
                             <span class="tooltip-text tooltip-left">Next Page (right-arrow)</span>
                         </div>
                     </nav>
@@ -403,14 +373,13 @@
             </div>
 
         </div>
-        <footer class="border-top dense-footer text-muted">
-            <div style="text-align:center;  white-space:nowrap;">
+        <footer class="border-top footer">
+            <div class="col-6">
                 &copy; IntelliTect 2005-@DateTime.Now.Year
             </div>
-
-            <div style="text-align:center; white-space:nowrap;">
-                <a class="link-color" target="_blank" rel="noreferrer noopener" href="https://intellitect.com/about/privacy-policy/">Privacy</a>  -
-                <a class="link-color" asp-route="TermsOfService">Terms Of Service</a>
+            <div class="col-6" style="text-align: right">
+                <a target="_blank" rel="noreferrer noopener" href="https://intellitect.com/about/privacy-policy/">Privacy</a>  -
+                <a asp-route="TermsOfService">Terms Of Service</a>
             </div>
         </footer>
     </div>
@@ -463,11 +432,11 @@
             <details :open="expandedTocs.has(item.key)"
                      v-on:toggle="!$event.target.open ? expandedTocs.delete(item.key) : expandedTocs.add(item.key)">
                 <summary :class="{
-                         'toc-content' : item.level==0,
-                         'nested' : item.level>
-                    0,
-                    'current-section': currentPage.some(p => p.key == item.key),
-                    }" :href="item.href">{{item.title}}
+                        'toc-content' : item.level==0,
+                        'nested' : item.level>
+                        0,
+                        'current-section': currentPage.some(p => p.key == item.key),
+                        }" :href="item.href">{{item.title}}
                 </summary>
                 <ul>
                     <li :class="{
@@ -475,7 +444,7 @@
                            'current-li' : currentPage.some(p=>
                             p.key == item.key) && !currentPage.some(p => p.level > item.level),
                             }" >
-                        <a class="link-button-color section-link" :class="{
+                        <a class="section-link" :class="{
                            ['indent-level-' + (item.level+1)]: true,
                            'current-section' : currentPage.some(p=>
                             p.key == item.key) && !currentPage.some(p => p.level > item.level),
@@ -492,7 +461,7 @@
                            'current-li' : currentPage.some(p=>
                             p.key == item.key) && !currentPage.some(p => p.level > item.level),
                             }" >
-            <a class="link-button-color section-link" :class="{
+            <a class="section-link" :class="{
                ['indent-level-' + (item.level)]: true,
                'current-section' : currentPage.some(p=>
                 p.key == item.key),
