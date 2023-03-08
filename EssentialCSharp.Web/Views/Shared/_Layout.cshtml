@@ -99,14 +99,22 @@
 
 
                     <div class="menu-position">
-                        <button class="menu-btn" 
-                            onclick="window.location='https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas'">
-                            <i class="fa fa-solid fa-comment fa-lg icon-light" data-toggle="tooltip" data-placement="bottom" title="Feedback"></i>
-                        </button>
-
-                        <button class="menu-btn" id="announcement-dropdown">
-                            <i class="fa fa-solid fa-bullhorn fa-lg icon-light" data-toggle="tooltip" data-placement="bottom" title="Announcements"></i>
-                        </button>
+                        <div class="menu-tooltip">
+                            <button class="menu-btn" target="blank"
+                                onclick="window.open('https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas', 'blank')">
+                                <i class="fa fa-solid fa-comment fa-lg icon-light"></i>
+                            </button>                            
+                            <span class="tooltip-text">Feedback</span>
+                        </div>
+                        <div class="menu-tooltip">
+                        <!-- <a asp-route="TermsOfService"><i class="fa fa-solid fa-bullhorn fa-lg icon-light"></i></a> -->
+                            <form asp-action="Announcements">
+                                <button class="menu-btn" id="announcement-dropdown">
+                                    <i class="fa fa-solid fa-bullhorn fa-lg icon-light"></i>
+                                </button>
+                            </form>
+                            <span class="tooltip-text">Announcements</span>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -175,14 +183,14 @@
                 </div>
                 <div class="container mt-4 pt-2">
 
-                    <nav v-cloak class="page-nav-container">
-                        <div class="hover-text">
-                            <a id="prev-btn" :href="previousPageUrl" v-if="previousPageUrl" class="nav-btn"><i class="fa fa-solid fa-arrow-left icon-light nav-btn-icon"></i></a>
-                            <span class="tooltip-text tooltip-right">Previous Page (left-arrow)</span>
+                    <nav v-cloak class="turn-page">
+                        <div class="turn-page-tooltip">
+                            <a id="prev-btn" :href="previousPageUrl" v-if="previousPageUrl" class="arrow-btn"><i class="fa fa-solid fa-arrow-left icon-light arrow-icon"></i></a>
+                            <span class="turn-page-tooltip-text tooltip-right">Previous Page</span>
                         </div>
-                        <div class="hover-text">
-                            <a id="next-btn" :href="nextPageUrl" v-if="nextPageUrl" class="nav-btn"><i class="fa fa-solid fa-arrow-right icon-light nav-btn-icon"></i></a>
-                            <span class="tooltip-text tooltip-left">Next Page (right-arrow)</span>
+                        <div class="turn-page-tooltip">
+                            <a id="next-btn" :href="nextPageUrl" v-if="nextPageUrl" class="arrow-btn"><i class="fa fa-solid fa-arrow-right icon-light arrow-icon"></i></a>
+                            <span class="turn-page-tooltip-text tooltip-left">Next Page</span>
                         </div>
                     </nav>
 
@@ -374,12 +382,12 @@
 
         </div>
         <footer class="border-top footer">
-            <div class="col-6">
-                &copy; IntelliTect 2005-@DateTime.Now.Year
-            </div>
-            <div class="col-6" style="text-align: right">
-                <a target="_blank" rel="noreferrer noopener" href="https://intellitect.com/about/privacy-policy/">Privacy</a>  -
-                <a asp-route="TermsOfService">Terms Of Service</a>
+            <div class="d-flex">
+                <div class="me-auto p-2">&copy; IntelliTect 2005-@DateTime.Now.Year</div>
+                <div class="p-2">
+                    <a target="_blank" rel="noreferrer noopener" href="https://intellitect.com/about/privacy-policy/">Privacy</a>
+                </div>
+                <div class="p-2"><a asp-route="TermsOfService">Terms Of Service</a></div>
             </div>
         </footer>
     </div>
