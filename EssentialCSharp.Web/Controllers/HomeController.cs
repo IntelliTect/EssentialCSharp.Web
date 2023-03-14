@@ -54,6 +54,13 @@ public class HomeController : Controller
         return View();
     }
 
+    [Route("/Announcements",
+       Name = "Announcements")]
+    public IActionResult Announcements()
+    {
+        return View();
+    }
+
     [Route("/home",
         Name = "home")]
     public IActionResult Home()
