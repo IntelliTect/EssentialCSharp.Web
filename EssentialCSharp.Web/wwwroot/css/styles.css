@@ -5,9 +5,7 @@
   --primary-color: #11356a;
   --secondary-color: #232732;
   --accent-color-1: #7fc9ce;
-  --accent-color-1-light: #7fc9ce3d;
   --accent-color-2: #ffdd74;
-  --accent-color-2-light: #ffdd743d;
   --link-color: #0042b5;
   --link-color-hover: #208fe4;
   --grey: #bcbec0;
@@ -39,22 +37,6 @@ a:hover {
   opacity: 85%;
 }
 
-.background-primary {
-  background-color: var(--primary-color);
-}
-
-.background-secondary {
-  background-color: var(--secondary-color);
-}
-
-.background-accent-1 {
-  background-color: var(--accent-color-1);
-}
-
-.background-accent-2 {
-  background-color: var(--accent-color-2);
-}
-
 .background-grey-lighten-2 {
   background-color: var(--grey-lighten-2);
 }
@@ -76,14 +58,20 @@ a:hover {
   font-family: "Courier New", monospace;
 }
 
+.divider-light-blue {
+  border-top: 3px solid var(--accent-color-1);
+  margin: 2em 0 2em 0;
+  opacity: 1;
+}
+
 .divider-blue {
-  border-top: 4px solid var(--accent-color-1);
+  border-top: 3px solid var(--link-color-hover);
   margin: 2em 0 2em 0;
   opacity: 1;
 }
 
 .divider-yellow {
-  border-top: 4px solid var(--accent-color-2);
+  border-top: 3px solid var(--accent-color-2);
   margin: 2em 0 2em 0;
   opacity: 1;
 }
@@ -120,27 +108,24 @@ a:hover {
 
 .card {
   height: 100%;
-  cursor: pointer;
 }
 
-.card-blue {
+.card-light-blue {
   border-radius: 0;
   border-left: 8px solid var(--accent-color-1);
   background-color: var(--grey-lighten-2);
 }
 
-:hover.card-blue {
-  background-color: var(--accent-color-1-light);
+.card-blue {
+  border-radius: 0;
+  border-left: 8px solid var(--link-color-hover);
+  background-color: var(--grey-lighten-2);
 }
 
 .card-yellow {
   border-radius: 0;
   border-left: 8px solid var(--accent-color-2);
   background-color: var(--grey-lighten-2);
-}
-
-:hover.card-yellow {
-  background-color: var(--accent-color-2-light);
 }
 
 /* Main Layout */
@@ -178,7 +163,7 @@ a:hover {
 }
 
 .menu-btn {
-  margin-left: 8px;
+  margin: 0 5px 0 5px;
   display: inline-block;
   outline: none;
   color: transparent;
@@ -200,7 +185,7 @@ a:hover {
   text-decoration: none;
   white-space: nowrap;
   overflow: hidden;
-  margin-left: 1rem;
+  margin-left: 5px;
 }
 
 .menu-chapter-title {
@@ -510,7 +495,7 @@ details > summary::-webkit-details-marker {
   background: var(--secondary-color);
   position: fixed;
   top: 0;
-  z-index: 1;
+  z-index: 2;
   padding: 0 2em;
 }
 
@@ -590,13 +575,6 @@ details > summary::-webkit-details-marker {
 
 /* Home Page Styles */
 
-/* .white-text {
-  color: white;
-  align-content: center;
-  justify-content: center;
-  width: 100%;
-} */
-
 /* .home-icon {
   margin-top: 0px;
   padding-top: 0;
@@ -605,45 +583,46 @@ details > summary::-webkit-details-marker {
   max-width: 250px;
 } */
 
-.home-author {
-  font-weight: 700;
-  font-size: 18px;
-  line-height: 16px;
-  align-items: center;
-  text-align: center;
-}
-
-.home-quote-author {
-  font-size: 18px;
-  text-align: right;
-  line-height: 16px;
-}
-
-.home-quote {
-  font-style: italic;
-  font-weight: 400;
-  font-size: 18px;
-  line-height: 24px;
-  align-items: center;
-  text-align: left;
-  margin-top: 30px;
-}
-
-.home-header {
-  font-weight: 700;
-  font-size: 20px;
-  margin-bottom: -1px;
-}
-
-.quote-block {
-  max-width: 730px;
+.quote {
+  max-width: 600px;
   display: inline-block;
-  padding: 20px;
-  background-color: #f1f2f2;
+  margin: 40px 0 20px 0;
 }
 
-.quote-author-block {
-  margin-top: -8px;
+.quote .quote-author {
+  padding-top: 20px;
+  text-align: right;
+}
+
+.quote .quote-content {
+  position: relative;
+}
+
+.quote .quote-content .quote-text {
+  font-size: large;
+  text-align: center;
+  background-color: var(--grey-lighten-2);
+  padding: 25px 20px 20px 20px;
+}
+
+.quote .quote-content .quote-icon {
+  color: var(--accent-color-1);
+  position: absolute;
+  top: -30px;
+  left: 20px;
+  z-index: 1;
+  font-size: 40px;
+}
+
+.quote .quote-content .quote-text::after {
+  content: " ";
+  position: absolute;
+  top: 100%;
+  left: 85%;
+  margin-left: -5px;
+  border-width: 15px;
+  border-style: solid;
+  border-color: var(--grey-lighten-2) transparent transparent transparent;
 }
 
 /* The snackbar - position it at the bottom and in the middle of the screen */

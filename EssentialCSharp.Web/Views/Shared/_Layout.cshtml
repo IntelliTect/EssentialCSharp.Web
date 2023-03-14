@@ -107,9 +107,8 @@
                             <span class="tooltip-text">Feedback</span>
                         </div>
                         <div class="menu-tooltip">
-                        <!-- <a asp-route="TermsOfService"><i class="fa fa-solid fa-bullhorn fa-lg icon-light"></i></a> -->
                             <form asp-action="Announcements">
-                                <button class="menu-btn" id="announcement-dropdown">
+                                <button class="menu-btn">
                                     <i class="fa fa-solid fa-bullhorn fa-lg icon-light"></i>
                                 </button>
                             </form>
@@ -153,10 +152,10 @@
                                         Contents
                                     </h5>
                                 </div>
-                                <!-- <button class="toc-label hide" v-on:click="sidebarTab = 'search'" id="search-btn">
+                                <button class="toc-label hide" v-on:click="sidebarTab = 'search'" id="search-btn">
                                     SEARCH
                                     <div v-if="sidebarTab == 'search'" class="bottom-border" id="search-border"></div>
-                                </button> -->
+                                </button>
                             </div>
 
                             <div v-cloak v-if="sidebarTab == 'toc'" class="toc-tree" id="toc">
@@ -165,10 +164,12 @@
                                 </ul>
                             </div>
                             <div v-cloak>
-                                Build: @if (ReleaseDateAttribute.GetReleaseDate() is DateTime date)
-                                {
-                                    <b>@TimeZoneInfo.ConvertTimeFromUtc(date, TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time")).ToString("d MMM, yyyy h:mm:ss tt", CultureInfo.InvariantCulture)</b>
-                                }
+                                <small>
+                                    Build: @if (ReleaseDateAttribute.GetReleaseDate() is DateTime date)
+                                    {
+                                        <b>@TimeZoneInfo.ConvertTimeFromUtc(date, TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time")).ToString("d MMM, yyyy h:mm:ss tt", CultureInfo.InvariantCulture)</b>
+                                    }
+                                </small>
                             </div>
                             <div v-cloak v-if="sidebarTab == 'search'" id="searchBar" class="search-window">
                                 <div class="input">
@@ -197,183 +198,6 @@
                     @RenderBody()
 
                 </div>
-
-                <!-- <div v-cloak v-if="comingSoonSidebarShown" class="comingSoonSidebar" id="comingSoonSidebar">
-                    <ul class="cs-tree">
-                        <li>
-                            <details>
-                                <summary class="toc-content">Web Features Coming Soon</summary>
-                                <ul class="no-icon">
-                                    <li>
-                                        <details class="no-border">
-                                            <summary class="cs-section-link no-icon">Client-side Compiler</summary>
-                                            <ul>
-                                                <li>
-                                                    <div class="cs-description">Write, compile, and run code snippets right from your browser. Enjoy hands-on experience with the code as you go through the site.</div>
-                                                    @* <a class="cs-description link-color">View on GitHub</a>*@
-                                                </li>
-                                            </ul>
-                                        </details>
-                                    </li>
-                                    <li>
-                                        <details class="no-border">
-                                            <summary class="cs-section-link no-icon">Interactive Code Listings</summary>
-                                            <ul>
-                                                <li>
-                                                    <div class="cs-description">Edit, compile, and run the code listings found throughout Essential C#.</div>
-                                                    @*<a class="cs-description link-color">View on GitHub</a>*@
-                                                </li>
-                                            </ul>
-                                        </details>
-                                    </li>
-                                    <li>
-                                        <details class="no-border">
-                                            <summary class="cs-section-link no-icon">Full Text Search</summary>
-                                            <ul>
-                                                <li>
-                                                    <div class="cs-description">Search for keywords and phrases to easily find relevant information.</div>
-                                                    @* <a class="cs-description link-color">View on GitHub</a>*@
-                                                </li>
-                                            </ul>
-                                        </details>
-                                    </li>
-                                    <li>
-                                        <details class="no-border">
-                                            <summary class="cs-section-link no-icon">Hyperlinking</summary>
-                                            <ul>
-                                                <li>
-                                                    <div class="cs-description">Easily navigate to interesting and relevant sites as well as related sections in Essential C#.</div>
-                                                    @* <a class="cs-description link-color">View on GitHub</a>*@
-                                                </li>
-                                            </ul>
-                                        </details>
-                                    </li>
-                                    <li>
-                                        <details class="no-border">
-                                            <summary class="cs-section-link no-icon">Table of Contents Filtering</summary>
-                                            <ul>
-                                                <li>
-                                                    <div class="cs-description">The Table of Contents filter will let you narrow down the list of topics to help you quickly and easily find your destination.</div>
-                                                    @*<a class="cs-description link-color">View on GitHub</a>*@
-                                                </li>
-                                            </ul>
-                                        </details>
-                                    </li>
-                                </ul>
-                            </details>
-                        </li>
-                        <li>
-                            <details>
-                                <summary class="toc-content">Content Coming Soon</summary>
-                                <ul class="no-icon">
-                                    <li>
-                                        <details class="no-border">
-                                            <summary class="cs-section-link no-icon"><span class="code-text">records</span></summary>
-                                            <ul>
-                                                <li>
-                                                    <div class="cs-description">New feature from C# 9.</div>
-                                                    @* <a class="cs-description link-color">View on GitHub</a>*@
-                                                </li>
-                                            </ul>
-                                        </details>
-                                    </li>
-                                    <li>
-                                        <details class="no-border">
-                                            <summary class="cs-section-link no-icon">File Scoped <span class="code-text">namespaces</span></summary>
-                                            <ul>
-                                                <li>
-                                                    <div class="cs-description">New feature from C# 10.</div>
-                                                    @*<a class="cs-description link-color">View on GitHub</a>*@
-                                                </li>
-                                            </ul>
-                                        </details>
-                                    </li>
-                                    <li>
-                                        <details class="no-border">
-                                            <summary class="cs-section-link no-icon"><span class="code-text">using</span> Statements Improvements</summary>
-                                            <ul>
-                                                <li>
-                                                    <div class="cs-description">Feature improvements from C# 10.</div>
-                                                    @*<a class="cs-description link-color">View on GitHub</a>*@
-                                                </li>
-                                            </ul>
-                                        </details>
-                                    </li>
-                                    <li>
-                                        <details class="no-border">
-                                            <summary class="cs-section-link no-icon">Pattern Matching Improvements</summary>
-                                            <ul>
-                                                <li>
-                                                    <div class="cs-description">Feature improvements from C# 11.</div>
-                                                    @*<a class="cs-description link-color">View on GitHub</a>*@
-                                                </li>
-                                            </ul>
-                                        </details>
-                                    </li>
-                                    <li>
-                                        <details class="no-border">
-                                            <summary class="cs-section-link no-icon"><span class="code-text">required</span> Members</summary>
-                                            <ul>
-                                                <li>
-                                                    <div class="cs-description">New feature from C# 11.</div>
-                                                    @*<a class="cs-description link-color">View on GitHub</a>*@
-                                                </li>
-                                            </ul>
-                                        </details>
-                                    </li>
-                                </ul>
-                            </details>
-                        </li>
-                        <li>
-                            <details>
-                                <summary class="toc-content">Recently Completed</summary>
-                                <ul class="no-icon">
-                                    <li>
-                                        <details class="no-border">
-                                            <summary class="cs-section-link no-icon">Copying Header Hyperlinks</summary>
-                                            <ul>
-                                                <li>
-                                                    <div class="cs-description">Easily copy a header URL to link to a book section.</div>
-                                                    @* <a class="cs-description link-color">View on GitHub</a>*@
-                                                </li>
-                                            </ul>
-                                        </details>
-                                    </li>
-                                    <li>
-                                        <details class="no-border">
-                                            <summary class="cs-section-link no-icon">Home Page</summary>
-                                            <ul>
-                                                <li>
-                                                    <div class="cs-description">Add a home page that features a short description of the book and a high level mindmap.</div>
-                                                    @*  <a class="cs-description link-color">View on GitHub</a>*@
-                                                </li>
-                                            </ul>
-                                        </details>
-                                    </li>
-                                    <li>
-                                        <details class="no-border">
-                                            <summary class="cs-section-link no-icon">Keyboard Shortcuts</summary>
-                                            <ul>
-                                                <li>
-                                                    <div class="cs-description">Quickly navigate through the book via keyboard shortcuts (right/left arrows, 'n', 'p').</div>
-                                                    @*  <a class="cs-description link-color">View on GitHub</a>*@
-                                                </li>
-                                            </ul>
-                                        </details>
-                                    </li>
-
-                                </ul>
-                            </details>
-                        </li>
-                    </ul>
-                    <div style="display:flex; justify-content:center;">
-                        <button class="show-on-mobile"
-                                v-on:click="comingSoonSidebarShown = !comingSoonSidebarShown">
-                            Close
-                        </button>
-                    </div>
-                </div> -->
-
             </main>
 
             <div v-cloak v-if="snackbarMessage" id="snackbar" class="show" :style="{ color: snackbarColor }">
@@ -477,7 +301,6 @@
             </a>
         </li>
     </template>
-
     <script src="~/js/site.js" type="module" asp-append-version="true"></script>
 
 </body>
