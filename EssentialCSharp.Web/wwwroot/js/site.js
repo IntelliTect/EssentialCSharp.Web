@@ -21,6 +21,30 @@ import { useWindowSize } from "vue-window-size";
 const tocData = markRaw(TOC_DATA);
 
 //Add new content or features here:
+
+const featuresComingSoonList = [
+  {
+    title: "Client-side Compiler",
+    text: "Write, compile, and run code snippets right from your browser. Enjoy hands-on experience with the code as you go through the site.",
+  },
+  {
+    title: "Interactive Code Listings",
+    text: "Edit, compile, and run the code listings found throughout Essential C#.",
+  },
+  {
+    title: "Full Text Search",
+    text: "Search for keywords and phrases to easily find relevant information.",
+  },
+  {
+    title: "Hyperlinking",
+    text: "Easily navigate to interesting and relevant sites as well as related sections in Essential C#.",
+  },
+  {
+    title: "Table of Contents Filtering",
+    text: "The Table of Contents filter will let you narrow down the list of topics to help you quickly and easily find your destination.",
+  },
+];
+
 const contentComingSoonList = [
   {
     title: "<span class='code-text'>records</span>",
@@ -34,12 +58,14 @@ const contentComingSoonList = [
     title: "<span class='code-text'>using</span> Statement Improvements",
     text: "New feature from C# 10.",
   },
-];
-
-const featuresComingSoonList = [
-  { title: "Client-side Compiler", text: "New feature from C# 9." },
-  { title: "Interactive Code Listings", text: "New feature from C# 10." },
-  { title: "Full Text Search", text: "New feature from C# 10." },
+  {
+    title: "Pattern Matching Improvements",
+    text: "Feature improvements from C# 11.",
+  },
+  {
+    title: "<span class='code-text'>required</span> Members",
+    text: "New feature from C# 11.",
+  },
 ];
 
 const completedFeaturesList = [
