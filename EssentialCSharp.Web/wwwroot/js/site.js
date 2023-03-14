@@ -34,29 +34,27 @@ const contentComingSoonList = [
     title: "<span class='code-text'>using</span> Statement Improvements",
     text: "New feature from C# 10.",
   },
-  {
-    title: "<span class='code-text'>using</span> Statement Improvements",
-    text: "New feature from C# 10.",
-  },
-  {
-    title: "<span class='code-text'>using</span> Statement Improvements",
-    text: "New feature from C# 10.",
-  },
 ];
 
 const featuresComingSoonList = [
   { title: "Client-side Compiler", text: "New feature from C# 9." },
   { title: "Interactive Code Listings", text: "New feature from C# 10." },
   { title: "Full Text Search", text: "New feature from C# 10." },
-  { title: "Full Text Search", text: "New feature from C# 10." },
 ];
 
 const completedFeaturesList = [
-  { title: "Client-side Compiler", text: "New feature from C# 9." },
-  { title: "Interactive Code Listings", text: "New feature from C# 10." },
-  { title: "Full Text Search", text: "New feature from C# 10." },
-  { title: "Full Text Search", text: "New feature from C# 10." },
-  { title: "Full Text Search", text: "New feature from C# 10." },
+  {
+    title: "Copying Header Hyperlinks",
+    text: "Easily copy a header URL to link to a book section.",
+  },
+  {
+    title: "Home Page",
+    text: "Add a home page that features a short description of the book and a high level mindmap.",
+  },
+  {
+    title: "Keyboard Shortcuts",
+    text: "Quickly navigate through the book via keyboard shortcuts (right/left arrows, 'n', 'p').",
+  },
 ];
 
 /**

@@ -89,7 +89,7 @@
                             <i class="fa fa-bars fa-lg icon-light"></i>
                         </button>
                         <div>
-                            <a class="menu-brand text-light hide-on-mobile" asp-route="home">Essential C#</a>
+                            <a class="menu-brand text-light" asp-route="home">Essential C#</a>
                         </div>
                     </div>
 
@@ -206,12 +206,14 @@
 
         </div>
         <footer class="border-top footer">
-            <div class="d-flex">
-                <div class="me-auto p-2">&copy; IntelliTect 2005-@DateTime.Now.Year</div>
-                <div class="p-2">
+            <div class="row">
+                <div class="col-12 col-md-4 me-auto p-2">
+                    &copy; IntelliTect 2005-@DateTime.Now.Year 
+                </div>
+                <div class="col-12 col-md-auto align-self-end p-2">
                     <a target="_blank" rel="noreferrer noopener" href="https://intellitect.com/about/privacy-policy/">Privacy</a>
                 </div>
-                <div class="p-2"><a asp-route="TermsOfService">Terms Of Service</a></div>
+                <div class="col-12 col-md-auto align-self-end p-2"><a asp-route="TermsOfService">Terms Of Service</a></div>
             </div>
         </footer>
     </div>
