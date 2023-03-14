@@ -2,3547 +2,937 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://essentialcsharp.com</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/TermsOfService</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.2</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/data-type</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/type-name-forms</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/fundamental-numeric-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/integer-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/floating-point-types-float-double</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/decimal-type</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/literal-values</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/more-fundamental-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/boolean-type-bool</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/character-type-char</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/strings</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/literals</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/string-interpolation</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/raw-string-literals</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/string-methods</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/newline</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/string-length</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/strings-are-immutable</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/system-text-stringbuilder</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/null-and-void</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/null</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/the-void-type</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/conversions-between-data-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/explicit-cast</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/implicit-conversion</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/type-conversion-without-casting</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/chapter-2-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://essentialcsharp.com/more-with-data-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/categories-of-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/value-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/reference-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/declaring-types-that-allow-null</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/dereferencing-a-null-reference</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/nullable-value-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/nullable-reference-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/implicitly-typed-local-variables</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/tuples</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/arrays</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/declaring-an-array</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/data-type</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/instantiating-and-assigning-arrays</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/fundamental-numeric-types</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/using-an-array</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/ranges</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/more-array-methods</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/array-instance-members</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/strings-as-arrays</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/common-array-errors</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/more-fundamental-types</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/chapter-3-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://essentialcsharp.com/conversions-between-data-types</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://essentialcsharp.com/chapter-2-summary</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/introducing-c</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/hello-world</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/creating-editing-compiling-and-running-c-source-code</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/with-dotnet-cli</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/with-visual-studio-2022-windows</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/understanding-a-project</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/compilation-and-execution</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/essential-c-source-code</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/c-syntax-fundamentals</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/statements-and-statement-delimiters</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/introducing-a-class-and-a-method</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/c-keywords</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/identifiers</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/type-definition</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/main-method</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/whitespace</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/working-with-variables</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/introducing-data-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/declaring-a-variable</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/assigning-a-variable</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/using-a-variable</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/console-input-and-output</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/getting-input-from-the-console</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/writing-output-to-the-console</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/comments</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/debugging</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/managed-execution-and-the-common-language-infrastructure</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/common-intermediate-language-and-ildasm</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/multiple-net-frameworks</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/application-programming-interface</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/c-and-net-versioning</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/chapter-1-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/operators-and-control-flow</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/operators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/plus-and-minus-unary-operators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/arithmetic-binary-operators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/using-the-addition-operator-with-strings</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/using-characters-in-arithmetic-operations</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/special-floating-point-characteristics</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/compound-mathematical-assignment-operators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/increment-and-decrement-operators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/constant-expressions-and-constant-locals</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/introducing-flow-control</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/if-statement</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/nested-if</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/code-blocks</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/code-blocks-scopes-and-declaration-spaces</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/boolean-expressions</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/relational-and-equality-operators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/logical-boolean-operators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/or-operator</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/and-operator</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/exclusive-or-operator</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/logical-negation-operator</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/conditional-operator</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/programming-with-null</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/checking-for-null-and-not-null</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/null-coalescing-and-null-coalescing-assignment-operators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/null-conditional-operator</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/null-forgiving-operator</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/bitwise-operators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/shift-operators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/bitwise-operators-1</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/bitwise-compound-assignment-operators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/bitwise-complement-operator</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/control-flow-statements-continued</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/the-while-and-dowhile-loops</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/the-for-loop</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/the-foreach-loop</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/the-basic-switch-statement</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/jump-statements</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/the-break-statement</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/the-continue-statement</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/the-goto-statement</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/c-preprocessor-directives</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/excluding-and-including-code-if-elif-else-endif</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/defining-preprocessor-symbols-define-undef</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/emitting-errors-and-warnings-error-warning</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/turning-off-warning-messages-pragma</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/nowarnwarn-list-option</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/specifying-line-numbers-line</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/hints-for-visual-editors-region-endregion</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/activating-nullable-reference-types-nullable</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/chapter-4-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/interfaces</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/introducing-interfaces</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/polymorphism-through-interfaces</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/interface-implementation</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/explicit-member-implementation</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/implicit-member-implementation</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/explicit-versus-implicit-interface-implementation</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/converting-between-the-implementing-class-and-its-interfaces</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/interface-inheritance</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/multiple-interface-inheritance</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/extension-methods-on-interfaces</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/versioning</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/interface-versioning-prior-to-c-8-0</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/interface-versioning-in-c-8-0-or-later</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/additional-encapsulation-and-polymorphism-with-protected-interface-members</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/extension-methods-versus-default-interface-members</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/interfaces-compared-with-abstract-classes</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/interfaces-compared-with-attributes</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/chapter-8-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/classes</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/inheritance</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/derivation</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/declaring-and-instantiating-a-class</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/casting-between-base-and-derived-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/instance-fields</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/declaring-an-instance-field</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/accessing-an-instance-field</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/instance-methods</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/using-the-this-keyword</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/private-access-modifier</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/protected-access-modifier</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/extension-methods-1</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/single-inheritance</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/sealed-classes</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/overriding-the-base-class</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/virtual-modifier</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/new-modifier</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/sealed-modifier</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/base-member</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/invoking-base-class-constructors</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/abstract-classes</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/all-classes-derive-from-system-object</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/type-checking</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/type-checking-with-the-is-operator</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/type-checking-with-declaration</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/type-checking-with-switch-statements</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/type-checking-with-switch-expressions</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/pattern-matching</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/constant-patterns-c-7-0</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/relational-patterns-c-9-0</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/logical-patterns-c-9-0</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/parenthesized-patterns-c-9-0</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/tuple-patterns-c-8-0</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/positional-patterns-c-8-0</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/property-patterns-c-8-0-10-0</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/storing-and-loading-with-files</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/access-modifiers</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/when-clause</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/properties</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/declaring-a-property</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/pattern-matching-with-unrelated-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/automatically-implemented-properties</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/property-and-field-guidelines</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/recursive-pattern-matching-c-7-0</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/using-properties-with-validation</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/list-patterns-c-11-0</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/read-only-and-write-only-properties</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/avoid-pattern-matching-when-polymorphism-is-possible</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/calculated-properties</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/chapter-7-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/access-modifiers-on-getters-and-setters</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/properties-and-method-calls-not-allowed-as-ref-or-out-parameter-values</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/constructors</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/declaring-a-constructor</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/default-and-copy-constructors</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/object-initializers</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/init-only-setters</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/overloading-constructors</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/constructor-chaining-calling-another-constructor-using-this</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/non-nullable-reference-type-properties-with-constructors</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/readwrite-non-nullable-reference-type-properties</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/read-only-automatically-implemented-reference-type-properties</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/required-modifier</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/nullable-attributes</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/deconstructors</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/static-members</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/static-fields</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/static-methods</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/static-constructors</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/static-properties</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/static-classes</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/extension-methods</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/encapsulating-the-data</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/const</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/readonly</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/nested-classes</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/partial-classes</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/defining-a-partial-class</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/partial-methods</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/chapter-6-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://essentialcsharp.com/inheritance</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://essentialcsharp.com/overriding-the-base-class</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://essentialcsharp.com/abstract-classes</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://essentialcsharp.com/all-classes-derive-from-system-object</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://essentialcsharp.com/pattern-matching</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://essentialcsharp.com/avoid-pattern-matching-when-polymorphism-is-possible</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://essentialcsharp.com/chapter-7-summary</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/methods-and-parameters</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/calling-a-method</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/namespaces</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/type-name</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/scope</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/method-name</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/parameters-and-arguments</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/method-return-values</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/statement-versus-method-call</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/declaring-a-method</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/formal-parameter-declaration</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/method-return-type-declaration</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/expression-bodied-methods</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/using-directives</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/implicit-using-statements</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/global-using-directives</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/csproj-using-element</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/the-using-directive</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/using-static-directive</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/aliasing</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/returns-and-parameters-on-main-method</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/top-level-statements</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/advanced-method-parameters</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/value-parameters</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/reference-parameters-ref</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/output-parameters-out</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/read-only-pass-by-reference-in</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/return-by-reference</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/parameter-arrays-params</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/recursion</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/method-overloading</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/optional-parameters</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/basic-error-handling-with-exceptions</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/trapping-errors</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/reporting-errors-using-a-throw-statement</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/reporting-null-argument-exceptions</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/additional-parameter-validation</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/introducing-the-nameof-operator</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/avoid-using-exception-handling-to-deal-with-expected-situations</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/chapter-5-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/well-formed-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/operator-overloading</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/comparison-operators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/binary-operators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/combining-assignment-with-binary-operators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/conditional-logical-operators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/unary-operators-true-false</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/conversion-operators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/guidelines-for-conversion-operators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/referencing-other-assemblies</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/referencing-a-library</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/referencing-a-project-or-library-with-dotnet-cli</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/referencing-a-project-or-library-with-visual-studio-2019</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/nuget-packaging</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/nuget-references-with-dotnet-cli</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/nuget-references-with-visual-studio-2019</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/invoking-a-referenced-package-or-project</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/encapsulation-of-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/public-or-internal-access-modifiers-on-type-declarations</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/the-protected-internal-type-modifier</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/defining-namespaces</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/xml-comments</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/associating-xml-comments-with-programming-constructs</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/generating-an-xml-documentation-file</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/garbage-collection</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/weak-references</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/resource-cleanup</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/finalizers</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/deterministic-finalization-with-the-using-statement</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/garbage-collection-finalization-and-idisposable</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/lazy-initialization</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/chapter-10-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/exception-handling</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/multiple-exception-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/catching-exceptions</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/rethrowing-an-existing-exception</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/general-catch-block</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/guidelines-for-exception-handling</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/defining-custom-exceptions</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/rethrowing-a-wrapped-exception</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://essentialcsharp.com/declaring-a-method</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/chapter-11-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/introducing-structs-and-records</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/using-directives</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/reference-equality-versus-value-equality</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/returns-and-parameters-on-main-method</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/structs</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/top-level-statements</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/declaring-a-record-struct</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/recursion</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/record-struct-code-generation</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/method-overloading</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/record-classes</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/optional-parameters</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/record-class-inheritance</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/basic-error-handling-with-exceptions</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/records</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/chapter-5-summary</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/data-storage-with-properties</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/well-formed-types</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/immutable-value-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/referencing-other-assemblies</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/cloning-records-using-the-with-operator</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/encapsulation-of-types</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/record-constructors</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/defining-namespaces</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/record-struct-initialization</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/xml-comments</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/record-deconstructors</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/garbage-collection</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/overriding-object-members</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/resource-cleanup</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/overriding-tostring</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/implementing-value-equality</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/customizing-record-behavior</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/boxing</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/enums</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/converting-between-enums-and-strings</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/enums-as-flags</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/chapter-9-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/lazy-initialization</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/generics</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/c-without-generics</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/introducing-generic-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/using-a-generic-class</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/defining-a-simple-generic-class</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/benefits-of-generics</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/type-parameter-naming-guidelines</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/generic-interfaces-and-structs</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/defining-a-constructor-and-a-finalizer</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/specifying-a-default-value-with-the-default-operator</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/multiple-type-parameters</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/nested-generic-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/constraints</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/interface-constraints</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/type-parameter-constraints</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/unmanaged-constraint</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/notnull-constraint</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/structclass-constraints</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/multiple-constraints</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/constructor-constraints</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/constraint-inheritance</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/generic-methods</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/generic-method-type-inference</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/specifying-constraints</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/covariance-and-contravariance</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/enabling-covariance-with-the-out-type-parameter-modifier</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/enabling-contravariance-with-the-in-type-parameter-modifier</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/support-for-unsafe-covariance-in-arrays</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/generic-internals</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/chapter-12-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/delegates-and-lambda-expressions</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/introducing-delegates</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/defining-the-scenario</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/delegate-data-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/declaring-delegate-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/general-purpose-delegate-types-system-func-and-system-action</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/instantiating-a-delegate</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/lambda-expressions</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/statement-lambdas</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/expression-lambdas</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/anonymous-methods</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/delegates-do-not-have-structural-equality</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/outer-variables</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/expression-trees</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/using-lambda-expressions-as-data</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/expression-trees-are-object-graphs</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/delegates-versus-expression-trees</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/examining-an-expression-tree</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/chapter-13-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/events</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/coding-the-publish-subscribe-pattern-with-multicast-delegates</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/introducing-structs-and-records</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/defining-subscriber-methods</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/reference-equality-versus-value-equality</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/defining-the-publisher</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/hooking-up-the-publisher-and-subscribers</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/invoking-a-delegate</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/check-for-null</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/delegate-operators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/sequential-invocation</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/error-handling</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/method-returns-and-pass-by-reference</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/structs</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/understanding-events</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/why-events</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/record-classes</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/encapsulating-the-subscription</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/encapsulating-the-publication</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/declaring-an-event</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/coding-conventions</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/generics-and-delegates</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/customizing-the-event-implementation</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/record-class-inheritance</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/chapter-14-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://essentialcsharp.com/overriding-object-members</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://essentialcsharp.com/customizing-record-behavior</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://essentialcsharp.com/enums</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://essentialcsharp.com/chapter-9-summary</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/collection-interfaces-with-standard-query-operators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/collection-initializers</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/what-makes-a-class-a-collection-ienumerable</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/foreach-with-arrays</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/foreach-with-ienumerablet</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/state-is-shared</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/do-not-modify-collections-during-foreach-iteration</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/standard-query-operators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/filtering-with-where</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/projecting-with-select</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/counting-elements-with-count</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/deferred-execution</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/sorting-with-orderby-and-thenby</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/performing-an-inner-join-with-join</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/implementing-a-one-to-many-relationship-with-groupjoin</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/calling-selectmany</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/more-standard-query-operators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/anonymous-types-with-linq</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/anonymous-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/selecting-into-anonymous-types-with-linq</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/more-about-anonymous-types-and-implicit-local-variables</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/chapter-15-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/linq-with-query-expressions</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/introducing-query-expressions</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/projection</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/filtering</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/sorting</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/the-let-clause</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/grouping</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/query-continuation-with-into</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/flattening-sequences-of-sequences-with-multiple-from-clauses</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/query-expressions-are-just-method-invocations</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/chapter-16-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/building-custom-collections</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/more-collection-interfaces</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/ilistt-versus-idictionarytkey-tvalue</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/icollectiont</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/primary-collection-classes</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/list-collections-listt</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/total-ordering</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/searching-a-listt</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/dictionary-collections-dictionarytkey-tvalue</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/sorted-collections-sorteddictionarytkey-tvalue-and-sortedlistt</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/stack-collections-stackt</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/queue-collections-queuet</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/linked-lists-linkedlistt</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/providing-an-indexer</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/returning-null-or-an-empty-collection</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/iterators</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/defining-an-iterator</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/iterator-syntax</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/yielding-values-from-an-iterator</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/iterators-and-state</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/more-iterator-examples</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/placing-a-yield-return-within-a-loop</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/canceling-further-iteration-yield-break</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/creating-multiple-iterators-in-a-single-class</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/yield-statement-requirements</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/chapter-17-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/reflection-attributes-and-dynamic-programming</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/reflection</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/accessing-metadata-using-system-type</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/gettype</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/typeof</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/member-invocation</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/reflection-on-generic-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/determining-the-type-of-type-parameters</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/determining-whether-a-class-or-method-supports-generics</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/obtaining-type-parameters-for-a-generic-class-or-method</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/nameof-operator</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/attributes</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/custom-attributes</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/looking-for-attributes</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/initializing-an-attribute-through-a-constructor</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/system-attributeusageattribute</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/named-parameters</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/predefined-attributes</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/system-conditionalattribute</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/system-obsoleteattribute</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/programming-with-dynamic-objects</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/invoking-reflection-using-dynamic</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/dynamic-principles-and-behaviors</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/why-dynamic-binding</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/static-compilation-versus-dynamic-programming</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/implementing-a-custom-dynamic-object</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/chapter-18-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/programming-the-task-based-asynchronous-pattern</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/synchronously-invoking-a-high-latency-operation</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/asynchronously-invoking-a-high-latency-operation-using-the-tpl</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/the-task-based-asynchronous-pattern-with-async-and-await</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/introducing-asynchronous-return-of-valuetaskt</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/asynchronous-streams</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/iasyncdisposable-and-the-await-using-declaration-and-statement</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/using-linq-with-iasyncenumerable</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/returning-void-from-an-asynchronous-method</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/asynchronous-lambdas-and-local-functions</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/task-schedulers-and-the-synchronization-context</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/asyncawait-with-the-windows-ui</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/chapter-20-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/iterating-in-parallel</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/executing-loop-iterations-in-parallel</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/canceling-a-parallel-loop</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/running-linq-queries-in-parallel</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/canceling-a-plinq-query</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/chapter-21-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/thread-synchronization</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/why-synchronization</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/synchronization-using-monitor</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/using-the-lock-keyword</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/choosing-a-lock-object</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/why-to-avoid-locking-on-this-typeoftype-and-string</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/avoid-synchronizing-with-methodimplattribute</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/declaring-fields-as-volatile</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/using-the-system-threading-interlocked-class</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/event-notification-with-multiple-threads</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/synchronization-design-best-practices</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/introducing-multithreading</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/multithreading-basics</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/avoiding-deadlock</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/when-to-provide-synchronization</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/asynchronous-tasks</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/why-the-tpl</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/introducing-asynchronous-tasks</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/task-continuation</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/avoiding-unnecessary-locking</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/unhandled-exception-handling-on-task-with-aggregateexception</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/more-synchronization-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/canceling-a-task</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/task-run-a-shortcut-and-simplification-to-task-factory-startnew</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/using-system-threading-mutex</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/long-running-tasks</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/tasks-are-disposable</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/working-with-system-threading</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/chapter-19-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/platform-interoperability-and-unsafe-code</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/platform-invoke</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/declaring-external-functions</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/parameter-data-types</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/waithandle</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/using-ref-rather-than-pointers</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/using-structlayoutattribute-for-sequential-layout</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/error-handling-1</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/using-safehandle</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/reset-events-manualresetevent-and-manualreseteventslim</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/calling-external-functions</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/simplifying-api-calls-with-wrappers</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/semaphoresemaphoreslim-and-countdownevent</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/function-pointers-map-to-delegates</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/guidelines</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/pointers-and-addresses</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/unsafe-code</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/pointer-declaration</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/concurrent-collection-classes</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/assigning-a-pointer</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/fixing-data</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/allocating-on-the-stack</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/dereferencing-a-pointer</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/thread-local-storage</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/accessing-the-member-of-a-referent-type</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/executing-unsafe-code-via-a-delegate</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/chapter-23-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/threadlocalt</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/thread-local-storage-with-threadstaticattribute</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/thread-synchronization</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/timers</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://essentialcsharp.com/chapter-22-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <loc>https://essentialcsharp.com/introducing-multithreading</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://essentialcsharp.com/asynchronous-tasks</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://essentialcsharp.com/canceling-a-task</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://essentialcsharp.com/working-with-system-threading</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://essentialcsharp.com/chapter-19-summary</loc>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/the-common-language-infrastructure</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/defining-the-common-language-infrastructure</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/cli-implementations</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/microsoft-net-framework</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/net-core</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/xamarin</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/net-standard</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/base-class-library</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/c-compilation-to-machine-code</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/runtime</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/garbage-collection-1</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/platform-portability</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/performance</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/assemblies-manifests-and-modules</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/common-intermediate-language</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/common-type-system</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/common-language-specification</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/metadata</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://essentialcsharp.com/net-native-and-ahead-of-time-compilation</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://essentialcsharp.com/chapter-24-summary</loc>
-    <lastmod>2023-03-03T17:22:01.2537406+00:00</lastmod>
+    <lastmod>2023-03-10T22:16:59.2615379+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
