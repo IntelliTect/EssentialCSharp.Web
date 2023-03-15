@@ -2,7 +2,7 @@
 
 ## Projects Overview
 
-[EssentialCSharp.Web](https://github.com/IntelliTect/EssentialCSharpManuscript/tree/main/Utilities/EssentialCSharp.Web) - The site seen at [essentialcsharp.com](https://essentialcsharp.com/)
+[EssentialCSharp.Web](https://github.com/IntelliTect/EssentialCSharp.Web/tree/main/EssentialCSharp.Web) - The site seen at [essentialcsharp.com](https://essentialcsharp.com/)
 
 ## What You Will Need
 
