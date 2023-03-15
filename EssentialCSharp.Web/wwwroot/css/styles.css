@@ -240,6 +240,7 @@ a:hover {
 
 .turn-page {
   top: calc(100vh - 9rem);
+  top: calc(100dvh - 9rem);
   display: flex;
   justify-content: space-between;
   position: -webkit-sticky; /* Safari */
