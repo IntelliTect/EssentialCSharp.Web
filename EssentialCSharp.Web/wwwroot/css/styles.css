@@ -292,9 +292,9 @@ a:hover {
   visibility: hidden;
   position: absolute;
   z-index: 2;
-  top: 0px;
+  top: -15px;
   max-width: 50vw;
-  width: 150px;
+  width: 200px;
   color: var(--primary-color);
   font-size: 1rem;
   background-color: var(--grey-lighten-1);

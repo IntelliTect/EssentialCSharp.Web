@@ -189,16 +189,24 @@
                         </div>
                     </Transition>
                 </div>
-                <div class="container mt-4 pt-2">
+                <div class="container my-5 pb-5">
 
                     <nav v-cloak class="turn-page">
                         <div class="turn-page-tooltip">
                             <a id="prev-btn" :href="previousPageUrl" v-if="previousPageUrl" class="arrow-btn"><i class="fa fa-solid fa-arrow-left icon-light arrow-icon"></i></a>
-                            <span class="turn-page-tooltip-text tooltip-right">Previous Page</span>
+                            <span class="turn-page-tooltip-text tooltip-right">
+                                <b>Previous Page</b>
+                                <br />
+                                ( or use the <i class="fa-solid fa-square-caret-left"></i> key)
+                            </span>
                         </div>
                         <div class="turn-page-tooltip">
                             <a id="next-btn" :href="nextPageUrl" v-if="nextPageUrl" class="arrow-btn"><i class="fa fa-solid fa-arrow-right icon-light arrow-icon"></i></a>
-                            <span class="turn-page-tooltip-text tooltip-left">Next Page</span>
+                            <span class="turn-page-tooltip-text tooltip-left">
+                                <b>Next Page</b>
+                                <br />
+                                ( or use the <i class="fa-solid fa-square-caret-right"></i> key)
+                            </span>
                         </div>
                     </nav>
 
