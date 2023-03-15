@@ -1,169 +1,88 @@
-<div class="home-page home-title-underline">
-    <img class="home-icon" src="../../images/icon_transparent.png" alt="Essential C#">
-    <h1 class="home-title">Welcome to Essential C#</h1>
-    <h3 class="home-author">Written by <span class="text-uppercase">Mark Michaelis</span></h3>
-    <h3 class="home-author">with <span class="text-uppercase">Eric Lippert & Kevin Bost</span></h3>
-    <div class="quote-block">
-        <h3 class="home-quote">&quot;Welcome to one of the most venerable and trusted franchises you could dream of in the world of C# books&mdash;and probably far beyond!&quot;</h3>
-        <div class="quote-author-block">
-            <h3 class="home-quote-author">&mdash; From the Foreword by Mads Torgersen,</h3>
-            <h3 class="home-quote-author">C# Lead Designer,</h3>
-            <h3 class="home-quote-author">Microsoft</h3>
+<div class="py-2 px-2"> 
+    <div> 
+        <h1>Welcome to Essential C#</h1>
+        <h4><i>Written by Mark Michaelis with Eric Lippert & Kevin Bost</i></h4>
+        <div class="quote">
+            <div class="quote-content">
+                <div class="quote-icon">
+                    <i class="fa fa-solid fa-quote-left"></i>
+                </div>
+                <div class="quote-text">
+                    Welcome to one of the most venerable and trusted franchises you could dream of in the world of C# books&mdash;and probably far beyond!
+                </div>
+            </div>
+            <div class="quote-author">
+                <strong>From the Foreword by Mads Torgersen</strong>
+                <br />
+                <i>C# Lead Designer, Microsoft</i>
+            </div>
+        </div>
+    </div>
+
+    <div class="py-4"> 
+        <h3>The Comprehensive, Expert Guide to C# Language Programming</h3>
+        <p>Essential C# is a well-organized, no-fluff guide</a> to C# for programmers at all levels of experience. Reflecting the most important C# features from 3.0 through 8.0 and including modern programming patterns, it will help you write code that&rsquo;s simple, powerful, robust, secure, and maintainable. World-class C# expert Mark Michaelis presents a complete tutorial and reference for the entire language, including expert coverage of key C# enhancements, C#&rsquo;s use with .NET Core/.NET Standard, and cross-platform compilation. He illustrates key C# constructs with succinct examples, and presents best-practice coding guidelines.</p>
+    </div>
+
+    <div>
+    <hr class="divider-blue" />
+    </div>
+
+    <div class="row py-4">
+        <div class="col-12 my-2">
+            <h3>Web Features Coming Soon</h3>
+        </div>
+        <div v-for="(feature, i) in featuresComingSoonList.slice(0, 3)" key="i" class="col-sm-12 col-md-6 col-lg-4 mb-4">
+            <div class="card card-blue">
+                <div class="card-body">
+                    <h5 class="card-title" v-html="feature.title"></h5>
+                    <p class="card-text" v-html="feature.text"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+    <hr class="divider-light-blue" />
+    </div>
+
+    <div class="row py-4">
+        <div class="col-12 my-2">
+            <h3>Content Coming Soon</h3>
+        </div>
+        <div v-for="(feature, i) in contentComingSoonList.slice(0, 3)" key="i" class="col-sm-12 col-md-6 col-lg-4 mb-4">
+            <div class="card card-light-blue">
+                <div class="card-body">
+                   <h5 class="card-title" v-html="feature.title"></h5>
+                    <p class="card-text" v-html="feature.text"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <hr class="divider-yellow" />
+    </div>
+
+    <div class="row py-4">
+        <div class="col-12 my-2">
+            <h3>Recently Completed</h3>
+        </div>
+        <div v-for="(feature, i) in completedFeaturesList.slice(0, 3)" key="i" class="col-sm-12 col-md-6 col-lg-4 mb-4">
+            <div class="card card-yellow">
+                <div class="card-body">
+                    <h5 class="card-title" v-html="feature.title"></h5>
+                    <p class="card-text" v-html="feature.text"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-auto">
+            <button type="button" class="button my-4" onclick="window.location.href='/Announcements'">
+                View All Announcements
+            </button>
         </div>
     </div>
 
 </div>
-<h2 class="home-header text-uppercase">The comprehensive, expert guide to C# language programming</h2>
-<p>Essential C# is a well-organized, no-fluff guide to C# for programmers at all levels of experience. Reflecting the most important C# features from 3.0 through 8.0 and including modern programming patterns, it will help you write code that&rsquo;s simple, powerful, robust, secure, and maintainable. World-class C# expert Mark Michaelis presents a complete tutorial and reference for the entire language, including expert coverage of key C# enhancements, C#&rsquo;s use with .NET Core/.NET Standard, and cross-platform compilation. He illustrates key C# constructs with succinct examples, and presents best-practice coding guidelines.</p>
-<div class="home-page">
-    <img class="mind-map" src="../../images/00mindmap.svg" alt="High Level Mind Map">
-    <div class="coming-soon-layout">
-        <div class="feature-section-header background-green">
-            <div class="feature-section-header-title white-text">Web Features Coming Soon</div>
-        </div>
-        <div class="feature-section">
-            
-            <div class="feature-box">
-                <div class="feature-circle green">
-                    {1}
-                </div>
-                <div class="feature-content">
-                    <div class="feature-title green">Client-side Compiler</div>
-                    <div class="feature-description">Write, compile, and run code snippets right from your browser. Enjoy hands-on experience with the code as you go through the site.</div>
-                  @*  <a class="link-color feature-link">View on GitHub</a>*@
-                </div>
-            </div>
-            <div class="feature-box">
-                <div class="feature-circle green">
-                    {2}
-                </div>
-                <div class="feature-content">
-                    <div class="feature-title green">Interactive Code Listings</div>
-                    <div class="feature-description">Edit, compile, and run the code listings found throughout Essential C#.</div>
-                    @*<a class="link-color feature-link">View on GitHub</a>*@
-                </div>
-            </div>
-            <div class="feature-box">
-                <div class="feature-circle green">
-                    {3}
-                </div>
-                <div class="feature-content">
-                    <div class="feature-title green">Full Text Search</div>
-                    <div class="feature-description">Search for keywords and phrases to easily find relevant information.</div>
-                    @*<a class="link-color feature-link">View on GitHub</a>*@
-                </div>
-            </div>
-             <div class="feature-box">
-                <div class="feature-circle green">
-                    {4}
-                </div>
-                <div class="feature-content">
-                    <div class="feature-title green">Hyperlinking</div>
-                    <div class="feature-description">Easily navigate to interesting and relevant sites as well as related sections in Essential C#.</div>
-                    @*<a class="link-color feature-link">View on GitHub</a>*@
-                </div>
-            </div>
-            <div class="feature-box">
-                <div class="feature-circle green">
-                    {5}
-                </div>
-                <div class="feature-content">
-                    <div class="feature-title green">Table of Contents Filtering</div>
-                    <div class="feature-description">The Table of Contents filter will let you narrow down the list of topics to help you quickly and easily find your destination.</div>
-                    @*<a class="link-color feature-link">View on GitHub</a>*@
-                </div>
-            </div>
-        </div>
-        <div class="feature-section-header background-blue">
-            <div class="feature-section-header-title white-text">Content Coming Soon</div>
-        </div>
-        <div class="feature-section">
-            <div class="feature-box">
-                <div class="feature-circle blue">
-                    {1}
-                </div>
-                <div class="feature-content">
-                    <div class="feature-title blue"><span class="code-text">records</span></div>
-                    <div class="feature-description">New feature from C# 9.</div>
-                    @*<a class="link-color feature-link">View on GitHub</a>*@
-                </div>
-            </div>
-            <div class="feature-box">
-                <div class="feature-circle blue">
-                    {2}
-                </div>
-                <div class="feature-content">
-                    <div class="feature-title blue">File Scoped <span class="code-text">namespaces</span></div>
-                    <div class="feature-description">New feature from C# 10.</div>
-                    @*<a class="link-color feature-link">View on GitHub</a>*@
-                </div>
-            </div>
-             <div class="feature-box">
-                <div class="feature-circle blue">
-                    {3}
-                </div>
-                <div class="feature-content">
-                    <div class="feature-title blue"><span class="code-text">using</span> Statements Improvements</div>
-                    <div class="feature-description">Feature improvements from C# 10.</div>
-                    @*<a class="link-color feature-link">View on GitHub</a>*@
-                </div>
-            </div>
-            <div class="feature-box">
-                <div class="feature-circle blue">
-                    {4}
-                </div>
-                <div class="feature-content">
-                    <div class="feature-title blue">Pattern Matching Improvements</div>
-                    <div class="feature-description">Feature improvements from C# 11.</div>
-                    @*<a class="link-color feature-link">View on GitHub</a>*@
-                </div>
-            </div>
-            <div class="feature-box">
-                <div class="feature-circle blue">
-                    {5}
-                </div>
-                <div class="feature-content">
-                    <div class="feature-title blue"><span class="code-text">required</span> Members</div>
-                    <div class="feature-description">New feature from C# 11.</div>
-                    @*<a class="link-color feature-link">View on GitHub</a>*@
-                </div>
-            </div>
-        </div>
-         <div class="feature-section-header background-green">
-             <div class="feature-section-header-title white-text">Recently Completed</div>
-        </div>
-        <div class="feature-section">  
-            <div class="feature-box">
-                <div class="feature-circle green">
-                    {1}
-                </div>
-                <div class="feature-content">
-                    <div class="feature-title green">Copying Header Hyperlinks</div>
-                    <div class="feature-description">Easily copy a header URL to link to a book section.</div>
-                    @*<a class="link-color feature-link">View on GitHub</a>*@
-                </div>
-            </div>
-             <div class="feature-box">
-                <div class="feature-circle green">
-                    {2}
-                </div>
-                <div class="feature-content">
-                    <div class="feature-title green">Home Page</div>
-                    <div class="feature-description">Add a home page that features a short description of the book and a high level mindmap.</div>
-                    @*<a class="link-color feature-link">View on GitHub</a>*@
-                </div>
-            </div>
-            <div class="feature-box">
-                <div class="feature-circle green">
-                    {3}
-                </div>
-                <div class="feature-content">
-                    <div class="feature-title green">Keyboard Shortcuts</div>
-                    <div class="feature-description">Quickly navigate through the book via keyboard shortcuts (right/left arrows, 'n', 'p').</div>
-                    @*<a class="link-color feature-link">View on GitHub</a>*@
-                </div>
-            </div>
-           
-        </div>
-    </div>
-</div> 
