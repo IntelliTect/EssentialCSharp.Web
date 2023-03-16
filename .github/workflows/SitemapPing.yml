@@ -2,8 +2,8 @@ name: Ping Google About Updated Sitemap
 on:
   push:
     branches: [ main ]
-    # Only trigger if our content package (and potentially the sitemap) is change since
-    # our .csproj currently contains the references to the content package
+    # Only trigger if our content package (and potentially the sitemap) is changed
+    # since our .csproj currently contains the reference to the content package
     paths:
       - EssentialCSharp.Web/EssentialCSharp.Web.csproj
   workflow_dispatch:
