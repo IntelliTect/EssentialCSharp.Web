@@ -27,7 +27,7 @@
     <title id="page-title">Essential C#</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@docsearch/css@@3" />
+    <link rel="stylesheet" href="./lib/docsearch/style.css" />
     @*Font Family*@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -41,13 +41,13 @@
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="theme-color" content="#ffffff">
     @*So that Safari can import modules*@
-    <script async src="https://ga.jspm.io/npm:es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script async src="lib/es-module-shims/dist/es-module-shims.js"></script>
     <environment include="Development">
         <script type="importmap">
             {
                 "imports": {
-                    "vue": "https://unpkg.com/vue@3.2.45/dist/vue.esm-browser.js",
-                    "vue-window-size": "https://unpkg.com/vue-window-size@2.0.0/composition-api/dist/index.js"
+                    "vue": "./lib/vue/dist/vue.esm-browser.js",
+                    "vue-window-size": "./lib/vue-window-size/composition-api/dist/index.js"
                 }
             }
         </script>
@@ -56,8 +56,8 @@
         <script type="importmap">
             {
                 "imports": {
-                    "vue": "https://unpkg.com/vue@3.2.45/dist/vue.esm-browser.prod.js",
-                    "vue-window-size": "https://unpkg.com/vue-window-size@2.0.0/composition-api/dist/index.js"
+                    "vue": "./lib/vue/dist/vue.esm-browser.prod.js",
+                    "vue-window-size": "./lib/vue-window-size/composition-api/dist/index.js"
                 }
             }
         </script>
