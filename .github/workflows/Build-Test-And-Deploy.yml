@@ -9,6 +9,18 @@ on:
   workflow_dispatch:
 
 jobs:
+  automerge:
+      if: ${{ github.event_name == 'pull_request' }}
+      runs-on: ubuntu-latest
+      permissions:
+        pull-requests: write
+        contents: write
+      steps:
+        - uses: fastify/github-action-merge-dependabot@v3.6.1
+          with:
+            github-token: ${{ secrets.BOT_PAT }}
+            use-github-auto-merge: true
+
   build-and-test:
     runs-on: ubuntu-latest
 
