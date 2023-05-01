@@ -16,7 +16,7 @@ jobs:
         pull-requests: write
         contents: write
       steps:
-        - uses: fastify/github-action-merge-dependabot@v3.6.1
+        - uses: fastify/github-action-merge-dependabot@v3.6.5
           with:
             github-token: ${{ secrets.BOT_PAT }}
             use-github-auto-merge: true
