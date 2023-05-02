@@ -24,7 +24,7 @@ public class HomeController : Controller
 
         if (string.IsNullOrEmpty(key))
         {
-            return RedirectToAction(nameof(Home)); 
+            return RedirectToAction(nameof(Home));
         }
         else if (siteMapping is not null)
         {
@@ -42,9 +42,9 @@ public class HomeController : Controller
         }
         else
         {
-            return RedirectToAction(nameof(Error), new { errorMessage = "Specified page not found, please check your spelling and try again" });
+            return RedirectToAction(nameof(Error), new { errorMessage = "Specified page not found, please check your spelling and try again", statusCode = 404 });
         }
-        
+
     }
 
     [Route("/TermsOfService",
@@ -103,9 +103,10 @@ public class HomeController : Controller
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error(string? errorMessage = null)
+    public IActionResult Error(string? errorMessage = null, int statusCode = 404)
     {
-        ViewBag.ErrorMessage = errorMessage;
+        Response.StatusCode = statusCode;
+        ViewBag.ErrorMessage = $"{statusCode}: {errorMessage}";
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 }
