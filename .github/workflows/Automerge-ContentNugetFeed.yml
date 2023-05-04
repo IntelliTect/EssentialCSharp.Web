@@ -1,4 +1,4 @@
-name: Dependabot auto-merge ContentNugetFeed
+name: Dependabot auto-merge
 on: pull_request
 
 permissions:
