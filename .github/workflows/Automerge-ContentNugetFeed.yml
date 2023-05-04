@@ -15,6 +15,11 @@ jobs:
         uses: dependabot/fetch-metadata@v1
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Add a label for content updates
+        if: ${{contains(steps.metadata.outputs.dependency-names, 'ContentFeedNuget')}}
+        run: gh pr edit "$PR_URL" --add-label "content update"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}   
       - name: Approve a PR
         run: gh pr review --approve "$PR_URL"
         env:
