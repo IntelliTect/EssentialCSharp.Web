@@ -18,8 +18,8 @@ jobs:
       steps:
         - uses: fastify/github-action-merge-dependabot@v3.6.1
           with:
-            github-token: ${{ secrets.BOT_PAT }}
             use-github-auto-merge: true
+            exclude: 'ContentFeedNuget'
 
   build-and-test:
     runs-on: ubuntu-latest
