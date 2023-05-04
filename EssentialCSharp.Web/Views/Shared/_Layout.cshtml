@@ -1,7 +1,8 @@
 @using EssentialCSharp.Web.Extensions
 @using System.Globalization
+@using EssentialCSharp.Web.Services;
 @using IntelliTect.Multitool
-@inject IList<SiteMapping> _SiteMappings
+@inject SiteMappingService _SiteMappings
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -259,7 +260,7 @@
                 // so skip any items that are /before/ the current node.
                 Items = GetItems(chapterItems.SkipWhile(q => i.Key != q.Key), indentLevel + 1)
             });
-            var tocData = _SiteMappings.GroupBy(x => x.ChapterNumber).OrderBy(x => x.Key).Select(x => new
+            var tocData = _SiteMappings.SiteMappings.GroupBy(x => x.ChapterNumber).OrderBy(x => x.Key).Select(x => new
             {
                 Level = 0,
                 Key = x.First().Key,

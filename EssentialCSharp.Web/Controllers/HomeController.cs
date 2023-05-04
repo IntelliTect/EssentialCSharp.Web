@@ -1,4 +1,5 @@
 using EssentialCSharp.Web.Models;
+using EssentialCSharp.Web.Services;
 using HtmlAgilityPack;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,14 +8,16 @@ namespace EssentialCSharp.Web.Controllers;
 public class HomeController : Controller
 {
     private readonly IWebHostEnvironment _HostingEnvironment;
-    private readonly IList<SiteMapping> _SiteMappings;
+    private readonly SiteMappingService _SiteMappingService;
     private readonly ILogger<HomeController> _Logger;
+    private readonly IList<SiteMapping> _SiteMappings;
 
-    public HomeController(ILogger<HomeController> logger, IWebHostEnvironment hostingEnvironment, IList<SiteMapping> siteMappings)
+    public HomeController(ILogger<HomeController> logger, IWebHostEnvironment hostingEnvironment, SiteMappingService siteMappingService)
     {
         _Logger = logger;
         _HostingEnvironment = hostingEnvironment;
-        _SiteMappings = siteMappings;
+        _SiteMappingService = siteMappingService;
+        _SiteMappings = _SiteMappingService.SiteMappings;
     }
 
     public IActionResult Index(string key)
