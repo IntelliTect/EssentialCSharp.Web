@@ -10,20 +10,18 @@ public class HomeController : Controller
     private readonly IWebHostEnvironment _HostingEnvironment;
     private readonly SiteMappingService _SiteMappingService;
     private readonly ILogger<HomeController> _Logger;
-    private readonly IList<SiteMapping> _SiteMappings;
 
     public HomeController(ILogger<HomeController> logger, IWebHostEnvironment hostingEnvironment, SiteMappingService siteMappingService)
     {
         _Logger = logger;
         _HostingEnvironment = hostingEnvironment;
         _SiteMappingService = siteMappingService;
-        _SiteMappings = _SiteMappingService.SiteMappings;
     }
 
     public IActionResult Index(string key)
     {
         // if no key (default case), then load up home page
-        SiteMapping? siteMapping = SiteMapping.Find(key, _SiteMappings);
+        SiteMapping? siteMapping = SiteMapping.Find(key, _SiteMappingService.SiteMappings);
 
         if (string.IsNullOrEmpty(key))
         {
@@ -73,7 +71,7 @@ public class HomeController : Controller
 
     private string FlipPage(int currentChapter, int currentPage, bool next)
     {
-        if (_SiteMappings.Count == 0)
+        if (_SiteMappingService.SiteMappings.Count == 0)
         {
             return "";
         }
@@ -84,18 +82,18 @@ public class HomeController : Controller
             page = 1;
         }
 
-        SiteMapping? siteMap = _SiteMappings.FirstOrDefault(f => f.ChapterNumber == currentChapter && f.PageNumber == currentPage + page);
+        SiteMapping? siteMap = _SiteMappingService.SiteMappings.FirstOrDefault(f => f.ChapterNumber == currentChapter && f.PageNumber == currentPage + page);
 
         if (siteMap is null)
         {
             if (next)
             {
-                siteMap = _SiteMappings.FirstOrDefault(f => f.ChapterNumber == currentChapter + 1 && f.PageNumber == 1);
+                siteMap = _SiteMappingService.SiteMappings.FirstOrDefault(f => f.ChapterNumber == currentChapter + 1 && f.PageNumber == 1);
             }
             else
             {
-                int? previousPage = _SiteMappings.LastOrDefault(f => f.ChapterNumber == currentChapter - 1)?.PageNumber;
-                siteMap = _SiteMappings.FirstOrDefault(f => f.ChapterNumber == currentChapter - 1 && f.PageNumber == previousPage);
+                int? previousPage = _SiteMappingService.SiteMappings.LastOrDefault(f => f.ChapterNumber == currentChapter - 1)?.PageNumber;
+                siteMap = _SiteMappingService.SiteMappings.FirstOrDefault(f => f.ChapterNumber == currentChapter - 1 && f.PageNumber == previousPage);
             }
             if (siteMap is null)
             {

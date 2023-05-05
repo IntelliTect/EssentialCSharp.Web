@@ -2,9 +2,9 @@
 
 namespace EssentialCSharp.Web.Services
 {
-    public class SiteMappingService
+    public class SiteMappingService : ISiteMappingService
     {
-        public IList<SiteMapping> SiteMappings { get; init; }
+        public IList<SiteMapping> SiteMappings { get; }
 
         public SiteMappingService(IWebHostEnvironment webHostEnvironment)
         {
