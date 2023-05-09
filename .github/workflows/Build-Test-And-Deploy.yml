@@ -61,7 +61,9 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           push: true
-          tags: essentialcsharpregistry.azurecr.io/essentialcsharp:${{ github.sha }}
+          tags: essentialcsharpregistry.azurecr.io/essentialcsharp:${{ github.sha }},essentialcsharpregistry.azurecr.io/essentialcsharp:latest
+          file: ./EssentialCSharp.Web/Dockerfile
+          context: ./EssentialCSharp.Web/
 
   deploy-development:
     if: github.event_name != 'pull_request'
@@ -83,7 +85,7 @@ jobs:
           inlineScript: |
             az config set extension.use_dynamic_install=yes_without_prompt
             az containerapp registry set -n essentialcsharpdev -g EssentialCSharp --server essentialcsharpregistry.azurecr.io --username  ${{ secrets.ESSENTIALCSHARPDEV_REGISTRY_USERNAME }} --password ${{ secrets.ESSENTIALCSHARPDEV_REGISTRY_PASSWORD }}
-            az containerapp update -n essentialcsharpdev -g EssentialCSharp --image essentialcsharpregistry.azurecr.io/essentialcsharp:${{ github.sha }}
+            az containerapp update -n essentialcsharpdev -g EssentialCSharp --image essentialcsharpregistry.azurecr.io/essentialcsharp:latest
           
   deploy-production:
     if: github.event_name != 'pull_request'
@@ -105,4 +107,4 @@ jobs:
           inlineScript: |
             az config set extension.use_dynamic_install=yes_without_prompt
             az containerapp registry set -n essentialcsharpprod -g EssentialCSharp --server essentialcsharpregistry.azurecr.io --username  ${{ secrets.ESSENTIALCSHARPPROD_REGISTRY_USERNAME }} --password ${{ secrets.ESSENTIALCSHARPPROD_REGISTRY_PASSWORD }}
-            az containerapp update -n essentialcsharpprod -g EssentialCSharp --image essentialcsharpregistry.azurecr.io/essentialcsharp:${{ github.sha }}
+            az containerapp update -n essentialcsharpprod -g EssentialCSharp --image essentialcsharpregistry.azurecr.io/essentialcsharp:latest
