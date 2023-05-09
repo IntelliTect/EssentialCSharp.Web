@@ -2,4 +2,5 @@
 
 public interface ISiteMappingService
 {
+    IList<SiteMapping> SiteMappings { get; }
 }

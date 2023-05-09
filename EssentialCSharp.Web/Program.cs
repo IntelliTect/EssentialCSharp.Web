@@ -11,7 +11,7 @@ public sealed class Program
         // Add services to the container.
         builder.Services.AddRazorPages();
 
-        builder.Services.AddSingleton<SiteMappingService>();
+        builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
 
         WebApplication app = builder.Build();
         // Configure the HTTP request pipeline.

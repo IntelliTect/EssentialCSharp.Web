@@ -8,10 +8,10 @@ namespace EssentialCSharp.Web.Controllers;
 public class HomeController : Controller
 {
     private readonly IWebHostEnvironment _HostingEnvironment;
-    private readonly SiteMappingService _SiteMappingService;
+    private readonly ISiteMappingService _SiteMappingService;
     private readonly ILogger<HomeController> _Logger;
 
-    public HomeController(ILogger<HomeController> logger, IWebHostEnvironment hostingEnvironment, SiteMappingService siteMappingService)
+    public HomeController(ILogger<HomeController> logger, IWebHostEnvironment hostingEnvironment, ISiteMappingService siteMappingService)
     {
         _Logger = logger;
         _HostingEnvironment = hostingEnvironment;
