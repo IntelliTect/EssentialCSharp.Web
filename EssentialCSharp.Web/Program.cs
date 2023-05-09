@@ -1,3 +1,5 @@
+using EssentialCSharp.Web.Services;
+
 namespace EssentialCSharp.Web;
 
 public sealed class Program
@@ -9,20 +11,9 @@ public sealed class Program
         // Add services to the container.
         builder.Services.AddRazorPages();
 
-        builder.Services.AddSingleton<IList<SiteMapping>>(sp =>
-        {
-            IWebHostEnvironment _HostingEnvironment = sp.GetRequiredService<IWebHostEnvironment>();
-            string path = Path.Combine(_HostingEnvironment.ContentRootPath, "Chapters", "sitemap.json");
-            List<SiteMapping>? siteMappings = System.Text.Json.JsonSerializer.Deserialize<List<SiteMapping>>(File.OpenRead(path));
-            if (siteMappings is null)
-            {
-                throw new InvalidOperationException("No table of contents found");
-            }
-            return siteMappings;
-        });
+        builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
 
         WebApplication app = builder.Build();
-        _ = app.Services.GetRequiredService<IList<SiteMapping>>();
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
         {
