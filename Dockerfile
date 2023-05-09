@@ -10,7 +10,7 @@ WORKDIR /src
 COPY ["EssentialCSharp.Web/EssentialCSharp.Web.csproj", "EssentialCSharp.Web/"]
 RUN dotnet restore "EssentialCSharp.Web/EssentialCSharp.Web.csproj"
 COPY . .
-WORKDIR "/src/EssentialCSharp.Web"
+WORKDIR "/EssentialCSharp.Web"
 RUN dotnet build "EssentialCSharp.Web.csproj" -c Release -o /app/build
 
 FROM build AS publish

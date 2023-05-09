@@ -62,8 +62,6 @@ jobs:
         with:
           push: true
           tags: essentialcsharpregistry.azurecr.io/essentialcsharp:${{ github.sha }}
-          file: ./EssentialCSharp.Web/Dockerfile
-          context: ./EssentialCSharp.Web/
 
   deploy-development:
     if: github.event_name != 'pull_request'
@@ -78,7 +76,6 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.ESSENTIALCSHARPDEV_AZURE_CREDENTIALS }}
-
 
       - name: Deploy to containerapp
         uses: azure/CLI@v1
