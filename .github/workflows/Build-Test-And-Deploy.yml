@@ -58,7 +58,7 @@ jobs:
 
       - name: Build and push container image to registry
         if: github.event_name != 'pull_request'
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v4
         with:
           push: true
           tags: essentialcsharpregistry.azurecr.io/essentialcsharp:${{ github.sha }}
