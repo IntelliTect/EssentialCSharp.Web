@@ -11,10 +11,11 @@ WORKDIR /src
 COPY EssentialCSharp.Web/*.csproj .
 COPY nuget.config .
 RUN --mount=type=secret,id=nuget_auth_token \
-    VSS_NUGET_EXTERNAL_FEED_ENDPOINTS="{\"endpointCredentials\": [{\"endpoint\":\"https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json\", \"password\":\"${nuget_auth_token}\"}]}" \
-    dotnet restore "EssentialCSharp.Web.csproj" && \
-    dotnet build "EssentialCSharp.Web.csproj" -c Release -o /app/build --no-restore && \
-    dotnet publish "EssentialCSharp.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-build
+    VSS_NUGET_EXTERNAL_FEED_ENDPOINTS="{\"endpointCredentials\": [{\"endpoint\":\"https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json\", \"password\":"$(cat /run/secrets/nuget_auth_token)"}]}" \
+    echo VSS_NUGET_EXTERNAL_FEED_ENDPOINTS && \
+    dotnet restore "EssentialCSharp.Web.csproj" -v d && \
+    dotnet build "EssentialCSharp.Web.csproj" -c Release -o /app/build --no-restore -v d && \
+    dotnet publish "EssentialCSharp.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-build -v d
 
 FROM base AS final
 WORKDIR /app
