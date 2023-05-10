@@ -63,7 +63,9 @@ jobs:
           push: true
           tags: essentialcsharpregistry.azurecr.io/essentialcsharp:${{ github.sha }},essentialcsharpregistry.azurecr.io/essentialcsharp:latest
           file: ./EssentialCSharp.Web/Dockerfile
-          context: ./EssentialCSharp.Web/
+          context: .
+          secrets: |
+            "nuget_auth_token=${{secrets.AZURE_DEVOPS_PAT}}"
 
   deploy-development:
     if: github.event_name != 'pull_request'
