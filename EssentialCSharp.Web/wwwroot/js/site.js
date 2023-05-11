@@ -32,10 +32,6 @@ const featuresComingSoonList = [
     text: "Edit, compile, and run the code listings found throughout Essential C#.",
   },
   {
-    title: "Full Text Search",
-    text: "Search for keywords and phrases to easily find relevant information.",
-  },
-  {
     title: "Hyperlinking",
     text: "Easily navigate to interesting and relevant sites as well as related sections in Essential C#.",
   },
@@ -47,10 +43,6 @@ const featuresComingSoonList = [
 
 const contentComingSoonList = [
   {
-    title: "<span class='code-text'>records</span>",
-    text: "New feature from C# 9.",
-  },
-  {
     title: "File Scoped <span class='code-text'>namespaces</span>",
     text: "New feature from C# 10.",
   },
@@ -61,10 +53,6 @@ const contentComingSoonList = [
   {
     title: "Pattern Matching Improvements",
     text: "Feature improvements from C# 11.",
-  },
-  {
-    title: "<span class='code-text'>required</span> Members",
-    text: "New feature from C# 11.",
   },
 ];
 
