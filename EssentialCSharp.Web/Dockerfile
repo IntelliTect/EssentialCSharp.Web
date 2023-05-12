@@ -11,6 +11,7 @@ WORKDIR /src
 COPY EssentialCSharp.Web/*.csproj .
 COPY nuget.config .
 RUN --mount=type=secret,id=nuget_auth_token \
+    ls /run/secrets && \
     cat /run/secrets/nuget_auth_token && \
     echo we are here && \
     export VSS_NUGET_EXTERNAL_FEED_ENDPOINTS="{\"endpointCredentials\": [{\"endpoint\":\"https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json\", \"password\":"$(cat /run/secrets/nuget_auth_token)"}]}" \
