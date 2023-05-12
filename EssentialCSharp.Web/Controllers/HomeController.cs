@@ -2,6 +2,7 @@ using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using HtmlAgilityPack;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis;
 
 namespace EssentialCSharp.Web.Controllers;
 
@@ -35,6 +36,7 @@ public class HomeController : Controller
             string headHtml = doc.DocumentNode.Element("html").Element("head").InnerHtml;
             string html = doc.DocumentNode.Element("html").Element("body").InnerHtml;
 
+            ViewBag.PageTitle = siteMapping.IndentLevel is 0 ? siteMapping.ChapterTitle + " " + siteMapping.RawHeading : siteMapping.RawHeading;
             ViewBag.NextPage = FlipPage(siteMapping!.ChapterNumber, siteMapping.PageNumber, true);
             ViewBag.PreviousPage = FlipPage(siteMapping.ChapterNumber, siteMapping.PageNumber, false);
             ViewBag.HeadContents = headHtml;
@@ -52,6 +54,7 @@ public class HomeController : Controller
        Name = "TermsOfService")]
     public IActionResult TermsOfService()
     {
+        ViewBag.PageTitle = "Terms Of Service";
         return View();
     }
 
@@ -59,6 +62,7 @@ public class HomeController : Controller
        Name = "Announcements")]
     public IActionResult Announcements()
     {
+        ViewBag.PageTitle = "Announcements";
         return View();
     }
 
@@ -108,6 +112,7 @@ public class HomeController : Controller
     {
         Response.StatusCode = statusCode;
         ViewBag.ErrorMessage = $"{statusCode}: {errorMessage}";
+        ViewBag.PageTitle = $"Error-{statusCode}";
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 }
