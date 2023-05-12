@@ -9,6 +9,7 @@
     @{
         const string imageUrl = "https://essentialcsharp.com/images/icon.png";
         const string description = "Accelerate your development knowledge with C# expert Mark Michaelis' free, online comprehensive C# tutorial and reference that is updated through C# 11.0";
+        string title = $"Essential C#{(string.IsNullOrEmpty(ViewBag.PageTitle) ? string.Empty : $": {ViewBag.PageTitle}")}";
     }
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -17,6 +18,7 @@
     <meta property="og:image:secure_url" content="@imageUrl" />
     <meta property="og:image" content="@imageUrl" />
     <meta name="twitter:image" content="@imageUrl" />
+    <title id="page-title">@title</title>
     <meta property="og:image:type" content="image/png" />
     <meta name="description" property="og:description" content="@description" />
     <meta name="twitter:description" content="@description" />
@@ -24,8 +26,7 @@
     <meta name="twitter:site" content="@@IntelliTect" />
     <meta property="og:image:width" content="500" />
     <meta property="og:image:height" content="500" />
-    <meta name="twitter:title" property="og:title" content="Essential C#" />
-    <PageTitle id="page-title">Essential C# </PageTitle>
+    <meta name="twitter:title" property="og:title" content="@title" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="./lib/docsearch/style.css" />
@@ -109,9 +110,9 @@
                     <div class="menu-position">
                         <div class="menu-tooltip">
                             <button class="menu-btn" target="blank"
-                                onclick="window.open('https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas', 'blank')">
+                                    onclick="window.open('https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas', 'blank')">
                                 <i class="fa fa-solid fa-comment fa-lg icon-light"></i>
-                            </button>                            
+                            </button>
                             <span class="tooltip-text">Feedback</span>
                         </div>
                         <div class="menu-tooltip">
@@ -224,7 +225,7 @@
         <footer class="border-top footer">
             <div class="row">
                 <div class="col-12 col-md-4 me-auto p-2">
-                    &copy; IntelliTect 2005-@DateTime.Now.Year 
+                    &copy; IntelliTect 2005-@DateTime.Now.Year
                 </div>
                 <div class="col-12 col-md-auto align-self-end p-2">
                     <a target="_blank" rel="noreferrer noopener" href="https://intellitect.com/about/privacy-policy/">Privacy</a>
