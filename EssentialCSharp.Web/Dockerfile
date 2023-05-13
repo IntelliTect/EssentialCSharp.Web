@@ -12,7 +12,6 @@ COPY EssentialCSharp.Web/*.csproj .
 COPY nuget.config .
 RUN --mount=type=secret,id=nuget_auth_token \
     ls /run/secrets && \
-    cat /run/secrets/nuget_auth_token && \
     echo we are here && \
     auth_token="$(cat /run/secrets/nuget_auth_token)" && \
     echo token && \
