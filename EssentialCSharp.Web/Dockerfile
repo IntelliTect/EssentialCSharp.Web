@@ -13,7 +13,7 @@ COPY nuget.config .
 RUN --mount=type=secret,id=nuget_auth_token \
     ls /run/secrets && \
     echo we are here && \
-    auth_token="$(cat /run/secrets/nuget_auth_token)" && \
+    auth_token=$(< /run/secrets/nuget_auth_token) && \
     echo token && \
     export VSS_NUGET_EXTERNAL_FEED_ENDPOINTS="{\"endpointCredentials\": [{\"endpoint\":\"https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json\", \"password\":\"$auth_token\"}]}" \
     echo $VSS_NUGET_EXTERNAL_FEED_ENDPOINTS && \
