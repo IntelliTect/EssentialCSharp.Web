@@ -44,9 +44,6 @@ jobs:
       - name: Run .NET Tests
         run: dotnet test --no-build --configuration Release
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-
       - name: Set up Docker Buildx
         if: github.event_name != 'pull_request'
         uses: docker/setup-buildx-action@v2
