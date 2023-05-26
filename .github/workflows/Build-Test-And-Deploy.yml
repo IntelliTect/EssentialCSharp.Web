@@ -67,6 +67,17 @@ jobs:
           secrets: |
             "nuget_auth_token=${{secrets.AZURE_DEVOPS_PAT}}"
 
+      - name: dotnet publish
+        if: github.event_name != 'pull_request'
+        run: dotnet publish -c Release -p:PublishDir=${{github.workspace}}/DeployEssentialCSharp.Web
+
+      - name: Upload artifact for deployment job
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v3
+        with:
+          name: .net-app
+          path: ${{github.workspace}}/DeployEssentialCSharp.Web
+
   deploy-development:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
