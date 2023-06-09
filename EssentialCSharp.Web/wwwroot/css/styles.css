@@ -485,6 +485,7 @@ details > summary::-webkit-details-marker {
   padding-top: 15px;
   padding-right: 18px;
   padding-left: 15px;
+  scrollbar-gutter: stable;
 }
 
 /* Top Banner Bar */
