@@ -84,7 +84,6 @@ jobs:
     needs: build-and-test
     environment:
       name: 'Development'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
       - name: Azure Login
@@ -106,7 +105,6 @@ jobs:
     needs: [build-and-test, deploy-development]
     environment:
       name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
       - name: Azure Login
