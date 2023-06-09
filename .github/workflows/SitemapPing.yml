@@ -11,6 +11,9 @@ jobs:
   ping-google:
     name: Ping Google
     runs-on: ubuntu-latest
+    environment:
+      name: 'Production'
+
     steps:
       - name: Send HTTP GET request to Google
         # https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap
