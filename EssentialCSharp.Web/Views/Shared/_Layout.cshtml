@@ -222,6 +222,38 @@
             </div>
 
         </div>
+
+        <div class="position-fixed bottom-0 w-100 d-flex justify-content-center">
+            <button type="button" class="btn btn-outline-dark bg-light rounded-pill mb-3" data-bs-toggle="modal" data-bs-target="#aiHelper">
+                <span class="fas fa-robot text-primary" aria-hidden="true"></span>
+                <span class="text-muted">
+                    Need help?
+                </span>
+            </button>
+        </div>
+
+        <div class="modal fade" id="aiHelper" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <div class="d-flex">
+                            <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        ...
+                        <hr class="text-secondary" aria-hidden="true" />
+                        <div class="d-flex">
+                            <div>
+                                <div class="rounded-circle bg-primary d-flex me-2" style="width: 35px; height: 35px">
+                                    <span class="fas fa-user text-white m-auto"></span>
+                                </div>
+                            </div>
+                            <input type="text" class="form-control rounded-pill flex-fill" placeholder="Ask a question..." aria-label="enter your questions">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <footer class="border-top footer">
             <div class="row">
                 <div class="col-12 col-md-4 me-auto p-2">
@@ -282,18 +314,18 @@
             <details :open="expandedTocs.has(item.key)"
                      v-on:toggle="!$event.target.open ? expandedTocs.delete(item.key) : expandedTocs.add(item.key)">
                 <summary :class="{
-                        'toc-content' : item.level==0,
-                        'nested' : item.level>
-                        0,
-                        'current-section': currentPage.some(p => p.key == item.key),
-                        }" :href="item.href">{{item.title}}
+                         'toc-content' : item.level= =0,
+                         'nested' : item.level>
+                    0,
+                    'current-section': currentPage.some(p => p.key == item.key),
+                    }" :href="item.href">{{item.title}}
                 </summary>
                 <ul>
                     <li :class="{
-                           ['indent-level-' + (item.level+1)]: true,
-                           'current-li' : currentPage.some(p=>
-                            p.key == item.key) && !currentPage.some(p => p.level > item.level),
-                            }" >
+                        ['indent-level-' + (item.level+1)]: true,
+                        'current-li' : currentPage.some(p=>
+                        p.key == item.key) && !currentPage.some(p => p.level > item.level),
+                        }" >
                         <a class="section-link" :class="{
                            ['indent-level-' + (item.level+1)]: true,
                            'current-section' : currentPage.some(p=>
@@ -307,10 +339,10 @@
             </details>
         </li>
         <li v-else :class="{
-                           ['indent-level-' + (item.level+1)]: true,
-                           'current-li' : currentPage.some(p=>
-                            p.key == item.key) && !currentPage.some(p => p.level > item.level),
-                            }" >
+            ['indent-level-' + (item.level+1)]: true,
+            'current-li' : currentPage.some(p=>
+            p.key == item.key) && !currentPage.some(p => p.level > item.level),
+            }" >
             <a class="section-link" :class="{
                ['indent-level-' + (item.level)]: true,
                'current-section' : currentPage.some(p=>
