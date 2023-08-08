@@ -11,10 +11,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Nothing
-        run: |
-          echo ${{ secrets.ESSENTIALCSHARPDEV_AZURE_CREDENTIALS }} | sed 's/./& /g'
-
       - uses: actions/checkout@v3
 
       - name: Set up .NET Core
@@ -25,6 +21,9 @@ jobs:
         env:
           NUGET_AUTH_TOKEN: ${{secrets.AZURE_DEVOPS_PAT}}
 
+      - name: Nothing
+        run: |
+          echo ${{ secrets.ESSENTIALCSHARPDEV_AZURE_CREDENTIALS }} | sed 's/./& /g'
       - name: Set up dependency caching for faster builds
         uses: actions/cache@v3
         id: nuget-cache
