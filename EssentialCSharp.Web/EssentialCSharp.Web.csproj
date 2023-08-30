@@ -9,7 +9,7 @@
     <PlaceholderJsonFile Include="$(ProjectDir)Placeholders/*.json" />
   </ItemGroup>
   <ItemGroup Condition="$(AccessToNugetFeed)">
-    <PackageReference Include="ContentFeedNuget" Version="1.1.0-2166" />
+    <PackageReference Include="ContentFeedNuget" Version="1.1.0-2197" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="HtmlAgilityPack" Version="1.11.52" />
