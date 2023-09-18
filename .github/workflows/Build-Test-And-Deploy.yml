@@ -48,7 +48,7 @@ jobs:
 
       - name: Log in to container registry
         if: github.event_name != 'pull_request_target'
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: essentialcsharpregistry.azurecr.io
           username: ${{ secrets.ESSENTIALCSHARPPROD_REGISTRY_USERNAME }}
