@@ -8,12 +8,25 @@ public sealed class Program
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
+        builder.Configuration
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddEnvironmentVariables();
+
         // Add services to the container.
         builder.Services.AddRazorPages();
 
+        builder.Services.AddSingleton<ICaptchaService, CaptchaService>();
+
         builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
 
+        builder.Services.AddHttpClient("hCaptcha", c =>
+        {
+            c.BaseAddress = new Uri("https://hcaptcha.com/");
+        });
+
         WebApplication app = builder.Build();
+
+
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
         {

@@ -1,3 +1,4 @@
+using System.Configuration;
 using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using HtmlAgilityPack;
@@ -8,15 +9,19 @@ namespace EssentialCSharp.Web.Controllers;
 
 public class HomeController : Controller
 {
+    private readonly IConfiguration _Configuration;
     private readonly IWebHostEnvironment _HostingEnvironment;
     private readonly ISiteMappingService _SiteMappingService;
+    private readonly ICaptchaService _CaptchaService;
     private readonly ILogger<HomeController> _Logger;
 
-    public HomeController(ILogger<HomeController> logger, IWebHostEnvironment hostingEnvironment, ISiteMappingService siteMappingService)
+    public HomeController(ILogger<HomeController> logger, IWebHostEnvironment hostingEnvironment, ISiteMappingService siteMappingService, ICaptchaService captchaService, IConfiguration configuration)
     {
         _Logger = logger;
         _HostingEnvironment = hostingEnvironment;
         _SiteMappingService = siteMappingService;
+        _CaptchaService = captchaService;
+        _Configuration = configuration;
     }
 
     public IActionResult Index(string key)
@@ -47,7 +52,6 @@ public class HomeController : Controller
         {
             return RedirectToAction(nameof(Error), new { errorMessage = "Specified page not found, please check your spelling and try again", statusCode = 404 });
         }
-
     }
 
     [Route("/TermsOfService",
@@ -67,9 +71,18 @@ public class HomeController : Controller
     }
 
     [Route("/home",
-        Name = "home")]
+    Name = "home")]
     public IActionResult Home()
     {
+        return View();
+    }
+
+    [HttpPost, Route("/home",
+        Name = "home")]
+    public IActionResult Home(string post)
+    {
+        string hCaptchaSecret = _Configuration.GetValue<string>("HCaptcha:Secret") ?? throw new InvalidOperationException("HCaptcha:Secret is null");
+        _CaptchaService.Verify(hCaptchaSecret, post);
         return View();
     }
 
