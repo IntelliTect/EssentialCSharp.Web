@@ -1,4 +1,5 @@
 using System.Configuration;
+using EssentialCSharp.Web.Extensions;
 using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using HtmlAgilityPack;
@@ -79,11 +80,21 @@ public class HomeController : Controller
 
     [HttpPost, Route("/home",
         Name = "home")]
-    public IActionResult Home(string post)
+    public async Task<IActionResult> Home(IFormCollection collection)
     {
         string hCaptchaSecret = _Configuration.GetValue<string>("HCaptcha:Secret") ?? throw new InvalidOperationException("HCaptcha:Secret is null");
-        _CaptchaService.Verify(hCaptchaSecret, post);
-        return View();
+        string hCaptchaToken = collection["h-captcha-response"].ToString();
+        HttpResponseMessage response = await _CaptchaService.Verify(hCaptchaSecret, hCaptchaToken);
+        if (response.IsSuccessStatusCode)
+        {
+            _Logger.HomeControllerSuccessfulCaptchaResponse(Json(response));
+            return View();
+        }
+        else
+        {
+            _Logger.HomeControllerSuccessfulCaptchaResponse(Json(response));
+            return View();
+        }
     }
 
     private string FlipPage(int currentChapter, int currentPage, bool next)
