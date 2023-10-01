@@ -85,16 +85,18 @@ public class HomeController : Controller
         string hCaptchaSecret = _Configuration.GetValue<string>("HCaptcha:Secret") ?? throw new InvalidOperationException("HCaptcha:Secret is null");
         string hCaptchaToken = collection["h-captcha-response"].ToString();
         HttpResponseMessage response = await _CaptchaService.Verify(hCaptchaSecret, hCaptchaToken);
-        if (response.IsSuccessStatusCode)
-        {
-            _Logger.HomeControllerSuccessfulCaptchaResponse(Json(response));
-            return View();
-        }
-        else
-        {
-            _Logger.HomeControllerSuccessfulCaptchaResponse(Json(response));
-            return View();
-        }
+        //if (response.IsSuccessStatusCode)
+        //{
+        //    _Logger.HomeControllerSuccessfulCaptchaResponse(Json(response));
+        //    return View();
+        //}
+        //else
+        //{
+        //    _Logger.HomeControllerSuccessfulCaptchaResponse(Json(response));
+
+        //    return RedirectToAction(nameof(Error), new { errorMessage = "Captcha Failed. Forbidden", statusCode = 403 });
+        //}
+        return View();
     }
 
     private string FlipPage(int currentChapter, int currentPage, bool next)
