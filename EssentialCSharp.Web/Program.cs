@@ -2,7 +2,7 @@ using EssentialCSharp.Web.Services;
 
 namespace EssentialCSharp.Web;
 
-public sealed class Program
+public partial class Program
 {
     private static void Main(string[] args)
     {
