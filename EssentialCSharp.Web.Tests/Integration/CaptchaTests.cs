@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -22,7 +22,8 @@ public class CaptchaTests : IClassFixture<WebApplicationFactory<Program>>
         // From https://docs.hcaptcha.com/#integration-testing-test-keys
         string hCaptchaSecret = "0x0000000000000000000000000000000000000000";
         string hCaptchaToken = "10000000-aaaa-bbbb-cccc-000000000001";
-        HttpResponseMessage response = await _CaptchaService.Verify(hCaptchaSecret, hCaptchaToken);
+        string hCaptchaSiteKey = "10000000-ffff-ffff-ffff-000000000001";
+        HttpResponseMessage response = await captchaService.Verify(hCaptchaSecret, hCaptchaToken, hCaptchaSiteKey);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
