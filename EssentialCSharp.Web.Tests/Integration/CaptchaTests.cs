@@ -17,8 +17,8 @@ public class CaptchaTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task CaptchaService_Verify_Success()
     {
-        ICaptchaService? _CaptchaService = _factory.Services.GetService<ICaptchaService>();
-        Assert.NotNull(_CaptchaService);
+        ICaptchaService captchaService = _factory.Services.GetRequiredService<ICaptchaService>();
+
         // From https://docs.hcaptcha.com/#integration-testing-test-keys
         string hCaptchaSecret = "0x0000000000000000000000000000000000000000";
         string hCaptchaToken = "10000000-aaaa-bbbb-cccc-000000000001";

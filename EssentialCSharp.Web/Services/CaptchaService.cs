@@ -15,10 +15,11 @@ namespace EssentialCSharp.Web.Services
         {
             // create post data
             List<KeyValuePair<string, string>> postData = new()
-        {
-            new KeyValuePair<string, string>("secret", secret),
-            new KeyValuePair<string, string>("response", token),
-        };
+            {
+                new KeyValuePair<string, string>("secret", secret),
+                new KeyValuePair<string, string>("response", token),
+            };
+
 
             return await PostVerification(postData);
         }
@@ -27,11 +28,12 @@ namespace EssentialCSharp.Web.Services
         {
             // create post data
             List<KeyValuePair<string, string>> postData = new()
-        {
-            new KeyValuePair<string, string>("secret", secret),
-            new KeyValuePair<string, string>("response", token),
-            new KeyValuePair<string, string>("remoteip", remoteIp)
-        };
+            {
+                new KeyValuePair<string, string>("secret", secret),
+                new KeyValuePair<string, string>("response", token),
+                new KeyValuePair<string, string>("remoteip", remoteIp)
+            };
+
 
             return await PostVerification(postData);
         }
