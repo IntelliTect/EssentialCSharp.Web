@@ -85,6 +85,8 @@ public class HomeController : Controller
         string hCaptchaSecret = _Configuration.GetValue<string>("HCaptcha:Secret") ?? throw new InvalidOperationException("HCaptcha:Secret is null");
         string hCaptchaToken = collection["h-captcha-response"].ToString();
         HttpResponseMessage response = await _CaptchaService.Verify(hCaptchaSecret, hCaptchaToken, "b9235f58-3d8d-4394-ab8e-78b35a6d69c5");
+        // The JSON should also return a field "success" as true
+        // https://docs.hcaptcha.com/#verify-the-user-response-server-side
         //if (response.IsSuccessStatusCode)
         //{
         //    _Logger.HomeControllerSuccessfulCaptchaResponse(Json(response));
