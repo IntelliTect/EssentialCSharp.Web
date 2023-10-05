@@ -276,3 +276,5 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+EssentialCSharp.Web/Markdown/
