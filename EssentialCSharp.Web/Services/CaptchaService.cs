@@ -17,11 +17,12 @@ public class CaptchaService : ICaptchaService
     {
         // create post data
         List<KeyValuePair<string, string>> postData = new()
-    {
-        new KeyValuePair<string, string>("secret", secret),
-        new KeyValuePair<string, string>("response", token),
-        new KeyValuePair<string, string>("sitekey", sitekey)
-    };
+        {
+            new KeyValuePair<string, string>("secret", secret),
+            new KeyValuePair<string, string>("response", token),
+            new KeyValuePair<string, string>("sitekey", sitekey)
+        };
+
 
         return await PostVerification(postData);
     }
