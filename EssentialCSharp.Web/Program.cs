@@ -11,10 +11,10 @@ public partial class Program
     private static void Main(string[] args)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+        ConfigurationManager configuration = builder.Configuration;
         string connectionString = builder.Configuration.GetConnectionString("EssentialCSharpWebContextConnection") ?? throw new InvalidOperationException("Connection string 'EssentialCSharpWebContextConnection' not found.");
 
         builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString));
-
         builder.Services.AddDefaultIdentity<EssentialCSharpWebUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<EssentialCSharpWebContext>();
 
         builder.Configuration
@@ -32,6 +32,13 @@ public partial class Program
         {
             c.BaseAddress = new Uri("https://hcaptcha.com/");
         });
+
+        builder.Services.AddAuthentication()
+         .AddMicrosoftAccount(microsoftoptions =>
+         {
+             microsoftoptions.ClientId = configuration["authentication:microsoft:clientid"]!;
+             microsoftoptions.ClientSecret = configuration["authentication:microsoft:clientsecret"]!;
+         });
 
         WebApplication app = builder.Build();
 

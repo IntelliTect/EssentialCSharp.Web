@@ -24,12 +24,14 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
 {
     public class RegisterModel : PageModel
     {
+#pragma warning disable IDE1006 // Naming Styles
         private readonly SignInManager<EssentialCSharpWebUser> _signInManager;
         private readonly UserManager<EssentialCSharpWebUser> _userManager;
         private readonly IUserStore<EssentialCSharpWebUser> _userStore;
         private readonly IUserEmailStore<EssentialCSharpWebUser> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
+#pragma warning restore IDE1006 // Naming Styles
 
         public RegisterModel(
             UserManager<EssentialCSharpWebUser> userManager,
