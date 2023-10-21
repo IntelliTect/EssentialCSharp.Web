@@ -1,4 +1,8 @@
 using EssentialCSharp.Web.Services;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using EssentialCSharp.Web.Data;
+using EssentialCSharp.Web.Areas.Identity.Data;
 
 namespace EssentialCSharp.Web;
 
@@ -7,6 +11,11 @@ public partial class Program
     private static void Main(string[] args)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+        string connectionString = builder.Configuration.GetConnectionString("EssentialCSharpWebContextConnection") ?? throw new InvalidOperationException("Connection string 'EssentialCSharpWebContextConnection' not found.");
+
+        builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString));
+
+        builder.Services.AddDefaultIdentity<EssentialCSharpWebUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<EssentialCSharpWebContext>();
 
         builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
@@ -47,6 +56,7 @@ public partial class Program
             name: "slug",
             pattern: "{*key}",
             defaults: new { controller = "Home", action = "Index" });
+        app.MapRazorPages();
 
         app.Run();
     }

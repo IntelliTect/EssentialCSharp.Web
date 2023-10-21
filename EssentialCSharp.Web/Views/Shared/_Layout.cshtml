@@ -123,6 +123,7 @@
                             </form>
                             <span class="tooltip-text">Announcements</span>
                         </div>
+                        <partial name="_LoginPartial" />
                     </div>
                 </div>
             </header>
@@ -240,7 +241,7 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/algoliaDocSearch.js" asp-append-version="true"></script>
 
-    @await RenderSectionAsync("Scripts", required: false)
+    @await RenderSectionAsync("Scripts", required: false);
     <script>
         @{
         object GetItems(IEnumerable<SiteMapping> chapterItems, int indentLevel) => chapterItems
