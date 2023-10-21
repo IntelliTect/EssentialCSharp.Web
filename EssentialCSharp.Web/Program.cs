@@ -1,9 +1,9 @@
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Areas.Identity.Data;
-
 namespace EssentialCSharp.Web;
 
 public partial class Program
@@ -16,6 +16,9 @@ public partial class Program
 
         builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString));
         builder.Services.AddDefaultIdentity<EssentialCSharpWebUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<EssentialCSharpWebContext>();
+
+        builder.Services.AddTransient<IEmailSender, EmailSender>();
+        builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration);
 
         builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
@@ -36,8 +39,8 @@ public partial class Program
         builder.Services.AddAuthentication()
          .AddMicrosoftAccount(microsoftoptions =>
          {
-             microsoftoptions.ClientId = configuration["authentication:microsoft:clientid"]!;
-             microsoftoptions.ClientSecret = configuration["authentication:microsoft:clientsecret"]!;
+             microsoftoptions.ClientId = configuration["authentication:microsoft:clientid"] ?? throw new InvalidOperationException("authentication:microsoft:clientid unexpectedly null");
+             microsoftoptions.ClientSecret = configuration["authentication:microsoft:clientsecret"]?? throw new InvalidOperationException("authentication:microsoft:clientsecret unexpectedly null");
          });
 
         WebApplication app = builder.Build();

@@ -7,7 +7,9 @@ namespace EssentialCSharp.Web.Extensions.Tests.Integration;
 
 public class CaptchaTests : IClassFixture<WebApplicationFactory<Program>>
 {
+#pragma warning disable IDE1006 // Naming Styles
     private readonly WebApplicationFactory<Program> _factory;
+#pragma warning restore IDE1006 // Naming Styles
 
     public CaptchaTests(WebApplicationFactory<Program> factory)
     {
