@@ -12,17 +12,27 @@
     <ol class="list">
         <li>
             <p>
-                Download a two-factor authenticator app like Microsoft Authenticator for
-                <a href="https://go.microsoft.com/fwlink/?Linkid=825072">Android</a> and
-                <a href="https://go.microsoft.com/fwlink/?Linkid=825073">iOS</a> or
-                Google Authenticator for
-                <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2&amp;hl=en">Android</a> and
-                <a href="https://itunes.apple.com/us/app/google-authenticator/id388497605?mt=8">iOS</a>.
+                Download a two-factor authenticator app such as:
+                <p>
+                2FAS:
+                <a href="https://play.google.com/store/apps/details?id=com.twofasapp">Android</a> - 
+                <a href="https://apps.apple.com/us/app/2fas-auth/id1217793794">iOS</a>
+                </p>
+                <p>
+                Ente.io
+                <a href="https://github.com/ente-io/auth/#android">Android</a> - 
+                <a href="https://github.com/ente-io/auth/#iphone--apple-silicon">iOS</a>
+
+                </p>
+                <p>
+                Aegis:
+                <a href="https://getaegis.app/">Android</a>
+
+                </p>
             </p>
         </li>
         <li>
             <p>Scan the QR Code or enter this key <kbd>@Model.SharedKey</kbd> into your two factor authenticator app. Spaces and casing do not matter.</p>
-            <div class="alert alert-info">Learn how to <a href="https://go.microsoft.com/fwlink/?Linkid=852423">enable QR code generation</a>.</div>
             <div id="qrCode"></div>
             <div id="qrCodeData" data-url="@Model.AuthenticatorUri"></div>
         </li>
@@ -50,4 +60,7 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script type="text/javascript" src="~/lib/qrcodejs/qrcode.js"></script>
+    <script type="text/javascript" src="~/js/qr.js"></script>
 }
