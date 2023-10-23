@@ -52,10 +52,9 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
         /// </summary>
         public class InputModel
         {
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
+            [Display(Name = "Username")]
+            public string Username { get; set; }
+
             [Phone]
             [Display(Name = "Phone number")]
             public string PhoneNumber { get; set; }
@@ -66,10 +65,9 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
             string userName = await _userManager.GetUserNameAsync(user);
             string phoneNumber = await _userManager.GetPhoneNumberAsync(user);
 
-            Username = userName;
-
             Input = new InputModel
             {
+                Username = userName,
                 PhoneNumber = phoneNumber
             };
         }
@@ -107,6 +105,16 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
                 if (!setPhoneResult.Succeeded)
                 {
                     StatusMessage = "Unexpected error when trying to set phone number.";
+                    return RedirectToPage();
+                }
+            }
+            string username = await _userManager.GetUserNameAsync(user);
+            if (Input.Username != username)
+            {
+                IdentityResult setUsernameResult = await _userManager.SetUserNameAsync(user, Input.Username);
+                if (!setUsernameResult.Succeeded)
+                {
+                    StatusMessage = "Unexpected error when trying to set username.";
                     return RedirectToPage();
                 }
             }

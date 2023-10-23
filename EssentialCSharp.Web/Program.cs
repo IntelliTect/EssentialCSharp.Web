@@ -16,7 +16,16 @@ public partial class Program
         string connectionString = builder.Configuration.GetConnectionString("EssentialCSharpWebContextConnection") ?? throw new InvalidOperationException("Connection string 'EssentialCSharpWebContextConnection' not found.");
 
         builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString));
-        builder.Services.AddDefaultIdentity<EssentialCSharpWebUser>(options => options.SignIn.RequireConfirmedAccount = true)
+        builder.Services.AddDefaultIdentity<EssentialCSharpWebUser>(options =>
+            {
+                options.SignIn.RequireConfirmedAccount = true;
+                options.User.RequireUniqueEmail = true;
+                options.SignIn.RequireConfirmedEmail = true;
+                options.Password.RequiredLength = 10;
+                options.Password.RequiredUniqueChars = 3;
+                //TODO: Implement IProtectedUserStore
+                //options.Stores.ProtectPersonalData = true;
+            })
             .AddEntityFrameworkStores<EssentialCSharpWebContext>();
         builder.Configuration
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
