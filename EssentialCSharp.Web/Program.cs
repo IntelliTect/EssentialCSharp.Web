@@ -21,8 +21,8 @@ public partial class Program
         builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration);
 
         builder.Configuration
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-    .AddEnvironmentVariables();
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddEnvironmentVariables();
 
         // Add services to the container.
         builder.Services.AddRazorPages();
@@ -40,7 +40,17 @@ public partial class Program
          .AddMicrosoftAccount(microsoftoptions =>
          {
              microsoftoptions.ClientId = configuration["authentication:microsoft:clientid"] ?? throw new InvalidOperationException("authentication:microsoft:clientid unexpectedly null");
-             microsoftoptions.ClientSecret = configuration["authentication:microsoft:clientsecret"]?? throw new InvalidOperationException("authentication:microsoft:clientsecret unexpectedly null");
+             microsoftoptions.ClientSecret = configuration["authentication:microsoft:clientsecret"] ?? throw new InvalidOperationException("authentication:microsoft:clientsecret unexpectedly null");
+         })
+         .AddGitHub(o =>
+         {
+             o.ClientId = configuration["github:clientId"] ?? throw new InvalidOperationException("github:clientId unexpectedly null");
+             o.ClientSecret = configuration["github:clientSecret"] ?? throw new InvalidOperationException("github:clientSecret unexpectedly null");
+             o.CallbackPath = "/signin-github";
+
+             // Grants access to read a user's profile data.
+             // https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps
+             o.Scope.Add("read:user");
          });
 
         WebApplication app = builder.Build();
