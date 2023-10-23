@@ -65,7 +65,7 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
             EssentialCSharpWebUser user = await _userManager.FindByEmailAsync(Input.Email);
             if (user == null)
             {
-                ModelState.AddModelError(string.Empty, "Verification email sent. Please check your email.");
+                ModelState.AddModelError(string.Empty, "Verification email sent. Please check your email. If you can't find the email, please check your spam folder.");
                 return Page();
             }
 
@@ -82,7 +82,7 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
                 "Confirm your email",
                 $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
-            ModelState.AddModelError(string.Empty, "Verification email sent. Please check your email.");
+            ModelState.AddModelError(string.Empty, "Verification email sent. Please check your email. If you can't find the email, please check your spam folder.");
             return Page();
         }
     }
