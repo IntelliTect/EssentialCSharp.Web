@@ -21,14 +21,16 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
     public class LoginModel : PageModel
     {
 #pragma warning disable IDE1006 // Naming Styles
+        private readonly UserManager<EssentialCSharpWebUser> _userManager;
         private readonly SignInManager<EssentialCSharpWebUser> _signInManager;
         private readonly ILogger<LoginModel> _logger;
 #pragma warning restore IDE1006 // Naming Styles
 
-        public LoginModel(SignInManager<EssentialCSharpWebUser> signInManager, ILogger<LoginModel> logger)
+        public LoginModel(SignInManager<EssentialCSharpWebUser> signInManager, UserManager<EssentialCSharpWebUser> userManager, ILogger<LoginModel> logger)
         {
             _signInManager = signInManager;
             _logger = logger;
+            _userManager = userManager;
         }
 
         /// <summary>
@@ -112,9 +114,16 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
 
             if (ModelState.IsValid)
             {
-                // This doesn't count login failures towards account lockout
-                // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-                Microsoft.AspNetCore.Identity.SignInResult result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+                Microsoft.AspNetCore.Identity.SignInResult result;
+                EssentialCSharpWebUser foundUser = await _userManager.FindByEmailAsync(Input.Email);
+                if (foundUser is not null)
+                {
+                    result = await _signInManager.PasswordSignInAsync(foundUser, Input.Password, Input.RememberMe, lockoutOnFailure: true);
+                }
+                else
+                {
+                    result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: true);
+                }
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
