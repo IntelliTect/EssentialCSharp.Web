@@ -2,6 +2,10 @@
 {
     public class AuthMessageSenderOptions
     {
-        public string? SendGridKey { get; set; }
+        public const string AuthMessageSender = "AuthMessageSender";
+        public string? APIKey { get; set; }
+        public string? SecretKey { get; set; }
+        public string? SendFromEmail { get; set; }
+        public string? SendFromName { get; set; }
     }
 }
