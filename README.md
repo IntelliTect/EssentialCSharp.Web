@@ -36,4 +36,8 @@ Authentication:github:clientId = anotherimportantclientid
 HCaptcha:SiteKey = captchaSiteKey
 HCaptcha:SecretKey = captchaSecretKey
 
+Testing Secret Values:
+Some Value Secrets for Testing/Development Purposes:
+HCaptcha: https://docs.hcaptcha.com/#integration-testing-test-keys
+
 Please use issues or discussions to report issues found.
