@@ -33,11 +33,11 @@ public partial class Program
 
         builder.Services.AddTransient<IEmailSender, EmailSender>();
         builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration.GetSection(AuthMessageSenderOptions.AuthMessageSender));
+        builder.Services.Configure<CaptchaOptions>(builder.Configuration.GetSection(CaptchaOptions.CaptchaSender));
         builder.Services.ConfigureApplicationCookie(o => {
             o.ExpireTimeSpan = TimeSpan.FromDays(14);
             o.SlidingExpiration = true;
         });
-
 
         // Add services to the container.
         builder.Services.AddRazorPages();
@@ -48,7 +48,7 @@ public partial class Program
 
         builder.Services.AddHttpClient("hCaptcha", c =>
         {
-            c.BaseAddress = new Uri("https://hcaptcha.com/");
+            c.BaseAddress = new Uri("https://api.hcaptcha.com");
         });
 
         builder.Services.AddHttpClient<IMailjetClient, MailjetClient>(client =>
@@ -77,7 +77,6 @@ public partial class Program
          });
 
         WebApplication app = builder.Build();
-
 
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())

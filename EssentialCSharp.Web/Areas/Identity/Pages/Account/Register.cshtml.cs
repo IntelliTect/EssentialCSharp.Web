@@ -19,6 +19,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using EssentialCSharp.Web.Services;
+using Microsoft.Extensions.Options;
+using EssentialCSharp.Web.Models;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
 {
@@ -31,6 +36,8 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
         private readonly IUserEmailStore<EssentialCSharpWebUser> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
+        private readonly ICaptchaService _captchaService;
+        public CaptchaOptions CaptchaOptions { get; } //Set with Secret Manager.
 #pragma warning restore IDE1006 // Naming Styles
 
         public RegisterModel(
@@ -38,7 +45,9 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
             IUserStore<EssentialCSharpWebUser> userStore,
             SignInManager<EssentialCSharpWebUser> signInManager,
             ILogger<RegisterModel> logger,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            ICaptchaService captchaService,
+            IOptions<CaptchaOptions> optionsAccessor)
         {
             _userManager = userManager;
             _userStore = userStore;
@@ -46,8 +55,11 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
             _signInManager = signInManager;
             _logger = logger;
             _emailSender = emailSender;
+            _captchaService = captchaService;
+            CaptchaOptions = optionsAccessor.Value;
         }
 
+        public string SiteKey { get; set; }
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
@@ -109,6 +121,7 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
 
         public async Task OnGetAsync(string returnUrl = null)
         {
+            SiteKey = CaptchaOptions.SiteKey;
             ReturnUrl = returnUrl;
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         }
@@ -116,44 +129,90 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
             returnUrl ??= Url.Content("~/");
-            ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-            if (ModelState.IsValid)
+            string hCaptcha_response = Request.Form[CaptchaOptions.HttpPostResponseKeyName];
+
+            HCaptchaResult response = await _captchaService.Verify(hCaptcha_response);
+            // The JSON should also return a field "success" as true
+            // https://docs.hcaptcha.com/#verify-the-user-response-server-side
+            if (response.Success)
             {
-                EssentialCSharpWebUser user = CreateUser();
-
-                await _userStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
-                await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
-                IdentityResult result = await _userManager.CreateAsync(user, Input.Password);
-
-                if (result.Succeeded)
+                ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+                if (ModelState.IsValid)
                 {
-                    _logger.LogInformation("User created a new account with password.");
+                    EssentialCSharpWebUser user = CreateUser();
 
-                    string userId = await _userManager.GetUserIdAsync(user);
-                    string code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                    code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                    string callbackUrl = Url.Page(
-                        "/Account/ConfirmEmail",
-                        pageHandler: null,
-                        values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
-                        protocol: Request.Scheme);
+                    await _userStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
+                    await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+                    IdentityResult result = await _userManager.CreateAsync(user, Input.Password);
 
-                    await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
-                        $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
-
-                    if (_userManager.Options.SignIn.RequireConfirmedAccount)
+                    if (result.Succeeded)
                     {
-                        return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl });
+                        _logger.LogInformation("User created a new account with password.");
+
+                        string userId = await _userManager.GetUserIdAsync(user);
+                        string code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                        string callbackUrl = Url.Page(
+                            "/Account/ConfirmEmail",
+                            pageHandler: null,
+                            values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
+                            protocol: Request.Scheme);
+
+                        await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
+                            $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+
+                        if (_userManager.Options.SignIn.RequireConfirmedAccount)
+                        {
+                            return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl });
+                        }
+                        else
+                        {
+                            await _signInManager.SignInAsync(user, isPersistent: false);
+                            return LocalRedirect(returnUrl);
+                        }
                     }
-                    else
+                    foreach (IdentityError error in result.Errors)
                     {
-                        await _signInManager.SignInAsync(user, isPersistent: false);
-                        return LocalRedirect(returnUrl);
+                        ModelState.AddModelError(string.Empty, error.Description);
                     }
                 }
-                foreach (IdentityError error in result.Errors)
+            }
+            else
+            {
+                switch (response.ErrorCodes.Count)
                 {
-                    ModelState.AddModelError(string.Empty, error.Description);
+                    case 0:
+                        throw new InvalidOperationException("The HCaptcha determined the passcode is not valid, and does not meet the security criteria");
+                    case > 1:
+                        throw new InvalidOperationException("HCaptcha returned error codes: " + string.Join(", ", response.ErrorCodes));
+                    default:
+                        {
+                            HCaptchaErrorDetails.TryGetValue(response.ErrorCodes.FirstOrDefault(), out HCaptchaErrorDetails details);
+                            switch (details.ErrorCode)
+                            {
+                                case HCaptchaErrorDetails.MissingInputResponse:
+                                case HCaptchaErrorDetails.InvalidInputResponse:
+                                case HCaptchaErrorDetails.InvalidOrAlreadySeenResponse:
+                                    ModelState.AddModelError(string.Empty, details.FriendlyDescription);
+                                    _logger.LogInformation("HCaptcha returned error code: {ErrorDetails}", details.ToString());
+                                    break;
+                                case HCaptchaErrorDetails.BadRequest:
+                                    ModelState.AddModelError(string.Empty, details.FriendlyDescription);
+                                    _logger.LogInformation("HCaptcha returned error code: {ErrorDetails}", details.ToString());
+                                    break;
+                                case HCaptchaErrorDetails.MissingInputSecret:
+                                case HCaptchaErrorDetails.InvalidInputSecret:
+                                case HCaptchaErrorDetails.NotUsingDummyPasscode:
+                                case HCaptchaErrorDetails.SitekeySecretMismatch:
+                                    _logger.LogCritical("HCaptcha returned error code: {ErrorDetails}", details.ToString());
+                                    break;
+                                default:
+                                    throw new InvalidOperationException("HCaptcha returned unknown error code: " + details.ErrorCode);
+                            }
+
+                            break;
+                        }
+
                 }
             }
 

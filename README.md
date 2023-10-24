@@ -33,5 +33,7 @@ Authentication:Microsoft:ClientSecret = anotherimportantsecret
 Authentication:Microsoft:ClientId = anotherimportantclient
 Authentication:github:clientSecret = anotherimportantclientsecret
 Authentication:github:clientId = anotherimportantclientid
+HCaptcha:SiteKey = captchaSiteKey
+HCaptcha:SecretKey = captchaSecretKey
 
 Please use issues or discussions to report issues found.
