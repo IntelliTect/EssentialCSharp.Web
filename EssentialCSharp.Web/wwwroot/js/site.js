@@ -159,13 +159,18 @@ const app = createApp({
     }
 
     document.addEventListener("keydown", (e) => {
-      if (e.key == "ArrowRight") {
-        goToNext();
-      }
+        let selectionString = document.getSelection().toString();
+        if (e.key == "ArrowRight") {
+            if (!selectionString) {
+                goToNext();
+            }
+        }
 
-      if (e.key == "ArrowLeft") {
-        goToPrevious();
-      }
+        if (e.key == "ArrowLeft") {
+            if (!selectionString) {
+                goToPrevious();
+            }
+        }
     });
 
     const sidebarShown = ref(false);
