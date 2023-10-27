@@ -18,18 +18,36 @@ public partial class Program
         builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString));
         builder.Services.AddDefaultIdentity<EssentialCSharpWebUser>(options =>
             {
-                options.SignIn.RequireConfirmedAccount = true;
+                // Password settings
                 options.User.RequireUniqueEmail = true;
-                options.SignIn.RequireConfirmedEmail = true;
                 options.Password.RequiredLength = 10;
-                options.Password.RequiredUniqueChars = 3;
+                options.Password.RequireDigit = true;
+                options.Password.RequireNonAlphanumeric = true;
+                options.Password.RequireUppercase = true;
+                options.Password.RequireLowercase = true;
+                options.Password.RequiredUniqueChars = 6;
+
+                options.SignIn.RequireConfirmedEmail = true;
+                options.SignIn.RequireConfirmedAccount = true;
+
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(30);
+                options.Lockout.MaxFailedAccessAttempts = 3;
                 //TODO: Implement IProtectedUserStore
                 //options.Stores.ProtectPersonalData = true;
             })
             .AddEntityFrameworkStores<EssentialCSharpWebContext>();
+
         builder.Configuration
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .AddEnvironmentVariables();
+
+        builder.Services.ConfigureApplicationCookie(options =>
+        {
+            options.Cookie.HttpOnly = true;
+            options.Cookie.Expiration = TimeSpan.FromHours(1);
+            options.SlidingExpiration = true;
+        });
+
 
         builder.Services.AddTransient<IEmailSender, EmailSender>();
         builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration.GetSection(AuthMessageSenderOptions.AuthMessageSender));
@@ -82,8 +100,11 @@ public partial class Program
         if (!app.Environment.IsDevelopment())
         {
             app.UseExceptionHandler("/Error");
-            // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-            app.UseHsts();
+            builder.Services.AddHsts(options =>
+            {
+                options.MaxAge = TimeSpan.FromDays(365);
+                options.IncludeSubDomains = true;
+            });
         }
 
         app.UseHttpsRedirection();
