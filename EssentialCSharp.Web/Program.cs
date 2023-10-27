@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using Mailjet.Client;
+using EssentialCSharp.Web.Middleware;
 
 namespace EssentialCSharp.Web;
 
@@ -44,18 +45,24 @@ public partial class Program
         builder.Services.ConfigureApplicationCookie(options =>
         {
             options.Cookie.HttpOnly = true;
-            options.Cookie.Expiration = TimeSpan.FromHours(1);
+            options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
             options.SlidingExpiration = true;
         });
+
+        // if in development
+        if (builder.Environment.IsDevelopment())
+        {
+            builder.Services.AddHsts(options =>
+            {
+                options.MaxAge = TimeSpan.FromDays(365);
+                options.IncludeSubDomains = true;
+            });
+        }
 
 
         builder.Services.AddTransient<IEmailSender, EmailSender>();
         builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration.GetSection(AuthMessageSenderOptions.AuthMessageSender));
         builder.Services.Configure<CaptchaOptions>(builder.Configuration.GetSection(CaptchaOptions.CaptchaSender));
-        builder.Services.ConfigureApplicationCookie(o => {
-            o.ExpireTimeSpan = TimeSpan.FromDays(14);
-            o.SlidingExpiration = true;
-        });
 
         // Add services to the container.
         builder.Services.AddRazorPages();
@@ -100,12 +107,10 @@ public partial class Program
         if (!app.Environment.IsDevelopment())
         {
             app.UseExceptionHandler("/Error");
-            builder.Services.AddHsts(options =>
-            {
-                options.MaxAge = TimeSpan.FromDays(365);
-                options.IncludeSubDomains = true;
-            });
+            app.UseHsts();
         }
+            app.UseSecurityHeadersMiddleware(new SecurityHeadersBuilder()
+                .AddDefaultSecurePolicy());
 
         app.UseHttpsRedirection();
         app.UseStaticFiles();
