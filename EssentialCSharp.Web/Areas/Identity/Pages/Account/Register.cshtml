@@ -25,12 +25,12 @@
             <div class="row mb-3">
                 <div class="col  form-floating">
                     <input asp-for="Input.FirstName" class="form-control" aria-required="true" placeholder="Please enter your firstname." />
-                    <label class="ms-lg-2" asp-for=" Input.FirstName" class="form-label"></label>
+                    <label class="ms-lg-2 form-label" asp-for=" Input.FirstName"></label>
                     <span asp-validation-for="Input.FirstName" class="text-danger"></span>
                 </div>
                 <div class="col  form-floating ml-2">
                     <input asp-for="Input.LastName" class="form-control" placeholder="Please enter your lastname." />
-                    <label class="ms-lg-2" asp-for="Input.LastName" class="form-label"></label>
+                    <label class="ms-lg-2 form-label" asp-for="Input.LastName"></label>
                     <span asp-validation-for="Input.LastName" class="text-danger"></span>
                 </div>
             </div>

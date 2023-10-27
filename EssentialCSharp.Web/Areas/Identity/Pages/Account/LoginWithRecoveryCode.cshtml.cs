@@ -60,12 +60,7 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
         public async Task<IActionResult> OnGetAsync(string returnUrl = null)
         {
             // Ensure the user has gone through the username & password screen first
-            EssentialCSharpWebUser user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
-            if (user == null)
-            {
-                throw new InvalidOperationException($"Unable to load two-factor authentication user.");
-            }
-
+            EssentialCSharpWebUser user = await _signInManager.GetTwoFactorAuthenticationUserAsync() ?? throw new InvalidOperationException($"Unable to load two-factor authentication user.");
             ReturnUrl = returnUrl;
 
             return Page();
@@ -78,12 +73,7 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
                 return Page();
             }
 
-            EssentialCSharpWebUser user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
-            if (user == null)
-            {
-                throw new InvalidOperationException($"Unable to load two-factor authentication user.");
-            }
-
+            EssentialCSharpWebUser user = await _signInManager.GetTwoFactorAuthenticationUserAsync() ?? throw new InvalidOperationException($"Unable to load two-factor authentication user.");
             string recoveryCode = Input.RecoveryCode.Replace(" ", string.Empty);
 
             Microsoft.AspNetCore.Identity.SignInResult result = await _signInManager.TwoFactorRecoveryCodeSignInAsync(recoveryCode);

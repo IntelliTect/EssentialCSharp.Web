@@ -15,18 +15,8 @@ public class SecurityHeadersMiddleware
     /// <param name="policy">An instance of the <see cref="SecurityHeadersPolicy"/> which can be applied.</param>
     public SecurityHeadersMiddleware(RequestDelegate next, SecurityHeadersPolicy policy)
     {
-        if (next == null)
-        {
-            throw new ArgumentNullException(nameof(next));
-        }
-
-        if (policy == null)
-        {
-            throw new ArgumentNullException(nameof(policy));
-        }
-
-        _next = next;
-        _policy = policy;
+        _next = next ?? throw new ArgumentNullException(nameof(next));
+        _policy = policy ?? throw new ArgumentNullException(nameof(policy));
     }
 
     public async Task Invoke(HttpContext context)
@@ -36,13 +26,7 @@ public class SecurityHeadersMiddleware
             throw new ArgumentNullException(nameof(context));
         }
 
-        HttpResponse response = context.Response;
-
-        if (response == null)
-        {
-            throw new InvalidOperationException(nameof(context.Response));
-        }
-
+        HttpResponse response = context.Response ?? throw new InvalidOperationException(nameof(context.Response));
         IHeaderDictionary headers = response.Headers;
 
         foreach (KeyValuePair<string, string> headerValuePair in _policy.SetHeaders)
