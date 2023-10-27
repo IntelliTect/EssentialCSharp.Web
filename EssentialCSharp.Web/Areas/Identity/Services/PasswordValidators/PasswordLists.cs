@@ -1,8 +1,4 @@
-﻿using System.Reflection;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Options;
-
-namespace EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
+﻿namespace EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
 
 public class PasswordLists
 {

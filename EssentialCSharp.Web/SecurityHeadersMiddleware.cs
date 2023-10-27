@@ -1,7 +1,4 @@
-﻿using System.Threading.Tasks;
-using EssentialCSharp.Web.Middleware;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
+﻿using EssentialCSharp.Web.Middleware;
 
 namespace EssentialCSharp.Web;
 

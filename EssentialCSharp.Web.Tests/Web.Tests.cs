@@ -1,5 +1,4 @@
-﻿using EssentialCSharp.Web.Services;
-using EssentialCSharp.Web.Models;
+﻿using EssentialCSharp.Web.Models;
 
 namespace EssentialCSharp.Web.Tests;
 

@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using System.Net;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Mvc.Testing;
 using EssentialCSharp.Web.Models;

@@ -1,11 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Options;
 using Mailjet.Client;
-using Mailjet;
 using Mailjet.Client.Resources;
-using Newtonsoft.Json.Linq;
 using Mailjet.Client.TransactionalEmails;
-using System.Linq;
 
 namespace EssentialCSharp.Web.Services;
 

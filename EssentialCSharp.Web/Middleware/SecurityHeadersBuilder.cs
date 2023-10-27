@@ -1,6 +1,4 @@
-﻿using System;
-using System.Drawing;
-using System.Globalization;
+﻿using System.Globalization;
 using EssentialCSharp.Web.Middleware.Constants;
 
 namespace EssentialCSharp.Web.Middleware;
