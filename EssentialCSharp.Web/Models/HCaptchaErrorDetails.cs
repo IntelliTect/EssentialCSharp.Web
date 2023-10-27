@@ -13,7 +13,7 @@ public record class HCaptchaErrorDetails
     public const string NotUsingDummyPasscode = "not-using-dummy-passcode";
     public const string SitekeySecretMismatch = "sitekey-secret-mismatch";
 
-    private static IReadOnlyDictionary<string, HCaptchaErrorDetails> _ErrorCodeDescriptionDictionary = new Dictionary<string, HCaptchaErrorDetails>()
+    private static readonly IReadOnlyDictionary<string, HCaptchaErrorDetails> _ErrorCodeDescriptionDictionary = new Dictionary<string, HCaptchaErrorDetails>()
     {
         { MissingInputSecret, new(MissingInputSecret, "Your secret key is missing.", null) },
         { InvalidInputSecret, new(InvalidInputSecret, "Your secret key is invalid or malformed.", null) },

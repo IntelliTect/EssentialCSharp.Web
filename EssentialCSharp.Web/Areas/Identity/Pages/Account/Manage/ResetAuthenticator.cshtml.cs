@@ -11,33 +11,29 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
 {
     public class ResetAuthenticatorModel : PageModel
     {
-        private readonly UserManager<EssentialCSharpWebUser> _userManager;
-        private readonly SignInManager<EssentialCSharpWebUser> _signInManager;
-        private readonly ILogger<ResetAuthenticatorModel> _logger;
+        private readonly UserManager<EssentialCSharpWebUser> _UserManager;
+        private readonly SignInManager<EssentialCSharpWebUser> _SignInManager;
+        private readonly ILogger<ResetAuthenticatorModel> _Logger;
 
         public ResetAuthenticatorModel(
             UserManager<EssentialCSharpWebUser> userManager,
             SignInManager<EssentialCSharpWebUser> signInManager,
             ILogger<ResetAuthenticatorModel> logger)
         {
-            _userManager = userManager;
-            _signInManager = signInManager;
-            _logger = logger;
+            _UserManager = userManager;
+            _SignInManager = signInManager;
+            _Logger = logger;
         }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [TempData]
         public string StatusMessage { get; set; }
 
         public async Task<IActionResult> OnGet()
         {
-            EssentialCSharpWebUser user = await _userManager.GetUserAsync(User);
+            EssentialCSharpWebUser user = await _UserManager.GetUserAsync(User);
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
             }
 
             return Page();
@@ -45,18 +41,18 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
 
         public async Task<IActionResult> OnPostAsync()
         {
-            EssentialCSharpWebUser user = await _userManager.GetUserAsync(User);
+            EssentialCSharpWebUser user = await _UserManager.GetUserAsync(User);
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
             }
 
-            await _userManager.SetTwoFactorEnabledAsync(user, false);
-            await _userManager.ResetAuthenticatorKeyAsync(user);
-            string userId = await _userManager.GetUserIdAsync(user);
-            _logger.LogInformation("User with ID '{UserId}' has reset their authentication app key.", user.Id);
+            await _UserManager.SetTwoFactorEnabledAsync(user, false);
+            await _UserManager.ResetAuthenticatorKeyAsync(user);
+            _ = await _UserManager.GetUserIdAsync(user);
+            _Logger.LogInformation("User with ID '{UserId}' has reset their authentication app key.", user.Id);
 
-            await _signInManager.RefreshSignInAsync(user);
+            await _SignInManager.RefreshSignInAsync(user);
             StatusMessage = "Your authenticator app key has been reset, you will need to configure your authenticator app using the new key.";
 
             return RedirectToPage("./EnableAuthenticator");

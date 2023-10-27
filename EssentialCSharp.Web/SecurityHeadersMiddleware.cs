@@ -5,8 +5,8 @@ namespace EssentialCSharp.Web;
 // You may need to install the Microsoft.AspNetCore.Http.Abstractions package into your project
 public class SecurityHeadersMiddleware
 {
-    private readonly RequestDelegate _next;
-    private readonly SecurityHeadersPolicy _policy;
+    private readonly RequestDelegate _Next;
+    private readonly SecurityHeadersPolicy _Policy;
 
     /// <summary>
     /// Instantiates a new <see cref="SecurityHeadersMiddleware"/>.
@@ -15,8 +15,8 @@ public class SecurityHeadersMiddleware
     /// <param name="policy">An instance of the <see cref="SecurityHeadersPolicy"/> which can be applied.</param>
     public SecurityHeadersMiddleware(RequestDelegate next, SecurityHeadersPolicy policy)
     {
-        _next = next ?? throw new ArgumentNullException(nameof(next));
-        _policy = policy ?? throw new ArgumentNullException(nameof(policy));
+        _Next = next ?? throw new ArgumentNullException(nameof(next));
+        _Policy = policy ?? throw new ArgumentNullException(nameof(policy));
     }
 
     public async Task Invoke(HttpContext context)
@@ -29,17 +29,17 @@ public class SecurityHeadersMiddleware
         HttpResponse response = context.Response ?? throw new InvalidOperationException(nameof(context.Response));
         IHeaderDictionary headers = response.Headers;
 
-        foreach (KeyValuePair<string, string> headerValuePair in _policy.SetHeaders)
+        foreach (KeyValuePair<string, string> headerValuePair in _Policy.SetHeaders)
         {
             headers[headerValuePair.Key] = headerValuePair.Value;
         }
 
-        foreach (string header in _policy.RemoveHeaders)
+        foreach (string header in _Policy.RemoveHeaders)
         {
             headers.Remove(header);
         }
 
-        await _next(context);
+        await _Next(context);
     }
 }
 

@@ -8,17 +8,15 @@ namespace EssentialCSharp.Web.Services;
 
 public class EmailSender : IEmailSender
 {
-
-    private readonly ILogger _logger;
-    private readonly IMailjetClient _mailjetClient;
-
+    private readonly ILogger _Logger;
+    private readonly IMailjetClient _MailjetClient;
 
     public EmailSender(IMailjetClient mailjetClient, IOptions<AuthMessageSenderOptions> optionsAccessor,
                        ILogger<EmailSender> logger)
     {
         Options = optionsAccessor.Value;
-        _logger = logger;
-        _mailjetClient = mailjetClient;
+        _Logger = logger;
+        _MailjetClient = mailjetClient;
     }
 
     public AuthMessageSenderOptions Options { get; } //Set with Secret Manager.
@@ -44,17 +42,17 @@ public class EmailSender : IEmailSender
                .Build();
 
         // invoke API to send email
-        Mailjet.Client.TransactionalEmails.Response.TransactionalEmailResponse response = await _mailjetClient.SendTransactionalEmailAsync(email);
+        Mailjet.Client.TransactionalEmails.Response.TransactionalEmailResponse response = await _MailjetClient.SendTransactionalEmailAsync(email);
         switch (response.Messages.Length)
         {
             case 0:
-                _logger.LogError("Unexpectedly no messages returned in the mailer response");
+                _Logger.LogError("Unexpectedly no messages returned in the mailer response");
                 break;
             case 1 when response.Messages.First().Status == "success":
-                _logger.LogInformation("Email to {ToEmail} queued successfully!", toEmail);
+                _Logger.LogInformation("Email to {ToEmail} queued successfully!", toEmail);
                 break;
             default:
-                _logger.LogError("Failure To Send Email to {ToEmail} with the following Errors: {ErrorMessage}", toEmail, response.Messages.Aggregate(
+                _Logger.LogError("Failure To Send Email to {ToEmail} with the following Errors: {ErrorMessage}", toEmail, response.Messages.Aggregate(
                     string.Empty, (current, messageItem) =>
                     current + $"{messageItem.Errors.Aggregate(string.Empty,
                     (currentError, errorItem) =>

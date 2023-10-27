@@ -16,31 +16,19 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
     [AllowAnonymous]
     public class RegisterConfirmationModel : PageModel
     {
-        private readonly UserManager<EssentialCSharpWebUser> _userManager;
-        private readonly IEmailSender _sender;
+        private readonly UserManager<EssentialCSharpWebUser> _UserManager;
+        private readonly IEmailSender _Sender;
 
         public RegisterConfirmationModel(UserManager<EssentialCSharpWebUser> userManager, IEmailSender sender)
         {
-            _userManager = userManager;
-            _sender = sender;
+            _UserManager = userManager;
+            _Sender = sender;
         }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public string Email { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public bool DisplayConfirmAccountLink { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public string EmailConfirmationUrl { get; set; }
 
         public async Task<IActionResult> OnGetAsync(string email, string returnUrl = null)
@@ -51,7 +39,7 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
             }
             returnUrl ??= Url.Content("~/");
 
-            EssentialCSharpWebUser user = await _userManager.FindByEmailAsync(email);
+            EssentialCSharpWebUser user = await _UserManager.FindByEmailAsync(email);
             if (user == null)
             {
                 return NotFound($"Unable to load user with email '{email}'.");
@@ -62,8 +50,8 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
             DisplayConfirmAccountLink = false;
             if (DisplayConfirmAccountLink)
             {
-                string userId = await _userManager.GetUserIdAsync(user);
-                string code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                string userId = await _UserManager.GetUserIdAsync(user);
+                string code = await _UserManager.GenerateEmailConfirmationTokenAsync(user);
                 code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
                 EmailConfirmationUrl = Url.Page(
                     "/Account/ConfirmEmail",

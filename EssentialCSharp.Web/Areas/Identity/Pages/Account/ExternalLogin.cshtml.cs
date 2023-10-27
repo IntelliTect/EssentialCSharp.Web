@@ -19,12 +19,12 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
     [AllowAnonymous]
     public class ExternalLoginModel : PageModel
     {
-        private readonly SignInManager<EssentialCSharpWebUser> _signInManager;
-        private readonly UserManager<EssentialCSharpWebUser> _userManager;
-        private readonly IUserStore<EssentialCSharpWebUser> _userStore;
-        private readonly IUserEmailStore<EssentialCSharpWebUser> _emailStore;
-        private readonly IEmailSender _emailSender;
-        private readonly ILogger<ExternalLoginModel> _logger;
+        private readonly SignInManager<EssentialCSharpWebUser> _SignInManager;
+        private readonly UserManager<EssentialCSharpWebUser> _UserManager;
+        private readonly IUserStore<EssentialCSharpWebUser> _UserStore;
+        private readonly IUserEmailStore<EssentialCSharpWebUser> _EmailStore;
+        private readonly IEmailSender _EmailSender;
+        private readonly ILogger<ExternalLoginModel> _Logger;
 
         public ExternalLoginModel(
             SignInManager<EssentialCSharpWebUser> signInManager,
@@ -33,50 +33,27 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
             ILogger<ExternalLoginModel> logger,
             IEmailSender emailSender)
         {
-            _signInManager = signInManager;
-            _userManager = userManager;
-            _userStore = userStore;
-            _emailStore = GetEmailStore();
-            _logger = logger;
-            _emailSender = emailSender;
+            _SignInManager = signInManager;
+            _UserManager = userManager;
+            _UserStore = userStore;
+            _EmailStore = GetEmailStore();
+            _Logger = logger;
+            _EmailSender = emailSender;
         }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [BindProperty]
         public InputModel Input { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public string ProviderDisplayName { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public string ReturnUrl { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [TempData]
         public string ErrorMessage { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public class InputModel
         {
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
+
             [Required]
             [EmailAddress]
             public string Email { get; set; }
@@ -88,7 +65,7 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
         {
             // Request a redirect to the external login provider.
             string redirectUrl = Url.Page("./ExternalLogin", pageHandler: "Callback", values: new { returnUrl });
-            Microsoft.AspNetCore.Authentication.AuthenticationProperties properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
+            Microsoft.AspNetCore.Authentication.AuthenticationProperties properties = _SignInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
             return new ChallengeResult(provider, properties);
         }
 
@@ -100,7 +77,7 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
                 ErrorMessage = $"Error from external provider: {remoteError}";
                 return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
             }
-            ExternalLoginInfo info = await _signInManager.GetExternalLoginInfoAsync();
+            ExternalLoginInfo info = await _SignInManager.GetExternalLoginInfoAsync();
             if (info == null)
             {
                 ErrorMessage = "Error loading external login information.";
@@ -108,10 +85,10 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
             }
 
             // Sign in the user with this external login provider if the user already has a login.
-            Microsoft.AspNetCore.Identity.SignInResult result = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
+            Microsoft.AspNetCore.Identity.SignInResult result = await _SignInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
             if (result.Succeeded)
             {
-                _logger.LogInformation("{Name} logged in with {LoginProvider} provider.", info.Principal.Identity.Name, info.LoginProvider);
+                _Logger.LogInformation("{Name} logged in with {LoginProvider} provider.", info.Principal.Identity.Name, info.LoginProvider);
                 return LocalRedirect(returnUrl);
             }
             if (result.IsLockedOut)
@@ -138,7 +115,7 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
         {
             returnUrl ??= Url.Content("~/");
             // Get the information about the user from the external login provider
-            ExternalLoginInfo info = await _signInManager.GetExternalLoginInfoAsync();
+            ExternalLoginInfo info = await _SignInManager.GetExternalLoginInfoAsync();
             if (info == null)
             {
                 ErrorMessage = "Error loading external login information during confirmation.";
@@ -149,18 +126,18 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
             {
                 EssentialCSharpWebUser user = CreateUser();
 
-                EssentialCSharpWebUser existingUser = await _userManager.FindByEmailAsync(Input.Email).ConfigureAwait(false);
+                EssentialCSharpWebUser existingUser = await _UserManager.FindByEmailAsync(Input.Email).ConfigureAwait(false);
                 if (existingUser is null)
                 {
-                    await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
-                    await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
-                    IdentityResult result = await _userManager.CreateAsync(user);
+                    await _UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
+                    await _EmailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+                    IdentityResult result = await _UserManager.CreateAsync(user);
                     if (result.Succeeded)
                     {
-                        result = await _userManager.AddLoginAsync(user, info);
+                        result = await _UserManager.AddLoginAsync(user, info);
                         if (result.Succeeded)
                         {
-                            _logger.LogInformation("User created an account using {Name} provider.", info.LoginProvider);
+                            _Logger.LogInformation("User created an account using {Name} provider.", info.LoginProvider);
                             return await SendConfirmationEmail(returnUrl, info, user);
                         }
                     }
@@ -185,8 +162,8 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
 
         private async Task<IActionResult> SendConfirmationEmail(string returnUrl, ExternalLoginInfo info, EssentialCSharpWebUser user)
         {
-            string userId = await _userManager.GetUserIdAsync(user);
-            string code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            string userId = await _UserManager.GetUserIdAsync(user);
+            string code = await _UserManager.GenerateEmailConfirmationTokenAsync(user);
             code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
             string callbackUrl = Url.Page(
                 "/Account/ConfirmEmail",
@@ -194,16 +171,16 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
                 values: new { area = "Identity", userId = userId, code = code },
                 protocol: Request.Scheme);
 
-            await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
+            await _EmailSender.SendEmailAsync(Input.Email, "Confirm your email",
                 $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
             // If account confirmation is required, we need to show the link if we don't have a real email sender
-            if (_userManager.Options.SignIn.RequireConfirmedAccount)
+            if (_UserManager.Options.SignIn.RequireConfirmedAccount)
             {
                 return RedirectToPage("./RegisterConfirmation", new { Email = Input.Email });
             }
 
-            await _signInManager.SignInAsync(user, isPersistent: false, info.LoginProvider);
+            await _SignInManager.SignInAsync(user, isPersistent: false, info.LoginProvider);
             return LocalRedirect(returnUrl);
         }
 
@@ -223,11 +200,11 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
 
         private IUserEmailStore<EssentialCSharpWebUser> GetEmailStore()
         {
-            if (!_userManager.SupportsUserEmail)
+            if (!_UserManager.SupportsUserEmail)
             {
                 throw new NotSupportedException("The default UI requires a user store with email support.");
             }
-            return (IUserEmailStore<EssentialCSharpWebUser>)_userStore;
+            return (IUserEmailStore<EssentialCSharpWebUser>)_UserStore;
         }
     }
 }

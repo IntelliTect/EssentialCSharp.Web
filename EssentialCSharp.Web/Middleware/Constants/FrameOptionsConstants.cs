@@ -1,6 +1,5 @@
 ﻿namespace EssentialCSharp.Web.Middleware.Constants;
 
-
 /// <summary>
 /// X-Frame-Options-related constants.
 /// </summary>

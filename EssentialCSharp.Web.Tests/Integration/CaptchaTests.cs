@@ -7,19 +7,17 @@ namespace EssentialCSharp.Web.Extensions.Tests.Integration;
 
 public class CaptchaTests : IClassFixture<WebApplicationFactory<Program>>
 {
-
-    private readonly WebApplicationFactory<Program> _factory;
-
+    private readonly WebApplicationFactory<Program> _Factory;
 
     public CaptchaTests(WebApplicationFactory<Program> factory)
     {
-        _factory = factory;
+        _Factory = factory;
     }
 
     [Fact]
     public async Task CaptchaService_Verify_Success()
     {
-        ICaptchaService captchaService = _factory.Services.GetRequiredService<ICaptchaService>();
+        ICaptchaService captchaService = _Factory.Services.GetRequiredService<ICaptchaService>();
 
         // From https://docs.hcaptcha.com/#integration-testing-test-keys
         string hCaptchaSecret = "0x0000000000000000000000000000000000000000";

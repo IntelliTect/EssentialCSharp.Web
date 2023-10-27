@@ -12,44 +12,28 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
 {
     public class IndexModel : PageModel
     {
-        private readonly UserManager<EssentialCSharpWebUser> _userManager;
-        private readonly SignInManager<EssentialCSharpWebUser> _signInManager;
+        private readonly UserManager<EssentialCSharpWebUser> _UserManager;
+        private readonly SignInManager<EssentialCSharpWebUser> _SignInManager;
 
         public IndexModel(
             UserManager<EssentialCSharpWebUser> userManager,
             SignInManager<EssentialCSharpWebUser> signInManager)
         {
-            _userManager = userManager;
-            _signInManager = signInManager;
+            _UserManager = userManager;
+            _SignInManager = signInManager;
         }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public string Username { get; set; }
 
         public string FirstName { get; set; }
         public string LastName { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [TempData]
         public string StatusMessage { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [BindProperty]
         public InputModel Input { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public class InputModel
         {
             [Display(Name = "Username")]
@@ -68,8 +52,8 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
 
         private async Task LoadAsync(EssentialCSharpWebUser user)
         {
-            string userName = await _userManager.GetUserNameAsync(user);
-            string phoneNumber = await _userManager.GetPhoneNumberAsync(user);
+            string userName = await _UserManager.GetUserNameAsync(user);
+            string phoneNumber = await _UserManager.GetPhoneNumberAsync(user);
 
             Input = new InputModel
             {
@@ -82,10 +66,10 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
 
         public async Task<IActionResult> OnGetAsync()
         {
-            EssentialCSharpWebUser user = await _userManager.GetUserAsync(User);
+            EssentialCSharpWebUser user = await _UserManager.GetUserAsync(User);
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
             }
 
             await LoadAsync(user);
@@ -94,10 +78,10 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
 
         public async Task<IActionResult> OnPostAsync()
         {
-            EssentialCSharpWebUser user = await _userManager.GetUserAsync(User);
+            EssentialCSharpWebUser user = await _UserManager.GetUserAsync(User);
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
             }
 
             if (!ModelState.IsValid)
@@ -106,20 +90,20 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
                 return Page();
             }
 
-            string phoneNumber = await _userManager.GetPhoneNumberAsync(user);
+            string phoneNumber = await _UserManager.GetPhoneNumberAsync(user);
             if (Input.PhoneNumber != phoneNumber)
             {
-                IdentityResult setPhoneResult = await _userManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
+                IdentityResult setPhoneResult = await _UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
                 if (!setPhoneResult.Succeeded)
                 {
                     StatusMessage = "Unexpected error when trying to set phone number.";
                     return RedirectToPage();
                 }
             }
-            string username = await _userManager.GetUserNameAsync(user);
+            string username = await _UserManager.GetUserNameAsync(user);
             if (Input.Username != username)
             {
-                IdentityResult setUsernameResult = await _userManager.SetUserNameAsync(user, Input.Username);
+                IdentityResult setUsernameResult = await _UserManager.SetUserNameAsync(user, Input.Username);
                 if (!setUsernameResult.Succeeded)
                 {
                     StatusMessage = "Unexpected error when trying to set username.";
@@ -129,7 +113,7 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
             if (Input.FirstName != user.FirstName)
             {
                 user.FirstName = Input.FirstName;
-                IdentityResult setFirstNameResult = await _userManager.UpdateAsync(user);
+                IdentityResult setFirstNameResult = await _UserManager.UpdateAsync(user);
                 if (!setFirstNameResult.Succeeded)
                 {
                     StatusMessage = "Unexpected error when trying to set first name.";
@@ -139,7 +123,7 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
             if (Input.LastName != user.LastName)
             {
                 user.LastName = Input.LastName;
-                IdentityResult setLastNameResult = await _userManager.UpdateAsync(user);
+                IdentityResult setLastNameResult = await _UserManager.UpdateAsync(user);
                 if (!setLastNameResult.Succeeded)
                 {
                     StatusMessage = "Unexpected error when trying to set last name.";
@@ -147,7 +131,7 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
                 }
             }
 
-            await _signInManager.RefreshSignInAsync(user);
+            await _SignInManager.RefreshSignInAsync(user);
             StatusMessage = "Your profile has been updated";
             return RedirectToPage();
         }

@@ -35,6 +35,7 @@ public partial class Program
 
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(30);
                 options.Lockout.MaxFailedAccessAttempts = 3;
+
                 //TODO: Implement IProtectedUserStore
                 //options.Stores.ProtectPersonalData = true;
             })
@@ -64,6 +65,8 @@ public partial class Program
         }
         builder.Services.Configure<PasswordHasherOptions>(option =>
         {
+            // https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2
+            // Minimum recommended is currently 210,000 iterations for pdkdf2-sha512 as of October 27, 2023
             option.IterationCount = 300000;
         });
 

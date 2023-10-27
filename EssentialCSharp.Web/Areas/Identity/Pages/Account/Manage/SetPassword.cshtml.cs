@@ -12,51 +12,32 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
 {
     public class SetPasswordModel : PageModel
     {
-        private readonly UserManager<EssentialCSharpWebUser> _userManager;
-        private readonly SignInManager<EssentialCSharpWebUser> _signInManager;
+        private readonly UserManager<EssentialCSharpWebUser> _UserManager;
+        private readonly SignInManager<EssentialCSharpWebUser> _SignInManager;
 
         public SetPasswordModel(
             UserManager<EssentialCSharpWebUser> userManager,
             SignInManager<EssentialCSharpWebUser> signInManager)
         {
-            _userManager = userManager;
-            _signInManager = signInManager;
+            _UserManager = userManager;
+            _SignInManager = signInManager;
         }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [BindProperty]
         public InputModel Input { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [TempData]
         public string StatusMessage { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public class InputModel
         {
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
+
             [Required]
             [StringLength(ValidationMessages.PasswordMaximumLength, ErrorMessage = ValidationMessages.StringLengthErrorMessage, MinimumLength = ValidationMessages.PasswordMinimumLength)]
             [DataType(DataType.Password)]
             [Display(Name = "New password")]
             public string NewPassword { get; set; }
 
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
             [DataType(DataType.Password)]
             [Display(Name = "Confirm new password")]
             [Compare("NewPassword", ErrorMessage = "The new password and confirmation password do not match.")]
@@ -65,13 +46,13 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
 
         public async Task<IActionResult> OnGetAsync()
         {
-            EssentialCSharpWebUser user = await _userManager.GetUserAsync(User);
+            EssentialCSharpWebUser user = await _UserManager.GetUserAsync(User);
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
             }
 
-            bool hasPassword = await _userManager.HasPasswordAsync(user);
+            bool hasPassword = await _UserManager.HasPasswordAsync(user);
 
             if (hasPassword)
             {
@@ -88,13 +69,13 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
                 return Page();
             }
 
-            EssentialCSharpWebUser user = await _userManager.GetUserAsync(User);
+            EssentialCSharpWebUser user = await _UserManager.GetUserAsync(User);
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
             }
 
-            IdentityResult addPasswordResult = await _userManager.AddPasswordAsync(user, Input.NewPassword);
+            IdentityResult addPasswordResult = await _UserManager.AddPasswordAsync(user, Input.NewPassword);
             if (!addPasswordResult.Succeeded)
             {
                 foreach (IdentityError error in addPasswordResult.Errors)
@@ -104,7 +85,7 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
                 return Page();
             }
 
-            await _signInManager.RefreshSignInAsync(user);
+            await _SignInManager.RefreshSignInAsync(user);
             StatusMessage = "Your password has been set.";
 
             return RedirectToPage();

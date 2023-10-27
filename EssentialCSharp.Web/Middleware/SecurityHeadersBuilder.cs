@@ -8,7 +8,7 @@ namespace EssentialCSharp.Web.Middleware;
 /// </summary>
 public class SecurityHeadersBuilder
 {
-    private readonly SecurityHeadersPolicy _policy = new();
+    private readonly SecurityHeadersPolicy _Policy = new();
 
     //public SecurityHeadersBuilder() { }
 
@@ -51,7 +51,7 @@ public class SecurityHeadersBuilder
     /// </summary>
     public SecurityHeadersBuilder AddFrameOptionsDeny()
     {
-        _policy.SetHeaders[FrameOptionsConstants.Header] = FrameOptionsConstants.Deny;
+        _Policy.SetHeaders[FrameOptionsConstants.Header] = FrameOptionsConstants.Deny;
         return this;
     }
 
@@ -61,7 +61,7 @@ public class SecurityHeadersBuilder
     /// </summary>
     public SecurityHeadersBuilder AddFrameOptionsSameOrigin()
     {
-        _policy.SetHeaders[FrameOptionsConstants.Header] = FrameOptionsConstants.SameOrigin;
+        _Policy.SetHeaders[FrameOptionsConstants.Header] = FrameOptionsConstants.SameOrigin;
         return this;
     }
 
@@ -72,7 +72,7 @@ public class SecurityHeadersBuilder
     /// <param name="uri">The uri of the origin in which the page may be displayed in a frame</param>
     public SecurityHeadersBuilder AddFrameOptionsSameOrigin(string uri)
     {
-        _policy.SetHeaders[FrameOptionsConstants.Header] = string.Format(CultureInfo.InvariantCulture, FrameOptionsConstants.AllowFromUri, uri);
+        _Policy.SetHeaders[FrameOptionsConstants.Header] = string.Format(CultureInfo.InvariantCulture, FrameOptionsConstants.AllowFromUri, uri);
         return this;
     }
 
@@ -82,7 +82,7 @@ public class SecurityHeadersBuilder
     /// </summary>
     public SecurityHeadersBuilder AddXssProtectionEnabled()
     {
-        _policy.SetHeaders[XssProtectionConstants.Header] = XssProtectionConstants.Enabled;
+        _Policy.SetHeaders[XssProtectionConstants.Header] = XssProtectionConstants.Enabled;
         return this;
     }
 
@@ -92,7 +92,7 @@ public class SecurityHeadersBuilder
     /// </summary>
     public SecurityHeadersBuilder AddXssProtectionDisabled()
     {
-        _policy.SetHeaders[XssProtectionConstants.Header] = XssProtectionConstants.Disabled;
+        _Policy.SetHeaders[XssProtectionConstants.Header] = XssProtectionConstants.Disabled;
         return this;
     }
 
@@ -102,7 +102,7 @@ public class SecurityHeadersBuilder
     /// </summary>
     public SecurityHeadersBuilder AddXssProtectionBlock()
     {
-        _policy.SetHeaders[XssProtectionConstants.Header] = XssProtectionConstants.Block;
+        _Policy.SetHeaders[XssProtectionConstants.Header] = XssProtectionConstants.Block;
         return this;
     }
 
@@ -112,7 +112,7 @@ public class SecurityHeadersBuilder
     /// </summary>
     public SecurityHeadersBuilder AddXssProtectionReport(string reportUrl)
     {
-        _policy.SetHeaders[XssProtectionConstants.Header] =
+        _Policy.SetHeaders[XssProtectionConstants.Header] =
             string.Format(CultureInfo.InvariantCulture, XssProtectionConstants.Report, reportUrl);
         return this;
     }
@@ -123,7 +123,7 @@ public class SecurityHeadersBuilder
     /// </summary>
     public SecurityHeadersBuilder AddStrictTransportSecurityMaxAge(int maxAge = OneYearInSeconds)
     {
-        _policy.SetHeaders[StrictTransportSecurityConstants.Header] =
+        _Policy.SetHeaders[StrictTransportSecurityConstants.Header] =
             string.Format(CultureInfo.InvariantCulture, StrictTransportSecurityConstants.MaxAge, maxAge);
         return this;
     }
@@ -134,7 +134,7 @@ public class SecurityHeadersBuilder
     /// </summary>
     public SecurityHeadersBuilder AddStrictTransportSecurityMaxAgeIncludeSubDomains(int maxAge = OneYearInSeconds)
     {
-        _policy.SetHeaders[StrictTransportSecurityConstants.Header] =
+        _Policy.SetHeaders[StrictTransportSecurityConstants.Header] =
             string.Format(CultureInfo.InvariantCulture, StrictTransportSecurityConstants.MaxAgeIncludeSubdomains, maxAge);
         return this;
     }
@@ -145,7 +145,7 @@ public class SecurityHeadersBuilder
     /// </summary>
     public SecurityHeadersBuilder AddStrictTransportSecurityNoCache()
     {
-        _policy.SetHeaders[StrictTransportSecurityConstants.Header] =
+        _Policy.SetHeaders[StrictTransportSecurityConstants.Header] =
             StrictTransportSecurityConstants.NoCache;
         return this;
     }
@@ -156,7 +156,7 @@ public class SecurityHeadersBuilder
     /// </summary>
     public SecurityHeadersBuilder AddContentTypeOptionsNoSniff()
     {
-        _policy.SetHeaders[ContentTypeOptionsConstants.Header] = ContentTypeOptionsConstants.NoSniff;
+        _Policy.SetHeaders[ContentTypeOptionsConstants.Header] = ContentTypeOptionsConstants.NoSniff;
         return this;
     }
 
@@ -165,7 +165,7 @@ public class SecurityHeadersBuilder
     /// </summary>
     public SecurityHeadersBuilder RemoveServerHeader()
     {
-        _policy.RemoveHeaders.Add(ServerConstants.Header);
+        _Policy.RemoveHeaders.Add(ServerConstants.Header);
         return this;
     }
 
@@ -182,7 +182,7 @@ public class SecurityHeadersBuilder
             throw new ArgumentNullException(nameof(header));
         }
 
-        _policy.SetHeaders[header] = value;
+        _Policy.SetHeaders[header] = value;
         return this;
     }
 
@@ -198,7 +198,7 @@ public class SecurityHeadersBuilder
             throw new ArgumentNullException(nameof(header));
         }
 
-        _policy.RemoveHeaders.Add(header);
+        _Policy.RemoveHeaders.Add(header);
         return this;
     }
 
@@ -208,6 +208,6 @@ public class SecurityHeadersBuilder
     /// <returns>The constructed <see cref="SecurityHeadersPolicy"/>.</returns>
     public SecurityHeadersPolicy Build()
     {
-        return _policy;
+        return _Policy;
     }
 }

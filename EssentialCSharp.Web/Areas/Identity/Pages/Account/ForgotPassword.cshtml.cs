@@ -16,32 +16,21 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
 {
     public class ForgotPasswordModel : PageModel
     {
-        private readonly UserManager<EssentialCSharpWebUser> _userManager;
-        private readonly IEmailSender _emailSender;
+        private readonly UserManager<EssentialCSharpWebUser> _UserManager;
+        private readonly IEmailSender _EmailSender;
 
         public ForgotPasswordModel(UserManager<EssentialCSharpWebUser> userManager, IEmailSender emailSender)
         {
-            _userManager = userManager;
-            _emailSender = emailSender;
+            _UserManager = userManager;
+            _EmailSender = emailSender;
         }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [BindProperty]
         public InputModel Input { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public class InputModel
         {
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
+
             [Required]
             [EmailAddress]
             public string Email { get; set; }
@@ -51,8 +40,8 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
         {
             if (ModelState.IsValid)
             {
-                EssentialCSharpWebUser user = await _userManager.FindByEmailAsync(Input.Email);
-                if (user == null || !(await _userManager.IsEmailConfirmedAsync(user)))
+                EssentialCSharpWebUser user = await _UserManager.FindByEmailAsync(Input.Email);
+                if (user == null || !(await _UserManager.IsEmailConfirmedAsync(user)))
                 {
                     // Don't reveal that the user does not exist or is not confirmed
                     return RedirectToPage("./ForgotPasswordConfirmation");
@@ -60,7 +49,7 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
 
                 // For more information on how to enable account confirmation and password reset please
                 // visit https://go.microsoft.com/fwlink/?LinkID=532713
-                string code = await _userManager.GeneratePasswordResetTokenAsync(user);
+                string code = await _UserManager.GeneratePasswordResetTokenAsync(user);
                 code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
                 string callbackUrl = Url.Page(
                     "/Account/ResetPassword",
@@ -68,7 +57,7 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
                     values: new { area = "Identity", code },
                     protocol: Request.Scheme);
 
-                await _emailSender.SendEmailAsync(
+                await _EmailSender.SendEmailAsync(
                     Input.Email,
                     "Reset Password",
                     $"Please reset your password by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");

@@ -8,9 +8,8 @@ namespace EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
 public class Top100000PasswordValidator<TUser>
     : CommonPasswordValidator<TUser> where TUser : IdentityUser
 {
-    public Top100000PasswordValidator() : this(new())
-    {
-    }
+    public Top100000PasswordValidator() : this(new PasswordLists())
+    { }
     public Top100000PasswordValidator(PasswordLists passwords)
         : base(passwords.Top100000PasswordsPlus.Value)
     { }

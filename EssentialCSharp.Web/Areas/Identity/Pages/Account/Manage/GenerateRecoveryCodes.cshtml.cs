@@ -11,40 +11,32 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
 {
     public class GenerateRecoveryCodesModel : PageModel
     {
-        private readonly UserManager<EssentialCSharpWebUser> _userManager;
-        private readonly ILogger<GenerateRecoveryCodesModel> _logger;
+        private readonly UserManager<EssentialCSharpWebUser> _UserManager;
+        private readonly ILogger<GenerateRecoveryCodesModel> _Logger;
 
         public GenerateRecoveryCodesModel(
             UserManager<EssentialCSharpWebUser> userManager,
             ILogger<GenerateRecoveryCodesModel> logger)
         {
-            _userManager = userManager;
-            _logger = logger;
+            _UserManager = userManager;
+            _Logger = logger;
         }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [TempData]
         public string[] RecoveryCodes { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [TempData]
         public string StatusMessage { get; set; }
 
         public async Task<IActionResult> OnGetAsync()
         {
-            EssentialCSharpWebUser user = await _userManager.GetUserAsync(User);
+            EssentialCSharpWebUser user = await _UserManager.GetUserAsync(User);
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
             }
 
-            bool isTwoFactorEnabled = await _userManager.GetTwoFactorEnabledAsync(user);
+            bool isTwoFactorEnabled = await _UserManager.GetTwoFactorEnabledAsync(user);
             if (!isTwoFactorEnabled)
             {
                 throw new InvalidOperationException($"Cannot generate recovery codes for user because they do not have 2FA enabled.");
@@ -55,23 +47,23 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
 
         public async Task<IActionResult> OnPostAsync()
         {
-            EssentialCSharpWebUser user = await _userManager.GetUserAsync(User);
+            EssentialCSharpWebUser user = await _UserManager.GetUserAsync(User);
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
             }
 
-            bool isTwoFactorEnabled = await _userManager.GetTwoFactorEnabledAsync(user);
-            string userId = await _userManager.GetUserIdAsync(user);
+            bool isTwoFactorEnabled = await _UserManager.GetTwoFactorEnabledAsync(user);
+            string userId = await _UserManager.GetUserIdAsync(user);
             if (!isTwoFactorEnabled)
             {
                 throw new InvalidOperationException($"Cannot generate recovery codes for user as they do not have 2FA enabled.");
             }
 
-            IEnumerable<string> recoveryCodes = await _userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
+            IEnumerable<string> recoveryCodes = await _UserManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
             RecoveryCodes = recoveryCodes.ToArray();
 
-            _logger.LogInformation("User with ID '{UserId}' has generated new 2FA recovery codes.", userId);
+            _Logger.LogInformation("User with ID '{UserId}' has generated new 2FA recovery codes.", userId);
             StatusMessage = "You have generated new recovery codes.";
             return RedirectToPage("./ShowRecoveryCodes");
         }
