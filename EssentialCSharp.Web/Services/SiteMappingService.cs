@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using EssentialCSharp.Web.Models;
+using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Services;
 

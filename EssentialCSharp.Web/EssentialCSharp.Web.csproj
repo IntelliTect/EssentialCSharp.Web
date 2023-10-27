@@ -75,6 +75,9 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
         <Content Include="Chapters\**\*.html" CopyToPublishDirectory="PreserveNewest" />
+      <Content Include="Areas\Identity\Services\PasswordValidators\PasswordLists\Top100000CommonPasswordsPlus.txt">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
     <Target Condition="!$(AccessToNugetFeed)" Name="CopyPlaceholderContent" BeforeTargets="Build">
         <Copy SourceFiles="@(PlaceholderJsonFile)" DestinationFolder="$(ProjectDir)/Chapters/" SkipUnchangedFiles="true" />

@@ -5,6 +5,8 @@ using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using Mailjet.Client;
 using EssentialCSharp.Web.Middleware;
+using Microsoft.AspNetCore.Identity;
+using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
 
 namespace EssentialCSharp.Web;
 
@@ -36,7 +38,9 @@ public partial class Program
                 //TODO: Implement IProtectedUserStore
                 //options.Stores.ProtectPersonalData = true;
             })
-            .AddEntityFrameworkStores<EssentialCSharpWebContext>();
+            .AddEntityFrameworkStores<EssentialCSharpWebContext>()
+             .AddPasswordValidator<UsernameOrEmailAsPasswordValidator<EssentialCSharpWebUser>>()
+             .AddPasswordValidator<Top100000PasswordValidator<EssentialCSharpWebUser>>();
 
         builder.Configuration
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
@@ -49,16 +53,17 @@ public partial class Program
             options.SlidingExpiration = true;
         });
 
-        // if in development
         if (builder.Environment.IsDevelopment())
         {
             builder.Services.AddHsts(options =>
             {
+                options.Preload = true;
                 options.MaxAge = TimeSpan.FromDays(365);
                 options.IncludeSubDomains = true;
             });
         }
 
+        //TODO: Implement the anti-forgery token with every POST/PUT request: https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery
 
         builder.Services.AddTransient<IEmailSender, EmailSender>();
         builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration.GetSection(AuthMessageSenderOptions.AuthMessageSender));
@@ -108,9 +113,9 @@ public partial class Program
         {
             app.UseExceptionHandler("/Error");
             app.UseHsts();
-        }
             app.UseSecurityHeadersMiddleware(new SecurityHeadersBuilder()
                 .AddDefaultSecurePolicy());
+        }
 
         app.UseHttpsRedirection();
         app.UseStaticFiles();

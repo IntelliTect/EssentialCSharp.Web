@@ -27,7 +27,7 @@ namespace EssentialCSharp.Web.Middleware
             // Headers to Add: https://owasp.org/www-project-secure-headers/ci/headers_add.json
             // <add name="X-Frame-Options" value="DENY" />
             AddFrameOptionsDeny();
-            // <add name="X-XSS-Protection" value="0"/>
+            // <add name="X-XSS-Protection" value="1; mode=block"/>
             AddXssProtectionBlock();
             // <add name="X-Content-Type-Options" value="nosniff" />
             AddContentTypeOptionsNoSniff();
