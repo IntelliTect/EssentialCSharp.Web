@@ -5,22 +5,22 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Encodings.Web;
-using Microsoft.AspNetCore.Authentication;
 using EssentialCSharp.Web.Areas.Identity.Data;
+using EssentialCSharp.Web.Models;
+using EssentialCSharp.Web.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
-using EssentialCSharp.Web.Services;
 using Microsoft.Extensions.Options;
-using EssentialCSharp.Web.Models;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
 {
     public class RegisterModel : PageModel
     {
-#pragma warning disable IDE1006 // Naming Styles
+
         private readonly SignInManager<EssentialCSharpWebUser> _signInManager;
         private readonly UserManager<EssentialCSharpWebUser> _userManager;
         private readonly IUserStore<EssentialCSharpWebUser> _userStore;
@@ -29,7 +29,7 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
         private readonly IEmailSender _emailSender;
         private readonly ICaptchaService _captchaService;
         public CaptchaOptions CaptchaOptions { get; } //Set with Secret Manager.
-#pragma warning restore IDE1006 // Naming Styles
+
 
         public RegisterModel(
             UserManager<EssentialCSharpWebUser> userManager,

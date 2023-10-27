@@ -1,12 +1,12 @@
+using EssentialCSharp.Web.Areas.Identity.Data;
+using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
+using EssentialCSharp.Web.Data;
+using EssentialCSharp.Web.Middleware;
 using EssentialCSharp.Web.Services;
+using Mailjet.Client;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
-using EssentialCSharp.Web.Data;
-using EssentialCSharp.Web.Areas.Identity.Data;
-using Mailjet.Client;
-using EssentialCSharp.Web.Middleware;
-using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
-using Microsoft.AspNetCore.Identity;
 
 namespace EssentialCSharp.Web;
 

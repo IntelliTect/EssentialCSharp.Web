@@ -11,10 +11,10 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
 {
     public class LogoutModel : PageModel
     {
-#pragma warning disable IDE1006 // Naming Styles
+
         private readonly SignInManager<EssentialCSharpWebUser> _signInManager;
         private readonly ILogger<LogoutModel> _logger;
-#pragma warning restore IDE1006 // Naming Styles
+
 
         public LogoutModel(SignInManager<EssentialCSharpWebUser> signInManager, ILogger<LogoutModel> logger)
         {

@@ -11,11 +11,11 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
 {
     public class LoginWithRecoveryCodeModel : PageModel
     {
-#pragma warning disable IDE1006 // Naming Styles
+
         private readonly SignInManager<EssentialCSharpWebUser> _signInManager;
         private readonly UserManager<EssentialCSharpWebUser> _userManager;
         private readonly ILogger<LoginWithRecoveryCodeModel> _logger;
-#pragma warning restore IDE1006 // Naming Styles
+
 
         public LoginWithRecoveryCodeModel(
             SignInManager<EssentialCSharpWebUser> signInManager,

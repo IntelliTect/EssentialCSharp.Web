@@ -1,17 +1,17 @@
-﻿using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.Extensions.Options;
-using Mailjet.Client;
+﻿using Mailjet.Client;
 using Mailjet.Client.Resources;
 using Mailjet.Client.TransactionalEmails;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Services;
 
 public class EmailSender : IEmailSender
 {
-#pragma warning disable IDE1006 // Naming Styles
+
     private readonly ILogger _logger;
     private readonly IMailjetClient _mailjetClient;
-#pragma warning restore IDE1006 // Naming Styles
+
 
     public EmailSender(IMailjetClient mailjetClient, IOptions<AuthMessageSenderOptions> optionsAccessor,
                        ILogger<EmailSender> logger)
@@ -51,13 +51,13 @@ public class EmailSender : IEmailSender
                 _logger.LogError("Unexpectedly no messages returned in the mailer response");
                 break;
             case 1 when response.Messages.First().Status == "success":
-            _logger.LogInformation("Email to {ToEmail} queued successfully!", toEmail);
+                _logger.LogInformation("Email to {ToEmail} queued successfully!", toEmail);
                 break;
             default:
                 _logger.LogError("Failure To Send Email to {ToEmail} with the following Errors: {ErrorMessage}", toEmail, response.Messages.Aggregate(
-                    string.Empty, (current, messageItem) => 
-                    current + $"{messageItem.Errors.Aggregate(string.Empty, 
-                    (currentError, errorItem) => 
+                    string.Empty, (current, messageItem) =>
+                    current + $"{messageItem.Errors.Aggregate(string.Empty,
+                    (currentError, errorItem) =>
                     currentError + $"\t{errorItem.ErrorIdentifier}: {errorItem.ErrorCode}: {errorItem.ErrorMessage}\n")}\n"));
                 break;
         }

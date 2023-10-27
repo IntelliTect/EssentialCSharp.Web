@@ -3,20 +3,20 @@
 #nullable disable
 
 using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
 {
     public class LoginWith2faModel : PageModel
     {
-#pragma warning disable IDE1006 // Naming Styles
+
         private readonly SignInManager<EssentialCSharpWebUser> _signInManager;
         private readonly UserManager<EssentialCSharpWebUser> _userManager;
         private readonly ILogger<LoginWith2faModel> _logger;
-#pragma warning restore IDE1006 // Naming Styles
+
 
         public LoginWith2faModel(
             SignInManager<EssentialCSharpWebUser> signInManager,

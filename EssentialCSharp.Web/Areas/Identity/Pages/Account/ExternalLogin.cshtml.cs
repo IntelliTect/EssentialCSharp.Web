@@ -6,8 +6,8 @@ using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
-using Microsoft.AspNetCore.Authorization;
 using EssentialCSharp.Web.Areas.Identity.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -19,14 +19,12 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
     [AllowAnonymous]
     public class ExternalLoginModel : PageModel
     {
-#pragma warning disable IDE1006 // Naming Styles
         private readonly SignInManager<EssentialCSharpWebUser> _signInManager;
         private readonly UserManager<EssentialCSharpWebUser> _userManager;
         private readonly IUserStore<EssentialCSharpWebUser> _userStore;
         private readonly IUserEmailStore<EssentialCSharpWebUser> _emailStore;
         private readonly IEmailSender _emailSender;
         private readonly ILogger<ExternalLoginModel> _logger;
-#pragma warning restore IDE1006 // Naming Styles
 
         public ExternalLoginModel(
             SignInManager<EssentialCSharpWebUser> signInManager,
@@ -83,7 +81,7 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
             [EmailAddress]
             public string Email { get; set; }
         }
-        
+
         public IActionResult OnGet() => RedirectToPage("./Login");
 
         public IActionResult OnPost(string provider, string returnUrl = null)
