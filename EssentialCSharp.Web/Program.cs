@@ -6,6 +6,7 @@ using EssentialCSharp.Web.Areas.Identity.Data;
 using Mailjet.Client;
 using EssentialCSharp.Web.Middleware;
 using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
+using Microsoft.AspNetCore.Identity;
 
 namespace EssentialCSharp.Web;
 
@@ -61,6 +62,10 @@ public partial class Program
                 options.IncludeSubDomains = true;
             });
         }
+        builder.Services.Configure<PasswordHasherOptions>(option =>
+        {
+            option.IterationCount = 300000;
+        });
 
         //TODO: Implement the anti-forgery token with every POST/PUT request: https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery
 
