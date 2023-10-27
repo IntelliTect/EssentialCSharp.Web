@@ -89,6 +89,17 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
             [DataType(DataType.Text)]
             [Display(Name = "User Name")]
             public string UserName { get; set; }
+
+            [Required]
+            [DataType(DataType.Text)]
+            [Display(Name = "First Name")]
+            public string FirstName { get; set; }
+
+            [Required]
+            [DataType(DataType.Text)]
+            [Display(Name = "Last Name")]
+            public string LastName { get; set; }
+
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
@@ -140,6 +151,8 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account
                 if (ModelState.IsValid)
                 {
                     EssentialCSharpWebUser user = CreateUser();
+                    user.FirstName = Input.FirstName;
+                    user.LastName = Input.LastName;
 
                     await _userStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
                     await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
