@@ -14,10 +14,23 @@
             <div class="form-floating mb-3">
                 <input asp-for="Input.Username" class="form-control" placeholder="Please choose your username." />
                 <label asp-for="Input.Username" class="form-label"></label>
-                <span asp-validation-for="Input.Username" class="text-danger"></span>"
+                <span asp-validation-for="Input.Username" class="text-danger"></span>
+            </div>
+            @* align firstname and lastname input boxes vertically *@
+            <div class="row mb-3">
+                <div class="col  form-floating">
+                    <input asp-for="Input.FirstName" class="form-control" placeholder="Please enter your firstname." />
+                    <label class="ms-lg-2" asp-for=" Input.FirstName" class="form-label"></label>
+                    <span asp-validation-for="Input.FirstName" class="text-danger"></span>
+                </div>
+                <div class="col  form-floating ml-2">
+                    <input asp-for="Input.LastName" class="form-control" placeholder="Please enter your lastname." />
+                    <label class="ms-lg-2" asp-for="Input.LastName" class="form-label"></label>
+                    <span asp-validation-for="Input.LastName" class="text-danger"></span>
+                </div>
             </div>
             <div class="form-floating mb-3">
-                <input asp-for="Input.PhoneNumber" class="form-control" placeholder="Please enter your phone number."/>
+                <input asp-for="Input.PhoneNumber" class="form-control" placeholder="Please enter your phone number." />
                 <label asp-for="Input.PhoneNumber" class="form-label"></label>
                 <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
             </div>
