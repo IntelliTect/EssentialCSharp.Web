@@ -23,12 +23,12 @@ public partial class Program
             {
                 // Password settings
                 options.User.RequireUniqueEmail = true;
-                options.Password.RequiredLength = 10;
-                options.Password.RequireDigit = true;
-                options.Password.RequireNonAlphanumeric = true;
-                options.Password.RequireUppercase = true;
-                options.Password.RequireLowercase = true;
-                options.Password.RequiredUniqueChars = 6;
+                options.Password.RequiredLength = PasswordRequirementOptions.PasswordMinimumLength;
+                options.Password.RequireDigit = PasswordRequirementOptions.RequireDigit;
+                options.Password.RequireNonAlphanumeric = PasswordRequirementOptions.RequireNonAlphanumeric;
+                options.Password.RequireUppercase = PasswordRequirementOptions.RequireUppercase;
+                options.Password.RequireLowercase = PasswordRequirementOptions.RequireLowercase;
+                options.Password.RequiredUniqueChars = PasswordRequirementOptions.RequiredUniqueChars;
 
                 options.SignIn.RequireConfirmedEmail = true;
                 options.SignIn.RequireConfirmedAccount = true;

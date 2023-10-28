@@ -42,7 +42,7 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
             public string OldPassword { get; set; }
 
             [Required]
-            [StringLength(ValidationMessages.PasswordMaximumLength, ErrorMessage = ValidationMessages.StringLengthErrorMessage, MinimumLength = ValidationMessages.PasswordMinimumLength)]
+            [StringLength(Web.Services.PasswordRequirementOptions.PasswordMaximumLength, ErrorMessage = ValidationMessages.StringLengthErrorMessage, MinimumLength = Web.Services.PasswordRequirementOptions.PasswordMinimumLength)]
             [DataType(DataType.Password)]
             [Display(Name = "New password")]
             public string NewPassword { get; set; }
