@@ -8,7 +8,7 @@ namespace EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
 public abstract class CommonPasswordValidator<TUser> : IPasswordValidator<TUser>
        where TUser : IdentityUser
 {
-    public CommonPasswordValidator(HashSet<string> passwords, IdentityOptions identityOptions)
+    public CommonPasswordValidator(HashSet<string> passwords)
     {
         Passwords = passwords;
     }
@@ -36,5 +36,4 @@ public abstract class CommonPasswordValidator<TUser> : IPasswordValidator<TUser>
 
         return Task.FromResult(result);
     }
-
 }
