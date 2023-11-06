@@ -8,87 +8,86 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
+namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage;
+
+public class SetPasswordModel : PageModel
 {
-    public class SetPasswordModel : PageModel
+    private readonly UserManager<EssentialCSharpWebUser> _UserManager;
+    private readonly SignInManager<EssentialCSharpWebUser> _SignInManager;
+
+    public SetPasswordModel(
+        UserManager<EssentialCSharpWebUser> userManager,
+        SignInManager<EssentialCSharpWebUser> signInManager)
     {
-        private readonly UserManager<EssentialCSharpWebUser> _UserManager;
-        private readonly SignInManager<EssentialCSharpWebUser> _SignInManager;
+        _UserManager = userManager;
+        _SignInManager = signInManager;
+    }
 
-        public SetPasswordModel(
-            UserManager<EssentialCSharpWebUser> userManager,
-            SignInManager<EssentialCSharpWebUser> signInManager)
+    [BindProperty]
+    public InputModel Input { get; set; }
+
+    [TempData]
+    public string StatusMessage { get; set; }
+
+    public class InputModel
+    {
+
+        [Required]
+        [StringLength(Web.Services.PasswordRequirementOptions.PasswordMaximumLength, ErrorMessage = ValidationMessages.StringLengthErrorMessage, MinimumLength = Web.Services.PasswordRequirementOptions.PasswordMinimumLength)]
+        [DataType(DataType.Password)]
+        [Display(Name = "New password")]
+        public string NewPassword { get; set; }
+
+        [DataType(DataType.Password)]
+        [Display(Name = "Confirm new password")]
+        [Compare("NewPassword", ErrorMessage = "The new password and confirmation password do not match.")]
+        public string ConfirmPassword { get; set; }
+    }
+
+    public async Task<IActionResult> OnGetAsync()
+    {
+        EssentialCSharpWebUser user = await _UserManager.GetUserAsync(User);
+        if (user == null)
         {
-            _UserManager = userManager;
-            _SignInManager = signInManager;
+            return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
         }
 
-        [BindProperty]
-        public InputModel Input { get; set; }
+        bool hasPassword = await _UserManager.HasPasswordAsync(user);
 
-        [TempData]
-        public string StatusMessage { get; set; }
-
-        public class InputModel
+        if (hasPassword)
         {
-
-            [Required]
-            [StringLength(Web.Services.PasswordRequirementOptions.PasswordMaximumLength, ErrorMessage = ValidationMessages.StringLengthErrorMessage, MinimumLength = Web.Services.PasswordRequirementOptions.PasswordMinimumLength)]
-            [DataType(DataType.Password)]
-            [Display(Name = "New password")]
-            public string NewPassword { get; set; }
-
-            [DataType(DataType.Password)]
-            [Display(Name = "Confirm new password")]
-            [Compare("NewPassword", ErrorMessage = "The new password and confirmation password do not match.")]
-            public string ConfirmPassword { get; set; }
+            return RedirectToPage("./ChangePassword");
         }
 
-        public async Task<IActionResult> OnGetAsync()
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostAsync()
+    {
+        if (!ModelState.IsValid)
         {
-            EssentialCSharpWebUser user = await _UserManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
-            }
-
-            bool hasPassword = await _UserManager.HasPasswordAsync(user);
-
-            if (hasPassword)
-            {
-                return RedirectToPage("./ChangePassword");
-            }
-
             return Page();
         }
 
-        public async Task<IActionResult> OnPostAsync()
+        EssentialCSharpWebUser user = await _UserManager.GetUserAsync(User);
+        if (user == null)
         {
-            if (!ModelState.IsValid)
-            {
-                return Page();
-            }
-
-            EssentialCSharpWebUser user = await _UserManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
-            }
-
-            IdentityResult addPasswordResult = await _UserManager.AddPasswordAsync(user, Input.NewPassword);
-            if (!addPasswordResult.Succeeded)
-            {
-                foreach (IdentityError error in addPasswordResult.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
-                return Page();
-            }
-
-            await _SignInManager.RefreshSignInAsync(user);
-            StatusMessage = "Your password has been set.";
-
-            return RedirectToPage();
+            return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
         }
+
+        IdentityResult addPasswordResult = await _UserManager.AddPasswordAsync(user, Input.NewPassword);
+        if (!addPasswordResult.Succeeded)
+        {
+            foreach (IdentityError error in addPasswordResult.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+            return Page();
+        }
+
+        await _SignInManager.RefreshSignInAsync(user);
+        StatusMessage = "Your password has been set.";
+
+        return RedirectToPage();
     }
 }

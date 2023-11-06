@@ -5,30 +5,29 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
+namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage;
+
+public class PersonalDataModel : PageModel
 {
-    public class PersonalDataModel : PageModel
+    private readonly UserManager<EssentialCSharpWebUser> _UserManager;
+    private readonly ILogger<PersonalDataModel> _Logger;
+
+    public PersonalDataModel(
+        UserManager<EssentialCSharpWebUser> userManager,
+        ILogger<PersonalDataModel> logger)
     {
-        private readonly UserManager<EssentialCSharpWebUser> _UserManager;
-        private readonly ILogger<PersonalDataModel> _Logger;
+        _UserManager = userManager;
+        _Logger = logger;
+    }
 
-        public PersonalDataModel(
-            UserManager<EssentialCSharpWebUser> userManager,
-            ILogger<PersonalDataModel> logger)
+    public async Task<IActionResult> OnGet()
+    {
+        EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
+        if (user == null)
         {
-            _UserManager = userManager;
-            _Logger = logger;
+            return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
         }
 
-        public async Task<IActionResult> OnGet()
-        {
-            EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
-            }
-
-            return Page();
-        }
+        return Page();
     }
 }

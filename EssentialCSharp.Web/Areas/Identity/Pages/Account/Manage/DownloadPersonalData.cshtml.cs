@@ -8,55 +8,54 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage
+namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage;
+
+public class DownloadPersonalDataModel : PageModel
 {
-    public class DownloadPersonalDataModel : PageModel
+    private readonly UserManager<EssentialCSharpWebUser> _UserManager;
+    private readonly ILogger<DownloadPersonalDataModel> _Logger;
+
+    public DownloadPersonalDataModel(
+        UserManager<EssentialCSharpWebUser> userManager,
+        ILogger<DownloadPersonalDataModel> logger)
     {
-        private readonly UserManager<EssentialCSharpWebUser> _UserManager;
-        private readonly ILogger<DownloadPersonalDataModel> _Logger;
+        _UserManager = userManager;
+        _Logger = logger;
+    }
 
-        public DownloadPersonalDataModel(
-            UserManager<EssentialCSharpWebUser> userManager,
-            ILogger<DownloadPersonalDataModel> logger)
+    public IActionResult OnGet()
+    {
+        return NotFound();
+    }
+
+    public async Task<IActionResult> OnPostAsync()
+    {
+        EssentialCSharpWebUser user = await _UserManager.GetUserAsync(User);
+        if (user == null)
         {
-            _UserManager = userManager;
-            _Logger = logger;
+            return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
         }
 
-        public IActionResult OnGet()
+        _Logger.LogInformation("User with ID '{UserId}' asked for their personal data.", _UserManager.GetUserId(User));
+
+        // Only include personal data for download
+        var personalData = new Dictionary<string, string>();
+        IEnumerable<System.Reflection.PropertyInfo> personalDataProps = typeof(EssentialCSharpWebUser).GetProperties().Where(
+                        prop => Attribute.IsDefined(prop, typeof(PersonalDataAttribute)));
+        foreach (System.Reflection.PropertyInfo p in personalDataProps)
         {
-            return NotFound();
+            personalData.Add(p.Name, p.GetValue(user)?.ToString() ?? "null");
         }
 
-        public async Task<IActionResult> OnPostAsync()
+        IList<UserLoginInfo> logins = await _UserManager.GetLoginsAsync(user);
+        foreach (UserLoginInfo l in logins)
         {
-            EssentialCSharpWebUser user = await _UserManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
-            }
-
-            _Logger.LogInformation("User with ID '{UserId}' asked for their personal data.", _UserManager.GetUserId(User));
-
-            // Only include personal data for download
-            var personalData = new Dictionary<string, string>();
-            IEnumerable<System.Reflection.PropertyInfo> personalDataProps = typeof(EssentialCSharpWebUser).GetProperties().Where(
-                            prop => Attribute.IsDefined(prop, typeof(PersonalDataAttribute)));
-            foreach (System.Reflection.PropertyInfo p in personalDataProps)
-            {
-                personalData.Add(p.Name, p.GetValue(user)?.ToString() ?? "null");
-            }
-
-            IList<UserLoginInfo> logins = await _UserManager.GetLoginsAsync(user);
-            foreach (UserLoginInfo l in logins)
-            {
-                personalData.Add($"{l.LoginProvider} external login provider key", l.ProviderKey);
-            }
-
-            personalData.Add($"Authenticator Key", await _UserManager.GetAuthenticatorKeyAsync(user));
-
-            Response.Headers.Add("Content-Disposition", "attachment; filename=PersonalData.json");
-            return new FileContentResult(JsonSerializer.SerializeToUtf8Bytes(personalData), "application/json");
+            personalData.Add($"{l.LoginProvider} external login provider key", l.ProviderKey);
         }
+
+        personalData.Add($"Authenticator Key", await _UserManager.GetAuthenticatorKeyAsync(user));
+
+        Response.Headers.Add("Content-Disposition", "attachment; filename=PersonalData.json");
+        return new FileContentResult(JsonSerializer.SerializeToUtf8Bytes(personalData), "application/json");
     }
 }

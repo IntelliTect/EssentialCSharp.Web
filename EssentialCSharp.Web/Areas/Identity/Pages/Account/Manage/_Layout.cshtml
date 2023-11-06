@@ -1,12 +1,12 @@
 ﻿@{
     if (ViewData.TryGetValue("ParentLayout", out var parentLayout) && parentLayout !=  null)
-    {
-        Layout = parentLayout.ToString();
-    }
-    else
-    {
-        Layout = "/Areas/Identity/Pages/_Layout.cshtml";
-    }
+{
+    Layout = parentLayout.ToString();
+}
+else
+{
+    Layout = "/Areas/Identity/Pages/_Layout.cshtml";
+}
 }
 
 <h1>Manage your account</h1>
