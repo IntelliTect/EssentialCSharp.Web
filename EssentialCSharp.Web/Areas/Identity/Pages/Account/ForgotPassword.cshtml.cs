@@ -1,8 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-#nullable disable
-
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Encodings.Web;
 using EssentialCSharp.Web.Areas.Identity.Data;
@@ -26,22 +22,30 @@ public class ForgotPasswordModel : PageModel
     }
 
     [BindProperty]
-    public InputModel Input { get; set; }
+    public InputModel? Input { get; set; }
 
     public class InputModel
     {
 
         [Required]
         [EmailAddress]
-        public string Email { get; set; }
+        public string? Email { get; set; }
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
         if (ModelState.IsValid)
         {
-            EssentialCSharpWebUser user = await _UserManager.FindByEmailAsync(Input.Email);
-            if (user == null || !(await _UserManager.IsEmailConfirmedAsync(user)))
+            if (Input is null)
+            {
+                return RedirectToPage("./ForgotPasswordConfirmation");
+            }
+            if (Input.Email is null)
+            {
+                return RedirectToPage("./ForgotPasswordConfirmation");
+            }
+            EssentialCSharpWebUser? user = await _UserManager.FindByEmailAsync(Input.Email);
+            if (user is null || !(await _UserManager.IsEmailConfirmedAsync(user)))
             {
                 // Don't reveal that the user does not exist or is not confirmed
                 return RedirectToPage("./ForgotPasswordConfirmation");
@@ -51,11 +55,16 @@ public class ForgotPasswordModel : PageModel
             // visit https://go.microsoft.com/fwlink/?LinkID=532713
             string code = await _UserManager.GeneratePasswordResetTokenAsync(user);
             code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-            string callbackUrl = Url.Page(
+            string? callbackUrl = Url.Page(
                 "/Account/ResetPassword",
                 pageHandler: null,
                 values: new { area = "Identity", code },
                 protocol: Request.Scheme);
+
+            if (callbackUrl is null)
+            {
+                return RedirectToPage("./ForgotPasswordConfirmation");
+            }
 
             await _EmailSender.SendEmailAsync(
                 Input.Email,
