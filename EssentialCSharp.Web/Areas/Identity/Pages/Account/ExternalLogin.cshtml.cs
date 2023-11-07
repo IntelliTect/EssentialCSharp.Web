@@ -1,8 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-#nullable disable
-
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -42,43 +38,42 @@ public class ExternalLoginModel : PageModel
     }
 
     [BindProperty]
-    public InputModel Input { get; set; }
+    public InputModel? Input { get; set; }
 
-    public string ProviderDisplayName { get; set; }
+    public string? ProviderDisplayName { get; set; }
 
-    public string ReturnUrl { get; set; }
+    public string? ReturnUrl { get; set; }
 
     [TempData]
-    public string ErrorMessage { get; set; }
+    public string? ErrorMessage { get; set; }
 
     public class InputModel
     {
-
         [Required]
         [EmailAddress]
-        public string Email { get; set; }
+        public string? Email { get; set; }
     }
 
     public IActionResult OnGet() => RedirectToPage("./Login");
 
-    public IActionResult OnPost(string provider, string returnUrl = null)
+    public IActionResult OnPost(string provider, string? returnUrl = null)
     {
         // Request a redirect to the external login provider.
-        string redirectUrl = Url.Page("./ExternalLogin", pageHandler: "Callback", values: new { returnUrl });
+        string redirectUrl = Url.Page("./ExternalLogin", pageHandler: "Callback", values: new { returnUrl }) ?? "/";
         Microsoft.AspNetCore.Authentication.AuthenticationProperties properties = _SignInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
         return new ChallengeResult(provider, properties);
     }
 
-    public async Task<IActionResult> OnGetCallbackAsync(string returnUrl = null, string remoteError = null)
+    public async Task<IActionResult> OnGetCallbackAsync(string? returnUrl = null, string? remoteError = null)
     {
         returnUrl ??= Url.Content("~/");
-        if (remoteError != null)
+        if (remoteError is not null)
         {
             ErrorMessage = $"Error from external provider: {remoteError}";
             return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
         }
-        ExternalLoginInfo info = await _SignInManager.GetExternalLoginInfoAsync();
-        if (info == null)
+        ExternalLoginInfo? info = await _SignInManager.GetExternalLoginInfoAsync();
+        if (info is null)
         {
             ErrorMessage = "Error loading external login information.";
             return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
@@ -88,7 +83,7 @@ public class ExternalLoginModel : PageModel
         Microsoft.AspNetCore.Identity.SignInResult result = await _SignInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
         if (result.Succeeded)
         {
-            _Logger.LogInformation("{Name} logged in with {LoginProvider} provider.", info.Principal.Identity.Name, info.LoginProvider);
+            _Logger.LogInformation("{Name} logged in with {LoginProvider} provider.", info.Principal.Identity?.Name, info.LoginProvider);
             return LocalRedirect(returnUrl);
         }
         if (result.IsLockedOut)
@@ -102,7 +97,7 @@ public class ExternalLoginModel : PageModel
             ProviderDisplayName = info.ProviderDisplayName;
             if (info.Principal.HasClaim(c => c.Type == ClaimTypes.Email))
             {
-                Input = new InputModel
+                Input = new()
                 {
                     Email = info.Principal.FindFirstValue(ClaimTypes.Email)
                 };
@@ -111,12 +106,12 @@ public class ExternalLoginModel : PageModel
         }
     }
 
-    public async Task<IActionResult> OnPostConfirmationAsync(string returnUrl = null)
+    public async Task<IActionResult> OnPostConfirmationAsync(string? returnUrl = null)
     {
         returnUrl ??= Url.Content("~/");
         // Get the information about the user from the external login provider
-        ExternalLoginInfo info = await _SignInManager.GetExternalLoginInfoAsync();
-        if (info == null)
+        ExternalLoginInfo? info = await _SignInManager.GetExternalLoginInfoAsync();
+        if (info is null)
         {
             ErrorMessage = "Error loading external login information during confirmation.";
             return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
@@ -124,9 +119,19 @@ public class ExternalLoginModel : PageModel
 
         if (ModelState.IsValid)
         {
+            if (Input is null)
+            {
+                ErrorMessage = "Error getting input data.";
+                return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
+            }
+            if (Input.Email is null)
+            {
+                ErrorMessage = "Error: Email may not be null.";
+                return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
+            }
             EssentialCSharpWebUser user = CreateUser();
 
-            EssentialCSharpWebUser existingUser = await _UserManager.FindByEmailAsync(Input.Email).ConfigureAwait(false);
+            EssentialCSharpWebUser? existingUser = await _UserManager.FindByEmailAsync(Input.Email).ConfigureAwait(false);
             if (existingUser is null)
             {
                 await _UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
@@ -162,14 +167,30 @@ public class ExternalLoginModel : PageModel
 
     private async Task<IActionResult> SendConfirmationEmail(string returnUrl, ExternalLoginInfo info, EssentialCSharpWebUser user)
     {
+        if (Input is null)
+        {
+            ErrorMessage = "Error getting input data.";
+            return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
+        }
+        if (Input.Email is null)
+        {
+            ErrorMessage = "Error: Email may not be null.";
+            return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
+        }
         string userId = await _UserManager.GetUserIdAsync(user);
         string code = await _UserManager.GenerateEmailConfirmationTokenAsync(user);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-        string callbackUrl = Url.Page(
+        string? callbackUrl = Url.Page(
             "/Account/ConfirmEmail",
             pageHandler: null,
             values: new { area = "Identity", userId = userId, code = code },
             protocol: Request.Scheme);
+
+        if (callbackUrl is null)
+        {
+            ErrorMessage = "Error: callback url unexpectedly null.";
+            return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
+        }
 
         await _EmailSender.SendEmailAsync(Input.Email, "Confirm your email",
             $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
@@ -190,11 +211,11 @@ public class ExternalLoginModel : PageModel
         {
             return Activator.CreateInstance<EssentialCSharpWebUser>();
         }
-        catch
+        catch (MissingMethodException innerException)
         {
             throw new InvalidOperationException($"Can't create an instance of '{nameof(EssentialCSharpWebUser)}'. " +
                 $"Ensure that '{nameof(EssentialCSharpWebUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
-                $"override the external login page in /Areas/Identity/Pages/Account/ExternalLogin.cshtml");
+                $"override the external login page in /Areas/Identity/Pages/Account/ExternalLogin.cshtml", innerException);
         }
     }
 
