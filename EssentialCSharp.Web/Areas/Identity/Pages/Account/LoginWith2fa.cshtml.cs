@@ -1,8 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-#nullable disable
-
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -27,11 +23,11 @@ public class LoginWith2faModel : PageModel
     }
 
     [BindProperty]
-    public InputModel Input { get; set; }
+    public InputModel? Input { get; set; }
 
     public bool RememberMe { get; set; }
 
-    public string ReturnUrl { get; set; }
+    public string? ReturnUrl { get; set; }
 
     public class InputModel
     {
@@ -39,23 +35,23 @@ public class LoginWith2faModel : PageModel
         [StringLength(ValidationMessages.VerificationCodeMaximumLength, ErrorMessage = ValidationMessages.StringLengthErrorMessage, MinimumLength = ValidationMessages.VerificationCodeMaximumLength)]
         [DataType(DataType.Text)]
         [Display(Name = "Authenticator code")]
-        public string TwoFactorCode { get; set; }
+        public string? TwoFactorCode { get; set; }
 
         [Display(Name = "Remember this machine")]
         public bool RememberMachine { get; set; }
     }
 
-    public async Task<IActionResult> OnGetAsync(bool rememberMe, string returnUrl = null)
+    public async Task<IActionResult> OnGetAsync(bool rememberMe, string? returnUrl = null)
     {
         // Ensure the user has gone through the username & password screen first
         _ = await _SignInManager.GetTwoFactorAuthenticationUserAsync() ?? throw new InvalidOperationException($"Unable to load two-factor authentication user.");
-        ReturnUrl = returnUrl;
+        if (returnUrl is not null) ReturnUrl = returnUrl;
         RememberMe = rememberMe;
 
         return Page();
     }
 
-    public async Task<IActionResult> OnPostAsync(bool rememberMe, string returnUrl = null)
+    public async Task<IActionResult> OnPostAsync(bool rememberMe, string? returnUrl = null)
     {
         if (!ModelState.IsValid)
         {
@@ -65,6 +61,14 @@ public class LoginWith2faModel : PageModel
         returnUrl ??= Url.Content("~/");
 
         EssentialCSharpWebUser user = await _SignInManager.GetTwoFactorAuthenticationUserAsync() ?? throw new InvalidOperationException($"Unable to load two-factor authentication user.");
+        if (Input is null)
+        {
+            return RedirectToPage("./Lockout", new { ReturnUrl = returnUrl });
+        }
+        if (Input.TwoFactorCode is null)
+        {
+            return RedirectToPage("./Lockout", new { ReturnUrl = returnUrl });
+        }
         string authenticatorCode = Input.TwoFactorCode.Replace(" ", string.Empty).Replace("-", string.Empty);
 
         Microsoft.AspNetCore.Identity.SignInResult result = await _SignInManager.TwoFactorAuthenticatorSignInAsync(authenticatorCode, rememberMe, Input.RememberMachine);
