@@ -1,8 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-#nullable disable
-
-using EssentialCSharp.Web.Areas.Identity.Data;
+﻿using EssentialCSharp.Web.Areas.Identity.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -21,11 +17,11 @@ public class LogoutModel : PageModel
         _Logger = logger;
     }
 
-    public async Task<IActionResult> OnPost(string returnUrl = null)
+    public async Task<IActionResult> OnPost(string? returnUrl = null)
     {
         await _SignInManager.SignOutAsync();
         _Logger.LogInformation("User logged out.");
-        if (returnUrl != null)
+        if (returnUrl is not null)
         {
             return LocalRedirect(returnUrl);
         }

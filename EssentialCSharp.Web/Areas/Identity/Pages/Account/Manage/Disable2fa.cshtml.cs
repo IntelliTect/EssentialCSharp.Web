@@ -35,7 +35,7 @@ public class Disable2faModel : PageModel
 
         if (!await _UserManager.GetTwoFactorEnabledAsync(user))
         {
-            throw new InvalidOperationException($"Cannot disable 2FA for user as it's not currently enabled.");
+            throw new InvalidOperationException("Cannot disable 2FA for user as it's not currently enabled.");
         }
 
         return Page();
