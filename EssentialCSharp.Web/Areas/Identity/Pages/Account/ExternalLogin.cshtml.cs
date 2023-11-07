@@ -37,9 +37,6 @@ public class ExternalLoginModel : PageModel
         _EmailSender = emailSender;
     }
 
-    [BindProperty]
-    public InputModel? Input { get; set; }
-
     public string? ProviderDisplayName { get; set; }
 
     public string? ReturnUrl { get; set; }
@@ -47,12 +44,9 @@ public class ExternalLoginModel : PageModel
     [TempData]
     public string? ErrorMessage { get; set; }
 
-    public class InputModel
-    {
-        [Required]
-        [EmailAddress]
-        public string? Email { get; set; }
-    }
+    [Required]
+    [EmailAddress]
+    public string? Email { get; set; }
 
     public IActionResult OnGet() => RedirectToPage("./Login");
 
@@ -97,10 +91,7 @@ public class ExternalLoginModel : PageModel
             ProviderDisplayName = info.ProviderDisplayName;
             if (info.Principal.HasClaim(c => c.Type == ClaimTypes.Email))
             {
-                Input = new()
-                {
-                    Email = info.Principal.FindFirstValue(ClaimTypes.Email)
-                };
+                Email = info.Principal.FindFirstValue(ClaimTypes.Email);
             }
             return Page();
         }
@@ -119,23 +110,18 @@ public class ExternalLoginModel : PageModel
 
         if (ModelState.IsValid)
         {
-            if (Input is null)
-            {
-                ErrorMessage = "Error getting input data.";
-                return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
-            }
-            if (Input.Email is null)
+            if (Email is not { } email)
             {
                 ErrorMessage = "Error: Email may not be null.";
                 return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
             }
             EssentialCSharpWebUser user = CreateUser();
 
-            EssentialCSharpWebUser? existingUser = await _UserManager.FindByEmailAsync(Input.Email).ConfigureAwait(false);
+            EssentialCSharpWebUser? existingUser = await _UserManager.FindByEmailAsync(email).ConfigureAwait(false);
             if (existingUser is null)
             {
-                await _UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
-                await _EmailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+                await _UserStore.SetUserNameAsync(user, email, CancellationToken.None);
+                await _EmailStore.SetEmailAsync(user, email, CancellationToken.None);
                 IdentityResult result = await _UserManager.CreateAsync(user);
                 if (result.Succeeded)
                 {
@@ -167,12 +153,7 @@ public class ExternalLoginModel : PageModel
 
     private async Task<IActionResult> SendConfirmationEmail(string returnUrl, ExternalLoginInfo info, EssentialCSharpWebUser user)
     {
-        if (Input is null)
-        {
-            ErrorMessage = "Error getting input data.";
-            return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
-        }
-        if (Input.Email is null)
+        if (Email is not { } email)
         {
             ErrorMessage = "Error: Email may not be null.";
             return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
@@ -192,13 +173,13 @@ public class ExternalLoginModel : PageModel
             return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
         }
 
-        await _EmailSender.SendEmailAsync(Input.Email, "Confirm your email",
+        await _EmailSender.SendEmailAsync(email, "Confirm your email",
             $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
         // If account confirmation is required, we need to show the link if we don't have a real email sender
         if (_UserManager.Options.SignIn.RequireConfirmedAccount)
         {
-            return RedirectToPage("./RegisterConfirmation", new { Email = Input.Email });
+            return RedirectToPage("./RegisterConfirmation", new { Email = email });
         }
 
         await _SignInManager.SignInAsync(user, isPersistent: false, info.LoginProvider);
