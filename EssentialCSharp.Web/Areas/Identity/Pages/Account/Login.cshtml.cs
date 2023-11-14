@@ -1,8 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-#nullable disable
-
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
@@ -25,32 +21,36 @@ public class LoginModel : PageModel
         _UserManager = userManager;
     }
 
+    private InputModel? _Input;
     [BindProperty]
-    public InputModel Input { get; set; }
+    public InputModel Input { 
+        get => _Input ?? throw new InvalidOperationException(); 
+        set => _Input = value ?? throw new ArgumentNullException(nameof(value)); 
+    }
 
-    public IList<AuthenticationScheme> ExternalLogins { get; set; }
+    public IList<AuthenticationScheme>? ExternalLogins { get; set; }
 
-    public string ReturnUrl { get; set; }
+    public string? ReturnUrl { get; set; }
 
     [TempData]
-    public string ErrorMessage { get; set; }
+    public string? ErrorMessage { get; set; }
 
     public class InputModel
     {
 
         [Required]
         [EmailAddress]
-        public string Email { get; set; }
+        public string? Email { get; set; }
 
         [Required]
         [DataType(DataType.Password)]
-        public string Password { get; set; }
+        public string? Password { get; set; }
 
         [Display(Name = "Remember me?")]
         public bool RememberMe { get; set; }
     }
 
-    public async Task OnGetAsync(string returnUrl = null)
+    public async Task OnGetAsync(string? returnUrl = null)
     {
         if (!string.IsNullOrEmpty(ErrorMessage))
         {
@@ -67,7 +67,7 @@ public class LoginModel : PageModel
         ReturnUrl = returnUrl;
     }
 
-    public async Task<IActionResult> OnPostAsync(string returnUrl = null)
+    public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
     {
         returnUrl ??= Url.Content("~/");
 
@@ -76,7 +76,15 @@ public class LoginModel : PageModel
         if (ModelState.IsValid)
         {
             Microsoft.AspNetCore.Identity.SignInResult result;
-            EssentialCSharpWebUser foundUser = await _UserManager.FindByEmailAsync(Input.Email);
+            if (Input.Email is null)
+            {
+                return RedirectToPage(Url.Content("~/"), new { ReturnUrl = returnUrl });
+            }
+            EssentialCSharpWebUser? foundUser = await _UserManager.FindByEmailAsync(Input.Email);
+            if (Input.Password is null)
+            {
+                return RedirectToPage(Url.Content("~/"), new { ReturnUrl = returnUrl });
+            }
             if (foundUser is not null)
             {
                 result = await _SignInManager.PasswordSignInAsync(foundUser, Input.Password, Input.RememberMe, lockoutOnFailure: true);

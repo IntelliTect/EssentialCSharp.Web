@@ -1,8 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-#nullable disable
-
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Text;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using Microsoft.AspNetCore.Identity;
@@ -21,34 +17,38 @@ public class ResetPasswordModel : PageModel
         _UserManager = userManager;
     }
 
+    private InputModel? _Input;
     [BindProperty]
-    public InputModel Input { get; set; }
+    public InputModel Input
+    {
+        get => _Input ?? throw new InvalidOperationException();
+        set => _Input = value ?? throw new ArgumentNullException(nameof(value));
+    }
 
     public class InputModel
     {
-
         [Required]
         [EmailAddress]
-        public string Email { get; set; }
+        public string? Email { get; set; }
 
         [Required]
         [StringLength(Web.Services.PasswordRequirementOptions.PasswordMaximumLength, ErrorMessage = ValidationMessages.StringLengthErrorMessage, MinimumLength = Web.Services.PasswordRequirementOptions.PasswordMinimumLength)]
         [DataType(DataType.Password)]
-        public string Password { get; set; }
+        public string? Password { get; set; }
 
         [DataType(DataType.Password)]
         [Display(Name = "Confirm password")]
         [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
-        public string ConfirmPassword { get; set; }
+        public string? ConfirmPassword { get; set; }
 
         [Required]
-        public string Code { get; set; }
+        public string? Code { get; set; }
 
     }
 
-    public IActionResult OnGet(string code = null)
+    public IActionResult OnGet(string? code = null)
     {
-        if (code == null)
+        if (code is null)
         {
             return BadRequest("A code must be supplied for password reset.");
         }
@@ -69,11 +69,27 @@ public class ResetPasswordModel : PageModel
             return Page();
         }
 
-        EssentialCSharpWebUser user = await _UserManager.FindByEmailAsync(Input.Email);
-        if (user == null)
+        if (Input.Email is null)
+        {
+            ModelState.AddModelError(string.Empty, "Error: Email is required.");
+            return RedirectToPage();
+        }
+        EssentialCSharpWebUser? user = await _UserManager.FindByEmailAsync(Input.Email);
+        if (user is null)
         {
             // Don't reveal that the user does not exist
             return RedirectToPage("./ResetPasswordConfirmation");
+        }
+
+        if (Input.Password is null)
+        {
+            ModelState.AddModelError(string.Empty, "Error: Password is required.");
+            return RedirectToPage();
+        }
+        if (Input.Code is null)
+        {
+            ModelState.AddModelError(string.Empty, "Error: Code is required.");
+            return RedirectToPage();
         }
 
         IdentityResult result = await _UserManager.ResetPasswordAsync(user, Input.Code, Input.Password);

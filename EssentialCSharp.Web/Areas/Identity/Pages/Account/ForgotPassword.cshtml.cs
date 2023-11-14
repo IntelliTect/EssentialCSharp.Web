@@ -21,8 +21,13 @@ public class ForgotPasswordModel : PageModel
         _EmailSender = emailSender;
     }
 
+    private InputModel? _Input;
     [BindProperty]
-    public InputModel? Input { get; set; }
+    public InputModel Input
+    {
+        get => _Input ?? throw new InvalidOperationException();
+        set => _Input = value ?? throw new ArgumentNullException(nameof(value));
+    }
 
     public class InputModel
     {
@@ -36,10 +41,6 @@ public class ForgotPasswordModel : PageModel
     {
         if (ModelState.IsValid)
         {
-            if (Input is null)
-            {
-                return RedirectToPage("./ForgotPasswordConfirmation");
-            }
             if (Input.Email is null)
             {
                 return RedirectToPage("./ForgotPasswordConfirmation");

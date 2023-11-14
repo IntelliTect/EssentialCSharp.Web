@@ -1,8 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-#nullable disable
-
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -23,37 +19,42 @@ public class IndexModel : PageModel
         _SignInManager = signInManager;
     }
 
-    public string Username { get; set; }
+    public string? Username { get; set; }
 
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
 
     [TempData]
-    public string StatusMessage { get; set; }
+    public string? StatusMessage { get; set; }
 
+    private InputModel? _Input;
     [BindProperty]
-    public InputModel Input { get; set; }
+    public InputModel Input
+    {
+        get => _Input ?? throw new InvalidOperationException();
+        set => _Input = value ?? throw new ArgumentNullException(nameof(value));
+    }
 
     public class InputModel
     {
         [Display(Name = "Username")]
-        public string Username { get; set; }
+        public string? Username { get; set; }
 
         [Phone]
         [Display(Name = "Phone number")]
-        public string PhoneNumber { get; set; }
+        public string? PhoneNumber { get; set; }
 
         [Display(Name = "First Name")]
-        public string FirstName { get; set; }
+        public string? FirstName { get; set; }
 
         [Display(Name = "Last Name")]
-        public string LastName { get; set; }
+        public string? LastName { get; set; }
     }
 
     private async Task LoadAsync(EssentialCSharpWebUser user)
     {
-        string userName = await _UserManager.GetUserNameAsync(user);
-        string phoneNumber = await _UserManager.GetPhoneNumberAsync(user);
+        string? userName = await _UserManager.GetUserNameAsync(user);
+        string? phoneNumber = await _UserManager.GetPhoneNumberAsync(user);
 
         Input = new InputModel
         {
@@ -66,8 +67,8 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnGetAsync()
     {
-        EssentialCSharpWebUser user = await _UserManager.GetUserAsync(User);
-        if (user == null)
+        EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
+        if (user is null)
         {
             return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
         }
@@ -78,8 +79,8 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        EssentialCSharpWebUser user = await _UserManager.GetUserAsync(User);
-        if (user == null)
+        EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
+        if (user is null)
         {
             return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
         }
@@ -90,7 +91,7 @@ public class IndexModel : PageModel
             return Page();
         }
 
-        string phoneNumber = await _UserManager.GetPhoneNumberAsync(user);
+        string? phoneNumber = await _UserManager.GetPhoneNumberAsync(user);
         if (Input.PhoneNumber != phoneNumber)
         {
             IdentityResult setPhoneResult = await _UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
@@ -100,7 +101,7 @@ public class IndexModel : PageModel
                 return RedirectToPage();
             }
         }
-        string username = await _UserManager.GetUserNameAsync(user);
+        string? username = await _UserManager.GetUserNameAsync(user);
         if (Input.Username != username)
         {
             IdentityResult setUsernameResult = await _UserManager.SetUserNameAsync(user, Input.Username);

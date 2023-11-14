@@ -38,8 +38,13 @@ public class EnableAuthenticatorModel : PageModel
     [TempData]
     public string? StatusMessage { get; set; }
 
+    private InputModel? _Input;
     [BindProperty]
-    public InputModel? Input { get; set; }
+    public InputModel Input
+    {
+        get => _Input ?? throw new InvalidOperationException();
+        set => _Input = value ?? throw new ArgumentNullException(nameof(value));
+    }
 
     public class InputModel
     {
@@ -78,10 +83,6 @@ public class EnableAuthenticatorModel : PageModel
             return Page();
         }
 
-        if (Input is null)
-        {
-            return RedirectToPage("./TwoFactorAuthentication");
-        }
         if (Input.Code is null)
         {
             return RedirectToPage("./TwoFactorAuthentication");

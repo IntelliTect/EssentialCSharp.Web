@@ -22,8 +22,13 @@ public class LoginWith2faModel : PageModel
         _Logger = logger;
     }
 
+    private InputModel? _Input;
     [BindProperty]
-    public InputModel? Input { get; set; }
+    public InputModel Input
+    {
+        get => _Input ?? throw new InvalidOperationException();
+        set => _Input = value ?? throw new ArgumentNullException(nameof(value));
+    }
 
     public bool RememberMe { get; set; }
 
@@ -61,10 +66,6 @@ public class LoginWith2faModel : PageModel
         returnUrl ??= Url.Content("~/");
 
         EssentialCSharpWebUser user = await _SignInManager.GetTwoFactorAuthenticationUserAsync() ?? throw new InvalidOperationException($"Unable to load two-factor authentication user.");
-        if (Input is null)
-        {
-            return RedirectToPage("./Lockout", new { ReturnUrl = returnUrl });
-        }
         if (Input.TwoFactorCode is null)
         {
             return RedirectToPage("./Lockout", new { ReturnUrl = returnUrl });

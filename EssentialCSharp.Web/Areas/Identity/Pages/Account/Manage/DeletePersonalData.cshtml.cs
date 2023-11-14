@@ -1,8 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-#nullable disable
-
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -26,23 +22,27 @@ public class DeletePersonalDataModel : PageModel
         _Logger = logger;
     }
 
+    private InputModel? _Input;
     [BindProperty]
-    public InputModel Input { get; set; }
+    public InputModel Input
+    {
+        get => _Input ?? throw new InvalidOperationException();
+        set => _Input = value ?? throw new ArgumentNullException(nameof(value));
+    }
 
     public class InputModel
     {
-
         [Required]
         [DataType(DataType.Password)]
-        public string Password { get; set; }
+        public string? Password { get; set; }
     }
 
     public bool RequirePassword { get; set; }
 
     public async Task<IActionResult> OnGet()
     {
-        EssentialCSharpWebUser user = await _UserManager.GetUserAsync(User);
-        if (user == null)
+        EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
+        if (user is null)
         {
             return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
         }
@@ -53,8 +53,8 @@ public class DeletePersonalDataModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        EssentialCSharpWebUser user = await _UserManager.GetUserAsync(User);
-        if (user == null)
+        EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
+        if (user is null)
         {
             return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
         }
@@ -62,6 +62,11 @@ public class DeletePersonalDataModel : PageModel
         RequirePassword = await _UserManager.HasPasswordAsync(user);
         if (RequirePassword)
         {
+            if (Input.Password is null)
+            {
+                ModelState.AddModelError(string.Empty, "Please enter a password.");
+                return Page();
+            }
             if (!await _UserManager.CheckPasswordAsync(user, Input.Password))
             {
                 ModelState.AddModelError(string.Empty, "Incorrect password.");

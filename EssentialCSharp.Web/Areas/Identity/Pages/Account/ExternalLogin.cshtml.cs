@@ -123,11 +123,6 @@ public class ExternalLoginModel : PageModel
 
         if (ModelState.IsValid)
         {
-            if (Input is null)
-            {
-                ErrorMessage = "Error getting input data.";
-                return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
-            }
             if (Input.Email is null)
             {
                 ErrorMessage = "Error: Email may not be null.";
@@ -171,11 +166,6 @@ public class ExternalLoginModel : PageModel
 
     private async Task<IActionResult> SendConfirmationEmail(string returnUrl, ExternalLoginInfo info, EssentialCSharpWebUser user)
     {
-        if (Input is null)
-        {
-            ErrorMessage = "Error getting input data.";
-            return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
-        }
         if (Input.Email is null)
         {
             ErrorMessage = "Error: Email may not be null.";
