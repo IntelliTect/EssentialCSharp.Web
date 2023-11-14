@@ -21,7 +21,7 @@ public class ResetPasswordModel : PageModel
     [BindProperty]
     public InputModel Input
     {
-        get => _Input ?? throw new InvalidOperationException();
+        get => _Input!;
         set => _Input = value ?? throw new ArgumentNullException(nameof(value));
     }
 
