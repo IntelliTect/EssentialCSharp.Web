@@ -161,6 +161,7 @@ public class ExternalLoginModel : PageModel
 
         ProviderDisplayName = info.ProviderDisplayName;
         ReturnUrl = returnUrl;
+        ModelState.AddModelError(string.Empty, "Please check confirmation email to complete registration.");
         return Page();
     }
 
