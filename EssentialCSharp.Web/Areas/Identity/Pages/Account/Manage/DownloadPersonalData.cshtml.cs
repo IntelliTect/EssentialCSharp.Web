@@ -1,8 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-#nullable disable
-
-using System.Text.Json;
+﻿using System.Text.Json;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -30,8 +26,8 @@ public class DownloadPersonalDataModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        EssentialCSharpWebUser user = await _UserManager.GetUserAsync(User);
-        if (user == null)
+        EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
+        if (user is null)
         {
             return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
         }
@@ -52,8 +48,11 @@ public class DownloadPersonalDataModel : PageModel
         {
             personalData.Add($"{l.LoginProvider} external login provider key", l.ProviderKey);
         }
-
-        personalData.Add($"Authenticator Key", await _UserManager.GetAuthenticatorKeyAsync(user));
+        string? authenticatorKey = await _UserManager.GetAuthenticatorKeyAsync(user);
+        if(!string.IsNullOrWhiteSpace(authenticatorKey))
+        {
+            personalData.Add($"Authenticator Key", authenticatorKey);
+        }
 
         Response.Headers.Add("Content-Disposition", "attachment; filename=PersonalData.json");
         return new FileContentResult(JsonSerializer.SerializeToUtf8Bytes(personalData), "application/json");

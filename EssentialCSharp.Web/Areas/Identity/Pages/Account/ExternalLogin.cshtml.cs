@@ -37,8 +37,12 @@ public class ExternalLoginModel : PageModel
         _EmailSender = emailSender;
     }
 
+    private InputModel? _Input;
     [BindProperty]
-    public InputModel? Input { get; set; }
+    public InputModel Input { 
+        get => _Input ?? throw new InvalidOperationException(); 
+        set => _Input = value ?? throw new ArgumentNullException(nameof(value)); 
+    }
 
     public string? ProviderDisplayName { get; set; }
 
