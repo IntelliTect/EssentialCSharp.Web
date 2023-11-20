@@ -39,9 +39,10 @@ public class ExternalLoginModel : PageModel
 
     private InputModel? _Input;
     [BindProperty]
-    public InputModel Input { 
-        get => _Input!; 
-        set => _Input = value ?? throw new ArgumentNullException(nameof(value)); 
+    public InputModel Input
+    {
+        get => _Input!;
+        set => _Input = value ?? throw new ArgumentNullException(nameof(value));
     }
 
     public string? ProviderDisplayName { get; set; }

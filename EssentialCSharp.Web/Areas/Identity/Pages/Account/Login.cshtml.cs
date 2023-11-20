@@ -23,9 +23,10 @@ public class LoginModel : PageModel
 
     private InputModel? _Input;
     [BindProperty]
-    public InputModel Input { 
-        get => _Input!; 
-        set => _Input = value ?? throw new ArgumentNullException(nameof(value)); 
+    public InputModel Input
+    {
+        get => _Input!;
+        set => _Input = value ?? throw new ArgumentNullException(nameof(value));
     }
 
     public IList<AuthenticationScheme>? ExternalLogins { get; set; }

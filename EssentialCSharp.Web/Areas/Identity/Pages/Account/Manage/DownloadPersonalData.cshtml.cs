@@ -49,7 +49,7 @@ public class DownloadPersonalDataModel : PageModel
             personalData.Add($"{l.LoginProvider} external login provider key", l.ProviderKey);
         }
         string? authenticatorKey = await _UserManager.GetAuthenticatorKeyAsync(user);
-        if(!string.IsNullOrWhiteSpace(authenticatorKey))
+        if (!string.IsNullOrWhiteSpace(authenticatorKey))
         {
             personalData.Add($"Authenticator Key", authenticatorKey);
         }
