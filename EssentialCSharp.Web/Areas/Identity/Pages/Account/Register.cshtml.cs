@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Encodings.Web;
 using EssentialCSharp.Web.Areas.Identity.Data;
@@ -32,11 +32,12 @@ public class RegisterModel : PageModel
         ILogger<RegisterModel> logger,
         IEmailSender emailSender,
         ICaptchaService captchaService,
-        IOptions<CaptchaOptions> optionsAccessor)
+        IOptions<CaptchaOptions> optionsAccessor,
+        IUserEmailStore<EssentialCSharpWebUser> emailStore)
     {
         _UserManager = userManager;
         _UserStore = userStore;
-        _EmailStore = GetEmailStore();
+        _EmailStore = emailStore;
         _SignInManager = signInManager;
         _Logger = logger;
         _EmailSender = emailSender;
@@ -228,14 +229,5 @@ public class RegisterModel : PageModel
                 $"Ensure that '{nameof(EssentialCSharpWebUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
                 $"override the register page in /Areas/Identity/Pages/Account/Register.cshtml");
         }
-    }
-
-    private IUserEmailStore<EssentialCSharpWebUser> GetEmailStore()
-    {
-        if (!_UserManager.SupportsUserEmail)
-        {
-            throw new NotSupportedException("The default UI requires a user store with email support.");
-        }
-        return (IUserEmailStore<EssentialCSharpWebUser>)_UserStore;
     }
 }

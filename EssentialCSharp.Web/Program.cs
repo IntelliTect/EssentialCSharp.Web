@@ -5,6 +5,7 @@ using EssentialCSharp.Web.Middleware;
 using EssentialCSharp.Web.Services;
 using Mailjet.Client;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -67,7 +68,16 @@ public partial class Program
         {
             // https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2
             // Minimum recommended is currently 210,000 iterations for pdkdf2-sha512 as of October 27, 2023
-            option.IterationCount = 300000;
+            option.IterationCount = 500000;
+        });
+
+        builder.Services.AddScoped<IUserEmailStore<EssentialCSharpWebUser>>(provider =>
+        {
+            if (!provider.GetRequiredService<UserManager<EssentialCSharpWebUser>>().SupportsUserEmail)
+            {
+                throw new NotSupportedException("The default UI requires a user store with email support.");
+            }
+            return (IUserEmailStore<EssentialCSharpWebUser>)provider.GetRequiredService<IUserStore<EssentialCSharpWebUser>>();
         });
 
         //TODO: Implement the anti-forgery token with every POST/PUT request: https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery

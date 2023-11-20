@@ -27,16 +27,13 @@ public class ExternalLoginModel : PageModel
         UserManager<EssentialCSharpWebUser> userManager,
         IUserStore<EssentialCSharpWebUser> userStore,
         ILogger<ExternalLoginModel> logger,
-        IEmailSender emailSender)
+        IEmailSender emailSender,
+        IUserEmailStore<EssentialCSharpWebUser> emailStore)
     {
         _SignInManager = signInManager;
         _UserManager = userManager;
         _UserStore = userStore;
-        if (!_UserManager.SupportsUserEmail)
-        {
-            throw new NotSupportedException("The default UI requires a user store with email support.");
-        }
-        _EmailStore = (IUserEmailStore<EssentialCSharpWebUser>)_UserStore;
+        _EmailStore = emailStore;
         _Logger = logger;
         _EmailSender = emailSender;
     }
