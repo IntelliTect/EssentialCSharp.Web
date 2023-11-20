@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Encodings.Web;
 using EssentialCSharp.Web.Areas.Identity.Data;
@@ -104,6 +104,11 @@ public class RegisterModel : PageModel
     {
         returnUrl ??= Url.Content("~/");
         string? hCaptcha_response = Request.Form[CaptchaOptions.HttpPostResponseKeyName];
+
+        if (!ModelState.IsValid)
+        {
+            return Page();
+        }
 
         if (hCaptcha_response is null)
         {
