@@ -95,7 +95,7 @@ public class EnableAuthenticatorModel : PageModel
 
         if (!is2faTokenValid)
         {
-            ModelState.AddModelError("Input.Code", "Verification code is invalid.");
+            ModelState.AddModelError(nameof(Input.Code), "Verification code is invalid.");
             await LoadSharedKeyAndQrCodeUriAsync(user);
             return Page();
         }
