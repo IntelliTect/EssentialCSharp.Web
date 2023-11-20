@@ -10,7 +10,7 @@ ViewData["ActivePage"] = ManageNavPages.TwoFactorAuthentication;
 <h3>@ViewData["Title"]</h3>
 @{
     var consentFeature = HttpContext.Features.Get<ITrackingConsentFeature>();
-    @if (consentFeature?.CanTrack ?? true)
+    @if (consentFeature?.CanTrack ?? false)
 {
     @if (Model.Is2faEnabled)
     {
@@ -21,14 +21,14 @@ ViewData["ActivePage"] = ManageNavPages.TwoFactorAuthentication;
                     <p>You must <a asp-page="./GenerateRecoveryCodes">generate a new set of recovery codes</a> before you can log in with a recovery code.</p>
                 </div>
         }
-        else if (Model.RecoveryCodesLeft == 1)
+        else if (Model.RecoveryCodesLeft is 1)
         {
             <div class="alert alert-danger">
                     <strong>You have 1 recovery code left.</strong>
                     <p>You can <a asp-page="./GenerateRecoveryCodes">generate a new set of recovery codes</a>.</p>
                 </div>
         }
-        else if (Model.RecoveryCodesLeft <= 3)
+        else if (Model.RecoveryCodesLeft is 2 or 3)
         {
             <div class="alert alert-warning">
                     <strong>You have @Model.RecoveryCodesLeft recovery codes left.</strong>
