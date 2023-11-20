@@ -32,7 +32,11 @@ public class ExternalLoginModel : PageModel
         _SignInManager = signInManager;
         _UserManager = userManager;
         _UserStore = userStore;
-        _EmailStore = GetEmailStore();
+        if (!_UserManager.SupportsUserEmail)
+        {
+            throw new NotSupportedException("The default UI requires a user store with email support.");
+        }
+        _EmailStore = (IUserEmailStore<EssentialCSharpWebUser>)_UserStore;
         _Logger = logger;
         _EmailSender = emailSender;
     }
@@ -213,14 +217,5 @@ public class ExternalLoginModel : PageModel
                 $"Ensure that '{nameof(EssentialCSharpWebUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
                 $"override the external login page in /Areas/Identity/Pages/Account/ExternalLogin.cshtml", innerException);
         }
-    }
-
-    private IUserEmailStore<EssentialCSharpWebUser> GetEmailStore()
-    {
-        if (!_UserManager.SupportsUserEmail)
-        {
-            throw new NotSupportedException("The default UI requires a user store with email support.");
-        }
-        return (IUserEmailStore<EssentialCSharpWebUser>)_UserStore;
     }
 }

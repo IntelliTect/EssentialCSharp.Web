@@ -1,8 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-#nullable disable
-
-using EssentialCSharp.Web.Areas.Identity.Data;
+﻿using EssentialCSharp.Web.Areas.Identity.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -26,12 +22,12 @@ public class ResetAuthenticatorModel : PageModel
     }
 
     [TempData]
-    public string StatusMessage { get; set; }
+    public string? StatusMessage { get; set; }
 
     public async Task<IActionResult> OnGet()
     {
-        EssentialCSharpWebUser user = await _UserManager.GetUserAsync(User);
-        if (user == null)
+        EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
+        if (user is null)
         {
             return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
         }
@@ -41,8 +37,8 @@ public class ResetAuthenticatorModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        EssentialCSharpWebUser user = await _UserManager.GetUserAsync(User);
-        if (user == null)
+        EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
+        if (user is null)
         {
             return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
         }

@@ -1,8 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-#nullable disable
-
-using System.Text;
+﻿using System.Text;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -25,11 +21,11 @@ public class RegisterConfirmationModel : PageModel
         _Sender = sender;
     }
 
-    public string Email { get; set; }
+    public string? Email { get; set; }
 
     public bool DisplayConfirmAccountLink { get; set; }
 
-    public string EmailConfirmationUrl { get; set; }
+    public string? EmailConfirmationUrl { get; set; }
 
     public async Task<IActionResult> OnGetAsync(string email, string returnUrl = null)
     {
@@ -39,8 +35,8 @@ public class RegisterConfirmationModel : PageModel
         }
         returnUrl ??= Url.Content("~/");
 
-        EssentialCSharpWebUser user = await _UserManager.FindByEmailAsync(email);
-        if (user == null)
+        EssentialCSharpWebUser? user = await _UserManager.FindByEmailAsync(email);
+        if (user is null)
         {
             return NotFound($"Unable to load user with email '{email}'.");
         }
