@@ -57,6 +57,8 @@ jobs:
           CERT_PASSWORD: ${{ secrets.CERT_PASSWORD }}
         run: |
           sudo chmod 0755 /etc/letsencrypt/{live,archive}
+          sudo chown $USER: privkey.pem
+          sudo chmod 0640 /etc/letsencrypt/live/essentialcsharp.com/privkey.pem
           mkdir ./tmp/sandbox -p
           cp /etc/letsencrypt/live/essentialcsharp.com ./tmp/sandbox -r
           cd ./tmp/sandbox/essentialcsharp.com
