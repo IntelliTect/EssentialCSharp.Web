@@ -49,15 +49,20 @@ jobs:
           pip install -r requirements.txt
           chmod 600 godaddycreds.ini
           sudo .venv/bin/python -m main
+
+      - name: Clear API File
+        if: '!cancelled()'
+        run: |
           rm *ini
 
-      # Remember to clear certificate directories
       - name: Create Private Certificate
         env:
           CERT_PASSWORD: ${{ secrets.CERT_PASSWORD }}
         run: |
           sudo chmod 0755 /etc/letsencrypt/{live,archive}
           sudo chown $USER: privkey.pem
+          ls /etc/letsencrypt/live/
+          ls /etc/letsencrypt/live/essentialcsharp.com
           sudo chmod 0640 /etc/letsencrypt/live/essentialcsharp.com/privkey.pem
           mkdir ./tmp/sandbox -p
           cp /etc/letsencrypt/live/essentialcsharp.com ./tmp/sandbox -r
@@ -72,11 +77,13 @@ jobs:
             az containerapp env certificate upload -g EssentialCSharp --name EssentialCSharpEnvironment --certificate-file /etc/letsencrypt/live/essentialcsharp.com/tmp/sandbox/certificate.pfx --certificate-name essentialcsharp.comcertificate --password pass:"$CERT_PASSWORD"
 
       - name: Clear certificate directories
+        if: '!cancelled()'
         run: |
           cd /etc/letsencrypt/live/essentialcsharp.com
           rm -rf ./*
 
       - name: Logout of Azure CLI
+        if: '!cancelled()'
         uses: azure/CLI@v1
         with:
           inlineScript: |
@@ -85,6 +92,7 @@ jobs:
             az account clear
       
       - name: Clear Azure PowerShell Context
+        if: '!cancelled()'
         uses: azure/powershell@v1.2.0
         with:
           azPSVersion: "latest"
