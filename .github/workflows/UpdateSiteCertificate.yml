@@ -3,6 +3,7 @@ name: Update Site Certificate
 on:
   schedule:
     - cron: "1 1 1 * *"
+  workflow_dispatch:
 
 permissions:
   id-token: write
@@ -11,7 +12,7 @@ permissions:
 jobs:
   update-site-certificate:
     runs-on: ubuntu-latest
-    environment: CertificateUpload
+    environment: WebCertificate
 
     steps:
       - name: Azure login
