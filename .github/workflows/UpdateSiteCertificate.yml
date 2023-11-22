@@ -1,0 +1,41 @@
+name: Update Site Certificate
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request_target:
+  workflow_dispatch:
+
+jobs:
+  update-site-certificate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: "EssentialCSharp/EssentialCSharp.Web.CertbotDnsGoDaddy"
+          token: ${{ secrets.GoDaddy_Certbot_PAT }}
+          #TODO: Change this away from the staging branch used for testing
+          ref: "staging"
+
+      - name: Install Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Retrieve the key and add it to a file
+        env:
+          APIKEY_BASE64: ${{ secrets.APIKey_BASE64 }}
+        run: |
+          echo $APIKEY_BASE64 | base64 --decode > godaddycreds.ini
+
+      - name: Run Certbot 
+        run: |
+          pip install --upgrade pip
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+          chmod 600 godaddycreds.ini
+          sudo .venv/bin/python -m main
+          rm *ini
