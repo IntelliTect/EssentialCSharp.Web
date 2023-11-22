@@ -49,14 +49,10 @@ public class EmailSender : IEmailSender
                 _Logger.LogError("Unexpectedly no messages returned in the mailer response");
                 break;
             case 1 when response.Messages.First().Status == "success":
-                _Logger.LogInformation("Email to {ToEmail} queued successfully!", toEmail);
+                _Logger.LogInformation("Email to queued successfully!");
                 break;
             default:
-                _Logger.LogError("Failure To Send Email to {ToEmail} with the following Errors: {ErrorMessage}", toEmail, response.Messages.Aggregate(
-                    string.Empty, (current, messageItem) =>
-                    current + $"{messageItem.Errors.Aggregate(string.Empty,
-                    (currentError, errorItem) =>
-                    currentError + $"\t{errorItem.ErrorIdentifier}: {errorItem.ErrorCode}: {errorItem.ErrorMessage}\n")}\n"));
+                _Logger.LogError("Failure To Send Email");
                 break;
         }
     }
