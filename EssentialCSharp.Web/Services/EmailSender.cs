@@ -11,15 +11,15 @@ public class EmailSender : IEmailSender
     private readonly ILogger _Logger;
     private readonly IMailjetClient _MailjetClient;
 
-    public EmailSender(IMailjetClient mailjetClient, IOptions<AuthMessageSenderOptions> optionsAccessor,
+    public EmailSender(IMailjetClient mailjetClient, IOptions<AuthMessageSenderOptions> options,
                        ILogger<EmailSender> logger)
     {
-        Options = optionsAccessor.Value;
+        Options = options.Value;
         _Logger = logger;
         _MailjetClient = mailjetClient;
     }
 
-    public AuthMessageSenderOptions Options { get; } //Set with Secret Manager.
+    private AuthMessageSenderOptions Options { get; }
 
     public async Task SendEmailAsync(string email, string subject, string htmlMessage)
     {

@@ -5,10 +5,10 @@ public class ContentTypeOptionsConstants
     /// <summary>
     /// Header value for X-Content-Type-Options
     /// </summary>
-    public static readonly string Header = "X-Content-Type-Options";
+    public const string Header = "X-Content-Type-Options";
 
     /// <summary>
     /// Disables content sniffing
     /// </summary>
-    public static readonly string NoSniff = "nosniff";
+    public const string NoSniff = "nosniff";
 }

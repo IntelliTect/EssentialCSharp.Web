@@ -23,8 +23,8 @@ public abstract class CommonPasswordValidator<TUser> : IPasswordValidator<TUser>
                                               TUser user,
                                               string? password)
     {
-        if (password == null) { throw new ArgumentNullException(nameof(password)); }
-        if (manager == null) { throw new ArgumentNullException(nameof(manager)); }
+        if (manager is null) throw new ArgumentNullException(nameof(manager));
+        if (password is null) throw new ArgumentNullException(nameof(password));
 
         IdentityResult result = Passwords.Contains(password, StringComparer.InvariantCultureIgnoreCase)
         ? IdentityResult.Failed(new IdentityError

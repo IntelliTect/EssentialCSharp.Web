@@ -206,7 +206,7 @@ public class ExternalLoginModel : PageModel
     {
         try
         {
-            return Activator.CreateInstance<EssentialCSharpWebUser>();
+            return new EssentialCSharpWebUser();
         }
         catch (MissingMethodException innerException)
         {

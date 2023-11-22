@@ -21,7 +21,7 @@ public class Disable2faModel : PageModel
     [TempData]
     public string? StatusMessage { get; set; }
 
-    public async Task<IActionResult> OnGet()
+    public async Task<IActionResult> OnGetAsync()
     {
         EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
         if (user is null)

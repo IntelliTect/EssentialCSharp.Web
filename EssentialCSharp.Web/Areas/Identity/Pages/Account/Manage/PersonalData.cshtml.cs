@@ -18,10 +18,10 @@ public class PersonalDataModel : PageModel
         _Logger = logger;
     }
 
-    public async Task<IActionResult> OnGet()
+    public async Task<IActionResult> OnGetAsync()
     {
         EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
-        if (user == null)
+        if (user is null)
         {
             return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
         }

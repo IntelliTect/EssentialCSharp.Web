@@ -17,9 +17,9 @@ public class SecurityHeadersMiddleware
         _Policy = policy ?? throw new ArgumentNullException(nameof(policy));
     }
 
-    public async Task Invoke(HttpContext context)
+    public async Task Invoke(HttpContext? context)
     {
-        if (context == null)
+        if (context is null)
         {
             throw new ArgumentNullException(nameof(context));
         }

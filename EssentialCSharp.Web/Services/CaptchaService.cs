@@ -7,7 +7,7 @@ namespace EssentialCSharp.Web.Services;
 public class CaptchaService : ICaptchaService
 {
     private IHttpClientFactory ClientFactory { get; }
-    public CaptchaOptions Options { get; } //Set with Secret Manager.
+    private CaptchaOptions Options { get; }
 
     public CaptchaService(IHttpClientFactory clientFactory, IOptions<CaptchaOptions> optionsAccessor)
     {
@@ -17,7 +17,7 @@ public class CaptchaService : ICaptchaService
 
     // Verify captcha. Optionally add overload to pass in remoteIp as in the docs
     // https://docs.hcaptcha.com/#verify-the-user-response-server-side
-    public async Task<HCaptchaResult?> Verify(string secret, string response, string sitekey)
+    public async Task<HCaptchaResult?> VerifyAsync(string secret, string response, string sitekey)
     {
         // create post data
         List<KeyValuePair<string, string>> postData = new()
@@ -30,12 +30,12 @@ public class CaptchaService : ICaptchaService
         return await PostVerification(postData);
     }
 
-    public async Task<HCaptchaResult?> Verify(string response)
+    public async Task<HCaptchaResult?> VerifyAsync(string response)
     {
         string secret = Options.SecretKey ?? throw new InvalidOperationException($"{CaptchaOptions.CaptchaSender} {nameof(Options.SecretKey)} is unexpectedly null");
         string sitekey = Options.SiteKey ?? throw new InvalidOperationException($"{CaptchaOptions.CaptchaSender} {nameof(Options.SiteKey)} is unexpectedly null");
 
-        return await Verify(secret, response, sitekey);
+        return await VerifyAsync(secret, response, sitekey);
     }
 
     public async Task<HCaptchaResult?> PostVerification(List<KeyValuePair<string, string>> postData)

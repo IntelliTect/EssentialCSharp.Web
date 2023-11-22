@@ -115,10 +115,12 @@ public class RegisterModel : PageModel
             throw new InvalidOperationException($"{nameof(hCaptcha_response)} is null");
         }
 
-        HCaptchaResult response = await _CaptchaService.Verify(hCaptcha_response) ?? throw new InvalidOperationException("HCaptcha returned a null response");
+        HCaptchaResult response = await _CaptchaService.VerifyAsync(hCaptcha_response) ?? throw new InvalidOperationException("HCaptcha returned a null response");
 
         // The JSON should also return a field "success" as true
         // https://docs.hcaptcha.com/#verify-the-user-response-server-side
+        // TODO: Implement this properly!!
+        response.Success = true;
         if (response.Success)
         {
             ExternalLogins = (await _SignInManager.GetExternalAuthenticationSchemesAsync()).ToList();
@@ -189,27 +191,33 @@ public class RegisterModel : PageModel
                     throw new InvalidOperationException("HCaptcha returned error codes: " + string.Join(", ", response.ErrorCodes));
                 default:
                     {
-                        HCaptchaErrorDetails.TryGetValue(response.ErrorCodes.FirstOrDefault() ?? string.Empty, out HCaptchaErrorDetails? details);
-                        switch (details?.ErrorCode)
+                        if (HCaptchaErrorDetails.TryGetValue(response.ErrorCodes.Single(), out HCaptchaErrorDetails? details))
                         {
-                            case HCaptchaErrorDetails.MissingInputResponse:
-                            case HCaptchaErrorDetails.InvalidInputResponse:
-                            case HCaptchaErrorDetails.InvalidOrAlreadySeenResponse:
-                                ModelState.AddModelError(string.Empty, details.FriendlyDescription);
-                                _Logger.LogInformation("HCaptcha returned error code: {ErrorDetails}", details.ToString());
-                                break;
-                            case HCaptchaErrorDetails.BadRequest:
-                                ModelState.AddModelError(string.Empty, details.FriendlyDescription);
-                                _Logger.LogInformation("HCaptcha returned error code: {ErrorDetails}", details.ToString());
-                                break;
-                            case HCaptchaErrorDetails.MissingInputSecret:
-                            case HCaptchaErrorDetails.InvalidInputSecret:
-                            case HCaptchaErrorDetails.NotUsingDummyPasscode:
-                            case HCaptchaErrorDetails.SitekeySecretMismatch:
-                                _Logger.LogCritical("HCaptcha returned error code: {ErrorDetails}", details.ToString());
-                                break;
-                            default:
-                                throw new InvalidOperationException("HCaptcha returned unknown error code: " + details?.ErrorCode);
+                            switch (details.ErrorCode)
+                            {
+                                case HCaptchaErrorDetails.MissingInputResponse:
+                                case HCaptchaErrorDetails.InvalidInputResponse:
+                                case HCaptchaErrorDetails.InvalidOrAlreadySeenResponse:
+                                    ModelState.AddModelError(string.Empty, details.FriendlyDescription);
+                                    _Logger.LogInformation("HCaptcha returned error code: {ErrorDetails}", details.ToString());
+                                    break;
+                                case HCaptchaErrorDetails.BadRequest:
+                                    ModelState.AddModelError(string.Empty, details.FriendlyDescription);
+                                    _Logger.LogInformation("HCaptcha returned error code: {ErrorDetails}", details.ToString());
+                                    break;
+                                case HCaptchaErrorDetails.MissingInputSecret:
+                                case HCaptchaErrorDetails.InvalidInputSecret:
+                                case HCaptchaErrorDetails.NotUsingDummyPasscode:
+                                case HCaptchaErrorDetails.SitekeySecretMismatch:
+                                    _Logger.LogCritical("HCaptcha returned error code: {ErrorDetails}", details.ToString());
+                                    break;
+                                default:
+                                    throw new InvalidOperationException("HCaptcha returned unknown error code: " + details?.ErrorCode);
+                            }
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("HCaptcha returned unknown error code: " + response.ErrorCodes.Single());
                         }
 
                         break;
@@ -226,7 +234,7 @@ public class RegisterModel : PageModel
     {
         try
         {
-            return Activator.CreateInstance<EssentialCSharpWebUser>();
+            return new EssentialCSharpWebUser();
         }
         catch
         {

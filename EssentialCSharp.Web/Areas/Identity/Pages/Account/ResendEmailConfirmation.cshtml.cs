@@ -38,10 +38,6 @@ public class ResendEmailConfirmationModel : PageModel
         public string? Email { get; set; }
     }
 
-    public void OnGet()
-    {
-    }
-
     public async Task<IActionResult> OnPostAsync()
     {
         if (!ModelState.IsValid)

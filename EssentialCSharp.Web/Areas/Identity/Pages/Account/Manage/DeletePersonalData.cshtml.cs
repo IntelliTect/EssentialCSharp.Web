@@ -39,7 +39,7 @@ public class DeletePersonalDataModel : PageModel
 
     public bool RequirePassword { get; set; }
 
-    public async Task<IActionResult> OnGet()
+    public async Task<IActionResult> OnGetAsync()
     {
         EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
         if (user is null)

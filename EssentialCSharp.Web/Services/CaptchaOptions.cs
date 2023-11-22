@@ -3,8 +3,8 @@ namespace EssentialCSharp.Web.Services;
 public class CaptchaOptions
 {
     public const string CaptchaSender = "HCaptcha";
-    public string? SiteKey { get; set; }
-    public string? SecretKey { get; set; }
+    public required string SecretKey { get; set; }
+    public required string SiteKey { get; set; }
 
     /// <summary>
     /// The hCaptcha base URL
