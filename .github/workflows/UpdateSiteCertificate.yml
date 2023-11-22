@@ -1,20 +1,30 @@
 name: Update Site Certificate
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request_target:
-  workflow_dispatch:
+  schedule:
+    - cron: "1 1 1 * *"
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   update-site-certificate:
     runs-on: ubuntu-latest
+    environment: CertificateUpload
 
     steps:
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - uses: actions/checkout@v4
         with:
           repository: "EssentialCSharp/EssentialCSharp.Web.CertbotDnsGoDaddy"
-          token: ${{ secrets.GoDaddy_Certbot_PAT }}
+          token: ${{ secrets.CERTBOTDNSGODADDY_PAT }}
           #TODO: Change this away from the staging branch used for testing
           ref: "staging"
 
@@ -26,7 +36,7 @@ jobs:
 
       - name: Retrieve the key and add it to a file
         env:
-          APIKEY_BASE64: ${{ secrets.APIKey_BASE64 }}
+          APIKEY_BASE64: ${{ secrets.GODADDY_APIKEY_BASE64 }}
         run: |
           echo $APIKEY_BASE64 | base64 --decode > godaddycreds.ini
 
@@ -39,3 +49,41 @@ jobs:
           chmod 600 godaddycreds.ini
           sudo .venv/bin/python -m main
           rm *ini
+
+      # Remember to clear certificate directories
+      - name: Create Private Certificate
+        env:
+          CERT_PASSWORD: ${{ secrets.CERT_PASSWORD }}
+        run: |
+          cd /etc/letsencrypt/live/essentialcsharp.com
+          mkdir ./tmp/sandbox -p
+          cd ./tmp/sandbox
+          openssl pkcs12 -export -out certificate.pfx -inkey privkey.pem -in cert.pem -certfile chain.pem -passout pass:"$CERT_PASSWORD" -keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES -macalg SHA1
+
+      - name: Upload certificate
+        uses: azure/CLI@v1
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az containerapp env certificate upload -g EssentialCSharp --name EssentialCSharpEnvironment --certificate-file /etc/letsencrypt/live/essentialcsharp.com/tmp/sandbox/certificate.pfx --certificate-name essentialcsharp.comcertificate --password pass:"$CERT_PASSWORD"
+
+      - name: Clear certificate directories
+        run: |
+          cd /etc/letsencrypt/live/essentialcsharp.com
+          rm -rf ./*
+
+      - name: Logout of Azure CLI
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az logout
+            az cache purge
+            az account clear
+      
+      - name: Clear Azure PowerShell Context
+        uses: azure/powershell@v1.2.0
+        with:
+          azPSVersion: "latest"
+          inlineScript: |
+            Clear-AzContext -Scope Process
+            Clear-AzContext -Scope CurrentUser
