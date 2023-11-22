@@ -48,7 +48,8 @@ jobs:
           source .venv/bin/activate
           pip install -r requirements.txt
           chmod 600 godaddycreds.ini
-          .venv/bin/python -m main
+          sudo .venv/bin/python -m main
+          deactivate
           rm *ini
 
       # Remember to clear certificate directories
@@ -56,7 +57,9 @@ jobs:
         env:
           CERT_PASSWORD: ${{ secrets.CERT_PASSWORD }}
         run: |
-          mkdir ./tmp/sandbox -p
+          sudo chmod +x /etc/letsencrypt/live/essentialcsharp.com
+          sudo -s
+          ls /etc/letsencrypt/live/essentialcsharp.com
           cp /etc/letsencrypt/live/essentialcsharp.com ./tmp/sandbox -r
           cd ./tmp/sandbox
           openssl pkcs12 -export -out certificate.pfx -inkey privkey.pem -in cert.pem -certfile chain.pem -passout pass:"$CERT_PASSWORD" -keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES -macalg SHA1
