@@ -56,6 +56,7 @@ jobs:
         env:
           CERT_PASSWORD: ${{ secrets.CERT_PASSWORD }}
         run: |
+          sudo -s
           cd /etc/letsencrypt/live/essentialcsharp.com
           mkdir ./tmp/sandbox -p
           cd ./tmp/sandbox
