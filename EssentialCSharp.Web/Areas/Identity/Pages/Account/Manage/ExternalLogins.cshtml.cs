@@ -10,16 +10,16 @@ public class ExternalLoginsModel : PageModel
 {
     private readonly UserManager<EssentialCSharpWebUser> _UserManager;
     private readonly SignInManager<EssentialCSharpWebUser> _SignInManager;
-    private readonly IUserStore<EssentialCSharpWebUser> _UserStore;
+    private readonly IUserPasswordStore<EssentialCSharpWebUser> _UserPasswordStore;
 
     public ExternalLoginsModel(
         UserManager<EssentialCSharpWebUser> userManager,
         SignInManager<EssentialCSharpWebUser> signInManager,
-        IUserStore<EssentialCSharpWebUser> userStore)
+        IUserPasswordStore<EssentialCSharpWebUser> userPasswordStore)
     {
         _UserManager = userManager;
         _SignInManager = signInManager;
-        _UserStore = userStore;
+        _UserPasswordStore = userPasswordStore;
     }
 
     public IList<UserLoginInfo>? CurrentLogins { get; set; }
@@ -45,10 +45,7 @@ public class ExternalLoginsModel : PageModel
             .ToList();
 
         string? passwordHash = null;
-        if (_UserStore is IUserPasswordStore<EssentialCSharpWebUser> userPasswordStore)
-        {
-            passwordHash = await userPasswordStore.GetPasswordHashAsync(user, HttpContext.RequestAborted);
-        }
+        passwordHash = await _UserPasswordStore.GetPasswordHashAsync(user, HttpContext.RequestAborted);
 
         ShowRemoveButton = passwordHash is not null || CurrentLogins.Count > 1;
         return Page();

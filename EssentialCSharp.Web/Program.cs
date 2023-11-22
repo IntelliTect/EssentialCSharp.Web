@@ -5,7 +5,6 @@ using EssentialCSharp.Web.Middleware;
 using EssentialCSharp.Web.Services;
 using Mailjet.Client;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -78,6 +77,15 @@ public partial class Program
                 throw new NotSupportedException("The default UI requires a user store with email support.");
             }
             return (IUserEmailStore<EssentialCSharpWebUser>)provider.GetRequiredService<IUserStore<EssentialCSharpWebUser>>();
+        });
+
+        builder.Services.AddScoped<IUserPasswordStore<EssentialCSharpWebUser>>(provider =>
+        {
+            if (provider.GetRequiredService<IUserStore<EssentialCSharpWebUser>>() is IUserPasswordStore<EssentialCSharpWebUser> userPasswordStore)
+            {
+                return userPasswordStore;
+            }
+            throw new NotSupportedException("The default UI requires a user store with password support.");
         });
 
         //TODO: Implement the anti-forgery token with every POST/PUT request: https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery
