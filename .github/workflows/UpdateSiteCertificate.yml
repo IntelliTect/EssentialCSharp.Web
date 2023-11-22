@@ -56,11 +56,8 @@ jobs:
         env:
           CERT_PASSWORD: ${{ secrets.CERT_PASSWORD }}
         run: |
-          sudo chmod +x /etc/letsencrypt/live/essentialcsharp.com
-          sudo -s
-          ls /etc/letsencrypt/live
-          cd /etc/letsencrypt/live/essentialcsharp.com
           mkdir ./tmp/sandbox -p
+          cp /etc/letsencrypt/live/essentialcsharp.com ./tmp/sandbox -r
           cd ./tmp/sandbox
           openssl pkcs12 -export -out certificate.pfx -inkey privkey.pem -in cert.pem -certfile chain.pem -passout pass:"$CERT_PASSWORD" -keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES -macalg SHA1
 
