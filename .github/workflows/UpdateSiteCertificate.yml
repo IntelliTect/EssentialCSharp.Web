@@ -49,6 +49,7 @@ jobs:
           pip install -r requirements.txt
           chmod 600 godaddycreds.ini
           sudo .venv/bin/python -m main
+          deactivate
 
       - name: Clear API File
         if: '!cancelled()'
@@ -60,13 +61,14 @@ jobs:
           CERT_PASSWORD: ${{ secrets.CERT_PASSWORD }}
         run: |
           sudo chmod 0755 /etc/letsencrypt/{live,archive}
-          sudo chown $USER: privkey.pem
+          sudo chown $USER: /etc/letsencrypt/live/essentialcsharp.com/privkey.pem
           ls /etc/letsencrypt/live/
           ls /etc/letsencrypt/live/essentialcsharp.com
           sudo chmod 0640 /etc/letsencrypt/live/essentialcsharp.com/privkey.pem
           mkdir ./tmp/sandbox -p
           cp /etc/letsencrypt/live/essentialcsharp.com ./tmp/sandbox -r
           cd ./tmp/sandbox/essentialcsharp.com
+          ls -la
           openssl pkcs12 -export -out certificate.pfx -inkey privkey.pem -in cert.pem -certfile chain.pem -passout pass:"$CERT_PASSWORD" -keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES -macalg SHA1
 
       - name: Upload certificate
