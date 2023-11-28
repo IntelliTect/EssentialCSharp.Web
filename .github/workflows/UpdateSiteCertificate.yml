@@ -81,7 +81,7 @@ jobs:
           azcliversion: latest
           inlineScript: |
             pwd
-            az containerapp env certificate upload -g EssentialCSharp --name EssentialCSharpEnvironment --certificate-file /home/runner/work/EssentialCSharp.Web/EssentialCSharp.Web/tmp/sandbox/essentialcsharp.com/certificate.pfx --certificate-name essentialcsharp.comcertificate --password pass:"$CERT_PASSWORD"
+            az containerapp env certificate upload -g EssentialCSharp --name EssentialCSharpEnvironment --certificate-file /home/runner/work/EssentialCSharp.Web/EssentialCSharp.Web/tmp/sandbox/essentialcsharp.com/certificate.pfx --certificate-name essentialcsharp.comcertificate --password "$CERT_PASSWORD"
 
       - name: Clear certificate directories
         if: '!cancelled()'
