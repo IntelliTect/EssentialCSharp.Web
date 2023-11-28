@@ -86,8 +86,7 @@ jobs:
       - name: Clear certificate directories
         if: '!cancelled()'
         run: |
-          cd /etc/letsencrypt/live/essentialcsharp.com
-          rm -rf ./*
+          sudo rm -rf /etc/letsencrypt
 
       - name: Logout of Azure CLI
         if: '!cancelled()'
@@ -105,4 +104,3 @@ jobs:
           azPSVersion: "latest"
           inlineScript: |
             Clear-AzContext -Scope Process
-            Clear-AzContext -Scope CurrentUser
