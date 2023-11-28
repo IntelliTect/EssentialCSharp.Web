@@ -69,14 +69,17 @@ jobs:
           cp /etc/letsencrypt/live/essentialcsharp.com ./tmp/sandbox -r
           cd ./tmp/sandbox/essentialcsharp.com
           ls -la
-          openssl pkcs12 -export -out certificate.pfx -inkey privkey.pem -in cert.pem -certfile chain.pem -passout pass:"$CERT_PASSWORD" -keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES -macalg SHA1
+          pwd
+          openssl pkcs12 -export -out certificate.pfx -inkey /etc/letsencrypt/live/essentialcsharp.com/privkey.pem -in /etc/letsencrypt/live/essentialcsharp.com/cert.pem -certfile /etc/letsencrypt/live/essentialcsharp.com/chain.pem -passout pass:"$CERT_PASSWORD" -keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES -macalg SHA1
+          pwd
 
       - name: Upload certificate
         uses: azure/CLI@v1
         with:
           azcliversion: latest
           inlineScript: |
-            az containerapp env certificate upload -g EssentialCSharp --name EssentialCSharpEnvironment --certificate-file /etc/letsencrypt/live/essentialcsharp.com/tmp/sandbox/certificate.pfx --certificate-name essentialcsharp.comcertificate --password pass:"$CERT_PASSWORD"
+            pwd
+            az containerapp env certificate upload -g EssentialCSharp --name EssentialCSharpEnvironment --certificate-file /home/runner/work/EssentialCSharp.Web/EssentialCSharp.Web/tmp/sandbox/essentialcsharp.com/certificate.pfx --certificate-name essentialcsharp.comcertificate --password pass:"$CERT_PASSWORD"
 
       - name: Clear certificate directories
         if: '!cancelled()'
