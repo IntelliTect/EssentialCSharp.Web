@@ -26,8 +26,8 @@ jobs:
         with:
           repository: "EssentialCSharp/EssentialCSharp.Web.CertbotDnsGoDaddy"
           token: ${{ secrets.CERTBOTDNSGODADDY_PAT }}
-          #TODO: Change this away from the staging branch used for testing
-          ref: "staging"
+          # If testing, change this to the "staging" branch to not use up your Let's Encrypt quota for the week (which is very very small)
+          ref: "main"
 
       - name: Install Python
         uses: actions/setup-python@v2
