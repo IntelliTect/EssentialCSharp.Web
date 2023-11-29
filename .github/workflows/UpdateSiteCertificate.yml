@@ -1,0 +1,97 @@
+name: Update Site Certificate
+
+on:
+  schedule:
+    - cron: "1 1 1 * *"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  update-site-certificate:
+    runs-on: ubuntu-latest
+    environment: WebCertificate
+
+    steps:
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - uses: actions/checkout@v4
+        with:
+          repository: "EssentialCSharp/EssentialCSharp.Web.CertbotDnsGoDaddy"
+          token: ${{ secrets.CERTBOTDNSGODADDY_PAT }}
+          # If testing, change this to the "staging" branch to not use up your Let's Encrypt quota for the week (which is very very small)
+          ref: "main"
+
+      - name: Install Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Retrieve the key and add it to a file
+        env:
+          APIKEY_BASE64: ${{ secrets.GODADDY_APIKEY_BASE64 }}
+        run: |
+          echo $APIKEY_BASE64 | base64 --decode > godaddycreds.ini
+
+      - name: Run Certbot 
+        run: |
+          pip install --upgrade pip
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+          chmod 600 godaddycreds.ini
+          sudo .venv/bin/python -m main
+          deactivate
+
+      - name: Clear API File
+        if: '!cancelled()'
+        run: |
+          rm *ini
+
+      - name: Create Private Certificate
+        env:
+          CERT_PASSWORD: ${{ secrets.CERT_PASSWORD }}
+        run: |
+          sudo chmod 0755 /etc/letsencrypt/{live,archive}
+          sudo chown $USER: /etc/letsencrypt/live/essentialcsharp.com/privkey.pem
+          sudo chmod 0640 /etc/letsencrypt/live/essentialcsharp.com/privkey.pem
+          openssl pkcs12 -export -out certificate.pfx -inkey /etc/letsencrypt/live/essentialcsharp.com/privkey.pem -in /etc/letsencrypt/live/essentialcsharp.com/cert.pem -certfile /etc/letsencrypt/live/essentialcsharp.com/chain.pem -passout pass:"$CERT_PASSWORD" -keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES -macalg SHA1
+
+      - name: Upload certificate
+        env:
+          CERT_PASSWORD: ${{ secrets.CERT_PASSWORD }}
+        uses: azure/CLI@v1
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az containerapp env certificate upload -g EssentialCSharp --name EssentialCSharpEnvironment --certificate-file /home/runner/work/EssentialCSharp.Web/EssentialCSharp.Web/certificate.pfx --certificate-name essentialcsharp.comcertificate --password "$CERT_PASSWORD"
+
+      - name: Clear certificate directories
+        if: '!cancelled()'
+        run: |
+          sudo rm -rf /etc/letsencrypt
+
+      - name: Logout of Azure CLI
+        if: '!cancelled()'
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az logout
+            az cache purge
+            az account clear
+
+      - name: Clear Azure PowerShell Context
+        if: '!cancelled()'
+        uses: azure/powershell@v1.2.0
+        with:
+          azPSVersion: "latest"
+          inlineScript: |
+            Clear-AzContext -Scope Process
