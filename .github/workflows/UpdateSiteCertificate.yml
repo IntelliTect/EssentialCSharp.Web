@@ -63,8 +63,6 @@ jobs:
           sudo chmod 0755 /etc/letsencrypt/{live,archive}
           sudo chown $USER: /etc/letsencrypt/live/essentialcsharp.com/privkey.pem
           sudo chmod 0640 /etc/letsencrypt/live/essentialcsharp.com/privkey.pem
-          mkdir ./tmp/sandbox -p
-          cd ./tmp/sandbox/
           openssl pkcs12 -export -out certificate.pfx -inkey /etc/letsencrypt/live/essentialcsharp.com/privkey.pem -in /etc/letsencrypt/live/essentialcsharp.com/cert.pem -certfile /etc/letsencrypt/live/essentialcsharp.com/chain.pem -passout pass:"$CERT_PASSWORD" -keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES -macalg SHA1
 
       - name: Upload certificate
@@ -74,7 +72,7 @@ jobs:
         with:
           azcliversion: latest
           inlineScript: |
-            az containerapp env certificate upload -g EssentialCSharp --name EssentialCSharpEnvironment --certificate-file /home/runner/work/EssentialCSharp.Web/EssentialCSharp.Web/tmp/sandbox/certificate.pfx --certificate-name essentialcsharp.comcertificate --password "$CERT_PASSWORD"
+            az containerapp env certificate upload -g EssentialCSharp --name EssentialCSharpEnvironment --certificate-file /home/runner/work/EssentialCSharp.Web/EssentialCSharp.Web/certificate.pfx --certificate-name essentialcsharp.comcertificate --password "$CERT_PASSWORD"
 
       - name: Clear certificate directories
         if: '!cancelled()'
