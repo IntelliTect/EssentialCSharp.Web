@@ -90,7 +90,7 @@ jobs:
 
       - name: Clear Azure PowerShell Context
         if: '!cancelled()'
-        uses: azure/powershell@v1.2.0
+        uses: azure/powershell@v1.4.0
         with:
           azPSVersion: "latest"
           inlineScript: |
