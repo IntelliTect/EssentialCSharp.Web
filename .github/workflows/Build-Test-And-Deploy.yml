@@ -142,7 +142,6 @@ jobs:
       name: 'Production'
 
     steps:
-      #TODO: Match steps in Dev if they work as expected
       - name: Azure Login
         uses: azure/login@v1
         with:
