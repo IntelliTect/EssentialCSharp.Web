@@ -79,8 +79,8 @@ jobs:
         uses: azure/login@v1
         with:
           client-id: ${{ secrets.ESSENTIALCSHARPDEV_APPIDENTITY_CLIENT_ID }}
-          tenant-id: ${{ secrets.ESSENTIALCSHARPDEV_APPIDENTITY_TENANT_ID }}
-          subscription-id: ${{ secrets.ESSENTIALCSHARPDEV_SUBSCRIPTION_ID }}
+          tenant-id: ${{ secrets.ESSENTIALCSHARP_APPIDENTITY_TENANT_ID }}
+          subscription-id: ${{ secrets.ESSENTIALCSHARP_SUBSCRIPTION_ID }}
       
       - name: Download artifact
         uses: actions/download-artifact@v2
@@ -103,9 +103,7 @@ jobs:
       
       - name: Push Image to Container Registry
         if: github.event_name != 'pull_request_target'
-        run: |
-          docker tag ${{ vars.CONTAINER_REGISTRY }}/essentialcsharpweb:latest ${{ vars.CONTAINER_REGISTRY }}/essentialcsharpweb:${{ github.sha }}
-          docker push ${{ vars.CONTAINER_REGISTRY }}/essentialcsharpweb
+        run: docker push --all-tags ${{ vars.CONTAINER_REGISTRY }}/essentialcsharpweb
 
       - name: Create and Deploy to containerapp
         uses: azure/CLI@v1
@@ -151,14 +149,39 @@ jobs:
       - name: Azure Login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.ESSENTIALCSHARPPROD_AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.ESSENTIALCSHARP_APPIDENTITY_CLIENT_ID }}
+          tenant-id: ${{ secrets.ESSENTIALCSHARP_APPIDENTITY_TENANT_ID }}
+          subscription-id: ${{ secrets.ESSENTIALCSHARP_SUBSCRIPTION_ID }}
+      
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: essentialcsharpwebimage
+          path: ${{ github.workspace }}
+      
+      - name: Load image
+        run: |
+          docker load --input ${{ github.workspace }}/essentialcsharpwebimage.tar
+          docker image ls -a
+
+      - name: Log in to container registry
+        if: github.event_name != 'pull_request_target'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.CONTAINER_REGISTRY }}
+          username: ${{ secrets.ESSENTIALCSHARP_CLIENT_ID }}
+          password: ${{ secrets.ESSENTIALCSHARP_CLIENT_SECRET }}
+      
+      - name: Push Image to Container Registry
+        if: github.event_name != 'pull_request_target'
+        run: docker push --all-tags ${{ vars.CONTAINER_REGISTRY }}/essentialcsharpweb
 
       - name: Deploy to containerapp
         uses: azure/CLI@v1
         with:
           inlineScript: |
             az config set extension.use_dynamic_install=yes_without_prompt
-            az containerapp registry set -n essentialcsharpprod -g EssentialCSharp --server essentialcsharpregistry.azurecr.io --username  ${{ secrets.ESSENTIALCSHARPPROD_REGISTRY_USERNAME }} --password ${{ secrets.ESSENTIALCSHARPPROD_REGISTRY_PASSWORD }}
+            az containerapp registry set -n essentialcsharpprod -g EssentialCSharp --server essentialcsharpregistry.azurecr.io --username  ${{ secrets.ESSENTIALCSHARP_REGISTRY_USERNAME }} --password ${{ secrets.ESSENTIALCSHARP_REGISTRY_PASSWORD }}
             az containerapp update -n essentialcsharpprod -g EssentialCSharp --image essentialcsharpregistry.azurecr.io/essentialcsharp:${{ github.sha }}
 
       - name: Logout of Azure CLI
