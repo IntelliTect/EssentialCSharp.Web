@@ -69,12 +69,13 @@ jobs:
         env:
           CERT_PASSWORD: ${{ secrets.CERT_PASSWORD }}
           RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
+          CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
           CONTAINER_APP_ENVIRONMENT: ${{ vars.CONTAINER_APP_ENVIRONMENT }}
         uses: azure/CLI@v1
         with:
           azcliversion: latest
           inlineScript: |
-            az containerapp env certificate upload -g $RESOURCEGROUP --name $CONTAINER_APP_ENVIRONMENT --certificate-file /home/runner/work/EssentialCSharp.Web/EssentialCSharp.Web/certificate.pfx --certificate-name essentialcsharp.comcertificate --password "$CERT_PASSWORD"
+            az containerapp ssl upload -g $RESOURCEGROUP --name $CONTAINER_APP_NAME --environment $CONTAINER_APP_ENVIRONMENT --hostname essentialcsharp.com --certificate-file /home/runner/work/EssentialCSharp.Web/EssentialCSharp.Web/certificate.pfx --certificate-name essentialcsharp.comcertificate --password "$CERT_PASSWORD"
 
       - name: Clear certificate directories
         if: '!cancelled()'
