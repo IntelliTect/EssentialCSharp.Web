@@ -78,7 +78,7 @@ jobs:
       - name: Azure Login
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.ESSENTIALCSHARPDEV_APPIDENTITY_CLIENT_ID }}
+          client-id: ${{ secrets.ESSENTIALCSHARPDEV_CLIENT_ID }}
           tenant-id: ${{ secrets.ESSENTIALCSHARP_APPIDENTITY_TENANT_ID }}
           subscription-id: ${{ secrets.ESSENTIALCSHARP_SUBSCRIPTION_ID }}
       
@@ -112,13 +112,10 @@ jobs:
           RESOURCEGROUP: ${{ vars.RESOURCEGROUP }}
           CONTAINER_REGISTRY: ${{ vars.CONTAINER_REGISTRY }}
           CONTAINER_APP_ENVIRONMENT: ${{ vars.CONTAINER_APP_ENVIRONMENT }}
-          ESSENTIALCSHARPDEV_APPIDENTITY_CLIENT_ID: ${{ secrets.ESSENTIALCSHARPDEV_APPIDENTITY_CLIENT_ID }}
         with:
           inlineScript: |
             az config set extension.use_dynamic_install=yes_without_prompt
             az containerapp up -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --image $CONTAINER_REGISTRY/essentialcsharpweb:${{ github.sha }} --environment $CONTAINER_APP_ENVIRONMENT --registry-server $CONTAINER_REGISTRY
-            az containerapp registry set -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --server $CONTAINER_REGISTRY --identity $ESSENTIALCSHARPDEV_APPIDENTITY_CLIENT_ID
-            az containerapp update -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --image $CONTAINER_REGISTRY/essentialcsharpweb:${{ github.sha }}
 
       - name: Logout of Azure CLI
         if: '!cancelled()'
@@ -149,8 +146,8 @@ jobs:
       - name: Azure Login
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.ESSENTIALCSHARP_APPIDENTITY_CLIENT_ID }}
-          tenant-id: ${{ secrets.ESSENTIALCSHARP_APPIDENTITY_TENANT_ID }}
+          client-id: ${{ secrets.ESSENTIALCSHARP_CLIENT_ID }}
+          tenant-id: ${{ secrets.ESSENTIALCSHARP_TENANT_ID }}
           subscription-id: ${{ secrets.ESSENTIALCSHARP_SUBSCRIPTION_ID }}
       
       - name: Download artifact
@@ -176,13 +173,17 @@ jobs:
         if: github.event_name != 'pull_request_target'
         run: docker push --all-tags ${{ vars.CONTAINER_REGISTRY }}/essentialcsharpweb
 
-      - name: Deploy to containerapp
+      - name: Create and Deploy to containerapp
         uses: azure/CLI@v1
+        env:
+          CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
+          RESOURCEGROUP: ${{ vars.RESOURCEGROUP }}
+          CONTAINER_REGISTRY: ${{ vars.CONTAINER_REGISTRY }}
+          CONTAINER_APP_ENVIRONMENT: ${{ vars.CONTAINER_APP_ENVIRONMENT }}
         with:
           inlineScript: |
             az config set extension.use_dynamic_install=yes_without_prompt
-            az containerapp registry set -n essentialcsharpprod -g EssentialCSharp --server essentialcsharpregistry.azurecr.io --username  ${{ secrets.ESSENTIALCSHARP_REGISTRY_USERNAME }} --password ${{ secrets.ESSENTIALCSHARP_REGISTRY_PASSWORD }}
-            az containerapp update -n essentialcsharpprod -g EssentialCSharp --image essentialcsharpregistry.azurecr.io/essentialcsharp:${{ github.sha }}
+            az containerapp up -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --image $CONTAINER_REGISTRY/essentialcsharpweb:${{ github.sha }} --environment $CONTAINER_APP_ENVIRONMENT --registry-server $CONTAINER_REGISTRY
 
       - name: Logout of Azure CLI
         if: '!cancelled()'
