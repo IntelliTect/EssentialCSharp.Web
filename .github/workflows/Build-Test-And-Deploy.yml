@@ -106,6 +106,7 @@ jobs:
         run: docker push --all-tags ${{ vars.CONTAINER_REGISTRY }}/essentialcsharpweb
 
       - name: Create and Deploy to containerapp
+        if: github.event_name != 'pull_request_target'
         uses: azure/CLI@v1
         env:
           CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
@@ -118,7 +119,7 @@ jobs:
             az containerapp up -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --image $CONTAINER_REGISTRY/essentialcsharpweb:${{ github.sha }} --environment $CONTAINER_APP_ENVIRONMENT --registry-server $CONTAINER_REGISTRY
 
       - name: Logout of Azure CLI
-        if: '!cancelled()'
+        if: 'always()'
         uses: azure/CLI@v1
         with:
           inlineScript: |
@@ -127,7 +128,7 @@ jobs:
             az account clear
 
       - name: Clear Azure PowerShell Context
-        if: '!cancelled()'
+        if: 'always()'
         uses: azure/powershell@v1.4.0
         with:
           azPSVersion: "latest"
@@ -185,7 +186,7 @@ jobs:
             az containerapp up -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --image $CONTAINER_REGISTRY/essentialcsharpweb:${{ github.sha }} --environment $CONTAINER_APP_ENVIRONMENT --registry-server $CONTAINER_REGISTRY
 
       - name: Logout of Azure CLI
-        if: '!cancelled()'
+        if: 'always()'
         uses: azure/CLI@v1
         with:
           inlineScript: |
@@ -194,7 +195,7 @@ jobs:
             az account clear
 
       - name: Clear Azure PowerShell Context
-        if: '!cancelled()'
+        if: 'always()'
         uses: azure/powershell@v1.4.0
         with:
           azPSVersion: "latest"
