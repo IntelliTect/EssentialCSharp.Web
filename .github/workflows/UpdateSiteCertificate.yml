@@ -75,7 +75,7 @@ jobs:
         with:
           azcliversion: latest
           inlineScript: |
-            az containerapp ssl upload -g $RESOURCEGROUP --name $CONTAINER_APP_NAME --environment $CONTAINER_APP_ENVIRONMENT --hostname essentialcsharp.com --certificate-file /home/runner/work/EssentialCSharp.Web/EssentialCSharp.Web/certificate.pfx --certificate-name essentialcsharp.comcertificate --password "$CERT_PASSWORD"
+            az containerapp ssl upload --resource-group $RESOURCE_GROUP --name $CONTAINER_APP_NAME --environment $CONTAINER_APP_ENVIRONMENT --hostname essentialcsharp.com --certificate-file /home/runner/work/EssentialCSharp.Web/EssentialCSharp.Web/certificate.pfx --certificate-name essentialcsharp.comcertificate --password "$CERT_PASSWORD"
 
       - name: Clear certificate directories
         if: '!cancelled()'
