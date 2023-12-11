@@ -35,7 +35,7 @@ jobs:
         languages: ${{ matrix.language }}
 
     - name: Set up .NET Core
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         global-json-file: global.json
         source-url: https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json
