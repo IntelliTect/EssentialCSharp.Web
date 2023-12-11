@@ -14,6 +14,8 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     environment: 'BuildAndUploadImage'
+    env: 
+      TEST_TAG: user/app:test
 
     steps:
       - uses: actions/checkout@v4
@@ -51,16 +53,29 @@ jobs:
         if: github.event_name != 'pull_request_target'
         uses: docker/setup-buildx-action@v3
 
+      - name: Build and export to Docker
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: ${{ env.TEST_TAG }}
+
+      - name: Test
+        run: |
+          docker run --rm ${{ env.TEST_TAG }}  
+
       - name: Build Container Image
         if: github.event_name != 'pull_request_target'
         uses: docker/build-push-action@v5
         with:
-          tags: ${{ vars.CONTAINER_REGISTRY }}/essentialcsharpweb:${{ github.sha }},${{ vars.CONTAINER_REGISTRY }}/essentialcsharpweb:latest
+          tags: ${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb:${{ github.sha }},${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb:latest,${{ vars.PRODCONTAINER_REGISTRY }}/essentialcsharpweb:${{ github.sha }},${{ vars.PRODCONTAINER_REGISTRY }}/essentialcsharpweb:latest
           file: ./EssentialCSharp.Web/Dockerfile
           context: .
           secrets: |
             "nuget_auth_token=${{ secrets.AZURE_DEVOPS_PAT }}"
           outputs: type=docker,dest=${{ github.workspace }}/essentialcsharpwebimage.tar
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
@@ -97,13 +112,13 @@ jobs:
         if: github.event_name != 'pull_request_target'
         uses: docker/login-action@v3
         with:
-          registry: ${{ vars.CONTAINER_REGISTRY }}
+          registry: ${{ vars.DEVCONTAINER_REGISTRY }}
           username: ${{ secrets.ESSENTIALCSHARPDEV_CLIENT_ID }}
           password: ${{ secrets.ESSENTIALCSHARPDEV_CLIENT_SECRET }}
       
       - name: Push Image to Container Registry
         if: github.event_name != 'pull_request_target'
-        run: docker push --all-tags ${{ vars.CONTAINER_REGISTRY }}/essentialcsharpweb
+        run: docker push --all-tags ${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb
 
       - name: Create and Deploy to containerapp
         if: github.event_name != 'pull_request_target'
@@ -111,7 +126,7 @@ jobs:
         env:
           CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
           RESOURCEGROUP: ${{ vars.RESOURCEGROUP }}
-          CONTAINER_REGISTRY: ${{ vars.CONTAINER_REGISTRY }}
+          CONTAINER_REGISTRY: ${{ vars.DEVCONTAINER_REGISTRY }}
           CONTAINER_APP_ENVIRONMENT: ${{ vars.CONTAINER_APP_ENVIRONMENT }}
         with:
           inlineScript: |
@@ -165,20 +180,20 @@ jobs:
         if: github.event_name != 'pull_request_target'
         uses: docker/login-action@v3
         with:
-          registry: ${{ vars.CONTAINER_REGISTRY }}
+          registry: ${{ vars.PRODCONTAINER_REGISTRY }}
           username: ${{ secrets.ESSENTIALCSHARP_CLIENT_ID }}
           password: ${{ secrets.ESSENTIALCSHARP_CLIENT_SECRET }}
       
       - name: Push Image to Container Registry
         if: github.event_name != 'pull_request_target'
-        run: docker push --all-tags ${{ vars.CONTAINER_REGISTRY }}/essentialcsharpweb
+        run: docker push --all-tags ${{ vars.PRODCONTAINER_REGISTRY }}/essentialcsharpweb
 
       - name: Create and Deploy to containerapp
         uses: azure/CLI@v1
         env:
           CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
           RESOURCEGROUP: ${{ vars.RESOURCEGROUP }}
-          CONTAINER_REGISTRY: ${{ vars.CONTAINER_REGISTRY }}
+          CONTAINER_REGISTRY: ${{ vars.PRODCONTAINER_REGISTRY }}
           CONTAINER_APP_ENVIRONMENT: ${{ vars.CONTAINER_APP_ENVIRONMENT }}
         with:
           inlineScript: |
