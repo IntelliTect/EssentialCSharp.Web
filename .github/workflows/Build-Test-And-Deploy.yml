@@ -117,11 +117,13 @@ jobs:
           RESOURCEGROUP: ${{ vars.RESOURCEGROUP }}
           CONTAINER_REGISTRY: ${{ vars.DEVCONTAINER_REGISTRY }}
           CONTAINER_APP_ENVIRONMENT: ${{ vars.CONTAINER_APP_ENVIRONMENT }}
+          KEYVAULTURI: ${{ secrets.ESSENTIALCSHARP_KEYVAULT_URI }}
+          MANAGEDIDENTITYID: ${{ secrets.ESSENTIALCSHARP_APPIDENTITY_ID }}
         with:
           inlineScript: |
             az config set extension.use_dynamic_install=yes_without_prompt
             az containerapp up -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --image $CONTAINER_REGISTRY/essentialcsharpweb:${{ github.sha }} --environment $CONTAINER_APP_ENVIRONMENT --registry-server $CONTAINER_REGISTRY --ingress external
-            az containerapp ingress update -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --type external
+            az containerapp secret set -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --secrets Authentication:github:clientId=keyvaultref:$KEYVAULTURI/secrets/authentication-github-clientid,identityref:$MANAGEDIDENTITYID Authentication:github:clientSecret=keyvaultref:$KEYVAULTURI/secrets/authentication-github-clientsecret,identityref:$MANAGEDIDENTITYID Authentication:Microsoft:ClientId=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientid,identityref:$MANAGEDIDENTITYID Authentication:Microsoft:clientSecret=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientsecret,identityref:$MANAGEDIDENTITYID AuthMessageSender:APIKey=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-apikey,identityref:$MANAGEDIDENTITYID AuthMessageSender:SecretKey=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-secretkey,identityref:$MANAGEDIDENTITYID AuthMessageSender:SendFromName=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromname,identityref:$MANAGEDIDENTITYID AuthMessageSender:SendFromEmail=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromemail,identityref:$MANAGEDIDENTITYID ConnectionStrings:EssentialCSharpWebContextConnection=keyvaultref:$KEYVAULTURI/secrets/connectionstrings-essentialcsharpwebcontextconnection,identityref:$MANAGEDIDENTITYID
 
       - name: Logout of Azure CLI
         if: 'always()'
@@ -185,11 +187,13 @@ jobs:
           RESOURCEGROUP: ${{ vars.RESOURCEGROUP }}
           CONTAINER_REGISTRY: ${{ vars.PRODCONTAINER_REGISTRY }}
           CONTAINER_APP_ENVIRONMENT: ${{ vars.CONTAINER_APP_ENVIRONMENT }}
+          KEYVAULTURI: ${{ secrets.ESSENTIALCSHARP_KEYVAULT_URI }}
+          MANAGEDIDENTITYID: ${{ secrets.ESSENTIALCSHARP_APPIDENTITY_ID }}
         with:
           inlineScript: |
             az config set extension.use_dynamic_install=yes_without_prompt
             az containerapp up -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --image $CONTAINER_REGISTRY/essentialcsharpweb:${{ github.sha }} --environment $CONTAINER_APP_ENVIRONMENT --registry-server $CONTAINER_REGISTRY --ingress external
-            az containerapp ingress update -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --type external
+            az containerapp secret set -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --secrets Authentication:github:clientId=keyvaultref:$KEYVAULTURI/secrets/authentication-github-clientid,identityref:$MANAGEDIDENTITYID Authentication:github:clientSecret=keyvaultref:$KEYVAULTURI/secrets/authentication-github-clientsecret,identityref:$MANAGEDIDENTITYID Authentication:Microsoft:ClientId=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientid,identityref:$MANAGEDIDENTITYID Authentication:Microsoft:clientSecret=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientsecret,identityref:$MANAGEDIDENTITYID AuthMessageSender:APIKey=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-apikey,identityref:$MANAGEDIDENTITYID AuthMessageSender:SecretKey=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-secretkey,identityref:$MANAGEDIDENTITYID AuthMessageSender:SendFromName=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromname,identityref:$MANAGEDIDENTITYID AuthMessageSender:SendFromEmail=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromemail,identityref:$MANAGEDIDENTITYID ConnectionStrings:EssentialCSharpWebContextConnection=keyvaultref:$KEYVAULTURI/secrets/connectionstrings-essentialcsharpwebcontextconnection,identityref:$MANAGEDIDENTITYID
 
       - name: Logout of Azure CLI
         if: 'always()'
