@@ -1,4 +1,6 @@
-﻿namespace EssentialCSharp.Web.Middleware.Constants;
+﻿using System.Text;
+
+namespace EssentialCSharp.Web.Middleware.Constants;
 
 /// <summary>
 /// X-XSS-Protection-related constants.
@@ -29,5 +31,5 @@ public static class XssProtectionConstants
     /// A partially supported directive that tells the user-agent to report potential XSS attacks to a single URL. Data will be POST'd to the report URL in JSON format. 
     /// {0} specifies the report url, including protocol
     /// </summary>
-    public const string Report = "1; report={0}";
+    public static readonly CompositeFormat Report = CompositeFormat.Parse("1; report={0}");
 }
