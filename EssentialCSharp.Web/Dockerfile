@@ -1,11 +1,11 @@
 #syntax=docker/dockerfile:1.2
 
-FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 RUN sh -c "$(curl -fsSL https://aka.ms/install-artifacts-credprovider.sh)"
 WORKDIR /src
 COPY . .

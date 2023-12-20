@@ -1,4 +1,6 @@
-﻿namespace EssentialCSharp.Web.Services;
+﻿using EssentialCSharp.Web.Models;
+
+namespace EssentialCSharp.Web.Services;
 
 public interface ISiteMappingService
 {

@@ -1,6 +1,6 @@
 ﻿using EssentialCSharp.Web.Extensions;
 
-namespace EssentialCSharp.Web;
+namespace EssentialCSharp.Web.Models;
 
 public record class SiteMapping(string Key, string[] PagePath, int ChapterNumber, int PageNumber, string ChapterTitle, string RawHeading, string? AnchorId, int IndentLevel)
 {

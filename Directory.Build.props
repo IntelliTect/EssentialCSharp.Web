@@ -10,5 +10,6 @@
 
     <!-- https://aka.ms/vs-build-acceleration -->
     <AccelerateBuildsInVisualStudio>True</AccelerateBuildsInVisualStudio>
+    <UserSecretsId>18e91e0d-ea2d-490f-b77e-ec008f9d09ec</UserSecretsId>
   </PropertyGroup>
 </Project>

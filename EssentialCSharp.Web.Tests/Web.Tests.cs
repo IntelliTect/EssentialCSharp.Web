@@ -1,4 +1,6 @@
-﻿namespace EssentialCSharp.Web.Tests;
+﻿using EssentialCSharp.Web.Models;
+
+namespace EssentialCSharp.Web.Tests;
 
 public class SiteMappingTests
 {
