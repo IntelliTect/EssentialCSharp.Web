@@ -19,10 +19,7 @@ public class SecurityHeadersMiddleware
 
     public async Task Invoke(HttpContext? context)
     {
-        if (context is null)
-        {
-            throw new ArgumentNullException(nameof(context));
-        }
+        ArgumentNullException.ThrowIfNull(context);
 
         HttpResponse response = context.Response ?? throw new InvalidOperationException(nameof(context.Response));
         IHeaderDictionary headers = response.Headers;

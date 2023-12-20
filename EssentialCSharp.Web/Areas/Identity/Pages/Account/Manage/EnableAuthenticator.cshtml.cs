@@ -16,7 +16,7 @@ public class EnableAuthenticatorModel : PageModel
     private readonly ILogger<EnableAuthenticatorModel> _Logger;
     private readonly UrlEncoder _UrlEncoder;
 
-    private const string AuthenticatorUriFormat = "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6";
+    private static readonly CompositeFormat _AuthenticatorUriFormat = CompositeFormat.Parse("otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6");
 
     public EnableAuthenticatorModel(
         UserManager<EssentialCSharpWebUser> userManager,
@@ -166,7 +166,7 @@ public class EnableAuthenticatorModel : PageModel
     {
         return string.Format(
             CultureInfo.InvariantCulture,
-            AuthenticatorUriFormat,
+            _AuthenticatorUriFormat,
             _UrlEncoder.Encode("EssentialCSharp.com"),
             _UrlEncoder.Encode(email),
             unformattedKey);

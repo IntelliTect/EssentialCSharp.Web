@@ -1,4 +1,6 @@
-﻿namespace EssentialCSharp.Web.Middleware.Constants;
+using System.Text;
+
+namespace EssentialCSharp.Web.Middleware.Constants;
 
 /// <summary>
 /// X-Frame-Options-related constants.
@@ -23,5 +25,5 @@ public static class FrameOptionsConstants
     /// <summary>
     /// The page can only be displayed in a frame on the specified origin. {0} specifies the format string
     /// </summary>
-    public const string AllowFromUri = "ALLOW-FROM {0}";
+    public static readonly CompositeFormat AllowFromUri = CompositeFormat.Parse("ALLOW-FROM {0}");
 }
