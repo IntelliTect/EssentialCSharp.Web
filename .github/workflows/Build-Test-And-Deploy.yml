@@ -14,7 +14,7 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     environment: 'BuildAndUploadImage'
-    env: 
+    env:
       TEST_TAG: user/app:test
 
     steps:
@@ -39,13 +39,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
             ${{ runner.os }}-nuget-
-          
+
       - name: Restore with dotnet
         run: dotnet restore
-          
+
       - name: Build with dotnet
         run: dotnet build --configuration Release --no-restore
-        
+
       - name: Run .NET Tests
         run: dotnet test --no-build --configuration Release
 
@@ -85,13 +85,13 @@ jobs:
           client-id: ${{ secrets.ESSENTIALCSHARPDEV_CLIENT_ID }}
           tenant-id: ${{ secrets.ESSENTIALCSHARP_APPIDENTITY_TENANT_ID }}
           subscription-id: ${{ secrets.ESSENTIALCSHARP_SUBSCRIPTION_ID }}
-      
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: essentialcsharpwebimage
           path: ${{ github.workspace }}
-      
+
       - name: Load image
         run: |
           docker load --input ${{ github.workspace }}/essentialcsharpwebimage.tar
@@ -104,7 +104,7 @@ jobs:
           registry: ${{ vars.DEVCONTAINER_REGISTRY }}
           username: ${{ secrets.ESSENTIALCSHARPDEV_CLIENT_ID }}
           password: ${{ secrets.ESSENTIALCSHARPDEV_CLIENT_SECRET }}
-      
+
       - name: Push Image to Container Registry
         if: github.event_name != 'pull_request_target'
         run: docker push --all-tags ${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb
@@ -119,12 +119,20 @@ jobs:
           CONTAINER_APP_ENVIRONMENT: ${{ vars.CONTAINER_APP_ENVIRONMENT }}
           KEYVAULTURI: ${{ secrets.ESSENTIALCSHARP_KEYVAULT_URI }}
           MANAGEDIDENTITYID: ${{ secrets.ESSENTIALCSHARP_APPIDENTITY_ID }}
+          ACR_USERNAME: ${{ secrets.ESSENTIALCSHARP_ACR_USERNAME }}
+          ACR_PASSWORD: ${{ secrets.ESSENTIALCSHARP_ACR_PASSWORD }}
         with:
           inlineScript: |
             az config set extension.use_dynamic_install=yes_without_prompt
-            az containerapp up -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --image $CONTAINER_REGISTRY/essentialcsharpweb:${{ github.sha }} --environment $CONTAINER_APP_ENVIRONMENT --registry-server $CONTAINER_REGISTRY --ingress external
-            az containerapp secret set -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --secrets Authentication:github:clientId=keyvaultref:$KEYVAULTURI/secrets/authentication-github-clientid,identityref:$MANAGEDIDENTITYID Authentication:github:clientSecret=keyvaultref:$KEYVAULTURI/secrets/authentication-github-clientsecret,identityref:$MANAGEDIDENTITYID Authentication:Microsoft:ClientId=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientid,identityref:$MANAGEDIDENTITYID Authentication:Microsoft:clientSecret=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientsecret,identityref:$MANAGEDIDENTITYID AuthMessageSender:APIKey=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-apikey,identityref:$MANAGEDIDENTITYID AuthMessageSender:SecretKey=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-secretkey,identityref:$MANAGEDIDENTITYID AuthMessageSender:SendFromName=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromname,identityref:$MANAGEDIDENTITYID AuthMessageSender:SendFromEmail=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromemail,identityref:$MANAGEDIDENTITYID ConnectionStrings:EssentialCSharpWebContextConnection=keyvaultref:$KEYVAULTURI/secrets/connectionstrings-essentialcsharpwebcontextconnection,identityref:$MANAGEDIDENTITYID
-
+            az containerapp up -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --image $CONTAINER_REGISTRY/essentialcsharpweb:${{ github.sha }} --environment $CONTAINER_APP_ENVIRONMENT --registry-server $CONTAINER_REGISTRY --ingress external --registry-username $ACR_USERNAME --registry-password $ACR_PASSWORD
+            az containerapp secret set -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --secrets github-clientid=keyvaultref:$KEYVAULTURI/secrets/authentication-github-clientid,identityref:$MANAGEDIDENTITYID  \
+              github-clientsecret=keyvaultref:$KEYVAULTURI/secrets/authentication-github-clientsecret,identityref:$MANAGEDIDENTITYID msft-clientid=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientid,identityref:$MANAGEDIDENTITYID \
+              msft-clientsecret=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientsecret,identityref:$MANAGEDIDENTITYID emailsender-apikey=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-apikey,identityref:$MANAGEDIDENTITYID \
+              emailsender-secret=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-secretkey,identityref:$MANAGEDIDENTITYID emailsender-name=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromname,identityref:$MANAGEDIDENTITYID \
+              emailsender-email=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromemail,identityref:$MANAGEDIDENTITYID connectionstring=keyvaultref:$KEYVAULTURI/secrets/connectionstrings-essentialcsharpwebcontextconnection,identityref:$MANAGEDIDENTITYID
+            az containerapp update --name $CONTAINER_APP_NAME --resource-group $RESOURCEGROUP --replace-env-vars Authentication--github--clientId=secretref:github-clientid Authentication--github--clientSecret=secretref:github-clientsecret \
+              Authentication--microsoft--clientId=secretref:msft-clientid Authentication--microsoft--clientSecret=secretref:msft-clientsecret AuthMessageSender--ApiKey=secretref:emailsender-apikey AuthMessageSender--SecretKey=secretref:emailsender-secret \
+              AuthMessageSender--SendFromName=secretref:emailsender-name AuthMessageSender--SendFromEmail=secretref:emailsender-email ConnectionStrings--EssentialCSharpWebContextConnection=secretref:connectionstring
       - name: Logout of Azure CLI
         if: 'always()'
         uses: azure/CLI@v1
@@ -141,7 +149,7 @@ jobs:
           azPSVersion: "latest"
           inlineScript: |
             Clear-AzContext -Scope Process
-          
+
   deploy-production:
     if: github.event_name != 'pull_request_target'
     runs-on: ubuntu-latest
@@ -156,13 +164,13 @@ jobs:
           client-id: ${{ secrets.ESSENTIALCSHARP_CLIENT_ID }}
           tenant-id: ${{ secrets.ESSENTIALCSHARP_TENANT_ID }}
           subscription-id: ${{ secrets.ESSENTIALCSHARP_SUBSCRIPTION_ID }}
-      
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: essentialcsharpwebimage
           path: ${{ github.workspace }}
-      
+
       - name: Load image
         run: |
           docker load --input ${{ github.workspace }}/essentialcsharpwebimage.tar
@@ -175,7 +183,7 @@ jobs:
           registry: ${{ vars.PRODCONTAINER_REGISTRY }}
           username: ${{ secrets.ESSENTIALCSHARP_CLIENT_ID }}
           password: ${{ secrets.ESSENTIALCSHARP_CLIENT_SECRET }}
-      
+
       - name: Push Image to Container Registry
         if: github.event_name != 'pull_request_target'
         run: docker push --all-tags ${{ vars.PRODCONTAINER_REGISTRY }}/essentialcsharpweb
@@ -189,12 +197,20 @@ jobs:
           CONTAINER_APP_ENVIRONMENT: ${{ vars.CONTAINER_APP_ENVIRONMENT }}
           KEYVAULTURI: ${{ secrets.ESSENTIALCSHARP_KEYVAULT_URI }}
           MANAGEDIDENTITYID: ${{ secrets.ESSENTIALCSHARP_APPIDENTITY_ID }}
+          ACR_USERNAME: ${{ secrets.ESSENTIALCSHARP_ACR_USERNAME }}
+          ACR_PASSWORD: ${{ secrets.ESSENTIALCSHARP_ACR_PASSWORD }}
         with:
           inlineScript: |
             az config set extension.use_dynamic_install=yes_without_prompt
-            az containerapp up -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --image $CONTAINER_REGISTRY/essentialcsharpweb:${{ github.sha }} --environment $CONTAINER_APP_ENVIRONMENT --registry-server $CONTAINER_REGISTRY --ingress external
-            az containerapp secret set -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --secrets Authentication:github:clientId=keyvaultref:$KEYVAULTURI/secrets/authentication-github-clientid,identityref:$MANAGEDIDENTITYID Authentication:github:clientSecret=keyvaultref:$KEYVAULTURI/secrets/authentication-github-clientsecret,identityref:$MANAGEDIDENTITYID Authentication:Microsoft:ClientId=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientid,identityref:$MANAGEDIDENTITYID Authentication:Microsoft:clientSecret=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientsecret,identityref:$MANAGEDIDENTITYID AuthMessageSender:APIKey=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-apikey,identityref:$MANAGEDIDENTITYID AuthMessageSender:SecretKey=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-secretkey,identityref:$MANAGEDIDENTITYID AuthMessageSender:SendFromName=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromname,identityref:$MANAGEDIDENTITYID AuthMessageSender:SendFromEmail=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromemail,identityref:$MANAGEDIDENTITYID ConnectionStrings:EssentialCSharpWebContextConnection=keyvaultref:$KEYVAULTURI/secrets/connectionstrings-essentialcsharpwebcontextconnection,identityref:$MANAGEDIDENTITYID
-
+            az containerapp up -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --image $CONTAINER_REGISTRY/essentialcsharpweb:${{ github.sha }} --environment $CONTAINER_APP_ENVIRONMENT --registry-server $CONTAINER_REGISTRY --ingress external --registry-username $ACR_USERNAME --registry-password $ACR_PASSWORD
+            az containerapp secret set -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --secrets github-clientid=keyvaultref:$KEYVAULTURI/secrets/authentication-github-clientid,identityref:$MANAGEDIDENTITYID  \
+              github-clientsecret=keyvaultref:$KEYVAULTURI/secrets/authentication-github-clientsecret,identityref:$MANAGEDIDENTITYID msft-clientid=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientid,identityref:$MANAGEDIDENTITYID \
+              msft-clientsecret=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientsecret,identityref:$MANAGEDIDENTITYID emailsender-apikey=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-apikey,identityref:$MANAGEDIDENTITYID \
+              emailsender-secret=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-secretkey,identityref:$MANAGEDIDENTITYID emailsender-name=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromname,identityref:$MANAGEDIDENTITYID \
+              emailsender-email=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromemail,identityref:$MANAGEDIDENTITYID connectionstring=keyvaultref:$KEYVAULTURI/secrets/connectionstrings-essentialcsharpwebcontextconnection,identityref:$MANAGEDIDENTITYID
+            az containerapp update --name $CONTAINER_APP_NAME --resource-group $RESOURCEGROUP --replace-env-vars Authentication--github--clientId=secretref:github-clientid Authentication--github--clientSecret=secretref:github-clientsecret \
+              Authentication--microsoft--clientId=secretref:msft-clientid Authentication--microsoft--clientSecret=secretref:msft-clientsecret AuthMessageSender--ApiKey=secretref:emailsender-apikey AuthMessageSender--SecretKey=secretref:emailsender-secret \
+              AuthMessageSender--SendFromName=secretref:emailsender-name AuthMessageSender--SendFromEmail=secretref:emailsender-email ConnectionStrings--EssentialCSharpWebContextConnection=secretref:connectionstring
       - name: Logout of Azure CLI
         if: 'always()'
         uses: azure/CLI@v1
