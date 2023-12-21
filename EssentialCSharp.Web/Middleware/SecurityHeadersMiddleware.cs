@@ -1,6 +1,5 @@
 ﻿namespace EssentialCSharp.Web.Middleware;
 
-// You may need to install the Microsoft.AspNetCore.Http.Abstractions package into your project
 public class SecurityHeadersMiddleware
 {
     private readonly RequestDelegate _Next;
@@ -41,9 +40,9 @@ public class SecurityHeadersMiddleware
 // Extension method used to add the middleware to the HTTP request pipeline.
 public static class MiddlewareExtensions
 {
-    public static IApplicationBuilder UseMiddleware(this IApplicationBuilder builder)
+    public static IApplicationBuilder UseSecurityHeadersMiddleware(this IApplicationBuilder builder)
     {
-        return builder.UseMiddleware<SecurityHeadersMiddleware>();
+        return builder.UseMiddleware<SecurityHeadersMiddleware>(new SecurityHeadersBuilder().AddDefaultSecurePolicy().Build());
     }
 
     public static IApplicationBuilder UseSecurityHeadersMiddleware(this IApplicationBuilder app, SecurityHeadersBuilder builder)

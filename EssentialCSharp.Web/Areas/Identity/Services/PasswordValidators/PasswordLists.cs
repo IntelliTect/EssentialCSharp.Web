@@ -4,7 +4,7 @@ namespace EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
 
 public class PasswordLists
 {
-    private const string Prefix = @"Areas\Identity\Services\PasswordValidators\PasswordLists";
+    private static readonly string _Prefix = Path.Join("Areas","Identity","Services","PasswordValidators","PasswordLists");
 
     public PasswordLists()
     {
@@ -17,7 +17,7 @@ public class PasswordLists
     {
         // Only store in memory common passwords that are actually possible for a user to enter
         // based on our current password requirements
-        return new HashSet<string>(File.ReadLines(Path.Join(Prefix, listName))
+        return new HashSet<string>(File.ReadLines(Path.Join(_Prefix, listName))
             .Where(password => password.Length >= PasswordRequirementOptions.PasswordMinimumLength
             && password.Length <= PasswordRequirementOptions.PasswordMaximumLength
             && password.Distinct().Count() >= PasswordRequirementOptions.RequiredUniqueChars));

@@ -145,6 +145,8 @@ public partial class Program
                 .AddDefaultSecurePolicy());
         }
 
+        app.MapHealthChecks("/healthz");
+
         app.UseHttpsRedirection();
         app.UseStaticFiles();
 
