@@ -4,6 +4,7 @@ using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Middleware;
 using EssentialCSharp.Web.Services;
 using Mailjet.Client;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -134,6 +135,12 @@ public partial class Program
              o.Scope.Add("read:user");
          });
 
+        builder.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders =
+                ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        });
+
         WebApplication app = builder.Build();
 
         // Configure the HTTP request pipeline.
@@ -146,6 +153,8 @@ public partial class Program
         }
 
         app.MapHealthChecks("/healthz");
+
+        app.UseForwardedHeaders();
 
         app.UseHttpsRedirection();
         app.UseStaticFiles();
