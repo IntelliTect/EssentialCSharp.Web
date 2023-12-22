@@ -142,6 +142,8 @@ public partial class Program
         });
 
         WebApplication app = builder.Build();
+        
+        app.UseForwardedHeaders();
 
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
@@ -154,7 +156,6 @@ public partial class Program
 
         app.MapHealthChecks("/healthz");
 
-        app.UseForwardedHeaders();
 
         app.UseHttpsRedirection();
         app.UseStaticFiles();
