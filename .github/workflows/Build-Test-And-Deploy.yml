@@ -124,7 +124,7 @@ jobs:
         with:
           inlineScript: |
             az config set extension.use_dynamic_install=yes_without_prompt
-            az containerapp up -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --image $CONTAINER_REGISTRY/essentialcsharpweb:${{ github.sha }} --environment $CONTAINER_APP_ENVIRONMENT --registry-server $CONTAINER_REGISTRY --ingress external --registry-username $ACR_USERNAME --registry-password $ACR_PASSWORD
+            az containerapp up -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --image $CONTAINER_REGISTRY/essentialcsharpweb:${{ github.sha }} --environment $CONTAINER_APP_ENVIRONMENT --registry-server $CONTAINER_REGISTRY --ingress external --target-port 8080 --registry-username $ACR_USERNAME --registry-password $ACR_PASSWORD
             az containerapp secret set -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --secrets github-clientid=keyvaultref:$KEYVAULTURI/secrets/authentication-github-clientid,identityref:$MANAGEDIDENTITYID  \
               github-clientsecret=keyvaultref:$KEYVAULTURI/secrets/authentication-github-clientsecret,identityref:$MANAGEDIDENTITYID msft-clientid=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientid,identityref:$MANAGEDIDENTITYID \
               msft-clientsecret=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientsecret,identityref:$MANAGEDIDENTITYID emailsender-apikey=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-apikey,identityref:$MANAGEDIDENTITYID \
@@ -202,7 +202,7 @@ jobs:
         with:
           inlineScript: |
             az config set extension.use_dynamic_install=yes_without_prompt
-            az containerapp up -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --image $CONTAINER_REGISTRY/essentialcsharpweb:${{ github.sha }} --environment $CONTAINER_APP_ENVIRONMENT --registry-server $CONTAINER_REGISTRY --ingress external --registry-username $ACR_USERNAME --registry-password $ACR_PASSWORD
+            az containerapp up -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --image $CONTAINER_REGISTRY/essentialcsharpweb:${{ github.sha }} --environment $CONTAINER_APP_ENVIRONMENT --registry-server $CONTAINER_REGISTRY --ingress external --target-port 8080 --registry-username $ACR_USERNAME --registry-password $ACR_PASSWORD
             az containerapp secret set -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --secrets github-clientid=keyvaultref:$KEYVAULTURI/secrets/authentication-github-clientid,identityref:$MANAGEDIDENTITYID  \
               github-clientsecret=keyvaultref:$KEYVAULTURI/secrets/authentication-github-clientsecret,identityref:$MANAGEDIDENTITYID msft-clientid=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientid,identityref:$MANAGEDIDENTITYID \
               msft-clientsecret=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientsecret,identityref:$MANAGEDIDENTITYID emailsender-apikey=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-apikey,identityref:$MANAGEDIDENTITYID \
@@ -210,7 +210,7 @@ jobs:
               emailsender-email=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromemail,identityref:$MANAGEDIDENTITYID connectionstring=keyvaultref:$KEYVAULTURI/secrets/connectionstrings-essentialcsharpwebcontextconnection,identityref:$MANAGEDIDENTITYID
             az containerapp update --name $CONTAINER_APP_NAME --resource-group $RESOURCEGROUP --replace-env-vars Authentication__github__clientId=secretref:github-clientid Authentication__github__clientSecret=secretref:github-clientsecret \
               Authentication__microsoft__clientId=secretref:msft-clientid Authentication__microsoft__clientSecret=secretref:msft-clientsecret AuthMessageSender__ApiKey=secretref:emailsender-apikey AuthMessageSender__SecretKey=secretref:emailsender-secret \
-              AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring
+              AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Production
       - name: Logout of Azure CLI
         if: 'always()'
         uses: azure/CLI@v1
