@@ -123,6 +123,7 @@ public partial class Program
          {
              microsoftoptions.ClientId = configuration["authentication:microsoft:clientid"] ?? throw new InvalidOperationException("authentication:microsoft:clientid unexpectedly null");
              microsoftoptions.ClientSecret = configuration["authentication:microsoft:clientsecret"] ?? throw new InvalidOperationException("authentication:microsoft:clientsecret unexpectedly null");
+             microsoftoptions.CallbackPath = "/signin-microsoft";
          })
          .AddGitHub(o =>
          {
@@ -167,6 +168,8 @@ public partial class Program
         app.UseStaticFiles();
 
         app.UseRouting();
+
+        app.UseAuthentication();
         app.UseAuthorization();
 
         app.MapDefaultControllerRoute();
