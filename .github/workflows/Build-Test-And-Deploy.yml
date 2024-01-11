@@ -109,7 +109,7 @@ jobs:
         if: github.event_name != 'pull_request_target'
         run: docker push --all-tags ${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb
 
-      - name: Create and Deploy to containerapp
+      - name: Create and Deploy to Container App
         if: github.event_name != 'pull_request_target'
         uses: azure/CLI@v1
         env:
@@ -133,6 +133,12 @@ jobs:
             az containerapp update --name $CONTAINER_APP_NAME --resource-group $RESOURCEGROUP --replace-env-vars Authentication__github__clientId=secretref:github-clientid Authentication__github__clientSecret=secretref:github-clientsecret \
               Authentication__microsoft__clientId=secretref:msft-clientid Authentication__microsoft__clientSecret=secretref:msft-clientsecret AuthMessageSender__ApiKey=secretref:emailsender-apikey AuthMessageSender__SecretKey=secretref:emailsender-secret \
               AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Development
+      
+      - name: Assign Managed Identity to Container App
+        uses: azure/CLI@v1
+        with:
+          inlineScript: az containerapp identity assign -n ${{ vars.CONTAINER_APP_NAME }} -g ${{ vars.RESOURCEGROUP }} --user-assigned ${{ vars.CONTAINER_APP_IDENTITY }}
+      
       - name: Logout of Azure CLI
         if: 'always()'
         uses: azure/CLI@v1
@@ -188,7 +194,7 @@ jobs:
         if: github.event_name != 'pull_request_target'
         run: docker push --all-tags ${{ vars.PRODCONTAINER_REGISTRY }}/essentialcsharpweb
 
-      - name: Create and Deploy to containerapp
+      - name: Create and Deploy to Container App
         uses: azure/CLI@v1
         env:
           CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
@@ -211,6 +217,12 @@ jobs:
             az containerapp update --name $CONTAINER_APP_NAME --resource-group $RESOURCEGROUP --replace-env-vars Authentication__github__clientId=secretref:github-clientid Authentication__github__clientSecret=secretref:github-clientsecret \
               Authentication__microsoft__clientId=secretref:msft-clientid Authentication__microsoft__clientSecret=secretref:msft-clientsecret AuthMessageSender__ApiKey=secretref:emailsender-apikey AuthMessageSender__SecretKey=secretref:emailsender-secret \
               AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Production
+            
+      - name: Assign Managed Identity to Container App
+        uses: azure/CLI@v1
+        with:
+          inlineScript: az containerapp identity assign -n ${{ vars.CONTAINER_APP_NAME }} -g ${{ vars.RESOURCEGROUP }} --user-assigned ${{ vars.CONTAINER_APP_IDENTITY }}
+      
       - name: Logout of Azure CLI
         if: 'always()'
         uses: azure/CLI@v1
