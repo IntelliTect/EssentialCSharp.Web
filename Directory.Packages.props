@@ -5,7 +5,7 @@
     <AccessToNugetFeed>true</AccessToNugetFeed>
   </PropertyGroup>
   <ItemGroup Condition="$(AccessToNugetFeed)">
-    <PackageVersion Include="ContentFeedNuget" Version="1.1.0-3457" />
+    <PackageVersion Include="ContentFeedNuget" Version="1.1.0-3466" />
   </ItemGroup>
   <ItemGroup>
     <PackageVersion Include="AspNet.Security.OAuth.GitHub" Version="8.0.0" />
