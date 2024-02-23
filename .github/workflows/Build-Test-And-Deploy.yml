@@ -121,6 +121,7 @@ jobs:
           MANAGEDIDENTITYID: ${{ secrets.ESSENTIALCSHARP_APPIDENTITY_ID }}
           ACR_USERNAME: ${{ secrets.ESSENTIALCSHARP_ACR_USERNAME }}
           ACR_PASSWORD: ${{ secrets.ESSENTIALCSHARP_ACR_PASSWORD }}
+          AZURECLIENTID: ${{ secrets.IDENTITY_CLIENT_ID }}
         with:
           inlineScript: |
             az config set extension.use_dynamic_install=yes_without_prompt
@@ -132,7 +133,7 @@ jobs:
               emailsender-email=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromemail,identityref:$MANAGEDIDENTITYID connectionstring=keyvaultref:$KEYVAULTURI/secrets/connectionstrings-essentialcsharpwebcontextconnection,identityref:$MANAGEDIDENTITYID
             az containerapp update --name $CONTAINER_APP_NAME --resource-group $RESOURCEGROUP --replace-env-vars Authentication__github__clientId=secretref:github-clientid Authentication__github__clientSecret=secretref:github-clientsecret \
               Authentication__microsoft__clientId=secretref:msft-clientid Authentication__microsoft__clientSecret=secretref:msft-clientsecret AuthMessageSender__ApiKey=secretref:emailsender-apikey AuthMessageSender__SecretKey=secretref:emailsender-secret \
-              AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Development
+              AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Development AZURE_CLIENT_ID=$AZURECLIENTID
       
       - name: Assign Managed Identity to Container App
         uses: azure/CLI@v1
@@ -205,6 +206,7 @@ jobs:
           MANAGEDIDENTITYID: ${{ secrets.ESSENTIALCSHARP_APPIDENTITY_ID }}
           ACR_USERNAME: ${{ secrets.ESSENTIALCSHARP_ACR_USERNAME }}
           ACR_PASSWORD: ${{ secrets.ESSENTIALCSHARP_ACR_PASSWORD }}
+          AZURECLIENTID: ${{ secrets.IDENTITY_CLIENT_ID }}
         with:
           inlineScript: |
             az config set extension.use_dynamic_install=yes_without_prompt
@@ -216,7 +218,7 @@ jobs:
               emailsender-email=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromemail,identityref:$MANAGEDIDENTITYID connectionstring=keyvaultref:$KEYVAULTURI/secrets/connectionstrings-essentialcsharpwebcontextconnection,identityref:$MANAGEDIDENTITYID
             az containerapp update --name $CONTAINER_APP_NAME --resource-group $RESOURCEGROUP --replace-env-vars Authentication__github__clientId=secretref:github-clientid Authentication__github__clientSecret=secretref:github-clientsecret \
               Authentication__microsoft__clientId=secretref:msft-clientid Authentication__microsoft__clientSecret=secretref:msft-clientsecret AuthMessageSender__ApiKey=secretref:emailsender-apikey AuthMessageSender__SecretKey=secretref:emailsender-secret \
-              AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Production
+              AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Production AZURE_CLIENT_ID=$AZURECLIENTID
             
       - name: Assign Managed Identity to Container App
         uses: azure/CLI@v1
