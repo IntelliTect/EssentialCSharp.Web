@@ -45,8 +45,6 @@ public class RegisterModel : PageModel
         CaptchaOptions = optionsAccessor.Value;
     }
 
-    public string? SiteKey { get; set; }
-
     private InputModel? _Input;
     [BindProperty]
     public InputModel Input
@@ -95,7 +93,6 @@ public class RegisterModel : PageModel
 
     public async Task OnGetAsync(string? returnUrl = null)
     {
-        SiteKey = CaptchaOptions.SiteKey;
         ReturnUrl = returnUrl;
         ExternalLogins = (await _SignInManager.GetExternalAuthenticationSchemesAsync()).ToList();
     }
