@@ -130,10 +130,12 @@ jobs:
               github-clientsecret=keyvaultref:$KEYVAULTURI/secrets/authentication-github-clientsecret,identityref:$MANAGEDIDENTITYID msft-clientid=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientid,identityref:$MANAGEDIDENTITYID \
               msft-clientsecret=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientsecret,identityref:$MANAGEDIDENTITYID emailsender-apikey=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-apikey,identityref:$MANAGEDIDENTITYID \
               emailsender-secret=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-secretkey,identityref:$MANAGEDIDENTITYID emailsender-name=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromname,identityref:$MANAGEDIDENTITYID \
-              emailsender-email=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromemail,identityref:$MANAGEDIDENTITYID connectionstring=keyvaultref:$KEYVAULTURI/secrets/connectionstrings-essentialcsharpwebcontextconnection,identityref:$MANAGEDIDENTITYID
+              emailsender-email=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromemail,identityref:$MANAGEDIDENTITYID connectionstring=keyvaultref:$KEYVAULTURI/secrets/connectionstrings-essentialcsharpwebcontextconnection,identityref:$MANAGEDIDENTITYID \
+              captcha-sitekey=keyvaultref:$KEYVAULTURI/secrets/captcha-sitekey,identityref:$MANAGEDIDENTITYID
             az containerapp update --name $CONTAINER_APP_NAME --resource-group $RESOURCEGROUP --replace-env-vars Authentication__github__clientId=secretref:github-clientid Authentication__github__clientSecret=secretref:github-clientsecret \
               Authentication__microsoft__clientId=secretref:msft-clientid Authentication__microsoft__clientSecret=secretref:msft-clientsecret AuthMessageSender__ApiKey=secretref:emailsender-apikey AuthMessageSender__SecretKey=secretref:emailsender-secret \
-              AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Development AZURE_CLIENT_ID=$AZURECLIENTID
+              AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Development \
+              AZURE_CLIENT_ID=$AZURECLIENTID Captcha__SiteKey=secretref:captcha-sitekey
       
       - name: Assign Managed Identity to Container App
         uses: azure/CLI@v1
@@ -215,10 +217,12 @@ jobs:
               github-clientsecret=keyvaultref:$KEYVAULTURI/secrets/authentication-github-clientsecret,identityref:$MANAGEDIDENTITYID msft-clientid=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientid,identityref:$MANAGEDIDENTITYID \
               msft-clientsecret=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientsecret,identityref:$MANAGEDIDENTITYID emailsender-apikey=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-apikey,identityref:$MANAGEDIDENTITYID \
               emailsender-secret=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-secretkey,identityref:$MANAGEDIDENTITYID emailsender-name=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromname,identityref:$MANAGEDIDENTITYID \
-              emailsender-email=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromemail,identityref:$MANAGEDIDENTITYID connectionstring=keyvaultref:$KEYVAULTURI/secrets/connectionstrings-essentialcsharpwebcontextconnection,identityref:$MANAGEDIDENTITYID
+              emailsender-email=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromemail,identityref:$MANAGEDIDENTITYID connectionstring=keyvaultref:$KEYVAULTURI/secrets/connectionstrings-essentialcsharpwebcontextconnection,identityref:$MANAGEDIDENTITYID \
+              captcha-sitekey=keyvaultref:$KEYVAULTURI/secrets/captcha-sitekey,identityref:$MANAGEDIDENTITYID
             az containerapp update --name $CONTAINER_APP_NAME --resource-group $RESOURCEGROUP --replace-env-vars Authentication__github__clientId=secretref:github-clientid Authentication__github__clientSecret=secretref:github-clientsecret \
               Authentication__microsoft__clientId=secretref:msft-clientid Authentication__microsoft__clientSecret=secretref:msft-clientsecret AuthMessageSender__ApiKey=secretref:emailsender-apikey AuthMessageSender__SecretKey=secretref:emailsender-secret \
-              AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Production AZURE_CLIENT_ID=$AZURECLIENTID
+              AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Production \
+              AZURE_CLIENT_ID=$AZURECLIENTID Captcha__SiteKey=secretref:captcha-sitekey
             
       - name: Assign Managed Identity to Container App
         uses: azure/CLI@v1
