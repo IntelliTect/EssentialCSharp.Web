@@ -103,7 +103,7 @@ public partial class Program
 
         builder.Services.AddSingleton<ICaptchaService, CaptchaService>();
         builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
-        builder.Services.AddSingleton<DatabaseMigrationService>();
+        builder.Services.AddHostedService<DatabaseMigrationService>();
 
         builder.Services.AddHttpClient("hCaptcha", c =>
         {
