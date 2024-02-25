@@ -4,16 +4,10 @@ using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Services;
 
-public class CaptchaService : ICaptchaService
+public class CaptchaService(IHttpClientFactory clientFactory, IOptions<CaptchaOptions> optionsAccessor) : ICaptchaService
 {
-    private IHttpClientFactory ClientFactory { get; }
-    private CaptchaOptions Options { get; }
-
-    public CaptchaService(IHttpClientFactory clientFactory, IOptions<CaptchaOptions> optionsAccessor)
-    {
-        ClientFactory = clientFactory;
-        Options = optionsAccessor.Value;
-    }
+    private IHttpClientFactory ClientFactory { get; } = clientFactory;
+    private CaptchaOptions Options { get; } = optionsAccessor.Value;
 
     // Verify captcha. Optionally add overload to pass in remoteIp as in the docs
     // https://docs.hcaptcha.com/#verify-the-user-response-server-side
@@ -48,6 +42,7 @@ public class CaptchaService : ICaptchaService
             // hCaptcha wants URL-encoded POST
             "/siteverify", new FormUrlEncodedContent(postData));
 
+        res.EnsureSuccessStatusCode();
         // convert JSON string into Class
         return JsonSerializer.Deserialize<HCaptchaResult>(await res.Content.ReadAsStringAsync());
     }
