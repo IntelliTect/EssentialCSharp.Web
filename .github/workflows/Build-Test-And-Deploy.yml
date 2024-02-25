@@ -2,7 +2,7 @@ name: Build, Test, and Deploy EssentialCSharp.Web
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request_target:
   workflow_dispatch:
 
@@ -13,7 +13,7 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    environment: 'BuildAndUploadImage'
+    environment: "BuildAndUploadImage"
     env:
       TEST_TAG: user/app:test
 
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-test
     environment:
-      name: 'Development'
+      name: "Development"
 
     steps:
       - name: Azure Login
@@ -131,19 +131,19 @@ jobs:
               msft-clientsecret=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientsecret,identityref:$MANAGEDIDENTITYID emailsender-apikey=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-apikey,identityref:$MANAGEDIDENTITYID \
               emailsender-secret=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-secretkey,identityref:$MANAGEDIDENTITYID emailsender-name=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromname,identityref:$MANAGEDIDENTITYID \
               emailsender-email=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromemail,identityref:$MANAGEDIDENTITYID connectionstring=keyvaultref:$KEYVAULTURI/secrets/connectionstrings-essentialcsharpwebcontextconnection,identityref:$MANAGEDIDENTITYID \
-              captcha-sitekey=keyvaultref:$KEYVAULTURI/secrets/captcha-sitekey,identityref:$MANAGEDIDENTITYID
+              captcha-sitekey=keyvaultref:$KEYVAULTURI/secrets/captcha-sitekey,identityref:$MANAGEDIDENTITYID captcha-secretkey=keyvaultref:$KEYVAULTURI/secrets/captcha-secretkey,identityref:$MANAGEDIDENTITYID
             az containerapp update --name $CONTAINER_APP_NAME --resource-group $RESOURCEGROUP --replace-env-vars Authentication__github__clientId=secretref:github-clientid Authentication__github__clientSecret=secretref:github-clientsecret \
               Authentication__microsoft__clientId=secretref:msft-clientid Authentication__microsoft__clientSecret=secretref:msft-clientsecret AuthMessageSender__ApiKey=secretref:emailsender-apikey AuthMessageSender__SecretKey=secretref:emailsender-secret \
               AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Development \
-              AZURE_CLIENT_ID=$AZURECLIENTID HCaptcha__SiteKey=secretref:captcha-sitekey
-      
+              AZURE_CLIENT_ID=$AZURECLIENTID HCaptcha__SiteKey=secretref:captcha-sitekey HCaptcha__SecretKey=secretref:captcha-secretkey
+
       - name: Assign Managed Identity to Container App
         uses: azure/CLI@v1
         with:
           inlineScript: az containerapp identity assign -n ${{ vars.CONTAINER_APP_NAME }} -g ${{ vars.RESOURCEGROUP }} --user-assigned ${{ vars.CONTAINER_APP_IDENTITY }}
-      
+
       - name: Logout of Azure CLI
-        if: 'always()'
+        if: "always()"
         uses: azure/CLI@v1
         with:
           inlineScript: |
@@ -152,7 +152,7 @@ jobs:
             az account clear
 
       - name: Clear Azure PowerShell Context
-        if: 'always()'
+        if: "always()"
         uses: azure/powershell@v1.4.0
         with:
           azPSVersion: "latest"
@@ -164,7 +164,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [deploy-development]
     environment:
-      name: 'Production'
+      name: "Production"
 
     steps:
       - name: Azure Login
@@ -218,19 +218,19 @@ jobs:
               msft-clientsecret=keyvaultref:$KEYVAULTURI/secrets/authentication-microsoft-clientsecret,identityref:$MANAGEDIDENTITYID emailsender-apikey=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-apikey,identityref:$MANAGEDIDENTITYID \
               emailsender-secret=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-secretkey,identityref:$MANAGEDIDENTITYID emailsender-name=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromname,identityref:$MANAGEDIDENTITYID \
               emailsender-email=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromemail,identityref:$MANAGEDIDENTITYID connectionstring=keyvaultref:$KEYVAULTURI/secrets/connectionstrings-essentialcsharpwebcontextconnection,identityref:$MANAGEDIDENTITYID \
-              captcha-sitekey=keyvaultref:$KEYVAULTURI/secrets/captcha-sitekey,identityref:$MANAGEDIDENTITYID
+              captcha-sitekey=keyvaultref:$KEYVAULTURI/secrets/captcha-sitekey,identityref:$MANAGEDIDENTITYID captcha-secretkey=keyvaultref:$KEYVAULTURI/secrets/captcha-secretkey,identityref:$MANAGEDIDENTITYID
             az containerapp update --name $CONTAINER_APP_NAME --resource-group $RESOURCEGROUP --replace-env-vars Authentication__github__clientId=secretref:github-clientid Authentication__github__clientSecret=secretref:github-clientsecret \
               Authentication__microsoft__clientId=secretref:msft-clientid Authentication__microsoft__clientSecret=secretref:msft-clientsecret AuthMessageSender__ApiKey=secretref:emailsender-apikey AuthMessageSender__SecretKey=secretref:emailsender-secret \
               AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Production \
-              AZURE_CLIENT_ID=$AZURECLIENTID HCaptcha__SiteKey=secretref:captcha-sitekey
-            
+              AZURE_CLIENT_ID=$AZURECLIENTID HCaptcha__SiteKey=secretref:captcha-sitekey HCaptcha__SecretKey=secretref:captcha-secretkey
+
       - name: Assign Managed Identity to Container App
         uses: azure/CLI@v1
         with:
           inlineScript: az containerapp identity assign -n ${{ vars.CONTAINER_APP_NAME }} -g ${{ vars.RESOURCEGROUP }} --user-assigned ${{ vars.CONTAINER_APP_IDENTITY }}
-      
+
       - name: Logout of Azure CLI
-        if: 'always()'
+        if: "always()"
         uses: azure/CLI@v1
         with:
           inlineScript: |
@@ -239,7 +239,7 @@ jobs:
             az account clear
 
       - name: Clear Azure PowerShell Context
-        if: 'always()'
+        if: "always()"
         uses: azure/powershell@v1.4.0
         with:
           azPSVersion: "latest"
