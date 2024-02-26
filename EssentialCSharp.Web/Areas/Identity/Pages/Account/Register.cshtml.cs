@@ -116,8 +116,6 @@ public class RegisterModel : PageModel
 
         // The JSON should also return a field "success" as true
         // https://docs.hcaptcha.com/#verify-the-user-response-server-side
-        // TODO: Implement this properly!!
-        response.Success = true;
         if (response.Success)
         {
             ExternalLogins = (await _SignInManager.GetExternalAuthenticationSchemesAsync()).ToList();
