@@ -73,7 +73,6 @@ public partial class Program
             // Minimum recommended is currently 210,000 iterations for pdkdf2-sha512 as of October 27, 2023
             option.IterationCount = 500000;
         });
-
         builder.Services.AddScoped<IUserEmailStore<EssentialCSharpWebUser>>(provider =>
         {
             if (!provider.GetRequiredService<UserManager<EssentialCSharpWebUser>>().SupportsUserEmail)
@@ -94,7 +93,10 @@ public partial class Program
 
         //TODO: Implement the anti-forgery token with every POST/PUT request: https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery
 
-        builder.Services.AddTransient<IEmailSender, EmailSender>();
+        if (!builder.Environment.IsDevelopment())
+        {
+            builder.Services.AddTransient<IEmailSender, EmailSender>();
+        }
         builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration.GetSection(AuthMessageSenderOptions.AuthMessageSender));
         builder.Services.Configure<CaptchaOptions>(builder.Configuration.GetSection(CaptchaOptions.CaptchaSender));
 
@@ -110,31 +112,37 @@ public partial class Program
             c.BaseAddress = new Uri("https://api.hcaptcha.com");
         });
 
-        builder.Services.AddHttpClient<IMailjetClient, MailjetClient>(client =>
+        if (!builder.Environment.IsDevelopment())
         {
-            //set BaseAddress, MediaType, UserAgent
-            client.SetDefaultSettings();
+            builder.Services.AddHttpClient<IMailjetClient, MailjetClient>(client =>
+            {
+                //set BaseAddress, MediaType, UserAgent
+                client.SetDefaultSettings();
 
-            client.UseBasicAuthentication(configuration["AuthMessageSender:APIKey"], configuration["AuthMessageSender:SecretKey"]);
-        });
+                client.UseBasicAuthentication(configuration["AuthMessageSender:APIKey"], configuration["AuthMessageSender:SecretKey"]);
+            });
+        }
 
-        builder.Services.AddAuthentication()
-         .AddMicrosoftAccount(microsoftoptions =>
-         {
-             microsoftoptions.ClientId = configuration["authentication:microsoft:clientid"] ?? throw new InvalidOperationException("authentication:microsoft:clientid unexpectedly null");
-             microsoftoptions.ClientSecret = configuration["authentication:microsoft:clientsecret"] ?? throw new InvalidOperationException("authentication:microsoft:clientsecret unexpectedly null");
-             microsoftoptions.CallbackPath = "/signin-microsoft";
-         })
-         .AddGitHub(o =>
-         {
-             o.ClientId = configuration["authentication:github:clientId"] ?? throw new InvalidOperationException("github:clientId unexpectedly null");
-             o.ClientSecret = configuration["authentication:github:clientSecret"] ?? throw new InvalidOperationException("github:clientSecret unexpectedly null");
-             o.CallbackPath = "/signin-github";
+        if (!builder.Environment.IsDevelopment())
+        {
+            builder.Services.AddAuthentication()
+             .AddMicrosoftAccount(microsoftoptions =>
+             {
+                 microsoftoptions.ClientId = configuration["authentication:microsoft:clientid"] ?? throw new InvalidOperationException("authentication:microsoft:clientid unexpectedly null");
+                 microsoftoptions.ClientSecret = configuration["authentication:microsoft:clientsecret"] ?? throw new InvalidOperationException("authentication:microsoft:clientsecret unexpectedly null");
+                 microsoftoptions.CallbackPath = "/signin-microsoft";
+             })
+             .AddGitHub(o =>
+             {
+                 o.ClientId = configuration["authentication:github:clientId"] ?? throw new InvalidOperationException("github:clientId unexpectedly null");
+                 o.ClientSecret = configuration["authentication:github:clientSecret"] ?? throw new InvalidOperationException("github:clientSecret unexpectedly null");
+                 o.CallbackPath = "/signin-github";
 
-             // Grants access to read a user's profile data.
-             // https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps
-             o.Scope.Add("read:user");
-         });
+                 // Grants access to read a user's profile data.
+                 // https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps
+                 o.Scope.Add("read:user");
+             });
+        }
 
         builder.Services.Configure<ForwardedHeadersOptions>(options =>
         {
