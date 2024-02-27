@@ -1,6 +1,5 @@
 ﻿using EssentialCSharp.Web.Data;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace EssentialCSharp.Web;
 
