@@ -43,16 +43,16 @@ const featuresComingSoonList = [
 
 const contentComingSoonList = [
   {
-    title: "File Scoped <span class='code-text'>namespaces</span>",
-    text: "New feature from C# 10.",
+    title: "Experimental attribute",
+    text: "New feature from C# 12.0.",
   },
   {
-    title: "<span class='code-text'>using</span> Statement Improvements",
-    text: "New feature from C# 10.",
+    title: "Source Generators",
+    text: "A newer .NET feature.",
   },
   {
-    title: "Pattern Matching Improvements",
-    text: "Feature improvements from C# 11.",
+    title: "C# 13.0 Features",
+    text: "Various new features coming in .C# 13.0",
   },
 ];
 
