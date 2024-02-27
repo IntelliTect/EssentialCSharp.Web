@@ -1,4 +1,4 @@
-/* ES Module Shims Wasm 1.6.3 */
+/* ES Module Shims Wasm 1.8.3 */
 (function () {
 
   const hasWindow = typeof window !== 'undefined';
@@ -41,6 +41,7 @@
   const enable = Array.isArray(esmsInitOptions.polyfillEnable) ? esmsInitOptions.polyfillEnable : [];
   const cssModulesEnabled = enable.includes('css-modules');
   const jsonModulesEnabled = enable.includes('json-modules');
+  const wasmModulesEnabled = enable.includes('wasm-modules');
 
   const edge = !navigator.userAgentData && !!navigator.userAgent.match(/Edge\/\d+\.\d+/);
 
@@ -59,6 +60,8 @@
   else if (typeof skip === 'string') {
     const r = new RegExp(skip);
     skip = s => r.test(s);
+  } else if (skip instanceof RegExp) {
+    skip = s => skip.test(s);
   }
 
   const eoop = err => setTimeout(() => { throw err });
@@ -97,19 +100,16 @@
 
   const backslashRegEx = /\\/g;
 
-  function isURL (url) {
-    if (url.indexOf(':') === -1) return false;
+  function asURL (url) {
     try {
-      new URL(url);
-      return true;
+      if (url.indexOf(':') !== -1)
+        return new URL(url).href;
     }
-    catch (_) {
-      return false;
-    }
+    catch (_) {}
   }
 
   function resolveUrl (relUrl, parentUrl) {
-    return resolveIfNotPlainOrUrl(relUrl, parentUrl) || (isURL(relUrl) ? relUrl : resolveIfNotPlainOrUrl('./' + relUrl, parentUrl));
+    return resolveIfNotPlainOrUrl(relUrl, parentUrl) || (asURL(relUrl) || resolveIfNotPlainOrUrl('./' + relUrl, parentUrl));
   }
 
   function resolveIfNotPlainOrUrl (relUrl, parentUrl) {
@@ -127,6 +127,9 @@
         relUrl.length === 1  && (relUrl += '/')) ||
         relUrl[0] === '/') {
       const parentProtocol = parentUrl.slice(0, parentUrl.indexOf(':') + 1);
+      if (parentProtocol === 'blob:') {
+        throw new TypeError(`Failed to resolve module specifier "${relUrl}". Invalid relative url or base scheme isn't hierarchical.`);
+      }
       // Disabled, but these cases will give inconsistent results for deep backtracking
       //if (parentUrl[parentProtocol.length] !== '/')
       //  throw new Error('Cannot resolve');
@@ -308,33 +311,41 @@
   let supportsJsonAssertions = false;
   let supportsCssAssertions = false;
 
-  let supportsImportMaps = hasDocument && HTMLScriptElement.supports ? HTMLScriptElement.supports('importmap') : false;
-  let supportsImportMeta = supportsImportMaps;
+  const supports = hasDocument && HTMLScriptElement.supports;
+
+  let supportsImportMaps = supports && supports.name === 'supports' && supports('importmap');
+  let supportsImportMeta = supportsDynamicImport;
+  let supportsWasmModules = false;
 
   const importMetaCheck = 'import.meta';
-  const cssModulesCheck = `import"x"assert{type:"css"}`;
-  const jsonModulesCheck = `import"x"assert{type:"json"}`;
+  const moduleCheck = 'import"x"';
+  const cssModulesCheck = `assert{type:"css"}`;
+  const jsonModulesCheck = `assert{type:"json"}`;
 
-  const featureDetectionPromise = Promise.resolve(dynamicImportCheck).then(() => {
-    if (!supportsDynamicImport || supportsImportMaps && !cssModulesEnabled && !jsonModulesEnabled)
+  let featureDetectionPromise = Promise.resolve(dynamicImportCheck).then(() => {
+    if (!supportsDynamicImport)
       return;
-
     if (!hasDocument)
       return Promise.all([
         supportsImportMaps || dynamicImport(createBlob(importMetaCheck)).then(() => supportsImportMeta = true, noop),
-        cssModulesEnabled && dynamicImport(createBlob(cssModulesCheck.replace('x', createBlob('', 'text/css')))).then(() => supportsCssAssertions = true, noop),
-        jsonModulesEnabled && dynamicImport(createBlob(jsonModulescheck.replace('x', createBlob('{}', 'text/json')))).then(() => supportsJsonAssertions = true, noop),
+        cssModulesEnabled && dynamicImport(createBlob(moduleCheck.replace('x', createBlob('', 'text/css')) + cssModulesCheck)).then(() => supportsCssAssertions = true, noop),
+        jsonModulesEnabled && dynamicImport(createBlob(moduleCheck.replace('x', createBlob('{}', 'text/json')) + jsonModulesCheck)).then(() => supportsJsonAssertions = true, noop),
+        wasmModulesEnabled && dynamicImport(createBlob(moduleCheck.replace('x', createBlob(new Uint8Array([0,97,115,109,1,0,0,0]), 'application/wasm')))).then(() => supportsWasmModules = true, noop),
       ]);
 
     return new Promise(resolve => {
       const iframe = document.createElement('iframe');
       iframe.style.display = 'none';
       iframe.setAttribute('nonce', nonce);
-      function cb ({ data: [a, b, c, d] }) {
-        supportsImportMaps = a;
-        supportsImportMeta = b;
-        supportsCssAssertions = c;
-        supportsJsonAssertions = d;
+      function cb ({ data }) {
+        const isFeatureDetectionMessage = Array.isArray(data) && data[0] === 'esms';
+        if (!isFeatureDetectionMessage) {
+          return;
+        }
+        supportsImportMaps = data[1];
+        supportsImportMeta = data[2];
+        supportsCssAssertions = data[3];
+        supportsJsonAssertions = data[4];
         resolve();
         document.head.removeChild(iframe);
         window.removeEventListener('message', cb, false);
@@ -343,9 +354,16 @@
 
       const importMapTest = `<script nonce=${nonce || ''}>b=(s,type='text/javascript')=>URL.createObjectURL(new Blob([s],{type}));document.head.appendChild(Object.assign(document.createElement('script'),{type:'importmap',nonce:"${nonce}",innerText:\`{"imports":{"x":"\${b('')}"}}\`}));Promise.all([${
       supportsImportMaps ? 'true,true' : `'x',b('${importMetaCheck}')`}, ${cssModulesEnabled ? `b('${cssModulesCheck}'.replace('x',b('','text/css')))` : 'false'}, ${
-      jsonModulesEnabled ? `b('${jsonModulesCheck}'.replace('x',b('{}','text/json')))` : 'false'}].map(x =>typeof x==='string'?import(x).then(x =>!!x,()=>false):x)).then(a=>parent.postMessage(a,'*'))<${''}/script>`;
+      jsonModulesEnabled ? `b('${jsonModulesCheck}'.replace('x',b('{}','text/json')))` : 'false'}].map(x =>typeof x==='string'?import(x).then(x =>!!x,()=>false):x)).then(a=>parent.postMessage(['esms'].concat(a),'*'))<${''}/script>`;
 
-      iframe.onload = () => {
+      // Safari will call onload eagerly on head injection, but we don't want the Wechat
+      // path to trigger before setting srcdoc, therefore we track the timing
+      let readyForOnload = false, onloadCalledWhileNotReady = false;
+      function doOnload () {
+        if (!readyForOnload) {
+          onloadCalledWhileNotReady = true;
+          return;
+        }
         // WeChat browser doesn't support setting srcdoc scripts
         // But iframe sandboxes don't support contentDocument so we do this as a fallback
         const doc = iframe.contentDocument;
@@ -356,28 +374,34 @@
           s.innerHTML = importMapTest.slice(15 + (nonce ? nonce.length : 0), -9);
           doc.head.appendChild(s);
         }
-      };
+      }
+
+      iframe.onload = doOnload;
       // WeChat browser requires append before setting srcdoc
       document.head.appendChild(iframe);
+
       // setting srcdoc is not supported in React native webviews on iOS
       // setting src to a blob URL results in a navigation event in webviews
       // document.write gives usability warnings
+      readyForOnload = true;
       if ('srcdoc' in iframe)
         iframe.srcdoc = importMapTest;
       else
         iframe.contentDocument.write(importMapTest);
+      // retrigger onload for Safari only if necessary
+      if (onloadCalledWhileNotReady) doOnload();
     });
   });
 
-  /* es-module-lexer 1.1.0 */
-  const A=1===new Uint8Array(new Uint16Array([1]).buffer)[0];function parse(E,g="@"){if(!C)return init.then((()=>parse(E)));const I=E.length+1,K=(C.__heap_base.value||C.__heap_base)+4*I-C.memory.buffer.byteLength;K>0&&C.memory.grow(Math.ceil(K/65536));const k=C.sa(I-1);if((A?B:Q)(E,new Uint16Array(C.memory.buffer,k,I)),!C.parse())throw Object.assign(new Error(`Parse error ${g}:${E.slice(0,C.e()).split("\n").length}:${C.e()-E.lastIndexOf("\n",C.e()-1)}`),{idx:C.e()});const o=[],D=[];for(;C.ri();){const A=C.is(),Q=C.ie(),B=C.ai(),g=C.id(),I=C.ss(),K=C.se();let k;C.ip()&&(k=w(E.slice(-1===g?A-1:A,-1===g?Q+1:Q))),o.push({n:k,s:A,e:Q,ss:I,se:K,d:g,a:B});}for(;C.re();){const A=C.es(),Q=C.ee(),B=C.els(),g=C.ele(),I=E.slice(A,Q),K=I[0],k=B<0?void 0:E.slice(B,g),o=k?k[0]:"";D.push({s:A,e:Q,ls:B,le:g,n:'"'===K||"'"===K?w(I):I,ln:'"'===o||"'"===o?w(k):k});}function w(A){try{return (0,eval)(A)}catch(A){}}return [o,D,!!C.f()]}function Q(A,Q){const B=A.length;let C=0;for(;C<B;){const B=A.charCodeAt(C);Q[C++]=(255&B)<<8|B>>>8;}}function B(A,Q){const B=A.length;let C=0;for(;C<B;)Q[C]=A.charCodeAt(C++);}let C;const init=WebAssembly.compile((E="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","undefined"!=typeof Buffer?Buffer.from(E,"base64"):Uint8Array.from(atob(E),(A=>A.charCodeAt(0))))).then(WebAssembly.instantiate).then((({exports:A})=>{C=A;}));var E;
+  /* es-module-lexer 1.4.1 */
+  const A=1===new Uint8Array(new Uint16Array([1]).buffer)[0];function parse(E,g="@"){if(!C)return init.then((()=>parse(E)));const I=E.length+1,k=(C.__heap_base.value||C.__heap_base)+4*I-C.memory.buffer.byteLength;k>0&&C.memory.grow(Math.ceil(k/65536));const K=C.sa(I-1);if((A?B:Q)(E,new Uint16Array(C.memory.buffer,K,I)),!C.parse())throw Object.assign(new Error(`Parse error ${g}:${E.slice(0,C.e()).split("\n").length}:${C.e()-E.lastIndexOf("\n",C.e()-1)}`),{idx:C.e()});const o=[],D=[];for(;C.ri();){const A=C.is(),Q=C.ie(),B=C.ai(),g=C.id(),I=C.ss(),k=C.se();let K;C.ip()&&(K=w(E.slice(-1===g?A-1:A,-1===g?Q+1:Q))),o.push({n:K,s:A,e:Q,ss:I,se:k,d:g,a:B});}for(;C.re();){const A=C.es(),Q=C.ee(),B=C.els(),g=C.ele(),I=E.slice(A,Q),k=I[0],K=B<0?void 0:E.slice(B,g),o=K?K[0]:"";D.push({s:A,e:Q,ls:B,le:g,n:'"'===k||"'"===k?w(I):I,ln:'"'===o||"'"===o?w(K):K});}function w(A){try{return (0,eval)(A)}catch(A){}}return [o,D,!!C.f(),!!C.ms()]}function Q(A,Q){const B=A.length;let C=0;for(;C<B;){const B=A.charCodeAt(C);Q[C++]=(255&B)<<8|B>>>8;}}function B(A,Q){const B=A.length;let C=0;for(;C<B;)Q[C]=A.charCodeAt(C++);}let C;const init=WebAssembly.compile((E="AGFzbQEAAAABKghgAX8Bf2AEf39/fwBgAAF/YAAAYAF/AGADf39/AX9gAn9/AX9gAn9/AAMwLwABAQICAgICAgICAgICAgICAgICAAMDAwQEAAAAAwAAAAADAwAFBgAAAAcABgIFBAUBcAEBAQUDAQABBg8CfwFBsPIAC38AQbDyAAsHdRQGbWVtb3J5AgACc2EAAAFlAAMCaXMABAJpZQAFAnNzAAYCc2UABwJhaQAIAmlkAAkCaXAACgJlcwALAmVlAAwDZWxzAA0DZWxlAA4CcmkADwJyZQAQAWYAEQJtcwASBXBhcnNlABMLX19oZWFwX2Jhc2UDAQryPS9oAQF/QQAgADYC9AlBACgC0AkiASAAQQF0aiIAQQA7AQBBACAAQQJqIgA2AvgJQQAgADYC/AlBAEEANgLUCUEAQQA2AuQJQQBBADYC3AlBAEEANgLYCUEAQQA2AuwJQQBBADYC4AkgAQu+AQEDf0EAKALkCSEEQQBBACgC/AkiBTYC5AlBACAENgLoCUEAIAVBIGo2AvwJIARBHGpB1AkgBBsgBTYCAEEAKALICSEEQQAoAsQJIQYgBSABNgIAIAUgADYCCCAFIAIgAkECakEAIAYgA0YbIAQgA0YbNgIMIAUgAzYCFCAFQQA2AhAgBSACNgIEIAVBADYCHCAFQQAoAsQJIANGIgI6ABgCQAJAIAINAEEAKALICSADRw0BC0EAQQE6AIAKCwteAQF/QQAoAuwJIgRBEGpB2AkgBBtBACgC/AkiBDYCAEEAIAQ2AuwJQQAgBEEUajYC/AlBAEEBOgCACiAEQQA2AhAgBCADNgIMIAQgAjYCCCAEIAE2AgQgBCAANgIACwgAQQAoAoQKCxUAQQAoAtwJKAIAQQAoAtAJa0EBdQseAQF/QQAoAtwJKAIEIgBBACgC0AlrQQF1QX8gABsLFQBBACgC3AkoAghBACgC0AlrQQF1Cx4BAX9BACgC3AkoAgwiAEEAKALQCWtBAXVBfyAAGwseAQF/QQAoAtwJKAIQIgBBACgC0AlrQQF1QX8gABsLOwEBfwJAQQAoAtwJKAIUIgBBACgCxAlHDQBBfw8LAkAgAEEAKALICUcNAEF+DwsgAEEAKALQCWtBAXULCwBBACgC3AktABgLFQBBACgC4AkoAgBBACgC0AlrQQF1CxUAQQAoAuAJKAIEQQAoAtAJa0EBdQseAQF/QQAoAuAJKAIIIgBBACgC0AlrQQF1QX8gABsLHgEBf0EAKALgCSgCDCIAQQAoAtAJa0EBdUF/IAAbCyUBAX9BAEEAKALcCSIAQRxqQdQJIAAbKAIAIgA2AtwJIABBAEcLJQEBf0EAQQAoAuAJIgBBEGpB2AkgABsoAgAiADYC4AkgAEEARwsIAEEALQCICgsIAEEALQCACgvyDAEGfyMAQYDQAGsiACQAQQBBAToAiApBAEEAKALMCTYCkApBAEEAKALQCUF+aiIBNgKkCkEAIAFBACgC9AlBAXRqIgI2AqgKQQBBADoAgApBAEEAOwGKCkEAQQA7AYwKQQBBADoAlApBAEEANgKECkEAQQA6APAJQQAgAEGAEGo2ApgKQQAgADYCnApBAEEAOgCgCgJAAkACQAJAA0BBACABQQJqIgM2AqQKIAEgAk8NAQJAIAMvAQAiAkF3akEFSQ0AAkACQAJAAkACQCACQZt/ag4FAQgICAIACyACQSBGDQQgAkEvRg0DIAJBO0YNAgwHC0EALwGMCg0BIAMQFEUNASABQQRqQYIIQQoQLg0BEBVBAC0AiAoNAUEAQQAoAqQKIgE2ApAKDAcLIAMQFEUNACABQQRqQYwIQQoQLg0AEBYLQQBBACgCpAo2ApAKDAELAkAgAS8BBCIDQSpGDQAgA0EvRw0EEBcMAQtBARAYC0EAKAKoCiECQQAoAqQKIQEMAAsLQQAhAiADIQFBAC0A8AkNAgwBC0EAIAE2AqQKQQBBADoAiAoLA0BBACABQQJqIgM2AqQKAkACQAJAAkACQAJAAkACQAJAIAFBACgCqApPDQAgAy8BACICQXdqQQVJDQgCQAJAAkACQAJAAkACQAJAAkACQCACQWBqDgoSEQYRERERBQECAAsCQAJAAkACQCACQaB/ag4KCxQUAxQBFBQUAgALIAJBhX9qDgMFEwYJC0EALwGMCg0SIAMQFEUNEiABQQRqQYIIQQoQLg0SEBUMEgsgAxAURQ0RIAFBBGpBjAhBChAuDREQFgwRCyADEBRFDRAgASkABELsgISDsI7AOVINECABLwEMIgNBd2oiAUEXSw0OQQEgAXRBn4CABHFFDQ4MDwtBAEEALwGMCiIBQQFqOwGMCkEAKAKYCiABQQN0aiIBQQE2AgAgAUEAKAKQCjYCBAwPC0EALwGMCiIDRQ0LQQAgA0F/aiICOwGMCkEALwGKCiIDRQ0OQQAoApgKIAJB//8DcUEDdGooAgBBBUcNDgJAIANBAnRBACgCnApqQXxqKAIAIgIoAgQNACACQQAoApAKQQJqNgIEC0EAIANBf2o7AYoKIAIgAUEEajYCDAwOCwJAQQAoApAKIgEvAQBBKUcNAEEAKALkCSIDRQ0AIAMoAgQgAUcNAEEAQQAoAugJIgM2AuQJAkAgA0UNACADQQA2AhwMAQtBAEEANgLUCQtBAEEALwGMCiIDQQFqOwGMCkEAKAKYCiADQQN0aiIDQQZBAkEALQCgChs2AgAgAyABNgIEQQBBADoAoAoMDQtBAC8BjAoiAUUNCUEAIAFBf2oiATsBjApBACgCmAogAUH//wNxQQN0aigCAEEERg0EDAwLQScQGQwLC0EiEBkMCgsgAkEvRw0JAkACQCABLwEEIgFBKkYNACABQS9HDQEQFwwMC0EBEBgMCwsCQAJAQQAoApAKIgEvAQAiAxAaRQ0AAkACQCADQVVqDgQACAEDCAsgAUF+ai8BAEErRg0GDAcLIAFBfmovAQBBLUYNBQwGCwJAIANB/QBGDQAgA0EpRw0FQQAoApgKQQAvAYwKQQN0aigCBBAbRQ0FDAYLQQAoApgKQQAvAYwKQQN0aiICKAIEEBwNBSACKAIAQQZGDQUMBAsgAUF+ai8BAEFQakH//wNxQQpJDQMMBAtBACgCmApBAC8BjAoiAUEDdCIDakEAKAKQCjYCBEEAIAFBAWo7AYwKQQAoApgKIANqQQM2AgALEB0MBwtBAC0A8AlBAC8BigpBAC8BjApyckUhAgwJCyABEB4NACADRQ0AIANBL0ZBAC0AlApBAEdxDQAgAUF+aiEBQQAoAtAJIQICQANAIAFBAmoiBCACTQ0BQQAgATYCkAogAS8BACEDIAFBfmoiBCEBIAMQH0UNAAsgBEECaiEEC0EBIQUgA0H//wNxECBFDQEgBEF+aiEBAkADQCABQQJqIgMgAk0NAUEAIAE2ApAKIAEvAQAhAyABQX5qIgQhASADECANAAsgBEECaiEDCyADECFFDQEQIkEAQQA6AJQKDAULECJBACEFC0EAIAU6AJQKDAMLECNBACECDAULIANBoAFHDQELQQBBAToAoAoLQQBBACgCpAo2ApAKC0EAKAKkCiEBDAALCyAAQYDQAGokACACCxoAAkBBACgC0AkgAEcNAEEBDwsgAEF+ahAkC/wKAQZ/QQBBACgCpAoiAEEMaiIBNgKkCkEAKALsCSECQQEQKCEDAkACQAJAAkACQAJAAkACQAJAQQAoAqQKIgQgAUcNACADECdFDQELAkACQAJAAkACQAJAAkAgA0EqRg0AIANB+wBHDQFBACAEQQJqNgKkCkEBECghA0EAKAKkCiEEA0ACQAJAIANB//8DcSIDQSJGDQAgA0EnRg0AIAMQKxpBACgCpAohAwwBCyADEBlBAEEAKAKkCkECaiIDNgKkCgtBARAoGgJAIAQgAxAsIgNBLEcNAEEAQQAoAqQKQQJqNgKkCkEBECghAwsgA0H9AEYNA0EAKAKkCiIFIARGDQ8gBSEEIAVBACgCqApNDQAMDwsLQQAgBEECajYCpApBARAoGkEAKAKkCiIDIAMQLBoMAgtBAEEAOgCICgJAAkACQAJAAkACQCADQZ9/ag4MAgsEAQsDCwsLCwsFAAsgA0H2AEYNBAwKC0EAIARBDmoiAzYCpAoCQAJAAkBBARAoQZ9/ag4GABICEhIBEgtBACgCpAoiBSkAAkLzgOSD4I3AMVINESAFLwEKECBFDRFBACAFQQpqNgKkCkEAECgaC0EAKAKkCiIFQQJqQaIIQQ4QLg0QIAUvARAiAkF3aiIBQRdLDQ1BASABdEGfgIAEcUUNDQwOC0EAKAKkCiIFKQACQuyAhIOwjsA5Ug0PIAUvAQoiAkF3aiIBQRdNDQYMCgtBACAEQQpqNgKkCkEAECgaQQAoAqQKIQQLQQAgBEEQajYCpAoCQEEBECgiBEEqRw0AQQBBACgCpApBAmo2AqQKQQEQKCEEC0EAKAKkCiEDIAQQKxogA0EAKAKkCiIEIAMgBBACQQBBACgCpApBfmo2AqQKDwsCQCAEKQACQuyAhIOwjsA5Ug0AIAQvAQoQH0UNAEEAIARBCmo2AqQKQQEQKCEEQQAoAqQKIQMgBBArGiADQQAoAqQKIgQgAyAEEAJBAEEAKAKkCkF+ajYCpAoPC0EAIARBBGoiBDYCpAoLQQAgBEEGajYCpApBAEEAOgCICkEBECghBEEAKAKkCiEDIAQQKyEEQQAoAqQKIQIgBEHf/wNxIgFB2wBHDQNBACACQQJqNgKkCkEBECghBUEAKAKkCiEDQQAhBAwEC0EAQQE6AIAKQQBBACgCpApBAmo2AqQKC0EBECghBEEAKAKkCiEDAkAgBEHmAEcNACADQQJqQZwIQQYQLg0AQQAgA0EIajYCpAogAEEBECgQKiACQRBqQdgJIAIbIQMDQCADKAIAIgNFDQUgA0IANwIIIANBEGohAwwACwtBACADQX5qNgKkCgwDC0EBIAF0QZ+AgARxRQ0DDAQLQQEhBAsDQAJAAkAgBA4CAAEBCyAFQf//A3EQKxpBASEEDAELAkACQEEAKAKkCiIEIANGDQAgAyAEIAMgBBACQQEQKCEEAkAgAUHbAEcNACAEQSByQf0ARg0EC0EAKAKkCiEDAkAgBEEsRw0AQQAgA0ECajYCpApBARAoIQVBACgCpAohAyAFQSByQfsARw0CC0EAIANBfmo2AqQKCyABQdsARw0CQQAgAkF+ajYCpAoPC0EAIQQMAAsLDwsgAkGgAUYNACACQfsARw0EC0EAIAVBCmo2AqQKQQEQKCIFQfsARg0DDAILAkAgAkFYag4DAQMBAAsgAkGgAUcNAgtBACAFQRBqNgKkCgJAQQEQKCIFQSpHDQBBAEEAKAKkCkECajYCpApBARAoIQULIAVBKEYNAQtBACgCpAohASAFECsaQQAoAqQKIgUgAU0NACAEIAMgASAFEAJBAEEAKAKkCkF+ajYCpAoPCyAEIANBAEEAEAJBACAEQQxqNgKkCg8LECML1AYBBH9BAEEAKAKkCiIAQQxqIgE2AqQKAkACQAJAAkACQAJAAkACQAJAAkBBARAoIgJBWWoOCAQCAQQBAQEDAAsgAkEiRg0DIAJB+wBGDQQLQQAoAqQKIAFHDQJBACAAQQpqNgKkCg8LQQAoApgKQQAvAYwKIgJBA3RqIgFBACgCpAo2AgRBACACQQFqOwGMCiABQQU2AgBBACgCkAovAQBBLkYNA0EAQQAoAqQKIgFBAmo2AqQKQQEQKCECIABBACgCpApBACABEAFBAEEALwGKCiIBQQFqOwGKCkEAKAKcCiABQQJ0akEAKALkCTYCAAJAIAJBIkYNACACQSdGDQBBAEEAKAKkCkF+ajYCpAoPCyACEBlBAEEAKAKkCkECaiICNgKkCgJAAkACQEEBEChBV2oOBAECAgACC0EAQQAoAqQKQQJqNgKkCkEBECgaQQAoAuQJIgEgAjYCBCABQQE6ABggAUEAKAKkCiICNgIQQQAgAkF+ajYCpAoPC0EAKALkCSIBIAI2AgQgAUEBOgAYQQBBAC8BjApBf2o7AYwKIAFBACgCpApBAmo2AgxBAEEALwGKCkF/ajsBigoPC0EAQQAoAqQKQX5qNgKkCg8LQQBBACgCpApBAmo2AqQKQQEQKEHtAEcNAkEAKAKkCiICQQJqQZYIQQYQLg0CAkBBACgCkAoiARApDQAgAS8BAEEuRg0DCyAAIAAgAkEIakEAKALICRABDwtBAC8BjAoNAkEAKAKkCiECQQAoAqgKIQMDQCACIANPDQUCQAJAIAIvAQAiAUEnRg0AIAFBIkcNAQsgACABECoPC0EAIAJBAmoiAjYCpAoMAAsLQQAoAqQKIQJBAC8BjAoNAgJAA0ACQAJAAkAgAkEAKAKoCk8NAEEBECgiAkEiRg0BIAJBJ0YNASACQf0ARw0CQQBBACgCpApBAmo2AqQKC0EBECghAUEAKAKkCiECAkAgAUHmAEcNACACQQJqQZwIQQYQLg0IC0EAIAJBCGo2AqQKQQEQKCICQSJGDQMgAkEnRg0DDAcLIAIQGQtBAEEAKAKkCkECaiICNgKkCgwACwsgACACECoLDwtBAEEAKAKkCkF+ajYCpAoPC0EAIAJBfmo2AqQKDwsQIwtHAQN/QQAoAqQKQQJqIQBBACgCqAohAQJAA0AgACICQX5qIAFPDQEgAkECaiEAIAIvAQBBdmoOBAEAAAEACwtBACACNgKkCguYAQEDf0EAQQAoAqQKIgFBAmo2AqQKIAFBBmohAUEAKAKoCiECA0ACQAJAAkAgAUF8aiACTw0AIAFBfmovAQAhAwJAAkAgAA0AIANBKkYNASADQXZqDgQCBAQCBAsgA0EqRw0DCyABLwEAQS9HDQJBACABQX5qNgKkCgwBCyABQX5qIQELQQAgATYCpAoPCyABQQJqIQEMAAsLiAEBBH9BACgCpAohAUEAKAKoCiECAkACQANAIAEiA0ECaiEBIAMgAk8NASABLwEAIgQgAEYNAgJAIARB3ABGDQAgBEF2ag4EAgEBAgELIANBBGohASADLwEEQQ1HDQAgA0EGaiABIAMvAQZBCkYbIQEMAAsLQQAgATYCpAoQIw8LQQAgATYCpAoLbAEBfwJAAkAgAEFfaiIBQQVLDQBBASABdEExcQ0BCyAAQUZqQf//A3FBBkkNACAAQSlHIABBWGpB//8DcUEHSXENAAJAIABBpX9qDgQBAAABAAsgAEH9AEcgAEGFf2pB//8DcUEESXEPC0EBCy4BAX9BASEBAkAgAEGWCUEFECUNACAAQaAJQQMQJQ0AIABBpglBAhAlIQELIAELgwEBAn9BASEBAkACQAJAAkACQAJAIAAvAQAiAkFFag4EBQQEAQALAkAgAkGbf2oOBAMEBAIACyACQSlGDQQgAkH5AEcNAyAAQX5qQbIJQQYQJQ8LIABBfmovAQBBPUYPCyAAQX5qQaoJQQQQJQ8LIABBfmpBvglBAxAlDwtBACEBCyABC94BAQR/QQAoAqQKIQBBACgCqAohAQJAAkACQANAIAAiAkECaiEAIAIgAU8NAQJAAkACQCAALwEAIgNBpH9qDgUCAwMDAQALIANBJEcNAiACLwEEQfsARw0CQQAgAkEEaiIANgKkCkEAQQAvAYwKIgJBAWo7AYwKQQAoApgKIAJBA3RqIgJBBDYCACACIAA2AgQPC0EAIAA2AqQKQQBBAC8BjApBf2oiADsBjApBACgCmAogAEH//wNxQQN0aigCAEEDRw0DDAQLIAJBBGohAAwACwtBACAANgKkCgsQIwsLtAMBAn9BACEBAkACQAJAAkACQAJAAkACQAJAAkAgAC8BAEGcf2oOFAABAgkJCQkDCQkEBQkJBgkHCQkICQsCQAJAIABBfmovAQBBl39qDgQACgoBCgsgAEF8akG6CEECECUPCyAAQXxqQb4IQQMQJQ8LAkACQAJAIABBfmovAQBBjX9qDgMAAQIKCwJAIABBfGovAQAiAkHhAEYNACACQewARw0KIABBempB5QAQJg8LIABBempB4wAQJg8LIABBfGpBxAhBBBAlDwsgAEF8akHMCEEGECUPCyAAQX5qLwEAQe8ARw0GIABBfGovAQBB5QBHDQYCQCAAQXpqLwEAIgJB8ABGDQAgAkHjAEcNByAAQXhqQdgIQQYQJQ8LIABBeGpB5AhBAhAlDwsgAEF+akHoCEEEECUPC0EBIQEgAEF+aiIAQekAECYNBCAAQfAIQQUQJQ8LIABBfmpB5AAQJg8LIABBfmpB+ghBBxAlDwsgAEF+akGICUEEECUPCwJAIABBfmovAQAiAkHvAEYNACACQeUARw0BIABBfGpB7gAQJg8LIABBfGpBkAlBAxAlIQELIAELNAEBf0EBIQECQCAAQXdqQf//A3FBBUkNACAAQYABckGgAUYNACAAQS5HIAAQJ3EhAQsgAQswAQF/AkACQCAAQXdqIgFBF0sNAEEBIAF0QY2AgARxDQELIABBoAFGDQBBAA8LQQELTgECf0EAIQECQAJAIAAvAQAiAkHlAEYNACACQesARw0BIABBfmpB6AhBBBAlDwsgAEF+ai8BAEH1AEcNACAAQXxqQcwIQQYQJSEBCyABC3ABAn8CQAJAA0BBAEEAKAKkCiIAQQJqIgE2AqQKIABBACgCqApPDQECQAJAAkAgAS8BACIBQaV/ag4CAQIACwJAIAFBdmoOBAQDAwQACyABQS9HDQIMBAsQLRoMAQtBACAAQQRqNgKkCgwACwsQIwsLNQEBf0EAQQE6APAJQQAoAqQKIQBBAEEAKAKoCkECajYCpApBACAAQQAoAtAJa0EBdTYChAoLQwECf0EBIQECQCAALwEAIgJBd2pB//8DcUEFSQ0AIAJBgAFyQaABRg0AQQAhASACECdFDQAgAkEuRyAAEClyDwsgAQtGAQN/QQAhAwJAIAAgAkEBdCICayIEQQJqIgBBACgC0AkiBUkNACAAIAEgAhAuDQACQCAAIAVHDQBBAQ8LIAQQJCEDCyADCz0BAn9BACECAkBBACgC0AkiAyAASw0AIAAvAQAgAUcNAAJAIAMgAEcNAEEBDwsgAEF+ai8BABAfIQILIAILaAECf0EBIQECQAJAIABBX2oiAkEFSw0AQQEgAnRBMXENAQsgAEH4/wNxQShGDQAgAEFGakH//wNxQQZJDQACQCAAQaV/aiICQQNLDQAgAkEBRw0BCyAAQYV/akH//wNxQQRJIQELIAELnAEBA39BACgCpAohAQJAA0ACQAJAIAEvAQAiAkEvRw0AAkAgAS8BAiIBQSpGDQAgAUEvRw0EEBcMAgsgABAYDAELAkACQCAARQ0AIAJBd2oiAUEXSw0BQQEgAXRBn4CABHFFDQEMAgsgAhAgRQ0DDAELIAJBoAFHDQILQQBBACgCpAoiA0ECaiIBNgKkCiADQQAoAqgKSQ0ACwsgAgsxAQF/QQAhAQJAIAAvAQBBLkcNACAAQX5qLwEAQS5HDQAgAEF8ai8BAEEuRiEBCyABC4kEAQF/AkAgAUEiRg0AIAFBJ0YNABAjDwtBACgCpAohAiABEBkgACACQQJqQQAoAqQKQQAoAsQJEAFBAEEAKAKkCkECajYCpAoCQAJAAkACQEEAECgiAUHhAEYNACABQfcARg0BQQAoAqQKIQEMAgtBACgCpAoiAUECakGwCEEKEC4NAUEGIQAMAgtBACgCpAoiAS8BAkHpAEcNACABLwEEQfQARw0AQQQhACABLwEGQegARg0BC0EAIAFBfmo2AqQKDwtBACABIABBAXRqNgKkCgJAQQEQKEH7AEYNAEEAIAE2AqQKDwtBACgCpAoiAiEAA0BBACAAQQJqNgKkCgJAAkACQEEBECgiAEEiRg0AIABBJ0cNAUEnEBlBAEEAKAKkCkECajYCpApBARAoIQAMAgtBIhAZQQBBACgCpApBAmo2AqQKQQEQKCEADAELIAAQKyEACwJAIABBOkYNAEEAIAE2AqQKDwtBAEEAKAKkCkECajYCpAoCQEEBECgiAEEiRg0AIABBJ0YNAEEAIAE2AqQKDwsgABAZQQBBACgCpApBAmo2AqQKAkACQEEBECgiAEEsRg0AIABB/QBGDQFBACABNgKkCg8LQQBBACgCpApBAmo2AqQKQQEQKEH9AEYNAEEAKAKkCiEADAELC0EAKALkCSIBIAI2AhAgAUEAKAKkCkECajYCDAttAQJ/AkACQANAAkAgAEH//wNxIgFBd2oiAkEXSw0AQQEgAnRBn4CABHENAgsgAUGgAUYNASAAIQIgARAnDQJBACECQQBBACgCpAoiAEECajYCpAogAC8BAiIADQAMAgsLIAAhAgsgAkH//wNxC6sBAQR/AkACQEEAKAKkCiICLwEAIgNB4QBGDQAgASEEIAAhBQwBC0EAIAJBBGo2AqQKQQEQKCECQQAoAqQKIQUCQAJAIAJBIkYNACACQSdGDQAgAhArGkEAKAKkCiEEDAELIAIQGUEAQQAoAqQKQQJqIgQ2AqQKC0EBECghA0EAKAKkCiECCwJAIAIgBUYNACAFIARBACAAIAAgAUYiAhtBACABIAIbEAILIAMLcgEEf0EAKAKkCiEAQQAoAqgKIQECQAJAA0AgAEECaiECIAAgAU8NAQJAAkAgAi8BACIDQaR/ag4CAQQACyACIQAgA0F2ag4EAgEBAgELIABBBGohAAwACwtBACACNgKkChAjQQAPC0EAIAI2AqQKQd0AC0kBA39BACEDAkAgAkUNAAJAA0AgAC0AACIEIAEtAAAiBUcNASABQQFqIQEgAEEBaiEAIAJBf2oiAg0ADAILCyAEIAVrIQMLIAMLC+IBAgBBgAgLxAEAAHgAcABvAHIAdABtAHAAbwByAHQAZQB0AGEAcgBvAG0AdQBuAGMAdABpAG8AbgBzAHMAZQByAHQAdgBvAHkAaQBlAGQAZQBsAGUAYwBvAG4AdABpAG4AaQBuAHMAdABhAG4AdAB5AGIAcgBlAGEAcgBlAHQAdQByAGQAZQBiAHUAZwBnAGUAYQB3AGEAaQB0AGgAcgB3AGgAaQBsAGUAZgBvAHIAaQBmAGMAYQB0AGMAZgBpAG4AYQBsAGwAZQBsAHMAAEHECQsQAQAAAAIAAAAABAAAMDkAAA==","undefined"!=typeof Buffer?Buffer.from(E,"base64"):Uint8Array.from(atob(E),(A=>A.charCodeAt(0))))).then(WebAssembly.instantiate).then((({exports:A})=>{C=A;}));var E;
 
   async function _resolve (id, parentUrl) {
-    const urlResolved = resolveIfNotPlainOrUrl(id, parentUrl);
+    const urlResolved = resolveIfNotPlainOrUrl(id, parentUrl) || asURL(id);
     return {
       r: resolveImportMap(importMap, urlResolved || id, parentUrl) || throwUnresolved(id, parentUrl),
       // b = bare specifier
-      b: !urlResolved && !isURL(id)
+      b: !urlResolved && !asURL(id)
     };
   }
 
@@ -386,7 +410,7 @@
     // will be deprecated in next major
     if (result && result.then)
       result = await result;
-    return result ? { r: result, b: !resolveIfNotPlainOrUrl(id, parentUrl) && !isURL(id) } : _resolve(id, parentUrl);
+    return result ? { r: result, b: !resolveIfNotPlainOrUrl(id, parentUrl) && !asURL(id) } : _resolve(id, parentUrl);
   } : _resolve;
 
   // importShim('mod');
@@ -439,6 +463,7 @@
   };
 
   const registry = importShim._r = {};
+  importShim._w = {};
 
   async function loadAll (load, seen) {
     if (load.b || seen[load.u])
@@ -454,7 +479,7 @@
   let baselinePassthrough;
 
   const initPromise = featureDetectionPromise.then(() => {
-    baselinePassthrough = esmsInitOptions.polyfillEnable !== true && supportsDynamicImport && supportsImportMeta && supportsImportMaps && (!jsonModulesEnabled || supportsJsonAssertions) && (!cssModulesEnabled || supportsCssAssertions) && !importMapSrcOrLazy && !false;
+    baselinePassthrough = esmsInitOptions.polyfillEnable !== true && supportsDynamicImport && supportsImportMeta && supportsImportMaps && (!jsonModulesEnabled || supportsJsonAssertions) && (!cssModulesEnabled || supportsCssAssertions) && (!wasmModulesEnabled || supportsWasmModules) && !importMapSrcOrLazy;
     if (hasDocument) {
       if (!supportsImportMaps) {
         const supports = HTMLScriptElement.supports || (type => type === 'classic' || type === 'module');
@@ -520,10 +545,10 @@
     lastLoad = undefined;
     resolveDeps(load, seen);
     await lastStaticLoadPromise;
-    if (source && !shimMode && !load.n && !false) {
-      const module = await dynamicImport(createBlob(source), { errUrl: source });
+    if (source && !shimMode && !load.n) {
+      if (nativelyLoaded) return;
       if (revokeBlobURLs) revokeObjectURLs(Object.keys(seen));
-      return module;
+      return await dynamicImport(createBlob(source), { errUrl: source });
     }
     if (firstPolyfillLoad && !shimMode && load.n && nativelyLoaded) {
       onpolyfill();
@@ -577,90 +602,112 @@
     // edge doesnt execute sibling in order, so we fix this up by ensuring all previous executions are explicit dependencies
     let resolvedSource = edge && lastLoad ? `import '${lastLoad}';` : '';
 
-    if (!imports.length) {
-      resolvedSource += source;
-    }
-    else {
-      // once all deps have loaded we can inline the dependency resolution blobs
-      // and define this blob
-      let lastIndex = 0, depIndex = 0, dynamicImportEndStack = [];
-      function pushStringTo (originalIndex) {
-        while (dynamicImportEndStack[dynamicImportEndStack.length - 1] < originalIndex) {
-          const dynamicImportEnd = dynamicImportEndStack.pop();
-          resolvedSource += `${source.slice(lastIndex, dynamicImportEnd)}, ${urlJsString(load.r)}`;
-          lastIndex = dynamicImportEnd;
-        }
-        resolvedSource += source.slice(lastIndex, originalIndex);
-        lastIndex = originalIndex;
+    // once all deps have loaded we can inline the dependency resolution blobs
+    // and define this blob
+    let lastIndex = 0, depIndex = 0, dynamicImportEndStack = [];
+    function pushStringTo (originalIndex) {
+      while (dynamicImportEndStack[dynamicImportEndStack.length - 1] < originalIndex) {
+        const dynamicImportEnd = dynamicImportEndStack.pop();
+        resolvedSource += `${source.slice(lastIndex, dynamicImportEnd)}, ${urlJsString(load.r)}`;
+        lastIndex = dynamicImportEnd;
       }
-      for (const { s: start, ss: statementStart, se: statementEnd, d: dynamicImportIndex } of imports) {
-        // dependency source replacements
-        if (dynamicImportIndex === -1) {
-          let depLoad = load.d[depIndex++], blobUrl = depLoad.b, cycleShell = !blobUrl;
-          if (cycleShell) {
-            // circular shell creation
-            if (!(blobUrl = depLoad.s)) {
-              blobUrl = depLoad.s = createBlob(`export function u$_(m){${
-              depLoad.a[1].map(({ s, e }, i) => {
-                const q = depLoad.S[s] === '"' || depLoad.S[s] === "'";
-                return `e$_${i}=m${q ? `[` : '.'}${depLoad.S.slice(s, e)}${q ? `]` : ''}`;
-              }).join(',')
-            }}${
-              depLoad.a[1].length ? `let ${depLoad.a[1].map((_, i) => `e$_${i}`).join(',')};` : ''
-            }export {${
-              depLoad.a[1].map(({ s, e }, i) => `e$_${i} as ${depLoad.S.slice(s, e)}`).join(',')
-            }}\n//# sourceURL=${depLoad.r}?cycle`);
-            }
-          }
-
-          pushStringTo(start - 1);
-          resolvedSource += `/*${source.slice(start - 1, statementEnd)}*/${urlJsString(blobUrl)}`;
-
-          // circular shell execution
-          if (!cycleShell && depLoad.s) {
-            resolvedSource += `;import*as m$_${depIndex} from'${depLoad.b}';import{u$_ as u$_${depIndex}}from'${depLoad.s}';u$_${depIndex}(m$_${depIndex})`;
-            depLoad.s = undefined;
-          }
-          lastIndex = statementEnd;
-        }
-        // import.meta
-        else if (dynamicImportIndex === -2) {
-          load.m = { url: load.r, resolve: metaResolve };
-          metaHook(load.m, load.u);
-          pushStringTo(start);
-          resolvedSource += `importShim._r[${urlJsString(load.u)}].m`;
-          lastIndex = statementEnd;
-        }
-        // dynamic import
-        else {
-          pushStringTo(statementStart + 6);
-          resolvedSource += `Shim(`;
-          dynamicImportEndStack.push(statementEnd - 1);
-          lastIndex = start;
-        }
-      }
-
-      // support progressive cycle binding updates (try statement avoids tdz errors)
-      if (load.s)
-        resolvedSource += `\n;import{u$_}from'${load.s}';try{u$_({${exports.filter(e => e.ln).map(({ s, e, ln }) => `${source.slice(s, e)}:${ln}`).join(',')}})}catch(_){};\n`;
-
-      pushStringTo(source.length);
+      resolvedSource += source.slice(lastIndex, originalIndex);
+      lastIndex = originalIndex;
     }
 
-    let hasSourceURL = false;
-    resolvedSource = resolvedSource.replace(sourceMapURLRegEx, (match, isMapping, url) => (hasSourceURL = !isMapping, match.replace(url, () => new URL(url, load.r))));
-    if (!hasSourceURL)
-      resolvedSource += '\n//# sourceURL=' + load.r;
+    for (const { s: start, ss: statementStart, se: statementEnd, d: dynamicImportIndex } of imports) {
+      // dependency source replacements
+      if (dynamicImportIndex === -1) {
+        let depLoad = load.d[depIndex++], blobUrl = depLoad.b, cycleShell = !blobUrl;
+        if (cycleShell) {
+          // circular shell creation
+          if (!(blobUrl = depLoad.s)) {
+            blobUrl = depLoad.s = createBlob(`export function u$_(m){${
+            depLoad.a[1].map(({ s, e }, i) => {
+              const q = depLoad.S[s] === '"' || depLoad.S[s] === "'";
+              return `e$_${i}=m${q ? `[` : '.'}${depLoad.S.slice(s, e)}${q ? `]` : ''}`;
+            }).join(',')
+          }}${
+            depLoad.a[1].length ? `let ${depLoad.a[1].map((_, i) => `e$_${i}`).join(',')};` : ''
+          }export {${
+            depLoad.a[1].map(({ s, e }, i) => `e$_${i} as ${depLoad.S.slice(s, e)}`).join(',')
+          }}\n//# sourceURL=${depLoad.r}?cycle`);
+          }
+        }
+
+        pushStringTo(start - 1);
+        resolvedSource += `/*${source.slice(start - 1, statementEnd)}*/${urlJsString(blobUrl)}`;
+
+        // circular shell execution
+        if (!cycleShell && depLoad.s) {
+          resolvedSource += `;import*as m$_${depIndex} from'${depLoad.b}';import{u$_ as u$_${depIndex}}from'${depLoad.s}';u$_${depIndex}(m$_${depIndex})`;
+          depLoad.s = undefined;
+        }
+        lastIndex = statementEnd;
+      }
+      // import.meta
+      else if (dynamicImportIndex === -2) {
+        load.m = { url: load.r, resolve: metaResolve };
+        metaHook(load.m, load.u);
+        pushStringTo(start);
+        resolvedSource += `importShim._r[${urlJsString(load.u)}].m`;
+        lastIndex = statementEnd;
+      }
+      // dynamic import
+      else {
+        pushStringTo(statementStart + 6);
+        resolvedSource += `Shim(`;
+        dynamicImportEndStack.push(statementEnd - 1);
+        lastIndex = start;
+      }
+    }
+
+    // support progressive cycle binding updates (try statement avoids tdz errors)
+    if (load.s)
+      resolvedSource += `\n;import{u$_}from'${load.s}';try{u$_({${exports.filter(e => e.ln).map(({ s, e, ln }) => `${source.slice(s, e)}:${ln}`).join(',')}})}catch(_){};\n`;
+
+    function pushSourceURL (commentPrefix, commentStart) {
+      const urlStart = commentStart + commentPrefix.length;
+      const commentEnd = source.indexOf('\n', urlStart);
+      const urlEnd = commentEnd !== -1 ? commentEnd : source.length;
+      pushStringTo(urlStart);
+      resolvedSource += new URL(source.slice(urlStart, urlEnd), load.r).href;
+      lastIndex = urlEnd;
+    }
+
+    let sourceURLCommentStart = source.lastIndexOf(sourceURLCommentPrefix);
+    let sourceMapURLCommentStart = source.lastIndexOf(sourceMapURLCommentPrefix);
+
+    // ignore sourceMap comments before already spliced code
+    if (sourceURLCommentStart < lastIndex) sourceURLCommentStart = -1;
+    if (sourceMapURLCommentStart < lastIndex) sourceMapURLCommentStart = -1;
+
+    // sourceURL first / only
+    if (sourceURLCommentStart !== -1 && (sourceMapURLCommentStart === -1 || sourceMapURLCommentStart > sourceURLCommentStart)) {
+      pushSourceURL(sourceURLCommentPrefix, sourceURLCommentStart);
+    }
+    // sourceMappingURL
+    if (sourceMapURLCommentStart !== -1) {
+      pushSourceURL(sourceMapURLCommentPrefix, sourceMapURLCommentStart);
+      // sourceURL last
+      if (sourceURLCommentStart !== -1 && (sourceURLCommentStart > sourceMapURLCommentStart))
+        pushSourceURL(sourceURLCommentPrefix, sourceURLCommentStart);
+    }
+
+    pushStringTo(source.length);
+
+    if (sourceURLCommentStart === -1)
+      resolvedSource += sourceURLCommentPrefix + load.r;
 
     load.b = lastLoad = createBlob(resolvedSource);
     load.S = undefined;
   }
 
-  // ; and // trailer support added for Ruby on Rails 7 source maps compatibility
-  // https://github.com/guybedford/es-module-shims/issues/228
-  const sourceMapURLRegEx = /\n\/\/# source(Mapping)?URL=([^\n]+)\s*((;|\/\/[^#][^\n]*)\s*)*$/;
+  const sourceURLCommentPrefix = '\n//# sourceURL=';
+  const sourceMapURLCommentPrefix = '\n//# sourceMappingURL=';
 
   const jsContentType = /^(text|application)\/(x-)?javascript(;|$)/;
+  const wasmContentType = /^(application)\/wasm(;|$)/;
   const jsonContentType = /^(text|application)\/json(;|$)/;
   const cssContentType = /^(text|application)\/css(;|$)/;
 
@@ -694,8 +741,12 @@
     finally {
       popFetchPool();
     }
-    if (!res.ok)
-      throw Error(`${res.status} ${res.statusText} ${res.url}${fromParent(parent)}`);
+
+    if (!res.ok) {
+      const error = new TypeError(`${res.status} ${res.statusText} ${res.url}${fromParent(parent)}`);
+      error.response = res;
+      throw error;
+    }
     return res;
   }
 
@@ -704,6 +755,20 @@
     const contentType = res.headers.get('content-type');
     if (jsContentType.test(contentType))
       return { r: res.url, s: await res.text(), t: 'js' };
+    else if (wasmContentType.test(contentType)) {
+      const module = importShim._w[url] = await WebAssembly.compileStreaming(res);
+      let s = '', i = 0, importObj = '';
+      for (const impt of WebAssembly.Module.imports(module)) {
+        s += `import * as impt${i} from '${impt.module}';\n`;
+        importObj += `'${impt.module}':impt${i++},`;
+      }
+      i = 0;
+      s += `const instance = await WebAssembly.instantiate(importShim._w['${url}'], {${importObj}});\n`;
+      for (const expt of WebAssembly.Module.exports(module)) {
+        s += `export const ${expt.name} = instance.exports['${expt.name}'];\n`;
+      }
+      return { r: res.url, s, t: 'wasm' };
+    }
     else if (jsonContentType.test(contentType))
       return { r: res.url, s: `export default ${await res.text()}`, t: 'json' };
     else if (cssContentType.test(contentType)) {
@@ -759,9 +824,9 @@
         let t;
         ({ r: load.r, s: source, t } = await (fetchCache[url] || fetchModule(url, fetchOpts, parent)));
         if (t && !shimMode) {
-          if (t === 'css' && !cssModulesEnabled || t === 'json' && !jsonModulesEnabled)
+          if (t === 'css' && !cssModulesEnabled || t === 'json' && !jsonModulesEnabled || t === 'wasm' && !wasmModulesEnabled)
             throw Error(`${t}-modules require <script type="esms-options">{ "polyfillEnable": ["${t}-modules"] }<${''}/script>`);
-          if (t === 'css' && !supportsCssAssertions || t === 'json' && !supportsJsonAssertions)
+          if (t === 'css' && !supportsCssAssertions || t === 'json' && !supportsJsonAssertions || t === 'wasm' && !supportsWasmModules)
             load.n = true;
         }
       }
@@ -785,7 +850,7 @@
         const { r, b } = await resolve(n, load.r || load.u);
         if (b && (!supportsImportMaps || importMapSrcOrLazy))
           load.n = true;
-        if (d !== -1) return;      
+        if (d !== -1) return;
         if (skip && skip(r)) return { b: r };
         if (childFetchOpts.integrity)
           childFetchOpts = Object.assign({}, childFetchOpts, { integrity: undefined });
@@ -811,11 +876,13 @@
     const fetchOpts = {};
     if (script.integrity)
       fetchOpts.integrity = script.integrity;
-    if (script.referrerpolicy)
-      fetchOpts.referrerPolicy = script.referrerpolicy;
-    if (script.crossorigin === 'use-credentials')
+    if (script.referrerPolicy)
+      fetchOpts.referrerPolicy = script.referrerPolicy;
+    if (script.fetchPriority)
+      fetchOpts.priority = script.fetchPriority;
+    if (script.crossOrigin === 'use-credentials')
       fetchOpts.credentials = 'include';
-    else if (script.crossorigin === 'anonymous')
+    else if (script.crossOrigin === 'anonymous')
       fetchOpts.credentials = 'omit';
     else
       fetchOpts.credentials = 'same-origin';
@@ -826,22 +893,23 @@
 
   let domContentLoadedCnt = 1;
   function domContentLoadedCheck () {
-    if (--domContentLoadedCnt === 0 && !noLoadEventRetriggers)
+    if (--domContentLoadedCnt === 0 && !noLoadEventRetriggers && (shimMode || !baselinePassthrough)) {
       document.dispatchEvent(new Event('DOMContentLoaded'));
+    }
   }
   // this should always trigger because we assume es-module-shims is itself a domcontentloaded requirement
   if (hasDocument) {
     document.addEventListener('DOMContentLoaded', async () => {
       await initPromise;
-      if (shimMode || !baselinePassthrough)
-        domContentLoadedCheck();
+      domContentLoadedCheck();
     });
   }
 
   let readyStateCompleteCnt = 1;
   function readyStateCompleteCheck () {
-    if (--readyStateCompleteCnt === 0 && !noLoadEventRetriggers)
+    if (--readyStateCompleteCnt === 0 && !noLoadEventRetriggers && (shimMode || !baselinePassthrough)) {
       document.dispatchEvent(new Event('readystatechange'));
+    }
   }
 
   const hasNext = script => script.nextSibling || script.parentNode && hasNext(script.parentNode);
@@ -879,7 +947,15 @@
     const isDomContentLoadedScript = domContentLoadedCnt > 0;
     if (isBlockingReadyScript) readyStateCompleteCnt++;
     if (isDomContentLoadedScript) domContentLoadedCnt++;
-    const loadPromise = topLevelLoad(script.src || baseUrl, getFetchOpts(script), !script.src && script.innerHTML, !shimMode, isBlockingReadyScript && lastStaticLoadPromise).catch(throwError);
+    const loadPromise = topLevelLoad(script.src || baseUrl, getFetchOpts(script), !script.src && script.innerHTML, !shimMode, isBlockingReadyScript && lastStaticLoadPromise)
+      .then(() => {
+        // if the type of the script tag "module-shim", browser does not dispatch a "load" event
+        // see https://github.com/guybedford/es-module-shims/issues/346
+        if (shimMode) {
+          script.dispatchEvent(new Event('load'));
+        }
+      })
+      .catch(throwError);
     if (isBlockingReadyScript)
       lastStaticLoadPromise = loadPromise.then(readyStateCompleteCheck);
     if (isDomContentLoadedScript)
