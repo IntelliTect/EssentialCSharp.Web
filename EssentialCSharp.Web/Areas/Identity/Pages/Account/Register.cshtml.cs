@@ -180,7 +180,7 @@ public class RegisterModel : PageModel
         }
         else
         {
-            switch (response.ErrorCodes.Count)
+            switch (response.ErrorCodes?.Length)
             {
                 case 0:
                     throw new InvalidOperationException("The HCaptcha determined the passcode is not valid, and does not meet the security criteria");
@@ -188,6 +188,10 @@ public class RegisterModel : PageModel
                     throw new InvalidOperationException("HCaptcha returned error codes: " + string.Join(", ", response.ErrorCodes));
                 default:
                     {
+                        if (response.ErrorCodes is null)
+                        {
+                            throw new InvalidOperationException("HCaptcha returned error codes unexpectedly null");
+                        }
                         if (HCaptchaErrorDetails.TryGetValue(response.ErrorCodes.Single(), out HCaptchaErrorDetails? details))
                         {
                             switch (details.ErrorCode)
