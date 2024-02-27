@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Encodings.Web;
 using EssentialCSharp.Web.Areas.Identity.Data;
@@ -109,7 +109,8 @@ public class RegisterModel : PageModel
 
         if (hCaptcha_response is null)
         {
-            throw new InvalidOperationException($"{nameof(hCaptcha_response)} is null");
+            ModelState.AddModelError(CaptchaOptions.HttpPostResponseKeyName, "Captcha not completed.");
+            return Page();
         }
 
         HCaptchaResult response = await _CaptchaService.VerifyAsync(hCaptcha_response) ?? throw new InvalidOperationException("HCaptcha returned a null response");
