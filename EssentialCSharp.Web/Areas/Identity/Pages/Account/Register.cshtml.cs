@@ -14,36 +14,17 @@ using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
-public class RegisterModel : PageModel
+public class RegisterModel(
+    UserManager<EssentialCSharpWebUser> userManager,
+    IUserStore<EssentialCSharpWebUser> userStore,
+    SignInManager<EssentialCSharpWebUser> signInManager,
+    ILogger<RegisterModel> logger,
+    IEmailSender emailSender,
+    ICaptchaService captchaService,
+    IOptions<CaptchaOptions> optionsAccessor,
+    IUserEmailStore<EssentialCSharpWebUser> emailStore) : PageModel
 {
-    private readonly SignInManager<EssentialCSharpWebUser> _SignInManager;
-    private readonly UserManager<EssentialCSharpWebUser> _UserManager;
-    private readonly IUserStore<EssentialCSharpWebUser> _UserStore;
-    private readonly IUserEmailStore<EssentialCSharpWebUser> _EmailStore;
-    private readonly ILogger<RegisterModel> _Logger;
-    private readonly IEmailSender _EmailSender;
-    private readonly ICaptchaService _CaptchaService;
-    public CaptchaOptions CaptchaOptions { get; } //Set with Secret Manager.
-
-    public RegisterModel(
-        UserManager<EssentialCSharpWebUser> userManager,
-        IUserStore<EssentialCSharpWebUser> userStore,
-        SignInManager<EssentialCSharpWebUser> signInManager,
-        ILogger<RegisterModel> logger,
-        IEmailSender emailSender,
-        ICaptchaService captchaService,
-        IOptions<CaptchaOptions> optionsAccessor,
-        IUserEmailStore<EssentialCSharpWebUser> emailStore)
-    {
-        _UserManager = userManager;
-        _UserStore = userStore;
-        _EmailStore = emailStore;
-        _SignInManager = signInManager;
-        _Logger = logger;
-        _EmailSender = emailSender;
-        _CaptchaService = captchaService;
-        CaptchaOptions = optionsAccessor.Value;
-    }
+    public CaptchaOptions CaptchaOptions { get; } = optionsAccessor.Value;
 
     private InputModel? _Input;
     [BindProperty]
@@ -80,7 +61,7 @@ public class RegisterModel : PageModel
         public string? Email { get; set; }
 
         [Required]
-        [StringLength(Web.Services.PasswordRequirementOptions.PasswordMaximumLength, ErrorMessage = ValidationMessages.StringLengthErrorMessage, MinimumLength = Web.Services.PasswordRequirementOptions.PasswordMinimumLength)]
+        [StringLength(PasswordRequirementOptions.PasswordMaximumLength, ErrorMessage = ValidationMessages.StringLengthErrorMessage, MinimumLength = PasswordRequirementOptions.PasswordMinimumLength)]
         [DataType(DataType.Password)]
         [Display(Name = "Password")]
         public string? Password { get; set; }
@@ -94,7 +75,7 @@ public class RegisterModel : PageModel
     public async Task OnGetAsync(string? returnUrl = null)
     {
         ReturnUrl = returnUrl;
-        ExternalLogins = (await _SignInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+        ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
     }
 
     public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
@@ -109,38 +90,44 @@ public class RegisterModel : PageModel
 
         if (hCaptcha_response is null)
         {
-            ModelState.AddModelError(CaptchaOptions.HttpPostResponseKeyName, "Captcha not completed.");
+            ModelState.AddModelError(CaptchaOptions.HttpPostResponseKeyName, HCaptchaErrorDetails.GetValue(HCaptchaErrorDetails.MissingInputResponse).FriendlyDescription);
             return Page();
         }
 
-        HCaptchaResult response = await _CaptchaService.VerifyAsync(hCaptcha_response) ?? throw new InvalidOperationException("HCaptcha returned a null response");
+        HCaptchaResult? response = await captchaService.VerifyAsync(hCaptcha_response);
+        if (response is null)
+        {
+            ModelState.AddModelError(CaptchaOptions.HttpPostResponseKeyName, "Error: HCaptcha API response unexpectedly null");
+            return Page();
+        }
 
         // The JSON should also return a field "success" as true
         // https://docs.hcaptcha.com/#verify-the-user-response-server-side
         if (response.Success)
         {
-            ExternalLogins = (await _SignInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+            ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             if (ModelState.IsValid)
             {
                 EssentialCSharpWebUser user = CreateUser();
                 user.FirstName = Input.FirstName;
                 user.LastName = Input.LastName;
 
-                await _UserStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
-                await _EmailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+                await userStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
+                await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
                 if (Input.Password is null)
                 {
+                    logger.LogInformation("Error: Password null; please enter in a password");
                     ModelState.AddModelError(string.Empty, "Error: Password null; please enter in a password");
                     return Page();
                 }
-                IdentityResult result = await _UserManager.CreateAsync(user, Input.Password);
+                IdentityResult result = await userManager.CreateAsync(user, Input.Password);
 
                 if (result.Succeeded)
                 {
-                    _Logger.LogInformation("User created a new account with password.");
+                    logger.LogInformation("User created a new account with password.");
 
-                    string userId = await _UserManager.GetUserIdAsync(user);
-                    string code = await _UserManager.GenerateEmailConfirmationTokenAsync(user);
+                    string userId = await userManager.GetUserIdAsync(user);
+                    string code = await userManager.GenerateEmailConfirmationTokenAsync(user);
                     code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
                     string? callbackUrl = Url.Page(
                         "/Account/ConfirmEmail",
@@ -158,16 +145,16 @@ public class RegisterModel : PageModel
                         ModelState.AddModelError(string.Empty, "Error: Email may not be null.");
                         return Page();
                     }
-                    await _EmailSender.SendEmailAsync(Input.Email, "Confirm your email",
+                    await emailSender.SendEmailAsync(Input.Email, "Confirm your email",
                         $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
-                    if (_UserManager.Options.SignIn.RequireConfirmedAccount)
+                    if (userManager.Options.SignIn.RequireConfirmedAccount)
                     {
                         return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl });
                     }
                     else
                     {
-                        await _SignInManager.SignInAsync(user, isPersistent: false);
+                        await signInManager.SignInAsync(user, isPersistent: false);
                         return LocalRedirect(returnUrl);
                     }
                 }
@@ -199,17 +186,17 @@ public class RegisterModel : PageModel
                                 case HCaptchaErrorDetails.InvalidInputResponse:
                                 case HCaptchaErrorDetails.InvalidOrAlreadySeenResponse:
                                     ModelState.AddModelError(string.Empty, details.FriendlyDescription);
-                                    _Logger.LogInformation("HCaptcha returned error code: {ErrorDetails}", details.ToString());
+                                    logger.LogInformation("HCaptcha returned error code: {ErrorDetails}", details.ToString());
                                     break;
                                 case HCaptchaErrorDetails.BadRequest:
                                     ModelState.AddModelError(string.Empty, details.FriendlyDescription);
-                                    _Logger.LogInformation("HCaptcha returned error code: {ErrorDetails}", details.ToString());
+                                    logger.LogInformation("HCaptcha returned error code: {ErrorDetails}", details.ToString());
                                     break;
                                 case HCaptchaErrorDetails.MissingInputSecret:
                                 case HCaptchaErrorDetails.InvalidInputSecret:
                                 case HCaptchaErrorDetails.NotUsingDummyPasscode:
                                 case HCaptchaErrorDetails.SitekeySecretMismatch:
-                                    _Logger.LogCritical("HCaptcha returned error code: {ErrorDetails}", details.ToString());
+                                    logger.LogCritical("HCaptcha returned error code: {ErrorDetails}", details.ToString());
                                     break;
                                 default:
                                     throw new InvalidOperationException("HCaptcha returned unknown error code: " + details?.ErrorCode);
