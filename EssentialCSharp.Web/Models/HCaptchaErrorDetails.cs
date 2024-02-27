@@ -19,7 +19,7 @@ public record class HCaptchaErrorDetails
 #pragma warning restore CA1859 // Use concrete types when possible for improved performance
         { MissingInputSecret, new(MissingInputSecret, "Your secret key is missing.", null) },
         { InvalidInputSecret, new(InvalidInputSecret, "Your secret key is invalid or malformed.", null) },
-        { MissingInputResponse, new(MissingInputResponse, "The response parameter (verification token) is missing.", "Please fill complete the captcha and try again.") },
+        { MissingInputResponse, new(MissingInputResponse, "The response parameter (verification token) is missing.", "Please complete the captcha and try again.") },
         { InvalidInputResponse, new(InvalidInputResponse, "The response parameter (verification token) is invalid or malformed.", null) },
         { BadRequest, new(BadRequest, "The request is invalid or malformed.", null) },
         { InvalidOrAlreadySeenResponse, new(InvalidOrAlreadySeenResponse, "The response parameter has already been checked, or has another issue.", null) },
