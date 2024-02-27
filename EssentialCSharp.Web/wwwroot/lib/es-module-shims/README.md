@@ -1,18 +1,19 @@
 # ES Module Shims
 
-Shims modern ES Modules features like import maps on top of the baseline modules support in browsers supported by [95% of users](https://caniuse.com/#feat=es6-module).
+Polyfills import maps and other ES Modules features on top of the baseline native ESM support in browsers.
 
-When running in polyfill mode, [the 72% of users](https://caniuse.com/import-maps) with import maps entirely bypass the shim code entirely.
+With import maps now supported by all major browsers, ES Module Shims entirely bypasses processing for the [74% of users](https://caniuse.com/import-maps) with native import maps support.
 
-For the remaining 28% of users, the highly performant (see [benchmarks](#benchmarks)) production and [CSP-compatible](#csp-support) shim kicks in to rewrite module specifiers driven by the [Web Assembly ES Module Lexer](https://github.com/guybedford/es-module-lexer).
+For the remaining users, the highly performant (see [benchmarks](#benchmarks)) production and [CSP-compatible](#csp-support) shim kicks in to rewrite module specifiers driven by the [Web Assembly ES Module Lexer](https://github.com/guybedford/es-module-lexer).
 
 The following modules features are polyfilled:
 
-* [Import Maps](#import-maps) support.
+* [Import Maps](#import-maps) polyfill.
 * Dynamic `import()` shimming when necessary in eg older Firefox versions.
 * `import.meta` and `import.meta.url`.
 * [JSON](#json-modules) and [CSS modules](#css-modules) with import assertions (when enabled).
-* [`<link rel="modulepreload">` polyfill](#modulepreload) in non Chromium browsers for both shimmed and unshimmed preloading scenarios.
+* [Wasm modules](#wasm-modules) when enabled.
+* [`<link rel="modulepreload">` is shimmed](#modulepreload) in browsers without import maps support.
 
 When running in shim mode, module rewriting is applied for all users and custom [resolve](#resolve-hook) and [fetch](#fetch-hook) hooks can be implemented allowing for custom resolution and streaming in-browser transform workflows.
 
@@ -29,7 +30,7 @@ Because we are still using the native module loader the edge cases work out comp
 Include ES Module Shims with a `async` attribute on the script, then include an import map and module scripts normally:
 
 ```html
-<script async src="https://ga.jspm.io/npm:es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+<script async src="https://ga.jspm.io/npm:es-module-shims@1.8.3/dist/es-module-shims.js"></script>
 
 <!-- https://generator.jspm.io/#U2NhYGBkDM0rySzJSU1hKEpNTC5xMLTQM9Az0C1K1jMAAKFS5w0gAA -->
 <script type="importmap">
@@ -84,9 +85,9 @@ For example:
 
 ```html
 <script type="module">
-  import './supported.js';
+  import './supported-relative-import.js';
   console.log('Static Ok');
-  import('react').then(x => {
+  import('unsupported-import-map').then(x => {
     console.log('Dynamic Ok');
   }, err => {
     console.log('Dynamic Fail');
@@ -110,9 +111,9 @@ If a static failure is not possible and dynamic import must be used, one alterna
 
 ```html
 <script type="module">
-  import './supported.js';
+  import './supported-relative-import.js';
   console.log('Static Ok');
-  importShim('react').then(x => {
+  importShim('unsupported-import-map').then(x => {
     console.log('Ok');
   }, err => {
     console.log('Fail');
@@ -176,14 +177,13 @@ If the polyfill is analyzing or applying to a module script that doesn't need to
 </script>
 ```
 
-
 ### Polyfill Features
 
 If using more modern features like CSS Modules or JSON Modules, these need to be manually enabled via the [`polyfillEnable` init option](#polyfill-enable-option) to raise the native baseline from just checking import maps to also checking that browsers support these features:
 
 ```html
 <script>
-window.esmsInitOptions = { polyfillEnable: ['css-modules', 'json-modules'] }
+window.esmsInitOptions = { polyfillEnable: ['css-modules', 'json-modules', 'wasm-modules'] }
 </script>
 ```
 
@@ -223,6 +223,7 @@ Browser Compatibility on baseline ES modules support **with** ES Module Shims:
 | [Import Maps](#import-maps)                     | :heavy_check_mark:                   | :heavy_check_mark:                   | :heavy_check_mark:                   |
 | [JSON Modules](#json-modules)                   | :heavy_check_mark:                   | :heavy_check_mark:                   | :heavy_check_mark:                   |
 | [CSS Modules](#css-modules)                     | :heavy_check_mark:<sup>1</sup>       | :heavy_check_mark:<sup>1</sup>       | :heavy_check_mark:<sup>1</sup>       |
+| [Wasm Modules](#wasm-modules)                   | 89+                                  | 89+                                  | 15+                                  |
 | [import.meta.resolve](#resolve)                 | :heavy_check_mark:                   | :heavy_check_mark:                   | :heavy_check_mark:                   |
 | [Module Workers](#module-workers) (via wrapper) | 63+                                  | :x:<sup>2</sup>                      | 15+                                  |
 | Top-Level Await (unpolyfilled<sup>3</sup>)      | 89+                                  | 89+                                  | 15+                                  |
@@ -238,9 +239,10 @@ Browser compatibility **without** ES Module Shims:
 | [modulepreload](#modulepreload)    | 66+                | :x:                | :x:                |
 | [Dynamic Import](#dynamic-import)  | 63+                | 67+                | 11.1+              |
 | [import.meta.url](#importmetaurl)  | ~76+               | ~67+               | ~12+ ❕<sup>1</sup> |
-| [Import Maps](#import-maps)        | 89+                | :x:                | :x:                |
+| [Import Maps](#import-maps)        | 89+                | 108+               | 16.4+              |
 | [JSON Modules](#json-modules)      | 91+                | :x:                | :x:                |
 | [CSS Modules](#css-modules)        | 95+                | :x:                | :x:                |
+| [Wasm Modules](#wasm-modules)      | :x:                | :x:                | :x:                |
 | [import.meta.resolve](#resolve)    | :x:                | :x:                | :x:                |
 | [Module Workers](#module-workers)  | ~68+               | :x:                | :x:                |
 | Top-Level Await                    | 89+                | 89+                | 15+                |
@@ -249,9 +251,9 @@ Browser compatibility **without** ES Module Shims:
 
 ### Import Maps
 
-> Stability: WhatWG Standard, Single Browser Implementer
+> Stability: WhatWG Standard, implemented in all browsers although only recently in Firefox and Safari
 
-Import maps allow for importing "bare specifiers" in JavaScript modules, which prior to import maps throw in all browsers with native modules support.
+Import maps allow for importing _"bare specifiers"_ in JavaScript modules, which prior to import maps throw in all browsers with native modules support.
 
 Using this polyfill we can write:
 
@@ -359,8 +361,10 @@ This tag also supports the `"integrity"`, `"crossorigin"` and `"referrerpolicy"`
 
 This tag just initiates a fetch request in the browser and thus works equally as a preload polyfill in both shimmed and unshimmed modes, with integrity validation support.
 
+In browsers that don't support modulepreload, polyfilled preloading behaviour is provided using an early `fetch()` call with the same request options as the module script, resulting in network-level cache sharing.
+
 Unlike the browser specification, the modulepreload polyfill does not request dependency modules by default, in order to avoid unnecessary
-code analysis in the polyfill scenarios. **It is recommended to preload deep imports anyway so that this feature shouldn't be necessary.**
+code analysis in the polyfill scenarios, _it is always recommended to preload deep imports so that this feature shouldn't be necessary._
 
 #### Preload shim
 
@@ -368,7 +372,7 @@ When in shim mode, `<link rel="modulepreload-shim" href="/module.js" />` must be
 
 ### CSP Support
 
-By default ES Module Shims provides full support for CSP by using the asm.js ES Module Lexer build. This is absolutely identical in performance to the Wasm version in Firefox and Chrome, while in Safari the asm.js version is actually faster than Wasm making this build preferable.
+By default ES Module Shims provides full support for CSP by using the asm.js ES Module Lexer build. This is absolutely identical in performance to the Wasm version in Firefox and Chrome (in Safari the asm.js version is actually faster than Wasm).
 
 The CSP nonce to use for module scripts will be picked up from the first script on the page or via the [`nonce` init option](#nonce).
 
@@ -435,6 +439,26 @@ In addition CSS modules need to be served with a valid CSS content type.
 
 Checks for assertion failures are not currently included.
 
+### Wasm Modules
+
+> Stability: WebAssembly Standard, Unimplemented
+
+Implements the [WebAssembly ESM Integration](https://github.com/WebAssembly/esm-integration) spec (source phase imports omitted currently, tracking in https://github.com/guybedford/es-module-shims/issues/410).
+
+In shim mode, Wasm modules are always supported. In polyfill mode, Wasm modules require the `polyfillEnable: ['wasm-modules']` [init option](#polyfill-enable-option).
+
+WebAssembly module exports are made available as module exports and WebAssembly module imports will be resolved using the browser module loader.
+
+WebAssembly modules require native top-level await support to be polyfilled, see the [compatibility table](#browser-support) above.
+
+```html
+<script type="module">
+import { fn } from './app.wasm';
+</script>
+```
+
+If using CSP, make sure to add `'unsafe-wasm-eval'` to `script-src` which is needed when the shim or polyfill engages, note this policy is much much safer than eval due to the Wasm secure sandbox. See https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src#unsafe_webassembly_execution.
+
 ### Resolve
 
 > Stability: Draft HTML PR
@@ -491,18 +515,19 @@ const worker = new Worker(getWorkerScriptURL('myEsModule.js'));
 
 Provide a `esmsInitOptions` on the global scope before `es-module-shims` is loaded to configure various aspects of the module loading process:
 
-* [shimMode](#shim-mode-option)
-* [polyfillEnable](#polyfill-enable-option)
 * [enforceIntegrity](#enforce-integrity)
-* [nonce](#nonce)
+* [fetch](#fetch-hook)
+* [mapOverrides](#overriding-import-map-entries)
+* [modulepreload](#modulepreload)
 * [noLoadEventRetriggers](#no-load-event-retriggers)
-* [skip](#skip)
+* [nonce](#nonce)
 * [onerror](#error-hook)
 * [onpolyfill](#polyfill-hook)
+* [polyfillEnable](#polyfill-enable-option)
 * [resolve](#resolve-hook)
-* [fetch](#fetch-hook)
 * [revokeBlobURLs](#revoke-blob-urls)
-* [mapOverrides](#overriding-import-map-entries)
+* [shimMode](#shim-mode-option)
+* [skip](#skip)
 
 ```html
 <script>
@@ -519,7 +544,8 @@ window.esmsInitOptions = {
   skip: /^https:\/\/cdn\.com/, // defaults to null
   // Clean up blob URLs after execution
   revokeBlobURLs: true, // default false
-  // Secure mode to not support loading modules without integrity (integrity is always verified though)
+  // Secure mode to not support loading modules without integrity
+  // (integrity is always verified even when disabled though)
   enforceIntegrity: true, // default false
   // Permit overrides to import maps
   mapOverrides: true, // default false
