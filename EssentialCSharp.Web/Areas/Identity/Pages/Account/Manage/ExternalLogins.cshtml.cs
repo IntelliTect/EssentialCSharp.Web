@@ -6,22 +6,11 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage;
 
-public class ExternalLoginsModel : PageModel
+public class ExternalLoginsModel(
+    UserManager<EssentialCSharpWebUser> userManager,
+    SignInManager<EssentialCSharpWebUser> signInManager,
+    IUserPasswordStore<EssentialCSharpWebUser> userPasswordStore) : PageModel
 {
-    private readonly UserManager<EssentialCSharpWebUser> _UserManager;
-    private readonly SignInManager<EssentialCSharpWebUser> _SignInManager;
-    private readonly IUserPasswordStore<EssentialCSharpWebUser> _UserPasswordStore;
-
-    public ExternalLoginsModel(
-        UserManager<EssentialCSharpWebUser> userManager,
-        SignInManager<EssentialCSharpWebUser> signInManager,
-        IUserPasswordStore<EssentialCSharpWebUser> userPasswordStore)
-    {
-        _UserManager = userManager;
-        _SignInManager = signInManager;
-        _UserPasswordStore = userPasswordStore;
-    }
-
     public IList<UserLoginInfo>? CurrentLogins { get; set; }
 
     public IList<AuthenticationScheme>? OtherLogins { get; set; }
@@ -33,19 +22,19 @@ public class ExternalLoginsModel : PageModel
 
     public async Task<IActionResult> OnGetAsync()
     {
-        EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
+        EssentialCSharpWebUser? user = await userManager.GetUserAsync(User);
         if (user is null)
         {
-            return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
+            return NotFound($"Unable to load user with ID '{userManager.GetUserId(User)}'.");
         }
 
-        CurrentLogins = await _UserManager.GetLoginsAsync(user);
-        OtherLogins = (await _SignInManager.GetExternalAuthenticationSchemesAsync())
+        CurrentLogins = await userManager.GetLoginsAsync(user);
+        OtherLogins = (await signInManager.GetExternalAuthenticationSchemesAsync())
             .Where(auth => CurrentLogins.All(ul => auth.Name != ul.LoginProvider))
             .ToList();
 
         string? passwordHash = null;
-        passwordHash = await _UserPasswordStore.GetPasswordHashAsync(user, HttpContext.RequestAborted);
+        passwordHash = await userPasswordStore.GetPasswordHashAsync(user, HttpContext.RequestAborted);
 
         ShowRemoveButton = passwordHash is not null || CurrentLogins.Count > 1;
         return Page();
@@ -53,20 +42,20 @@ public class ExternalLoginsModel : PageModel
 
     public async Task<IActionResult> OnPostRemoveLoginAsync(string loginProvider, string providerKey)
     {
-        EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
+        EssentialCSharpWebUser? user = await userManager.GetUserAsync(User);
         if (user is null)
         {
-            return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
+            return NotFound($"Unable to load user with ID '{userManager.GetUserId(User)}'.");
         }
 
-        IdentityResult result = await _UserManager.RemoveLoginAsync(user, loginProvider, providerKey);
+        IdentityResult result = await userManager.RemoveLoginAsync(user, loginProvider, providerKey);
         if (!result.Succeeded)
         {
             StatusMessage = "The external login was not removed.";
             return RedirectToPage();
         }
 
-        await _SignInManager.RefreshSignInAsync(user);
+        await signInManager.RefreshSignInAsync(user);
         StatusMessage = "The external login was removed.";
         return RedirectToPage();
     }
@@ -78,21 +67,21 @@ public class ExternalLoginsModel : PageModel
 
         // Request a redirect to the external login provider to link a login for the current user
         string? redirectUrl = Url.Page("./ExternalLogins", pageHandler: "LinkLoginCallback");
-        AuthenticationProperties properties = _SignInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl, _UserManager.GetUserId(User));
+        AuthenticationProperties properties = signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl, userManager.GetUserId(User));
         return new ChallengeResult(provider, properties);
     }
 
     public async Task<IActionResult> OnGetLinkLoginCallbackAsync()
     {
-        EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
+        EssentialCSharpWebUser? user = await userManager.GetUserAsync(User);
         if (user is null)
         {
-            return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
+            return NotFound($"Unable to load user with ID '{userManager.GetUserId(User)}'.");
         }
 
-        string userId = await _UserManager.GetUserIdAsync(user);
-        ExternalLoginInfo info = await _SignInManager.GetExternalLoginInfoAsync(userId) ?? throw new InvalidOperationException($"Unexpected error occurred loading external login info.");
-        IdentityResult result = await _UserManager.AddLoginAsync(user, info);
+        string userId = await userManager.GetUserIdAsync(user);
+        ExternalLoginInfo info = await signInManager.GetExternalLoginInfoAsync(userId) ?? throw new InvalidOperationException($"Unexpected error occurred loading external login info.");
+        IdentityResult result = await userManager.AddLoginAsync(user, info);
         if (!result.Succeeded)
         {
             StatusMessage = "The external login was not added. External logins can only be associated with one account.";

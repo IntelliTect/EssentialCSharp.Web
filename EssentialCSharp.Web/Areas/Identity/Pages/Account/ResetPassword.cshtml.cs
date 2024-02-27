@@ -8,15 +8,8 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
-public class ResetPasswordModel : PageModel
+public class ResetPasswordModel(UserManager<EssentialCSharpWebUser> userManager) : PageModel
 {
-    private readonly UserManager<EssentialCSharpWebUser> _UserManager;
-
-    public ResetPasswordModel(UserManager<EssentialCSharpWebUser> userManager)
-    {
-        _UserManager = userManager;
-    }
-
     private InputModel? _Input;
     [BindProperty]
     public InputModel Input
@@ -74,7 +67,7 @@ public class ResetPasswordModel : PageModel
             ModelState.AddModelError(string.Empty, "Error: Email is required.");
             return RedirectToPage();
         }
-        EssentialCSharpWebUser? user = await _UserManager.FindByEmailAsync(Input.Email);
+        EssentialCSharpWebUser? user = await userManager.FindByEmailAsync(Input.Email);
         if (user is null)
         {
             // Don't reveal that the user does not exist
@@ -92,7 +85,7 @@ public class ResetPasswordModel : PageModel
             return RedirectToPage();
         }
 
-        IdentityResult result = await _UserManager.ResetPasswordAsync(user, Input.Code, Input.Password);
+        IdentityResult result = await userManager.ResetPasswordAsync(user, Input.Code, Input.Password);
         if (result.Succeeded)
         {
             return RedirectToPage("./ResetPasswordConfirmation");

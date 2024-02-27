@@ -10,21 +10,14 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage;
 
-public class EmailModel : PageModel
+public class EmailModel(
+    UserManager<EssentialCSharpWebUser> userManager,
+    SignInManager<EssentialCSharpWebUser> signInManager,
+    IEmailSender emailSender) : PageModel
 {
-    private readonly UserManager<EssentialCSharpWebUser> _UserManager;
-    private readonly SignInManager<EssentialCSharpWebUser> _SignInManager;
-    private readonly IEmailSender _EmailSender;
-
-    public EmailModel(
-        UserManager<EssentialCSharpWebUser> userManager,
-        SignInManager<EssentialCSharpWebUser> signInManager,
-        IEmailSender emailSender)
-    {
-        _UserManager = userManager;
-        _SignInManager = signInManager;
-        _EmailSender = emailSender;
-    }
+    private readonly UserManager<EssentialCSharpWebUser> _UserManager = userManager;
+    private readonly SignInManager<EssentialCSharpWebUser> _SignInManager = signInManager;
+    private readonly IEmailSender _EmailSender = emailSender;
 
     public string? Email { get; set; }
 

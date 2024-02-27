@@ -5,18 +5,14 @@ namespace EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
 /// <summary>
 /// Provides an abstraction for validating that the supplied password is not in a list of common passwords
 /// </summary>
-public abstract class CommonPasswordValidator<TUser> : IPasswordValidator<TUser>
+public abstract class CommonPasswordValidator<TUser>(HashSet<string> passwords) : IPasswordValidator<TUser>
        where TUser : IdentityUser
 {
-    public CommonPasswordValidator(HashSet<string> passwords)
-    {
-        Passwords = passwords;
-    }
 
     /// <summary>
     /// The collection of common passwords which should not be allowed
     /// </summary>
-    protected HashSet<string> Passwords { get; }
+    protected HashSet<string> Passwords { get; } = passwords;
 
     ///<inheritdoc />
     public Task<IdentityResult> ValidateAsync(UserManager<TUser> manager,

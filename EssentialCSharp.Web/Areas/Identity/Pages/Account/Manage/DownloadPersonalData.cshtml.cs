@@ -6,19 +6,10 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage;
 
-public class DownloadPersonalDataModel : PageModel
+public class DownloadPersonalDataModel(
+    UserManager<EssentialCSharpWebUser> userManager,
+    ILogger<DownloadPersonalDataModel> logger) : PageModel
 {
-    private readonly UserManager<EssentialCSharpWebUser> _UserManager;
-    private readonly ILogger<DownloadPersonalDataModel> _Logger;
-
-    public DownloadPersonalDataModel(
-        UserManager<EssentialCSharpWebUser> userManager,
-        ILogger<DownloadPersonalDataModel> logger)
-    {
-        _UserManager = userManager;
-        _Logger = logger;
-    }
-
     public IActionResult OnGet()
     {
         return NotFound();
@@ -26,13 +17,13 @@ public class DownloadPersonalDataModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
+        EssentialCSharpWebUser? user = await userManager.GetUserAsync(User);
         if (user is null)
         {
-            return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
+            return NotFound($"Unable to load user with ID '{userManager.GetUserId(User)}'.");
         }
 
-        _Logger.LogInformation("User with ID '{UserId}' asked for their personal data.", _UserManager.GetUserId(User));
+        logger.LogInformation("User with ID '{UserId}' asked for their personal data.", userManager.GetUserId(User));
 
         // Only include personal data for download
         var personalData = new Dictionary<string, string>();
@@ -43,12 +34,12 @@ public class DownloadPersonalDataModel : PageModel
             personalData.Add(p.Name, p.GetValue(user)?.ToString() ?? "null");
         }
 
-        IList<UserLoginInfo> logins = await _UserManager.GetLoginsAsync(user);
+        IList<UserLoginInfo> logins = await userManager.GetLoginsAsync(user);
         foreach (UserLoginInfo l in logins)
         {
             personalData.Add($"{l.LoginProvider} external login provider key", l.ProviderKey);
         }
-        string? authenticatorKey = await _UserManager.GetAuthenticatorKeyAsync(user);
+        string? authenticatorKey = await userManager.GetAuthenticatorKeyAsync(user);
         if (!string.IsNullOrWhiteSpace(authenticatorKey))
         {
             personalData.Add($"Authenticator Key", authenticatorKey);

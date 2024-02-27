@@ -12,17 +12,8 @@ using Microsoft.AspNetCore.WebUtilities;
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
 [AllowAnonymous]
-public class ResendEmailConfirmationModel : PageModel
+public class ResendEmailConfirmationModel(UserManager<EssentialCSharpWebUser> userManager, IEmailSender emailSender) : PageModel
 {
-    private readonly UserManager<EssentialCSharpWebUser> _UserManager;
-    private readonly IEmailSender _EmailSender;
-
-    public ResendEmailConfirmationModel(UserManager<EssentialCSharpWebUser> userManager, IEmailSender emailSender)
-    {
-        _UserManager = userManager;
-        _EmailSender = emailSender;
-    }
-
     private InputModel? _Input;
     [BindProperty]
     public InputModel Input
@@ -51,14 +42,14 @@ public class ResendEmailConfirmationModel : PageModel
             return Page();
         }
 
-        EssentialCSharpWebUser? user = await _UserManager.FindByEmailAsync(Input.Email);
+        EssentialCSharpWebUser? user = await userManager.FindByEmailAsync(Input.Email);
         if (user is null)
         {
-            return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
+            return NotFound($"Unable to load user with ID '{userManager.GetUserId(User)}'.");
         }
 
-        string userId = await _UserManager.GetUserIdAsync(user);
-        string code = await _UserManager.GenerateEmailConfirmationTokenAsync(user);
+        string userId = await userManager.GetUserIdAsync(user);
+        string code = await userManager.GenerateEmailConfirmationTokenAsync(user);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
         string? callbackUrl = Url.Page(
             "/Account/ConfirmEmail",
@@ -71,7 +62,7 @@ public class ResendEmailConfirmationModel : PageModel
             ModelState.AddModelError(string.Empty, "Error: callback url unexpectedly null.");
             return Page();
         }
-        await _EmailSender.SendEmailAsync(
+        await emailSender.SendEmailAsync(
             Input.Email,
             "Confirm your email",
             $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");

@@ -4,13 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EssentialCSharp.Web.Data;
 
-public class EssentialCSharpWebContext : IdentityDbContext<EssentialCSharpWebUser>
+public class EssentialCSharpWebContext(DbContextOptions<EssentialCSharpWebContext> options) : IdentityDbContext<EssentialCSharpWebUser>(options)
 {
-    public EssentialCSharpWebContext(DbContextOptions<EssentialCSharpWebContext> options)
-        : base(options)
-    {
-    }
-
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

@@ -5,23 +5,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
-public class LoginWithRecoveryCodeModel : PageModel
+public class LoginWithRecoveryCodeModel(
+    SignInManager<EssentialCSharpWebUser> signInManager,
+    UserManager<EssentialCSharpWebUser> userManager,
+    ILogger<LoginWithRecoveryCodeModel> logger) : PageModel
 {
-
-    private readonly SignInManager<EssentialCSharpWebUser> _SignInManager;
-    private readonly UserManager<EssentialCSharpWebUser> _UserManager;
-    private readonly ILogger<LoginWithRecoveryCodeModel> _Logger;
-
-    public LoginWithRecoveryCodeModel(
-        SignInManager<EssentialCSharpWebUser> signInManager,
-        UserManager<EssentialCSharpWebUser> userManager,
-        ILogger<LoginWithRecoveryCodeModel> logger)
-    {
-        _SignInManager = signInManager;
-        _UserManager = userManager;
-        _Logger = logger;
-    }
-
     private InputModel? _Input;
     [BindProperty]
     public InputModel Input
@@ -45,7 +33,7 @@ public class LoginWithRecoveryCodeModel : PageModel
     public async Task<IActionResult> OnGetAsync(string? returnUrl = null)
     {
         // Ensure the user has gone through the username & password screen first
-        EssentialCSharpWebUser user = await _SignInManager.GetTwoFactorAuthenticationUserAsync() ?? throw new InvalidOperationException($"Unable to load two-factor authentication user.");
+        EssentialCSharpWebUser user = await signInManager.GetTwoFactorAuthenticationUserAsync() ?? throw new InvalidOperationException($"Unable to load two-factor authentication user.");
         ReturnUrl = returnUrl;
 
         return Page();
@@ -58,30 +46,30 @@ public class LoginWithRecoveryCodeModel : PageModel
             return Page();
         }
 
-        EssentialCSharpWebUser user = await _SignInManager.GetTwoFactorAuthenticationUserAsync() ?? throw new InvalidOperationException($"Unable to load two-factor authentication user.");
+        EssentialCSharpWebUser user = await signInManager.GetTwoFactorAuthenticationUserAsync() ?? throw new InvalidOperationException($"Unable to load two-factor authentication user.");
         if (Input.RecoveryCode is null)
         {
             return Page();
         }
         string recoveryCode = Input.RecoveryCode.Replace(" ", string.Empty);
 
-        Microsoft.AspNetCore.Identity.SignInResult result = await _SignInManager.TwoFactorRecoveryCodeSignInAsync(recoveryCode);
+        Microsoft.AspNetCore.Identity.SignInResult result = await signInManager.TwoFactorRecoveryCodeSignInAsync(recoveryCode);
 
-        string userId = await _UserManager.GetUserIdAsync(user);
+        string userId = await userManager.GetUserIdAsync(user);
 
         if (result.Succeeded)
         {
-            _Logger.LogInformation("User with ID '{UserId}' logged in with a recovery code.", user.Id);
+            logger.LogInformation("User with ID '{UserId}' logged in with a recovery code.", user.Id);
             return LocalRedirect(returnUrl ?? Url.Content("~/"));
         }
         if (result.IsLockedOut)
         {
-            _Logger.LogWarning("User account locked out.");
+            logger.LogWarning("User account locked out.");
             return RedirectToPage("./Lockout");
         }
         else
         {
-            _Logger.LogWarning("Invalid recovery code entered for user with ID '{UserId}' ", user.Id);
+            logger.LogWarning("Invalid recovery code entered for user with ID '{UserId}' ", user.Id);
             ModelState.AddModelError(string.Empty, "Invalid recovery code entered.");
             return Page();
         }

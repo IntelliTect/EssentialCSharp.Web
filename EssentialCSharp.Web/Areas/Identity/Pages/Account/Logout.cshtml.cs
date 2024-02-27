@@ -5,22 +5,12 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
-public class LogoutModel : PageModel
+public class LogoutModel(SignInManager<EssentialCSharpWebUser> signInManager, ILogger<LogoutModel> logger) : PageModel
 {
-
-    private readonly SignInManager<EssentialCSharpWebUser> _SignInManager;
-    private readonly ILogger<LogoutModel> _Logger;
-
-    public LogoutModel(SignInManager<EssentialCSharpWebUser> signInManager, ILogger<LogoutModel> logger)
-    {
-        _SignInManager = signInManager;
-        _Logger = logger;
-    }
-
     public async Task<IActionResult> OnPost(string? returnUrl = null)
     {
-        await _SignInManager.SignOutAsync();
-        _Logger.LogInformation("User logged out.");
+        await signInManager.SignOutAsync();
+        logger.LogInformation("User logged out.");
         if (returnUrl is not null)
         {
             return LocalRedirect(returnUrl);

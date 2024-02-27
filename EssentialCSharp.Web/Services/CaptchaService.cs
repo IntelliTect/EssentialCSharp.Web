@@ -14,12 +14,12 @@ public class CaptchaService(IHttpClientFactory clientFactory, IOptions<CaptchaOp
     public async Task<HCaptchaResult?> VerifyAsync(string secret, string response, string sitekey)
     {
         // create post data
-        List<KeyValuePair<string, string>> postData = new()
-        {
+        List<KeyValuePair<string, string>> postData =
+        [
             new KeyValuePair<string, string>("secret", secret),
             new KeyValuePair<string, string>("response", response),
             new KeyValuePair<string, string>("sitekey", sitekey)
-        };
+        ];
 
         return await PostVerification(postData);
     }

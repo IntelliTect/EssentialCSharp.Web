@@ -6,19 +6,10 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage;
 
-public class IndexModel : PageModel
+public class IndexModel(
+    UserManager<EssentialCSharpWebUser> userManager,
+    SignInManager<EssentialCSharpWebUser> signInManager) : PageModel
 {
-    private readonly UserManager<EssentialCSharpWebUser> _UserManager;
-    private readonly SignInManager<EssentialCSharpWebUser> _SignInManager;
-
-    public IndexModel(
-        UserManager<EssentialCSharpWebUser> userManager,
-        SignInManager<EssentialCSharpWebUser> signInManager)
-    {
-        _UserManager = userManager;
-        _SignInManager = signInManager;
-    }
-
     public string? Username { get; set; }
 
     public string? FirstName { get; set; }
@@ -53,8 +44,8 @@ public class IndexModel : PageModel
 
     private async Task LoadAsync(EssentialCSharpWebUser user)
     {
-        string? userName = await _UserManager.GetUserNameAsync(user);
-        string? phoneNumber = await _UserManager.GetPhoneNumberAsync(user);
+        string? userName = await userManager.GetUserNameAsync(user);
+        string? phoneNumber = await userManager.GetPhoneNumberAsync(user);
 
         Input = new InputModel
         {
@@ -67,10 +58,10 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnGetAsync()
     {
-        EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
+        EssentialCSharpWebUser? user = await userManager.GetUserAsync(User);
         if (user is null)
         {
-            return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
+            return NotFound($"Unable to load user with ID '{userManager.GetUserId(User)}'.");
         }
 
         await LoadAsync(user);
@@ -79,10 +70,10 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
+        EssentialCSharpWebUser? user = await userManager.GetUserAsync(User);
         if (user is null)
         {
-            return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
+            return NotFound($"Unable to load user with ID '{userManager.GetUserId(User)}'.");
         }
 
         if (!ModelState.IsValid)
@@ -91,20 +82,20 @@ public class IndexModel : PageModel
             return Page();
         }
 
-        string? phoneNumber = await _UserManager.GetPhoneNumberAsync(user);
+        string? phoneNumber = await userManager.GetPhoneNumberAsync(user);
         if (Input.PhoneNumber != phoneNumber)
         {
-            IdentityResult setPhoneResult = await _UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
+            IdentityResult setPhoneResult = await userManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
             if (!setPhoneResult.Succeeded)
             {
                 StatusMessage = "Unexpected error when trying to set phone number.";
                 return RedirectToPage();
             }
         }
-        string? username = await _UserManager.GetUserNameAsync(user);
+        string? username = await userManager.GetUserNameAsync(user);
         if (Input.Username != username)
         {
-            IdentityResult setUsernameResult = await _UserManager.SetUserNameAsync(user, Input.Username);
+            IdentityResult setUsernameResult = await userManager.SetUserNameAsync(user, Input.Username);
             if (!setUsernameResult.Succeeded)
             {
                 StatusMessage = "Unexpected error when trying to set username.";
@@ -114,7 +105,7 @@ public class IndexModel : PageModel
         if (Input.FirstName != user.FirstName)
         {
             user.FirstName = Input.FirstName;
-            IdentityResult setFirstNameResult = await _UserManager.UpdateAsync(user);
+            IdentityResult setFirstNameResult = await userManager.UpdateAsync(user);
             if (!setFirstNameResult.Succeeded)
             {
                 StatusMessage = "Unexpected error when trying to set first name.";
@@ -124,7 +115,7 @@ public class IndexModel : PageModel
         if (Input.LastName != user.LastName)
         {
             user.LastName = Input.LastName;
-            IdentityResult setLastNameResult = await _UserManager.UpdateAsync(user);
+            IdentityResult setLastNameResult = await userManager.UpdateAsync(user);
             if (!setLastNameResult.Succeeded)
             {
                 StatusMessage = "Unexpected error when trying to set last name.";
@@ -132,7 +123,7 @@ public class IndexModel : PageModel
             }
         }
 
-        await _SignInManager.RefreshSignInAsync(user);
+        await signInManager.RefreshSignInAsync(user);
         StatusMessage = "Your profile has been updated";
         return RedirectToPage();
     }
