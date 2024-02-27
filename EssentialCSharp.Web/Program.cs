@@ -1,6 +1,7 @@
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
 using EssentialCSharp.Web.Data;
+using EssentialCSharp.Web.Extensions;
 using EssentialCSharp.Web.Middleware;
 using EssentialCSharp.Web.Services;
 using Mailjet.Client;
@@ -24,25 +25,25 @@ public partial class Program
 
         builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString));
         builder.Services.AddDefaultIdentity<EssentialCSharpWebUser>(options =>
-            {
-                // Password settings
-                options.User.RequireUniqueEmail = true;
-                options.Password.RequiredLength = PasswordRequirementOptions.PasswordMinimumLength;
-                options.Password.RequireDigit = PasswordRequirementOptions.RequireDigit;
-                options.Password.RequireNonAlphanumeric = PasswordRequirementOptions.RequireNonAlphanumeric;
-                options.Password.RequireUppercase = PasswordRequirementOptions.RequireUppercase;
-                options.Password.RequireLowercase = PasswordRequirementOptions.RequireLowercase;
-                options.Password.RequiredUniqueChars = PasswordRequirementOptions.RequiredUniqueChars;
+        {
+            // Password settings
+            options.User.RequireUniqueEmail = true;
+            options.Password.RequiredLength = PasswordRequirementOptions.PasswordMinimumLength;
+            options.Password.RequireDigit = PasswordRequirementOptions.RequireDigit;
+            options.Password.RequireNonAlphanumeric = PasswordRequirementOptions.RequireNonAlphanumeric;
+            options.Password.RequireUppercase = PasswordRequirementOptions.RequireUppercase;
+            options.Password.RequireLowercase = PasswordRequirementOptions.RequireLowercase;
+            options.Password.RequiredUniqueChars = PasswordRequirementOptions.RequiredUniqueChars;
 
-                options.SignIn.RequireConfirmedEmail = true;
-                options.SignIn.RequireConfirmedAccount = true;
+            options.SignIn.RequireConfirmedEmail = true;
+            options.SignIn.RequireConfirmedAccount = true;
 
-                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(30);
-                options.Lockout.MaxFailedAccessAttempts = 3;
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(30);
+            options.Lockout.MaxFailedAccessAttempts = 3;
 
-                //TODO: Implement IProtectedUserStore
-                //options.Stores.ProtectPersonalData = true;
-            })
+            //TODO: Implement IProtectedUserStore
+            //options.Stores.ProtectPersonalData = true;
+        })
             .AddEntityFrameworkStores<EssentialCSharpWebContext>()
              .AddPasswordValidator<UsernameOrEmailAsPasswordValidator<EssentialCSharpWebUser>>()
              .AddPasswordValidator<Top100000PasswordValidator<EssentialCSharpWebUser>>();
@@ -98,19 +99,13 @@ public partial class Program
             builder.Services.AddTransient<IEmailSender, EmailSender>();
         }
         builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration.GetSection(AuthMessageSenderOptions.AuthMessageSender));
-        builder.Services.Configure<CaptchaOptions>(builder.Configuration.GetSection(CaptchaOptions.CaptchaSender));
 
         // Add services to the container.
         builder.Services.AddRazorPages();
-
-        builder.Services.AddSingleton<ICaptchaService, CaptchaService>();
+        builder.Services.AddCaptchaService(builder.Configuration.GetSection(CaptchaOptions.CaptchaSender));
         builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
         builder.Services.AddHostedService<DatabaseMigrationService>();
 
-        builder.Services.AddHttpClient("hCaptcha", c =>
-        {
-            c.BaseAddress = new Uri("https://api.hcaptcha.com");
-        });
 
         if (!builder.Environment.IsDevelopment())
         {
