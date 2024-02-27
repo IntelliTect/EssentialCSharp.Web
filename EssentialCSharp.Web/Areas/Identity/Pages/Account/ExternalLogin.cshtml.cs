@@ -13,31 +13,14 @@ using Microsoft.AspNetCore.WebUtilities;
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
 [AllowAnonymous]
-public class ExternalLoginModel : PageModel
+public class ExternalLoginModel(
+    SignInManager<EssentialCSharpWebUser> signInManager,
+    UserManager<EssentialCSharpWebUser> userManager,
+    IUserStore<EssentialCSharpWebUser> userStore,
+    ILogger<ExternalLoginModel> logger,
+    IEmailSender emailSender,
+    IUserEmailStore<EssentialCSharpWebUser> emailStore) : PageModel
 {
-    private readonly SignInManager<EssentialCSharpWebUser> _SignInManager;
-    private readonly UserManager<EssentialCSharpWebUser> _UserManager;
-    private readonly IUserStore<EssentialCSharpWebUser> _UserStore;
-    private readonly IUserEmailStore<EssentialCSharpWebUser> _EmailStore;
-    private readonly IEmailSender _EmailSender;
-    private readonly ILogger<ExternalLoginModel> _Logger;
-
-    public ExternalLoginModel(
-        SignInManager<EssentialCSharpWebUser> signInManager,
-        UserManager<EssentialCSharpWebUser> userManager,
-        IUserStore<EssentialCSharpWebUser> userStore,
-        ILogger<ExternalLoginModel> logger,
-        IEmailSender emailSender,
-        IUserEmailStore<EssentialCSharpWebUser> emailStore)
-    {
-        _SignInManager = signInManager;
-        _UserManager = userManager;
-        _UserStore = userStore;
-        _EmailStore = emailStore;
-        _Logger = logger;
-        _EmailSender = emailSender;
-    }
-
     private InputModel? _Input;
     [BindProperty]
     public InputModel Input
@@ -66,7 +49,7 @@ public class ExternalLoginModel : PageModel
     {
         // Request a redirect to the external login provider.
         string redirectUrl = Url.Page("./ExternalLogin", pageHandler: "Callback", values: new { returnUrl }) ?? "/";
-        Microsoft.AspNetCore.Authentication.AuthenticationProperties properties = _SignInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
+        Microsoft.AspNetCore.Authentication.AuthenticationProperties properties = signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
         return new ChallengeResult(provider, properties);
     }
 
@@ -78,7 +61,7 @@ public class ExternalLoginModel : PageModel
             ErrorMessage = $"Error from external provider: {remoteError}";
             return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
         }
-        ExternalLoginInfo? info = await _SignInManager.GetExternalLoginInfoAsync();
+        ExternalLoginInfo? info = await signInManager.GetExternalLoginInfoAsync();
         if (info is null)
         {
             ErrorMessage = "Error loading external login information.";
@@ -86,10 +69,10 @@ public class ExternalLoginModel : PageModel
         }
 
         // Sign in the user with this external login provider if the user already has a login.
-        Microsoft.AspNetCore.Identity.SignInResult result = await _SignInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
+        Microsoft.AspNetCore.Identity.SignInResult result = await signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
         if (result.Succeeded)
         {
-            _Logger.LogInformation("{Name} logged in with {LoginProvider} provider.", info.Principal.Identity?.Name, info.LoginProvider);
+            logger.LogInformation("{Name} logged in with {LoginProvider} provider.", info.Principal.Identity?.Name, info.LoginProvider);
             return LocalRedirect(returnUrl);
         }
         if (result.IsLockedOut)
@@ -116,7 +99,7 @@ public class ExternalLoginModel : PageModel
     {
         returnUrl ??= Url.Content("~/");
         // Get the information about the user from the external login provider
-        ExternalLoginInfo? info = await _SignInManager.GetExternalLoginInfoAsync();
+        ExternalLoginInfo? info = await signInManager.GetExternalLoginInfoAsync();
         if (info is null)
         {
             ErrorMessage = "Error loading external login information during confirmation.";
@@ -132,18 +115,18 @@ public class ExternalLoginModel : PageModel
             }
             EssentialCSharpWebUser user = CreateUser();
 
-            EssentialCSharpWebUser? existingUser = await _UserManager.FindByEmailAsync(Input.Email).ConfigureAwait(false);
+            EssentialCSharpWebUser? existingUser = await userManager.FindByEmailAsync(Input.Email).ConfigureAwait(false);
             if (existingUser is null)
             {
-                await _UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
-                await _EmailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
-                IdentityResult result = await _UserManager.CreateAsync(user);
+                await userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
+                await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+                IdentityResult result = await userManager.CreateAsync(user);
                 if (result.Succeeded)
                 {
-                    result = await _UserManager.AddLoginAsync(user, info);
+                    result = await userManager.AddLoginAsync(user, info);
                     if (result.Succeeded)
                     {
-                        _Logger.LogInformation("User created an account using {Name} provider.", info.LoginProvider);
+                        logger.LogInformation("User created an account using {Name} provider.", info.LoginProvider);
                         return await SendConfirmationEmail(returnUrl, info, user);
                     }
                 }
@@ -174,8 +157,8 @@ public class ExternalLoginModel : PageModel
             ErrorMessage = "Error: Email may not be null.";
             return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
         }
-        string userId = await _UserManager.GetUserIdAsync(user);
-        string code = await _UserManager.GenerateEmailConfirmationTokenAsync(user);
+        string userId = await userManager.GetUserIdAsync(user);
+        string code = await userManager.GenerateEmailConfirmationTokenAsync(user);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
         string? callbackUrl = Url.Page(
             "/Account/ConfirmEmail",
@@ -189,16 +172,16 @@ public class ExternalLoginModel : PageModel
             return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
         }
 
-        await _EmailSender.SendEmailAsync(Input.Email, "Confirm your email",
+        await emailSender.SendEmailAsync(Input.Email, "Confirm your email",
             $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
         // If account confirmation is required, we need to show the link if we don't have a real email sender
-        if (_UserManager.Options.SignIn.RequireConfirmedAccount)
+        if (userManager.Options.SignIn.RequireConfirmedAccount)
         {
             return RedirectToPage("./RegisterConfirmation", new { Email = Input.Email });
         }
 
-        await _SignInManager.SignInAsync(user, isPersistent: false, info.LoginProvider);
+        await signInManager.SignInAsync(user, isPersistent: false, info.LoginProvider);
         return LocalRedirect(returnUrl);
     }
 

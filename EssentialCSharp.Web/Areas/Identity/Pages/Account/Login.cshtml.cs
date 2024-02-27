@@ -7,20 +7,8 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
-public class LoginModel : PageModel
+public class LoginModel(SignInManager<EssentialCSharpWebUser> signInManager, UserManager<EssentialCSharpWebUser> userManager, ILogger<LoginModel> logger) : PageModel
 {
-
-    private readonly UserManager<EssentialCSharpWebUser> _UserManager;
-    private readonly SignInManager<EssentialCSharpWebUser> _SignInManager;
-    private readonly ILogger<LoginModel> _Logger;
-
-    public LoginModel(SignInManager<EssentialCSharpWebUser> signInManager, UserManager<EssentialCSharpWebUser> userManager, ILogger<LoginModel> logger)
-    {
-        _SignInManager = signInManager;
-        _Logger = logger;
-        _UserManager = userManager;
-    }
-
     private InputModel? _Input;
     [BindProperty]
     public InputModel Input
@@ -63,7 +51,7 @@ public class LoginModel : PageModel
         // Clear the existing external cookie to ensure a clean login process
         await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
 
-        ExternalLogins = (await _SignInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+        ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 
         ReturnUrl = returnUrl;
     }
@@ -72,7 +60,7 @@ public class LoginModel : PageModel
     {
         returnUrl ??= Url.Content("~/");
 
-        ExternalLogins = (await _SignInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+        ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 
         if (ModelState.IsValid)
         {
@@ -81,22 +69,22 @@ public class LoginModel : PageModel
             {
                 return RedirectToPage(Url.Content("~/"), new { ReturnUrl = returnUrl });
             }
-            EssentialCSharpWebUser? foundUser = await _UserManager.FindByEmailAsync(Input.Email);
+            EssentialCSharpWebUser? foundUser = await userManager.FindByEmailAsync(Input.Email);
             if (Input.Password is null)
             {
                 return RedirectToPage(Url.Content("~/"), new { ReturnUrl = returnUrl });
             }
             if (foundUser is not null)
             {
-                result = await _SignInManager.PasswordSignInAsync(foundUser, Input.Password, Input.RememberMe, lockoutOnFailure: true);
+                result = await signInManager.PasswordSignInAsync(foundUser, Input.Password, Input.RememberMe, lockoutOnFailure: true);
             }
             else
             {
-                result = await _SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: true);
+                result = await signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: true);
             }
             if (result.Succeeded)
             {
-                _Logger.LogInformation("User logged in.");
+                logger.LogInformation("User logged in.");
                 return LocalRedirect(returnUrl);
             }
             if (result.RequiresTwoFactor)
@@ -105,7 +93,7 @@ public class LoginModel : PageModel
             }
             if (result.IsLockedOut)
             {
-                _Logger.LogWarning("User account locked out.");
+                logger.LogWarning("User account locked out.");
                 return RedirectToPage("./Lockout");
             }
             else

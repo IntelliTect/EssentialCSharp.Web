@@ -9,24 +9,12 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage;
 
-public class EnableAuthenticatorModel : PageModel
+public class EnableAuthenticatorModel(
+    UserManager<EssentialCSharpWebUser> userManager,
+    ILogger<EnableAuthenticatorModel> logger,
+    UrlEncoder urlEncoder) : PageModel
 {
-
-    private readonly UserManager<EssentialCSharpWebUser> _UserManager;
-    private readonly ILogger<EnableAuthenticatorModel> _Logger;
-    private readonly UrlEncoder _UrlEncoder;
-
     private static readonly CompositeFormat _AuthenticatorUriFormat = CompositeFormat.Parse("otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6");
-
-    public EnableAuthenticatorModel(
-        UserManager<EssentialCSharpWebUser> userManager,
-        ILogger<EnableAuthenticatorModel> logger,
-        UrlEncoder urlEncoder)
-    {
-        _UserManager = userManager;
-        _Logger = logger;
-        _UrlEncoder = urlEncoder;
-    }
 
     public string? SharedKey { get; set; }
 
@@ -58,10 +46,10 @@ public class EnableAuthenticatorModel : PageModel
 
     public async Task<IActionResult> OnGetAsync()
     {
-        EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
+        EssentialCSharpWebUser? user = await userManager.GetUserAsync(User);
         if (user is null)
         {
-            return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
+            return NotFound($"Unable to load user with ID '{userManager.GetUserId(User)}'.");
         }
 
         await LoadSharedKeyAndQrCodeUriAsync(user);
@@ -71,10 +59,10 @@ public class EnableAuthenticatorModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
+        EssentialCSharpWebUser? user = await userManager.GetUserAsync(User);
         if (user is null)
         {
-            return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
+            return NotFound($"Unable to load user with ID '{userManager.GetUserId(User)}'.");
         }
 
         if (!ModelState.IsValid)
@@ -90,8 +78,8 @@ public class EnableAuthenticatorModel : PageModel
         // Strip spaces and hyphens
         string verificationCode = Input.Code.Replace(" ", string.Empty).Replace("-", string.Empty);
 
-        bool is2faTokenValid = await _UserManager.VerifyTwoFactorTokenAsync(
-            user, _UserManager.Options.Tokens.AuthenticatorTokenProvider, verificationCode);
+        bool is2faTokenValid = await userManager.VerifyTwoFactorTokenAsync(
+            user, userManager.Options.Tokens.AuthenticatorTokenProvider, verificationCode);
 
         if (!is2faTokenValid)
         {
@@ -100,15 +88,15 @@ public class EnableAuthenticatorModel : PageModel
             return Page();
         }
 
-        await _UserManager.SetTwoFactorEnabledAsync(user, true);
-        string userId = await _UserManager.GetUserIdAsync(user);
-        _Logger.LogInformation("User with ID '{UserId}' has enabled 2FA with an authenticator app.", userId);
+        await userManager.SetTwoFactorEnabledAsync(user, true);
+        string userId = await userManager.GetUserIdAsync(user);
+        logger.LogInformation("User with ID '{UserId}' has enabled 2FA with an authenticator app.", userId);
 
         StatusMessage = "Your authenticator app has been verified.";
 
-        if (await _UserManager.CountRecoveryCodesAsync(user) == 0)
+        if (await userManager.CountRecoveryCodesAsync(user) == 0)
         {
-            IEnumerable<string>? recoveryCodes = await _UserManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
+            IEnumerable<string>? recoveryCodes = await userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
             if (recoveryCodes is null)
             {
                 return RedirectToPage("./TwoFactorAuthentication");
@@ -125,18 +113,18 @@ public class EnableAuthenticatorModel : PageModel
     private async Task LoadSharedKeyAndQrCodeUriAsync(EssentialCSharpWebUser user)
     {
         // Load the authenticator key & QR code URI to display on the form
-        string? unformattedKey = await _UserManager.GetAuthenticatorKeyAsync(user);
+        string? unformattedKey = await userManager.GetAuthenticatorKeyAsync(user);
         if (string.IsNullOrEmpty(unformattedKey))
         {
-            await _UserManager.ResetAuthenticatorKeyAsync(user);
-            unformattedKey = await _UserManager.GetAuthenticatorKeyAsync(user);
+            await userManager.ResetAuthenticatorKeyAsync(user);
+            unformattedKey = await userManager.GetAuthenticatorKeyAsync(user);
         }
         if (!string.IsNullOrEmpty(unformattedKey))
         {
             SharedKey = FormatKey(unformattedKey);
         }
 
-        string? email = await _UserManager.GetEmailAsync(user);
+        string? email = await userManager.GetEmailAsync(user);
         if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(unformattedKey))
         {
             AuthenticatorUri = GenerateQrCodeUri(email, unformattedKey);
@@ -167,8 +155,8 @@ public class EnableAuthenticatorModel : PageModel
         return string.Format(
             CultureInfo.InvariantCulture,
             _AuthenticatorUriFormat,
-            _UrlEncoder.Encode("EssentialCSharp.com"),
-            _UrlEncoder.Encode(email),
+            urlEncoder.Encode("EssentialCSharp.com"),
+            urlEncoder.Encode(email),
             unformattedKey);
     }
 }

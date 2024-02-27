@@ -6,23 +6,11 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage;
 
-public class ChangePasswordModel : PageModel
+public class ChangePasswordModel(
+    UserManager<EssentialCSharpWebUser> userManager,
+    SignInManager<EssentialCSharpWebUser> signInManager,
+    ILogger<ChangePasswordModel> logger) : PageModel
 {
-
-    private readonly UserManager<EssentialCSharpWebUser> _UserManager;
-    private readonly SignInManager<EssentialCSharpWebUser> _SignInManager;
-    private readonly ILogger<ChangePasswordModel> _Logger;
-
-    public ChangePasswordModel(
-        UserManager<EssentialCSharpWebUser> userManager,
-        SignInManager<EssentialCSharpWebUser> signInManager,
-        ILogger<ChangePasswordModel> logger)
-    {
-        _UserManager = userManager;
-        _SignInManager = signInManager;
-        _Logger = logger;
-    }
-
     private InputModel? _Input;
     [BindProperty]
     public InputModel Input
@@ -55,13 +43,13 @@ public class ChangePasswordModel : PageModel
 
     public async Task<IActionResult> OnGetAsync()
     {
-        EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
+        EssentialCSharpWebUser? user = await userManager.GetUserAsync(User);
         if (user is null)
         {
-            return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
+            return NotFound($"Unable to load user with ID '{userManager.GetUserId(User)}'.");
         }
 
-        bool hasPassword = await _UserManager.HasPasswordAsync(user);
+        bool hasPassword = await userManager.HasPasswordAsync(user);
         if (!hasPassword)
         {
             return RedirectToPage("./SetPassword");
@@ -77,10 +65,10 @@ public class ChangePasswordModel : PageModel
             return Page();
         }
 
-        EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
+        EssentialCSharpWebUser? user = await userManager.GetUserAsync(User);
         if (user is null)
         {
-            return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
+            return NotFound($"Unable to load user with ID '{userManager.GetUserId(User)}'.");
         }
 
         if (Input.NewPassword is null)
@@ -94,7 +82,7 @@ public class ChangePasswordModel : PageModel
             return RedirectToPage();
         }
 
-        IdentityResult changePasswordResult = await _UserManager.ChangePasswordAsync(user, Input.OldPassword, Input.NewPassword);
+        IdentityResult changePasswordResult = await userManager.ChangePasswordAsync(user, Input.OldPassword, Input.NewPassword);
         if (!changePasswordResult.Succeeded)
         {
             foreach (IdentityError error in changePasswordResult.Errors)
@@ -104,8 +92,8 @@ public class ChangePasswordModel : PageModel
             return Page();
         }
 
-        await _SignInManager.RefreshSignInAsync(user);
-        _Logger.LogInformation("User changed their password successfully.");
+        await signInManager.RefreshSignInAsync(user);
+        logger.LogInformation("User changed their password successfully.");
         StatusMessage = "Your password has been changed.";
 
         return RedirectToPage();

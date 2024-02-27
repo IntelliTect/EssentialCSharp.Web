@@ -1,20 +1,14 @@
 ﻿namespace EssentialCSharp.Web.Middleware;
 
-public class SecurityHeadersMiddleware
+/// <summary>
+/// Instantiates a new <see cref="SecurityHeadersMiddleware"/>.
+/// </summary>
+/// <param name="next">The next middleware in the pipeline.</param>
+/// <param name="policy">An instance of the <see cref="SecurityHeadersPolicy"/> which can be applied.</param>
+public class SecurityHeadersMiddleware(RequestDelegate next, SecurityHeadersPolicy policy)
 {
-    private readonly RequestDelegate _Next;
-    private readonly SecurityHeadersPolicy _Policy;
-
-    /// <summary>
-    /// Instantiates a new <see cref="SecurityHeadersMiddleware"/>.
-    /// </summary>
-    /// <param name="next">The next middleware in the pipeline.</param>
-    /// <param name="policy">An instance of the <see cref="SecurityHeadersPolicy"/> which can be applied.</param>
-    public SecurityHeadersMiddleware(RequestDelegate next, SecurityHeadersPolicy policy)
-    {
-        _Next = next ?? throw new ArgumentNullException(nameof(next));
-        _Policy = policy ?? throw new ArgumentNullException(nameof(policy));
-    }
+    private readonly RequestDelegate _Next = next ?? throw new ArgumentNullException(nameof(next));
+    private readonly SecurityHeadersPolicy _Policy = policy ?? throw new ArgumentNullException(nameof(policy));
 
     public async Task Invoke(HttpContext? context)
     {

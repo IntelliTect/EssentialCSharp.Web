@@ -7,15 +7,8 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
-public class ConfirmEmailModel : PageModel
+public class ConfirmEmailModel(UserManager<EssentialCSharpWebUser> userManager) : PageModel
 {
-    private readonly UserManager<EssentialCSharpWebUser> _UserManager;
-
-    public ConfirmEmailModel(UserManager<EssentialCSharpWebUser> userManager)
-    {
-        _UserManager = userManager;
-    }
-
     [TempData]
     public string StatusMessage { get; set; } = string.Empty;
     public async Task<IActionResult> OnGetAsync(string? userId, string? code)
@@ -25,14 +18,14 @@ public class ConfirmEmailModel : PageModel
             return RedirectToPage("/Index");
         }
 
-        EssentialCSharpWebUser? user = await _UserManager.FindByIdAsync(userId);
+        EssentialCSharpWebUser? user = await userManager.FindByIdAsync(userId);
         if (user is null)
         {
             return NotFound($"Unable to load user with ID '{userId}'.");
         }
 
         code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code));
-        IdentityResult result = await _UserManager.ConfirmEmailAsync(user, code);
+        IdentityResult result = await userManager.ConfirmEmailAsync(user, code);
         StatusMessage = result.Succeeded ? "Thank you for confirming your email." : "Error confirming your email.";
         return Page();
     }

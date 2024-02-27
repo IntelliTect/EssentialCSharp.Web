@@ -6,20 +6,12 @@ using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Services;
 
-public class EmailSender : IEmailSender
+public class EmailSender(IMailjetClient mailjetClient, IOptions<AuthMessageSenderOptions> options,
+                   ILogger<EmailSender> logger) : IEmailSender
 {
-    private readonly ILogger _Logger;
-    private readonly IMailjetClient _MailjetClient;
+    private readonly ILogger _Logger = logger;
 
-    public EmailSender(IMailjetClient mailjetClient, IOptions<AuthMessageSenderOptions> options,
-                       ILogger<EmailSender> logger)
-    {
-        Options = options.Value;
-        _Logger = logger;
-        _MailjetClient = mailjetClient;
-    }
-
-    private AuthMessageSenderOptions Options { get; }
+    private AuthMessageSenderOptions Options { get; } = options.Value;
 
     public async Task SendEmailAsync(string email, string subject, string htmlMessage)
     {
@@ -42,7 +34,7 @@ public class EmailSender : IEmailSender
                .Build();
 
         // invoke API to send email
-        Mailjet.Client.TransactionalEmails.Response.TransactionalEmailResponse response = await _MailjetClient.SendTransactionalEmailAsync(email);
+        Mailjet.Client.TransactionalEmails.Response.TransactionalEmailResponse response = await mailjetClient.SendTransactionalEmailAsync(email);
         switch (response.Messages.Length)
         {
             case 0:
