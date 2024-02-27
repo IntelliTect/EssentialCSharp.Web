@@ -5,13 +5,13 @@ namespace EssentialCSharp.Web.Tests;
 public class SiteMappingTests
 {
     static SiteMapping HelloWorldSiteMapping { get; } = new(Key: "hello-world",
-            PagePath: new string[]
-            {
+            PagePath:
+            [
                 "Chapters",
                 "01",
                 "Pages",
                 "01.html"
-            },
+            ],
             ChapterNumber: 1,
             PageNumber: 1,
             ChapterTitle: "Introducing C#",
@@ -19,13 +19,13 @@ public class SiteMappingTests
             AnchorId: "hello-world",
             IndentLevel: 0);
     static SiteMapping CSyntaxFundamentalsSiteMapping { get; } = new(Key: "c-syntax-fundamentals",
-            PagePath: new string[]
-            {
+            PagePath:
+            [
                 "Chapters",
                 "01",
                 "Pages",
                 "02.html"
-            },
+            ],
             ChapterNumber: 1,
             PageNumber: 2,
             ChapterTitle: "Introducing C#",
@@ -34,11 +34,11 @@ public class SiteMappingTests
             IndentLevel: 2);
     public static List<SiteMapping> GetSiteMap()
     {
-        return new List<SiteMapping>()
-        {
+        return
+        [
             HelloWorldSiteMapping,
             CSyntaxFundamentalsSiteMapping
-    };
+    ];
     }
 
     [Fact]
