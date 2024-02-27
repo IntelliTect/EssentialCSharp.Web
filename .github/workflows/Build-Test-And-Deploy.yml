@@ -147,7 +147,7 @@ jobs:
               captcha-sitekey=keyvaultref:$KEYVAULTURI/secrets/captcha-sitekey,identityref:$MANAGEDIDENTITYID captcha-secretkey=keyvaultref:$KEYVAULTURI/secrets/captcha-secretkey,identityref:$MANAGEDIDENTITYID
             az containerapp update --name $CONTAINER_APP_NAME --resource-group $RESOURCEGROUP --replace-env-vars Authentication__github__clientId=secretref:github-clientid Authentication__github__clientSecret=secretref:github-clientsecret \
               Authentication__microsoft__clientId=secretref:msft-clientid Authentication__microsoft__clientSecret=secretref:msft-clientsecret AuthMessageSender__ApiKey=secretref:emailsender-apikey AuthMessageSender__SecretKey=secretref:emailsender-secret \
-              AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Development \
+              AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Staging \
               AZURE_CLIENT_ID=$AZURECLIENTID HCaptcha__SiteKey=secretref:captcha-sitekey HCaptcha__SecretKey=secretref:captcha-secretkey
 
       - name: Logout of Azure CLI
