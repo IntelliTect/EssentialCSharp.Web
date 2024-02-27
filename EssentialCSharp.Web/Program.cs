@@ -171,7 +171,6 @@ public partial class Program
 
         app.MapHealthChecks("/healthz");
 
-
         app.UseHttpsRedirection();
         app.UseStaticFiles();
 
