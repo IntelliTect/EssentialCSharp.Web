@@ -30,7 +30,7 @@ string title = $"Essential C#{(string.IsNullOrEmpty(ViewBag.PageTitle) ? string.
     <meta name="twitter:title" property="og:title" content="@title" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true" />
-    <link rel="stylesheet" href="./lib/docsearch/style.css" />
+    <link rel="stylesheet" href="/lib/docsearch/style.css" />
     @*Font Family*@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -44,7 +44,7 @@ string title = $"Essential C#{(string.IsNullOrEmpty(ViewBag.PageTitle) ? string.
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="theme-color" content="#ffffff">
     @*So that Safari can import modules*@
-    <script async src="lib/es-module-shims/dist/es-module-shims.js"></script>
+    <script async src="/lib/es-module-shims/dist/es-module-shims.js"></script>
     <environment include="Development">
         <script type="importmap">
             {
