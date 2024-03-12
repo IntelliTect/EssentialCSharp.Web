@@ -111,7 +111,7 @@ jobs:
 
       - name: Create and Deploy to Container App
         if: github.event_name != 'pull_request_target'
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         env:
           CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
           RESOURCEGROUP: ${{ vars.RESOURCEGROUP }}
@@ -125,7 +125,7 @@ jobs:
             az containerapp up -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --image $CONTAINER_REGISTRY/essentialcsharpweb:${{ github.sha }} --environment $CONTAINER_APP_ENVIRONMENT --registry-server $CONTAINER_REGISTRY --ingress external --target-port 8080 --registry-username $ACR_USERNAME --registry-password $ACR_PASSWORD
 
       - name: Assign Managed Identity to Container App and Set Secrets and Environment Variables
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         env:
           CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
           RESOURCEGROUP: ${{ vars.RESOURCEGROUP }}
@@ -152,7 +152,7 @@ jobs:
 
       - name: Logout of Azure CLI
         if: "always()"
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript: |
             az logout
@@ -198,7 +198,7 @@ jobs:
         run: docker push --all-tags ${{ vars.PRODCONTAINER_REGISTRY }}/essentialcsharpweb
 
       - name: Create and Deploy to Container App
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         env:
           CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
           RESOURCEGROUP: ${{ vars.RESOURCEGROUP }}
@@ -212,7 +212,7 @@ jobs:
             az containerapp up -n $CONTAINER_APP_NAME -g $RESOURCEGROUP --image $CONTAINER_REGISTRY/essentialcsharpweb:${{ github.sha }} --environment $CONTAINER_APP_ENVIRONMENT --registry-server $CONTAINER_REGISTRY --ingress external --target-port 8080 --registry-username $ACR_USERNAME --registry-password $ACR_PASSWORD
 
       - name: Assign Managed Identity to Container App and Set Secrets and Environment Variables
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         env:
           CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
           RESOURCEGROUP: ${{ vars.RESOURCEGROUP }}
@@ -239,7 +239,7 @@ jobs:
 
       - name: Logout of Azure CLI
         if: "always()"
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript: |
             az logout

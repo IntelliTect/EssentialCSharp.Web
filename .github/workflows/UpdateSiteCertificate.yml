@@ -71,7 +71,7 @@ jobs:
           RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
           CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
           CONTAINER_APP_ENVIRONMENT: ${{ vars.CONTAINER_APP_ENVIRONMENT }}
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           azcliversion: latest
           inlineScript: |
@@ -84,7 +84,7 @@ jobs:
 
       - name: Logout of Azure CLI
         if: '!cancelled()'
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript: |
             az logout
