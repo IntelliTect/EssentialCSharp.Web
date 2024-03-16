@@ -12,6 +12,7 @@ import mistune
 from mistune.renderers.markdown import MarkdownRenderer
 
 import semantic_kernel as sk
+import semantic_kernel.core_skills.file_io_skill as sk_fio
 import semantic_kernel.connectors.ai.open_ai as sk_oai
 import semantic_kernel.connectors.memory.postgres as sk_mp
 
@@ -32,7 +33,7 @@ async def pull_data2(kernel: sk.Kernel, path: str, suffix: str) -> dict[str, lis
             if filename.endswith(suffix):
                 full_path = os.path.join(root, filename)
                 sub_path = os.path.relpath(full_path, path)
-                files[sub_path] = await read_async(path=full_path)
+                files[sub_path] = await sk_fio.FileIOSkill().read_async(path=full_path)
     data = await chunk_files2(files)
     return data
 
