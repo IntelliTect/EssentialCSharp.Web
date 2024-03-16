@@ -25,7 +25,6 @@ jobs:
             nuget restore ${{ github.workspace }}/EssentialCSharp.Chat/packages.config -PackagesDirectory ${{ github.workspace }}/packages
             python -m pip install --upgrade pip
             pip install -r ${{ github.workspace }}/EssentialCSharp.Chat/requirements.txt
-            ls ${{ github.workspace }}/packages
         - name: Build dotenv
           shell: bash
           run: |
@@ -35,4 +34,5 @@ jobs:
         - name: Build Vector DB
           shell: bash
           run: |
-              python ${{ github.workspace }}/EssentialCSharp.Chat/build_vector_db.py "${{ github.workspace }}/packages/ContentFeedNuget.1.1.0-3639/Markdown/"
+            ls -la ${{ github.workspace }}
+            python ${{ github.workspace }}/EssentialCSharp.Chat/build_vector_db.py "${{ github.workspace }}/packages/ContentFeedNuget.1.1.0-3639/Markdown/"
