@@ -3,6 +3,7 @@ import json
 import os
 import re
 import hashlib
+import sys
 
 from typing import Any
 
@@ -193,8 +194,8 @@ async def add_data_to_memory2(kernel: sk.Kernel, data: dict[str, list[tuple[str,
             )
             i += 1
 
-async def main() -> None:
-    input_folder = R"C:\Users\CaseySchadewitz\Downloads\ContentFeedNuget.1.1.0-477\Markdown"
+async def main(args) -> None:
+    input_folder = args.input_folder
     kernel = sk.Kernel()
     api_key, org_id = sk.openai_settings_from_dot_env()
     postgres_uri = sk.postgres_settings_from_dot_env()
@@ -221,6 +222,12 @@ async def main() -> None:
     #while chatting:
     #    chatting = await chat(kernel, chat_func, context)
 
+
+import argparse
+parser = argparse.ArgumentParser(description='Build a memory of markdown files')
+parser.add_argument('input_folder', type=str, help='The folder to read markdown files from')
+args = parser.parse_args()
+asyncio.run(main(args))
 
 if __name__ == "__main__":
     asyncio.run(main())

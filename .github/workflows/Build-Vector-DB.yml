@@ -16,6 +16,7 @@ jobs:
           with:
             python-version: 3.8
         - name: Install dependencies
+          shell: bash
           run: |
             sudo apt-get install nuget
             nuget config -Set repositoryPath=${{ github.workspace }}/packages -configfile ${{ github.workspace }}/nuget.config
@@ -24,3 +25,13 @@ jobs:
             python -m pip install --upgrade pip
             pip install -r ${{ github.workspace }}/EssentialCSharp.Chat/requirements.txt
             ls ${{ github.workspace }}/packages
+        - name: Build dotenv
+          shell: bash
+          run: |
+            echo "VECTOR_DB_CONNECTION_STRING=${{ secrets.POSTGRES_CONNECTION_STRING }}\n" > ${{ github.workspace }}/.env
+            echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}\n" >> ${{ github.workspace }}/.env
+            echo "OPENAI_ORG_ID=${{ secrets.OPENAI_ORG_ID }}\n" >> ${{ github.workspace }}/.env
+        - name: Build Vector DB
+          shell: bash
+          run: |
+              python ${{ github.workspace }}/EssentialCSharp.Chat/build_vector_db.py "${{ github.workspace }}/packages/ContentFeedNuget.1.1.0-3639/Markdown/"
