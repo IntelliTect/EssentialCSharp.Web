@@ -141,7 +141,7 @@ async def main(args) -> None:
     data = await pull_data2(kernel, input_folder, ".md")
 
     print("Adding data to memory...")
-    await add_data_to_memory(kernel, data)
+    await add_data_to_memory2(kernel, data)
 
     #print("Setting up a chat (with memory!)")
     #chat_func, context = await setup_chat_with_memory(kernel)
