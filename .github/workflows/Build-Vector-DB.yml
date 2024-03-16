@@ -18,6 +18,7 @@ jobs:
         - name: Install dependencies
           shell: bash
           run: |
+            sudo apt install libpq5
             sudo apt-get install nuget
             nuget config -Set repositoryPath=${{ github.workspace }}/packages -configfile ${{ github.workspace }}/nuget.config
             nuget sources Update -Name EssentialCSharp -username unused -password ${{ secrets.AZURE_DEVOPS_PAT }} -src "https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json"
