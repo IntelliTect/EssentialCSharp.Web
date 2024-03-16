@@ -19,7 +19,7 @@ jobs:
           run: |
             sudo apt-get install nuget
             nuget config -Set repositoryPath=${{ github.workspace }}/packages -configfile ${{ github.workspace }}/nuget.config
-            nuget sources Add -username unused -password ${{ secrets.AZURE_DEVOPS_PAT }} -src "https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json"
+            nuget sources Update -Name EssentialCSharp -username unused -password ${{ secrets.AZURE_DEVOPS_PAT }} -src "https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json"
             nuget restore ${{ github.workspace }}/EssentialCSharp.Chat/packages.config -PackagesDirectory ${{ github.workspace }}/packages
             python -m pip install --upgrade pip
             pip install -r ${{ github.workspace }}/EssentialCSharp.Chat/requirements.txt
