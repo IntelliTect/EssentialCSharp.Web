@@ -91,7 +91,7 @@ async def add_data_to_memory(kernel: sk.Kernel, data: dict[str, list[str]]) -> N
     for filename, chunks in data.items():
         i = 1
         for chunk in chunks:
-            await kernel.memory.save_information_async("essential_c_sharp", id=f"{filename}_{i}", text=chunk)
+            await kernel.memory.save_information_async("chatbot_memory", id=f"{filename}_{i}", text=chunk)
             i += 1
 
 #endregion
@@ -186,7 +186,7 @@ async def add_data_to_memory2(kernel: sk.Kernel, data: dict[str, list[tuple[str,
                 "text_hash": chunk[3]
             }
             await kernel.memory.save_information_async(
-                "essential_c_sharp",
+                "chatbot_memory",
                 id=f"{filename}_{i}",
                 text=chunk[1],
                 description=chunk[0],
