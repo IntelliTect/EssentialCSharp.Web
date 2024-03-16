@@ -28,7 +28,7 @@ jobs:
         - name: Build dotenv
           shell: bash
           run: |
-            echo "VECTOR_DB_CONNECTION_STRING=${{ secrets.POSTGRES_CONNECTION_STRING }}\n" > ${{ github.workspace }}/.env
+            echo "POSTGRES_CONNECTION_STRING=${{ secrets.POSTGRES_CONNECTION_STRING }}\n" > ${{ github.workspace }}/.env
             echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}\n" >> ${{ github.workspace }}/.env
             echo "OPENAI_ORG_ID=${{ secrets.OPENAI_ORG_ID }}\n" >> ${{ github.workspace }}/.env
         - name: Build Vector DB
