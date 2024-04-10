@@ -74,6 +74,20 @@ public class HomeController : Controller
         return View();
     }
 
+    [Route("/guidelines", Name = "guidelines")]
+    public IActionResult Guidelines()
+    {
+        ViewBag.PageTitle = "Coding Guidelines";
+        FileInfo fileInfo = new(Path.Combine(_HostingEnvironment.ContentRootPath, "Guidelines", "guidelines.json"));
+        if (!fileInfo.Exists)
+        {
+            return RedirectToAction(nameof(Error), new { errorMessage = "Guidelines could not be found", statusCode = 404 });
+        }
+        ViewBag.Guidelines = GuidelineListingExtensions.ReadGuidelineJsonFromInputDirectory(fileInfo, _Logger);
+        ViewBag.GuidelinesUrl = Request.Path.Value;
+        return View();
+    }
+
     private string FlipPage(int currentChapter, int currentPage, bool next)
     {
         if (_SiteMappingService.SiteMappings.Count == 0)

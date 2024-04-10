@@ -1,0 +1,46 @@
+@using EssentialCSharp.Web.Models
+@{
+    ViewData["Title"] = "Coding Guidelines";
+    var guidelines = ViewBag.Guidelines as List<GuidelineListing>;
+}
+
+<div>
+    @foreach (var group in guidelines!.GroupBy(g => g.SanitizedSubsection).OrderBy(g => g.Key))
+    {
+        <h2 id="@group.Key?.ToLower()">@group.Key</h2>
+        foreach (var guideline in group)
+        {
+            <div>
+                <i class="@GetSymbolForType(guideline.Type)" style="color: @GetColorForType(guideline.Type); padding-right: 10px;"></i>
+                <span>@guideline.Guideline</span>
+            </div>
+        }
+        <br />
+    }
+</div>
+
+@functions {
+    private string GetSymbolForType(GuidelineType type)
+    {
+        return type switch
+        {
+            GuidelineType.DoNot => "fa fa-solid fa-x",
+            GuidelineType.Avoid => "fa fa-solid fa-circle-exclamation",
+            GuidelineType.Consider => "fa fa-solid fa-question",
+            GuidelineType.Do => "fa fa-solid fa-check",
+            _ => string.Empty,
+        };
+    }
+
+    private string GetColorForType(GuidelineType type)
+    {
+        return type switch
+        {
+            GuidelineType.DoNot => "#ff0000",
+            GuidelineType.Avoid => "#ff0000",
+            GuidelineType.Consider => "#7a7a7a",
+            GuidelineType.Do => "#63E6BE",
+            _ => string.Empty,
+        };
+    }
+}

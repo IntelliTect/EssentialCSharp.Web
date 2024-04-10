@@ -278,3 +278,5 @@ FodyWeavers.xsd
 *.sln.iml
 
 EssentialCSharp.Web/Markdown/
+
+EssentialCSharp.Web/Guidelines/
