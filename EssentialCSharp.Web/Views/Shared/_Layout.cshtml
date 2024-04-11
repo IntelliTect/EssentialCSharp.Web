@@ -109,6 +109,14 @@ string title = $"Essential C#{(string.IsNullOrEmpty(ViewBag.PageTitle) ? string.
 
                     <div class="menu-position">
                         <div class="menu-tooltip">
+                            <form asp-action="Guidelines">
+                                <button class="menu-btn">
+                                    <i class="fa fa-solid fa-scale-balanced fa-lg icon-light"></i>
+                                </button>
+                            </form>
+                            <span class="tooltip-text">Coding Guidelines</span>
+                        </div>
+                        <div class="menu-tooltip">
                             <button class="menu-btn" target="blank"
                                     onclick="window.open('https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas', 'blank')">
                                 <i class="fa fa-solid fa-comment fa-lg icon-light"></i>
@@ -250,7 +258,7 @@ object GetItems(IEnumerable<SiteMapping> chapterItems, int indentLevel) => chapt
 // Examine all items up until we move up to a level higher than where we're starting,
 // which would indicate that we've reached the end of the entries nested under `indentationLevel`
 .TakeWhile(i => i.IndentLevel >= indentLevel)
-// Of all the multi-level descendants we found, take only those at the curent level that we're wanting to render.
+// Of all the multi-level descendants we found, take only those at the current level that we're wanting to render.
 .Where(i => i.IndentLevel == indentLevel)
 .Select(i => new
 {
