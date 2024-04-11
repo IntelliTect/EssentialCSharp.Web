@@ -8,7 +8,7 @@ public static class StringExtensions
     /// Prepares a string to be sanitized.
     /// </summary>
     /// <param name="str">Input string</param>
-    /// <returns>An IEnumberable of the input string</returns>
+    /// <returns>An IEnumerable of the input string</returns>
     public static IEnumerable<string> GetPotentialMatches(this string str)
     {
         string[] pathBeforeAnchorFragment = str.Split("#");
