@@ -83,7 +83,7 @@ public class HomeController : Controller
         {
             return RedirectToAction(nameof(Error), new { errorMessage = "Guidelines could not be found", statusCode = 404 });
         }
-        ViewBag.Guidelines = GuidelineListingExtensions.ReadGuidelineJsonFromInputDirectory(fileInfo, _Logger);
+        ViewBag.Guidelines = GuidelineListing.ReadGuidelineJsonFromInputDirectory(fileInfo, _Logger);
         ViewBag.GuidelinesUrl = Request.Path.Value;
         return View();
     }

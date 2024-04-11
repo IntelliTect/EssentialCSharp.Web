@@ -1,11 +1,11 @@
 @using EssentialCSharp.Web.Models
 @{
     ViewData["Title"] = "Coding Guidelines";
-    var guidelines = ViewBag.Guidelines as List<GuidelineListing>;
+    var guidelines = (List<GuidelineListing>)ViewBag.Guidelines as List<GuidelineListing>;
 }
 
 <div>
-    @foreach (var group in guidelines!.GroupBy(g => g.SanitizedSubsection).OrderBy(g => g.Key))
+    @foreach (var group in guidelines.GroupBy(g => g.SanitizedSubsection).OrderBy(g => g.Key))
     {
         <h2 id="@group.Key?.ToLower()">@group.Key</h2>
         foreach (var guideline in group)
