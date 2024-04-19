@@ -74,8 +74,7 @@ public class HomeController : Controller
         return View();
     }
 
-    [Route("/coding-guidelines", Name = "guidelines")]
-    [Route("/codingguidelines")]
+    [Route("/guidelines", Name = "guidelines")]
     public IActionResult Guidelines()
     {
         ViewBag.PageTitle = "Coding Guidelines";
