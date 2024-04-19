@@ -9,7 +9,7 @@ For any bugs, questions, or anything else with specifically the code found insid
 ## What You Will Need
 
 - [Visual Studio](https://visualstudio.microsoft.com/) (or your preferred IDE)
-- [.NET 7.0 SDK](https://dotnet.microsoft.com/download)
+- [.NET 8.0 SDK](https://dotnet.microsoft.com/download)
   - If you already have .NET installed you can check the version by typing `dotnet --info` into cmd to make sure you have the right version
 
 ## Startup Steps
