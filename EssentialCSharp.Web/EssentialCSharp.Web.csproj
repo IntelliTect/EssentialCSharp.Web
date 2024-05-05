@@ -11,6 +11,7 @@
   <ItemGroup>
     <PackageReference Include="ContentFeedNuget" />
     <PackageReference Include="AspNet.Security.OAuth.GitHub" />
+    <PackageReference Include="EssentialCSharp.Shared.Models" />
     <PackageReference Include="HtmlAgilityPack" />
     <PackageReference Include="IntelliTect.Multitool" />
     <PackageReference Include="Mailjet.Api" />
@@ -44,6 +45,10 @@
   <PropertyGroup>
     <ResolveStaticWebAssetsInputsDependsOn>RemoveIdentityAssets</ResolveStaticWebAssetsInputsDependsOn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="EssentialCSharp.Common"/>
+  </ItemGroup>
 
   <Target Name="RemoveIdentityAssets">
     <ItemGroup>

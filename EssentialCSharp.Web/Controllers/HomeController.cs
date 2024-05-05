@@ -1,3 +1,4 @@
+using EssentialCSharp.Web.Extensions;
 using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using HtmlAgilityPack;
@@ -24,7 +25,7 @@ public class HomeController : Controller
     public IActionResult Index(string key)
     {
         // if no key (default case), then load up home page
-        SiteMapping? siteMapping = SiteMapping.Find(key, _SiteMappingService.SiteMappings);
+        SiteMapping? siteMapping = key.Find(_SiteMappingService.SiteMappings);
 
         if (string.IsNullOrEmpty(key))
         {
@@ -83,7 +84,7 @@ public class HomeController : Controller
         {
             return RedirectToAction(nameof(Error), new { errorMessage = "Guidelines could not be found", statusCode = 404 });
         }
-        ViewBag.Guidelines = GuidelineListing.ReadGuidelineJsonFromInputDirectory(fileInfo, _Logger);
+        ViewBag.Guidelines = fileInfo.ReadGuidelineJsonFromInputDirectory(_Logger);
         ViewBag.GuidelinesUrl = Request.Path.Value;
         return View();
     }
