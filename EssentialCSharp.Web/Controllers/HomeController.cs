@@ -25,7 +25,7 @@ public class HomeController : Controller
     public IActionResult Index(string key)
     {
         // if no key (default case), then load up home page
-        SiteMapping? siteMapping = key.Find(_SiteMappingService.SiteMappings);
+        SiteMapping? siteMapping = _SiteMappingService.SiteMappings.Find(key);
 
         if (string.IsNullOrEmpty(key))
         {

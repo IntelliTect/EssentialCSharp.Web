@@ -44,28 +44,28 @@ public class SiteMappingTests
     [Fact]
     public void FindHelloWorldWithAnchorSlugReturnsCorrectSiteMap()
     {
-        SiteMapping? foundSiteMap = "hello-world#hello-world".Find(GetSiteMap());
+        SiteMapping? foundSiteMap = GetSiteMap().Find("hello-world#hello-world");
         Assert.NotNull(foundSiteMap);
         Assert.Equal(HelloWorldSiteMapping, foundSiteMap!);
     }
     [Fact]
     public void FindCSyntaxFundamentalsWithSpacesReturnsCorrectSiteMap()
     {
-        SiteMapping? foundSiteMap = "C# Syntax Fundamentals".Find(GetSiteMap());
+        SiteMapping? foundSiteMap = GetSiteMap().Find("C# Syntax Fundamentals");
         Assert.NotNull(foundSiteMap);
         Assert.Equal(CSyntaxFundamentalsSiteMapping, foundSiteMap!);
     }
     [Fact]
     public void FindCSyntaxFundamentalsWithSpacesAndAnchorReturnsCorrectSiteMap()
     {
-        SiteMapping? foundSiteMap = "C# Syntax Fundamentals#hello-world".Find(GetSiteMap());
+        SiteMapping? foundSiteMap = GetSiteMap().Find("C# Syntax Fundamentals#hello-world");
         Assert.NotNull(foundSiteMap);
         Assert.Equal(CSyntaxFundamentalsSiteMapping, foundSiteMap!);
     }
     [Fact]
     public void FindCSyntaxFundamentalsSanitizedWithAnchorReturnsCorrectSiteMap()
     {
-        SiteMapping? foundSiteMap = "c-syntax-fundamentals#hello-world".Find(GetSiteMap());
+        SiteMapping? foundSiteMap = GetSiteMap().Find("c-syntax-fundamentals#hello-world");
         Assert.NotNull(foundSiteMap);
         Assert.Equal(CSyntaxFundamentalsSiteMapping, foundSiteMap!);
     }

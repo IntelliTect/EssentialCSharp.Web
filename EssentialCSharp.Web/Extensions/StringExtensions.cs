@@ -65,17 +65,4 @@ public static class StringExtensions
     {
         return System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(str.Trim().ToLowerInvariant().Replace('-', ' '));
     }
-
-    public static SiteMapping? Find(this string key, IList<SiteMapping> siteMappings)
-    {
-        key ??= siteMappings[0].Key;
-        foreach (string? potentialMatch in key.GetPotentialMatches())
-        {
-            if (siteMappings.FirstOrDefault(x => x.Key == potentialMatch) is { } siteMap)
-            {
-                return siteMap;
-            }
-        }
-        return null;
-    }
 }

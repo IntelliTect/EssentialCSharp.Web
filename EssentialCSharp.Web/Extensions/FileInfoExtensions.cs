@@ -19,7 +19,7 @@ public static class FileInfoExtensions
         // Deserialize the JSON string into a List<GuidelineListing>
         List<GuidelineListing>? guidelines = JsonSerializer.Deserialize<List<GuidelineListing>>(jsonString, GuidelineListing.Options);
 
-        if (guidelines != null && guidelines.Count > 0)
+        if (guidelines?.Count > 0)
         {
             logger.LogInformation("guidelines.json successfully read from {JsonPath}", guidelinesJsonFile.FullName);
         }
