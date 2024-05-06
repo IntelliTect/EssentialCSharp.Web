@@ -68,15 +68,6 @@ public class SiteMappingTests
     {
         SiteMapping? foundSiteMap = GetSiteMap().Find("C# Syntax Fundamentals#hello-world");
         Assert.NotNull(foundSiteMap);
-        Assert.Equal(CSyntaxFundamentalsSiteMapping.Key, foundSiteMap.Key);
-        Assert.Equal(CSyntaxFundamentalsSiteMapping.PagePath, foundSiteMap.PagePath);
-        Assert.Equal(CSyntaxFundamentalsSiteMapping.RawHeading, foundSiteMap.RawHeading);
-        Assert.Equal(CSyntaxFundamentalsSiteMapping.ChapterTitle, foundSiteMap.ChapterTitle);
-        Assert.Equal(CSyntaxFundamentalsSiteMapping.ChapterNumber, foundSiteMap.ChapterNumber);
-        Assert.Equal(CSyntaxFundamentalsSiteMapping.PageNumber, foundSiteMap.PageNumber);
-        Assert.Equal(CSyntaxFundamentalsSiteMapping.IndentLevel, foundSiteMap.IndentLevel);
-        Assert.Equal(CSyntaxFundamentalsSiteMapping.AnchorId, foundSiteMap.AnchorId);
-        Assert.Equal(CSyntaxFundamentalsSiteMapping.IncludeInSitemap, foundSiteMap.IncludeInSitemap);
         Assert.Equal(CSyntaxFundamentalsSiteMapping, foundSiteMap);
     }
 
