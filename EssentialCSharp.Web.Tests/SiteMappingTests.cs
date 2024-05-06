@@ -4,36 +4,38 @@ namespace EssentialCSharp.Web.Tests;
 
 public class SiteMappingTests
 {
-    static SiteMapping HelloWorldSiteMapping { get; } = new(Key: "hello-world",
-            PagePath:
+    static SiteMapping HelloWorldSiteMapping { get; } = new(
+            key: "hello-world",
+            pagePath:
             [
                 "Chapters",
                 "01",
                 "Pages",
                 "01.html"
             ],
-            ChapterNumber: 1,
-            PageNumber: 1,
-            ChapterTitle: "Introducing C#",
-            RawHeading: "Introduction",
-            AnchorId: "hello-world",
-            IndentLevel: 0
+            chapterNumber: 1,
+            pageNumber: 1,
+            chapterTitle: "Introducing C#",
+            rawHeading: "Introduction",
+            anchorId: "hello-world",
+            indentLevel: 0
     );
 
-    static SiteMapping CSyntaxFundamentalsSiteMapping { get; } = new(Key: "c-syntax-fundamentals",
-            PagePath:
+    static SiteMapping CSyntaxFundamentalsSiteMapping => new(
+            key: "c-syntax-fundamentals",
+            pagePath:
             [
                 "Chapters",
                 "01",
                 "Pages",
                 "02.html"
             ],
-            ChapterNumber: 1,
-            PageNumber: 2,
-            ChapterTitle: "Introducing C#",
-            RawHeading: "C# Syntax Fundamentals",
-            AnchorId: "c-syntax-fundamentals",
-            IndentLevel: 2
+            chapterNumber: 1,
+            pageNumber: 2,
+            chapterTitle: "Introducing C#",
+            rawHeading: "C# Syntax Fundamentals",
+            anchorId: "c-syntax-fundamentals",
+            indentLevel: 2
     );
 
     public static List<SiteMapping> GetSiteMap()
@@ -66,6 +68,15 @@ public class SiteMappingTests
     {
         SiteMapping? foundSiteMap = GetSiteMap().Find("C# Syntax Fundamentals#hello-world");
         Assert.NotNull(foundSiteMap);
+        Assert.Equal(CSyntaxFundamentalsSiteMapping.Key, foundSiteMap.Key);
+        Assert.Equal(CSyntaxFundamentalsSiteMapping.PagePath, foundSiteMap.PagePath);
+        Assert.Equal(CSyntaxFundamentalsSiteMapping.RawHeading, foundSiteMap.RawHeading);
+        Assert.Equal(CSyntaxFundamentalsSiteMapping.ChapterTitle, foundSiteMap.ChapterTitle);
+        Assert.Equal(CSyntaxFundamentalsSiteMapping.ChapterNumber, foundSiteMap.ChapterNumber);
+        Assert.Equal(CSyntaxFundamentalsSiteMapping.PageNumber, foundSiteMap.PageNumber);
+        Assert.Equal(CSyntaxFundamentalsSiteMapping.IndentLevel, foundSiteMap.IndentLevel);
+        Assert.Equal(CSyntaxFundamentalsSiteMapping.AnchorId, foundSiteMap.AnchorId);
+        Assert.Equal(CSyntaxFundamentalsSiteMapping.IncludeInSitemap, foundSiteMap.IncludeInSitemap);
         Assert.Equal(CSyntaxFundamentalsSiteMapping, foundSiteMap);
     }
 
