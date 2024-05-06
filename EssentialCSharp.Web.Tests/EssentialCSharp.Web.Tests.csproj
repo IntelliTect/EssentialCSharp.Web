@@ -26,6 +26,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Using Include="EssentialCSharp.Common"/>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\EssentialCSharp.Web\EssentialCSharp.Web.csproj" />
   </ItemGroup>
 
