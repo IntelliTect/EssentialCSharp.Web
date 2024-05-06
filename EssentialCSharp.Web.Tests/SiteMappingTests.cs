@@ -21,7 +21,7 @@ public class SiteMappingTests
             indentLevel: 0
     );
 
-    static SiteMapping CSyntaxFundamentalsSiteMapping => new(
+    static SiteMapping CSyntaxFundamentalsSiteMapping { get; } = new(
             key: "c-syntax-fundamentals",
             pagePath:
             [
