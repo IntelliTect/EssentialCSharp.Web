@@ -17,7 +17,9 @@ public class SiteMappingTests
             ChapterTitle: "Introducing C#",
             RawHeading: "Introduction",
             AnchorId: "hello-world",
-            IndentLevel: 0);
+            IndentLevel: 0
+    );
+
     static SiteMapping CSyntaxFundamentalsSiteMapping { get; } = new(Key: "c-syntax-fundamentals",
             PagePath:
             [
@@ -31,14 +33,16 @@ public class SiteMappingTests
             ChapterTitle: "Introducing C#",
             RawHeading: "C# Syntax Fundamentals",
             AnchorId: "c-syntax-fundamentals",
-            IndentLevel: 2);
+            IndentLevel: 2
+    );
+
     public static List<SiteMapping> GetSiteMap()
     {
         return
         [
             HelloWorldSiteMapping,
             CSyntaxFundamentalsSiteMapping
-    ];
+        ];
     }
 
     [Fact]
@@ -46,27 +50,30 @@ public class SiteMappingTests
     {
         SiteMapping? foundSiteMap = GetSiteMap().Find("hello-world#hello-world");
         Assert.NotNull(foundSiteMap);
-        Assert.Equal(HelloWorldSiteMapping, foundSiteMap!);
+        Assert.Equal(HelloWorldSiteMapping, foundSiteMap);
     }
+
     [Fact]
     public void FindCSyntaxFundamentalsWithSpacesReturnsCorrectSiteMap()
     {
         SiteMapping? foundSiteMap = GetSiteMap().Find("C# Syntax Fundamentals");
         Assert.NotNull(foundSiteMap);
-        Assert.Equal(CSyntaxFundamentalsSiteMapping, foundSiteMap!);
+        Assert.Equal(CSyntaxFundamentalsSiteMapping, foundSiteMap);
     }
+
     [Fact]
     public void FindCSyntaxFundamentalsWithSpacesAndAnchorReturnsCorrectSiteMap()
     {
         SiteMapping? foundSiteMap = GetSiteMap().Find("C# Syntax Fundamentals#hello-world");
         Assert.NotNull(foundSiteMap);
-        Assert.Equal(CSyntaxFundamentalsSiteMapping, foundSiteMap!);
+        Assert.Equal(CSyntaxFundamentalsSiteMapping, foundSiteMap);
     }
+
     [Fact]
     public void FindCSyntaxFundamentalsSanitizedWithAnchorReturnsCorrectSiteMap()
     {
         SiteMapping? foundSiteMap = GetSiteMap().Find("c-syntax-fundamentals#hello-world");
         Assert.NotNull(foundSiteMap);
-        Assert.Equal(CSyntaxFundamentalsSiteMapping, foundSiteMap!);
+        Assert.Equal(CSyntaxFundamentalsSiteMapping, foundSiteMap);
     }
 }
