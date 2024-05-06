@@ -4,7 +4,7 @@ namespace EssentialCSharp.Web.Tests;
 
 public class SiteMappingTests
 {
-    static SiteMapping HelloWorldSiteMapping { get; } = new(
+    static SiteMapping HelloWorldSiteMapping => new(
             key: "hello-world",
             pagePath:
             [
@@ -21,7 +21,7 @@ public class SiteMappingTests
             indentLevel: 0
     );
 
-    static SiteMapping CSyntaxFundamentalsSiteMapping { get; } = new(
+    static SiteMapping CSyntaxFundamentalsSiteMapping => new(
             key: "c-syntax-fundamentals",
             pagePath:
             [

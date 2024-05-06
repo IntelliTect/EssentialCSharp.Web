@@ -10,7 +10,10 @@ public static class SiteMappingListExtensions
     /// <returns>If found, the site mapping that matches the key, otherwise null.</returns>
     public static SiteMapping? Find(this IList<SiteMapping> siteMappings, string? key)
     {
-        key ??= siteMappings[0].Key;
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return siteMappings.FirstOrDefault();
+        }
         foreach (string? potentialMatch in key.GetPotentialMatches())
         {
             if (siteMappings.FirstOrDefault(x => x.Key == potentialMatch) is { } siteMap)
