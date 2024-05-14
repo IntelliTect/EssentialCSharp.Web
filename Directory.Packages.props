@@ -9,7 +9,7 @@
     <PackageVersion Include="ContentFeedNuget" Version="$(ToolingPackagesVersion)" />
   </ItemGroup>
   <ItemGroup>
-    <PackageVersion Include="EssentialCSharp.Shared.Models" Version="$(ToolingPackagesVersion)" />
+    <PackageVersion Include="EssentialCSharp.Shared.Models" Version="1.1.1.3911" />
     <PackageVersion Include="AspNet.Security.OAuth.GitHub" Version="8.0.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="HtmlAgilityPack" Version="1.11.61" />
