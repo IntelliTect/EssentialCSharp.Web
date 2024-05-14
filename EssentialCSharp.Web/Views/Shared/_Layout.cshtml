@@ -92,13 +92,29 @@ string title = $"Essential C#{(string.IsNullOrEmpty(ViewBag.PageTitle) ? string.
     <div id="app" class="vh-100">
         <div>
             <header class="header-background">
-                <div class="banner">
-                    <div class="menu-position">
+                <div class="banner d-flex justify-content-between">
+                    <div class="d-flex align-items-center">
                         <button class="menu-btn" v-on:click="sidebarShown = !sidebarShown">
                             <i class="fa fa-bars fa-lg icon-light"></i>
                         </button>
-                        <div>
+@*                         <div>
                             <a class="menu-brand text-light hide-on-mobile" asp-route="home">Essential C#</a>
+                        </div> *@
+                        <div>
+                            <ul class="nav align-items-center">
+                              <li class="nav-item d-none d-md-block">
+                                  <a class="nav-link link-light active fs-4 text-light" aria-current="page" asp-route="home">Essential C#</a>
+                              </li>
+                              <li class="nav-item">
+                                <a class="nav-link link-light" href="#">About</a>
+                              </li>
+                              <li class="nav-item">
+                                <a class="nav-link link-light" href="#">Guidelines</a>
+                              </li>
+                              <li class="nav-item">
+                                <a class="nav-link link-light" href="#">Announcements</a>
+                              </li>
+                            </ul>
                         </div>
                     </div>
 
@@ -106,8 +122,7 @@ string title = $"Essential C#{(string.IsNullOrEmpty(ViewBag.PageTitle) ? string.
                         <span v-cloak>{{chapterParentPage.title}}</span>
                     </a>
 
-
-                    <div class="menu-position">
+                    <div class="d-flex align-items-center">
                         <div class="menu-tooltip">
                             <form asp-action="Guidelines">
                                 <button class="menu-btn">
