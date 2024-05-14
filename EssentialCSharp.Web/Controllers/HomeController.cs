@@ -60,16 +60,21 @@ public class HomeController : Controller
         return View();
     }
 
-    [Route("/Announcements",
-       Name = "Announcements")]
+    [Route("/Announcements", Name = "Announcements")]
     public IActionResult Announcements()
     {
         ViewBag.PageTitle = "Announcements";
         return View();
     }
 
-    [Route("/home",
-    Name = "home")]
+    [Route("/about", Name = "about")]
+    public IActionResult About()
+    {
+        ViewBag.PageTitle = "About";
+        return View();
+    }
+
+    [Route("/home", Name = "home")]
     public IActionResult Home()
     {
         return View();

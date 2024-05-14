@@ -4,10 +4,13 @@
     var guidelines = (List<GuidelineListing>)ViewBag.Guidelines as List<GuidelineListing>;
 }
 
+<h1 class="fs-2">@ViewData["Title"]</h1>
+<hr class="divider-blue" />
+
 <div>
     @foreach (var group in guidelines.GroupBy(g => g.SanitizedSubsection).OrderBy(g => g.Key))
     {
-        <h2 id="@group.Key?.ToLower()">@group.Key</h2>
+        <h2 class="fs-4" id="@group.Key?.ToLower()">@group.Key</h2>
         foreach (var guideline in group)
         {
             <div>

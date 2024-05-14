@@ -97,22 +97,19 @@ string title = $"Essential C#{(string.IsNullOrEmpty(ViewBag.PageTitle) ? string.
                         <button class="menu-btn" v-on:click="sidebarShown = !sidebarShown">
                             <i class="fa fa-bars fa-lg icon-light"></i>
                         </button>
-@*                         <div>
-                            <a class="menu-brand text-light hide-on-mobile" asp-route="home">Essential C#</a>
-                        </div> *@
-                        <div>
+                        <div class="d-none d-lg-block">
                             <ul class="nav align-items-center">
                               <li class="nav-item d-none d-md-block">
                                   <a class="nav-link link-light active fs-4 text-light" aria-current="page" asp-route="home">Essential C#</a>
                               </li>
                               <li class="nav-item">
-                                <a class="nav-link link-light" href="#">About</a>
+                                <a class="nav-link link-light" href="/about">About</a>
                               </li>
                               <li class="nav-item">
-                                <a class="nav-link link-light" href="#">Guidelines</a>
+                                <a class="nav-link link-light" href="/guidelines">Guidelines</a>
                               </li>
                               <li class="nav-item">
-                                <a class="nav-link link-light" href="#">Announcements</a>
+                                <a class="nav-link link-light" href="/announcements">Announcements</a>
                               </li>
                             </ul>
                         </div>
@@ -123,29 +120,30 @@ string title = $"Essential C#{(string.IsNullOrEmpty(ViewBag.PageTitle) ? string.
                     </a>
 
                     <div class="d-flex align-items-center">
-                        <div class="menu-tooltip">
+@*                         <div class="menu-tooltip">
                             <form asp-action="Guidelines">
                                 <button class="menu-btn">
                                     <i class="fa fa-solid fa-scale-balanced fa-lg icon-light"></i>
                                 </button>
                             </form>
                             <span class="tooltip-text">Coding Guidelines</span>
-                        </div>
-                        <div class="menu-tooltip">
+                        </div> *@
+                        <div class="menu-tooltip border-end">
                             <button class="menu-btn" target="blank"
                                     onclick="window.open('https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas', 'blank')">
                                 <i class="fa fa-solid fa-comment fa-lg icon-light"></i>
                             </button>
                             <span class="tooltip-text">Feedback</span>
                         </div>
-                        <div class="menu-tooltip">
+
+@*                         <div class="menu-tooltip">
                             <form asp-action="Announcements">
                                 <button class="menu-btn">
                                     <i class="fa fa-solid fa-bullhorn fa-lg icon-light"></i>
                                 </button>
                             </form>
                             <span class="tooltip-text">Announcements</span>
-                        </div>
+                        </div> *@
                         <partial name="_LoginPartial" />
                     </div>
                 </div>
