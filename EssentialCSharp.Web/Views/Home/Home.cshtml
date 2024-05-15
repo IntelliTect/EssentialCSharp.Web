@@ -1,9 +1,46 @@
-<div class="row">
-    <div class="col-12">
-        <h1>Welcome to Essential C#</h1>
-        <div class="fs-5"><i>Written by Mark Michaelis with Eric Lippert & Kevin Bost</i></div>
-    </div>
+<div>
+    <h1 class="fs-2">Welcome to Essential C#</h1>
+</div>
+
+<hr class="divider-light-blue" />
+
+<div class="row gx-5">
     <div class="col-12 col-md-6">
+        <div class="h3">The Comprehensive, Expert Guide to C# Language Programming</div>
+        <div class="h5"><i>Written by Mark Michaelis with Eric Lippert & Kevin Bost</i></div>
+        <p>
+            Essential C# is a well-organized, no-fluff guide to C# for programmers at all levels of experience.
+            Reflecting the most important C# features from 3.0 through 8.0 and including modern programming patterns,
+            it will help you write code that&rsquo;s simple, powerful, robust, secure, and maintainable.
+        </p>
+        <p>
+            World-class C# expert Mark Michaelis presents a complete tutorial and reference for the entire language,
+            including expert coverage of key C# enhancements, C#&rsquo;s use with .NET Core/.NET Standard,
+            and cross-platform compilation. He illustrates key C# constructs with succinct examples,
+            and presents best-practice coding guidelines.
+        </p>
+    </div>
+</div>
+
+<hr class="divider-light-blue" />
+
+<div class="row gx-5">
+    <div class="col-12 col-md-6">
+        <div class="d-flex align-items-center justify-content-center h-100">
+            <img src="/images/book.png" class="img-fluid" style="height: 450px" alt="Essential C Sharp Book">
+        </div>
+    </div>
+    <div class="col-12 col-md-6 mt-3">
+        <div class="h3">
+            Essential C# Book
+        </div>
+        <p>
+            Check out the interactive and comprehensive guide to the C# coding language to expand your development knowledge and enhance your skill set at your own pace. The site includes everything developers need to master C# and is an excellent tool for beginners to experts.
+        </p>
+        <div>
+            <a class="btn btn-primary" href="https://a.co/d/95wxhTg" target="_blank">Get the Book</a>
+        </div>
+
         <div class="quote">
             <div class="quote-content">
                 <div class="quote-icon">
@@ -20,35 +57,15 @@
             </div>
         </div>
     </div>
-    <div class="col-12 col-md-6">
-        <div class="py-4">
-            <h3>The Comprehensive, Expert Guide to C# Language Programming</h3>
-            <p>
-                Essential C# is a well-organized, no-fluff guide to C# for programmers at all levels of experience.
-                Reflecting the most important C# features from 3.0 through 8.0 and including modern programming patterns,
-                it will help you write code that&rsquo;s simple, powerful, robust, secure, and maintainable.
-            </p>
-            <p>
-                World-class C# expert Mark Michaelis presents a complete tutorial and reference for the entire language,
-                including expert coverage of key C# enhancements, C#&rsquo;s use with .NET Core/.NET Standard,
-                and cross-platform compilation. He illustrates key C# constructs with succinct examples,
-                and presents best-practice coding guidelines.
-            </p>
-        </div>
-    </div>
 </div>
 
+<hr class="divider-light-blue" />
 
-
-<div>
-    <hr class="divider-blue" />
-</div>
-
-<div class="row py-4">
+<div class="row">
     <div class="col-12 my-2">
         <h3>Web Features Coming Soon</h3>
     </div>
-    <div v-for="(feature, i) in featuresComingSoonList.slice(0, 3)" key="i" class="col-sm-12 col-md-6 col-lg-4 mb-4">
+    <div v-for="(feature, i) in featuresComingSoonList.slice(0, 3)" key="i" class="col-sm-12 col-md-6 col-lg-4 mb-5">
         <div class="card card-blue">
             <div class="card-body">
                 <h5 class="card-title" v-html="feature.title"></h5>
@@ -58,15 +75,11 @@
     </div>
 </div>
 
-<div>
-    <hr class="divider-light-blue" />
-</div>
-
-<div class="row py-4">
+<div class="row">
     <div class="col-12 my-2">
         <h3>Content Coming Soon</h3>
     </div>
-    <div v-for="(feature, i) in contentComingSoonList.slice(0, 3)" key="i" class="col-sm-12 col-md-6 col-lg-4 mb-4">
+    <div v-for="(feature, i) in contentComingSoonList.slice(0, 3)" key="i" class="col-sm-12 col-md-6 col-lg-4 mb-5">
         <div class="card card-light-blue">
             <div class="card-body">
                 <h5 class="card-title" v-html="feature.title"></h5>
@@ -76,15 +89,11 @@
     </div>
 </div>
 
-<div>
-    <hr class="divider-yellow" />
-</div>
-
-<div class="row py-4">
+<div class="row">
     <div class="col-12 my-2">
         <h3>Recently Completed</h3>
     </div>
-    <div v-for="(feature, i) in completedFeaturesList.slice(0, 3)" key="i" class="col-sm-12 col-md-6 col-lg-4 mb-4">
+    <div v-for="(feature, i) in completedFeaturesList.slice(0, 3)" key="i" class="col-sm-12 col-md-6 col-lg-4 mb-5">
         <div class="card card-yellow">
             <div class="card-body">
                 <h5 class="card-title" v-html="feature.title"></h5>
@@ -93,10 +102,11 @@
         </div>
     </div>
 </div>
+
 <div class="row justify-content-center">
     <div class="col-auto">
-        <button type="button" class="button my-4" onclick="window.location.href='/Announcements'">
+        <a class="btn btn-primary" href="/Announcements">
             View All Announcements
-        </button>
+        </a>
     </div>
 </div>
