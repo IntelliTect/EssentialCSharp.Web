@@ -3,7 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
     <AccessToNugetFeed>true</AccessToNugetFeed>
-    <ToolingPackagesVersion>1.1.1.3893</ToolingPackagesVersion>
+    <ToolingPackagesVersion>1.1.1.3911</ToolingPackagesVersion>
   </PropertyGroup>
   <ItemGroup Condition="$(AccessToNugetFeed)">
     <PackageVersion Include="ContentFeedNuget" Version="$(ToolingPackagesVersion)" />
