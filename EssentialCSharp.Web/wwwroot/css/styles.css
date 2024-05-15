@@ -43,7 +43,7 @@ a:hover {
 
 .btn-primary {
     --bs-btn-color: #fff;
-    --bs-btn-bg: var(--primary-color);
+    --bs-btn-bg: var(--primary-color) !important;
     --bs-btn-border-color: var(--primary-color);
     --bs-btn-hover-color: #fff;
     --bs-btn-hover-bg: var(--secondary-color);
@@ -57,6 +57,25 @@ a:hover {
     --bs-btn-disabled-bg: var(--accent-color-1);
     --bs-btn-disabled-border-color: var(--accent-color-1);
 }
+
+.btn-primary {
+    color: #fff;
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+    .btn-primary:hover {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+    }
+
+    .btn-primary:focus {
+        background-color: var(--secondary-color);
+    }
+
+    .btn-primary:active {
+        background-color: var(--secondary-color);
+    }
 
 :hover.button {
   opacity: 75%;
