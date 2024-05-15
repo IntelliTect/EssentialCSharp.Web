@@ -101,8 +101,8 @@
                             <ul class="nav align-items-center">
                                 <li class="nav-item d-none d-md-block">
                                     <a class="@(string.IsNullOrEmpty(ViewBag.PageTitle) ? "active nav-link fs-4" : "nav-link fs-4")" href="/home">
-                                       Essential C#
-                                   </a>
+                                        Essential C#
+                                    </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="@(ViewBag.PageTitle == "About" ? "active nav-link" : "nav-link")" href="/about">About</a>
@@ -280,8 +280,8 @@
         }
 
             PREVIOUS_PAGE = @Json.Serialize(ViewBag.PreviousPage)
-                NEXT_PAGE = @Json.Serialize(ViewBag.NextPage)
-                    TOC_DATA = @Json.Serialize(tocData)
+            NEXT_PAGE = @Json.Serialize(ViewBag.NextPage)
+            TOC_DATA = @Json.Serialize(tocData)
     </script>
 
     @* Recursive vue component template for rendering the table of contents. *@
