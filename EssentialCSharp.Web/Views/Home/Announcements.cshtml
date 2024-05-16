@@ -10,7 +10,7 @@
             <h2 class="fs-4">Web Features Coming Soon</h2>
         </div>
         <div v-for="(feature, i) in featuresComingSoonList" key="i" class="col-sm-12 col-md-6 col-lg-4 mb-5">
-            <div class="card card-blue">
+            <div class="card card-primary">
                 <div class="card-body">
                     <h5 class="card-title" v-html="feature.title"></h5>
                     <p class="card-text" v-html="feature.text"></p>
@@ -22,7 +22,7 @@
             <h2 class="fs-4">Content Coming Soon</h2>
         </div>
         <div v-for="(feature, i) in contentComingSoonList" key="i" class="col-sm-12 col-md-6 col-lg-4 mb-5">
-            <div class="card card-light-blue">
+            <div class="card card-secondary">
                 <div class="card-body">
                     <h5 class="card-title" v-html="feature.title"></h5>
                     <p class="card-text" v-html="feature.text"></p>
@@ -34,7 +34,7 @@
             <h2 class="fs-4">Recently Completed</h2>
         </div>
         <div v-for="(feature, i) in completedFeaturesList" key="i" class="col-sm-12 col-md-6 col-lg-4 mb-5">
-            <div class="card card-yellow">
+            <div class="card card-accent">
                 <div class="card-body">
                     <h5 class="card-title" v-html="feature.title"></h5>
                     <p class="card-text" v-html="feature.text"></p>

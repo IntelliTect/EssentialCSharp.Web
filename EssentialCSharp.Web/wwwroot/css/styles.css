@@ -1,13 +1,15 @@
 /* Global Styles */
 
 :root {
+  --primary-color: rgb(30, 83, 160);
+  --primary-color-rgb: 30, 83, 160;
+  --primary-dark-color: rgb(35, 39, 50);
+  --primary-medium-color: rgb(35, 119, 213);
+  --primary-accent-color: rgb(127, 201, 206);
+
   --toolbar-height: 50px;
-  --primary-color: #11356a;
-  --secondary-color: #232732;
-  --accent-color-1: #7fc9ce;
-  --accent-color-2: #ffdd74;
-  --link-color: #0042b5;
-  --link-color-hover: #208fe4;
+  --link-color: var(--primary-color);
+  --link-color-hover: var(--primary-medium-color);
   --grey: #bcbec0;
   --grey-lighten-1: #e6e7e8;
   --grey-lighten-2: #f1f2f2;
@@ -25,7 +27,14 @@ h1,
 h2,
 h3 {
   font-weight: bold;
-  color: var(--primary-color);
+  color: var(--primary-dark-color);
+}
+
+h4,
+h5,
+h6 {
+    font-weight: normal;
+    color: var(--primary-dark-color);
 }
 
 a {
@@ -46,16 +55,16 @@ a:hover {
     --bs-btn-bg: var(--primary-color) !important;
     --bs-btn-border-color: var(--primary-color);
     --bs-btn-hover-color: #fff;
-    --bs-btn-hover-bg: var(--secondary-color);
-    --bs-btn-hover-border-color: var(--secondary-color);
-    --bs-btn-focus-shadow-rgb: var(--accent-color-1);
+    --bs-btn-hover-bg: var(--primary-medium-color);
+    --bs-btn-hover-border-color: var(--primary-medium-color);
+    --bs-btn-focus-shadow-rgb: var(--primary-accent-color);
     --bs-btn-active-color: #fff;
     --bs-btn-active-bg: var(--primary-color);
     --bs-btn-active-border-color: var(--primary-color);
     --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
     --bs-btn-disabled-color: #fff;
-    --bs-btn-disabled-bg: var(--accent-color-1);
-    --bs-btn-disabled-border-color: var(--accent-color-1);
+    --bs-btn-disabled-bg: var(--primary-accent-color);
+    --bs-btn-disabled-border-color: var(--primary-accent-color);
 }
 
 .btn-primary {
@@ -65,16 +74,16 @@ a:hover {
 }
 
     .btn-primary:hover {
-        background-color: var(--secondary-color);
-        border-color: var(--secondary-color);
+        background-color: var(--primary-medium-color);
+        border-color: var(--primary-medium-color);
     }
 
     .btn-primary:focus {
-        background-color: var(--secondary-color);
+        background-color: var(--primary-medium-color);
     }
 
     .btn-primary:active {
-        background-color: var(--secondary-color);
+        background-color: var(--primary-medium-color);
     }
 
 :hover.button {
@@ -86,25 +95,13 @@ a:hover {
 }
 
 .divider-light-blue {
-  border-top: 3px solid var(--accent-color-1);
-  margin: 2em 0 2em 0;
-  opacity: 1;
-}
-
-.divider-blue {
-  border-top: 3px solid var(--link-color-hover);
-  margin: 2em 0 2em 0;
-  opacity: 1;
-}
-
-.divider-yellow {
-  border-top: 3px solid var(--accent-color-2);
+  border-top: 3px solid var(--primary-accent-color);
   margin: 2em 0 2em 0;
   opacity: 1;
 }
 
 .icon-light {
-  color: var(--accent-color-1);
+  color: var(--primary-accent-color);
 }
 
 :hover.icon-light {
@@ -129,29 +126,29 @@ a:hover {
 /* Style Edits to Bootstrap Components */
 
 .card-title {
-  font-weight: bold;
-  color: var(--primary-color);
+  font-weight: 500;
+  color: var(--primary-dark-color);
 }
 
 .card {
   height: 100%;
 }
 
-.card-light-blue {
+.card-primary {
   border-radius: 0;
-  border-left: 8px solid var(--accent-color-1);
+  border-left: 8px solid var(--primary-color);
   background-color: var(--grey-lighten-2);
 }
 
-.card-blue {
+.card-secondary {
   border-radius: 0;
-  border-left: 8px solid var(--link-color-hover);
+  border-left: 8px solid var(--primary-dark-color);
   background-color: var(--grey-lighten-2);
 }
 
-.card-yellow {
+.card-accent {
   border-radius: 0;
-  border-left: 8px solid var(--accent-color-2);
+  border-left: 8px solid var(--primary-accent-color);
   background-color: var(--grey-lighten-2);
 }
 
@@ -268,11 +265,11 @@ a:hover {
 }
 
 .nav-link:hover {
-    color: var(--accent-color-1);
+    color: var(--primary-accent-color);
 }
 
 .nav-item .active {
-    color: var(--accent-color-1);
+    color: var(--primary-accent-color);
 }
 
 /* Page Navigation Arrow Buttons */
@@ -534,7 +531,7 @@ details > summary::-webkit-details-marker {
   width: 100%;
   display: flex;
   justify-content: center;
-  background: var(--secondary-color);
+  background: var(--primary-dark-color);
   position: fixed;
   top: 0;
   z-index: 2;
@@ -652,7 +649,7 @@ details > summary::-webkit-details-marker {
 }
 
 .quote .quote-content .quote-icon {
-  color: var(--accent-color-1);
+  color: var(--primary-accent-color);
   position: absolute;
   top: -30px;
   left: 20px;
