@@ -122,7 +122,7 @@
                     </a>
 
                     <div class="d-flex align-items-center">
-                        <div class="border-end pe-2">
+                        <div class="border-end pe-3 d-none d-md-block">
                             <a class="btn btn-primary btn-sm rounded-pill"
                                target="blank"
                                href="https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas">
@@ -130,6 +130,11 @@
                                 Feedback
                             </a>
                         </div>
+                        <a class="d-md-none"
+                           target="blank"
+                           href="https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas">
+                            <span class="fa fa-solid fa-comment icon-light fa-lg"></span>
+                        </a>
                         <partial name="_LoginPartial" />
                     </div>
                 </div>
@@ -159,9 +164,22 @@
                                         </span>
                                     </button>
                                 </div>
-                                <div class="show-on-mobile" style="padding-left:6px; margin-bottom:1rem;">
-                                    <a href="home" class="toc-label" style="text-decoration:none">
-                                        Home
+                                <div class="list-group list-group-flush d-md-none mb-3">
+                                    <a href="home" class="@(string.IsNullOrEmpty(ViewBag.PageTitle) ? "active list-group-item list-group-item-action" : "list-group-item list-group-item-action")">
+                                        <span class="fas fa-home me-2"></span>
+                                        <span class="fs-5">Home</span>
+                                    </a>
+                                    <a href="/About" class="@(ViewBag.PageTitle == "About" ? "active list-group-item list-group-item-action" : "list-group-item list-group-item-action")">
+                                        <span class="fas fa-book me-2"></span>
+                                        <span class="fs-5">About</span>
+                                    </a>
+                                    <a href="/Guidelines" class="@(ViewBag.PageTitle == "Coding Guidelines" ? "active list-group-item list-group-item-action" : "list-group-item list-group-item-action")">
+                                        <span class="fas fa-code me-2"></span>
+                                        <span class="fs-5">Guidelines</span>
+                                    </a>
+                                    <a href="/Announcements" class="@(ViewBag.PageTitle == "Announcements" ? "active list-group-item list-group-item-action" : "list-group-item list-group-item-action")">
+                                        <span class="fas fa-bullhorn me-2"></span>
+                                        <span class="fs-5">Announcements</span>
                                     </a>
                                 </div>
                                 <div>

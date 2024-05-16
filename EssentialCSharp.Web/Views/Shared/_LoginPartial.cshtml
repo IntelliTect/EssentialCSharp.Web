@@ -4,7 +4,7 @@
 @inject SignInManager<EssentialCSharpWebUser> SignInManager
 @inject UserManager<EssentialCSharpWebUser> UserManager
 
-<div class="menu-tooltip">
+<div class="menu-tooltip text-nowrap">
     @if (SignInManager.IsSignedIn(User))
     {
         <div class="menu-tooltip">

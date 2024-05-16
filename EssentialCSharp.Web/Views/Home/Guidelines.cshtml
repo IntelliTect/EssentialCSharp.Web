@@ -4,22 +4,24 @@
     var guidelines = (List<GuidelineListing>)ViewBag.Guidelines as List<GuidelineListing>;
 }
 
-<h1 class="fs-2">@ViewData["Title"]</h1>
-<hr class="divider-light-blue" />
+<div class="px-3">
+    <h1>@ViewData["Title"]</h1>
+    <hr class="divider-light-blue" />
 
-<div>
-    @foreach (var group in guidelines.GroupBy(g => g.SanitizedSubsection).OrderBy(g => g.Key))
-    {
-        <h2 class="fs-4" id="@group.Key?.ToLower()">@group.Key</h2>
-        foreach (var guideline in group)
+    <div>
+        @foreach (var group in guidelines.GroupBy(g => g.SanitizedSubsection).OrderBy(g => g.Key))
         {
-            <div>
-                <i class="@GetSymbolForType(guideline.Type)" style="color: @GetColorForType(guideline.Type); padding-right: 10px;"></i>
-                <span>@guideline.Guideline</span>
-            </div>
+            <h2 class="fs-4" id="@group.Key?.ToLower()">@group.Key</h2>
+            foreach (var guideline in group)
+            {
+                <div>
+                    <i class="@GetSymbolForType(guideline.Type)" style="color: @GetColorForType(guideline.Type); padding-right: 10px;"></i>
+                    <span>@guideline.Guideline</span>
+                </div>
+            }
+            <br />
         }
-        <br />
-    }
+    </div>
 </div>
 
 @functions {

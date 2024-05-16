@@ -3,7 +3,7 @@
 :root {
   --primary-color: rgb(30, 83, 160);
   --primary-color-rgb: 30, 83, 160;
-  --primary-dark-color: rgb(35, 39, 50);
+  --primary-dark-color: rgb(26, 48, 70);
   --primary-medium-color: rgb(35, 119, 213);
   --primary-accent-color: rgb(127, 201, 206);
 
@@ -24,16 +24,16 @@ body {
 }
 
 h1,
-h2,
-h3 {
+h2 {
   font-weight: bold;
   color: var(--primary-dark-color);
 }
 
+h3,
 h4,
 h5,
 h6 {
-    font-weight: normal;
+    font-weight: 500;
     color: var(--primary-dark-color);
 }
 
@@ -150,6 +150,11 @@ a:hover {
   border-radius: 0;
   border-left: 8px solid var(--primary-accent-color);
   background-color: var(--grey-lighten-2);
+}
+
+.list-group-item.active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
 }
 
 /* Main Layout */
