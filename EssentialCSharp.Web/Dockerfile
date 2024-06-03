@@ -5,7 +5,7 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0.300 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0.301 AS build
 RUN sh -c "$(curl -fsSL https://aka.ms/install-artifacts-credprovider.sh)"
 WORKDIR /src
 COPY . .
