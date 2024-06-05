@@ -8,9 +8,9 @@
 <html lang="en">
 <head>
     @{
-const string imageUrl = "https://essentialcsharp.com/images/icon.png";
-const string description = "Accelerate your development knowledge with C# expert Mark Michaelis' free, online comprehensive C# tutorial and reference that is updated through C# 11.0";
-string title = $"Essential C#{(string.IsNullOrEmpty(ViewBag.PageTitle) ? string.Empty : $": {ViewBag.PageTitle}")}";
+        const string imageUrl = "https://essentialcsharp.com/images/icon.png";
+        const string description = "Accelerate your development knowledge with C# expert Mark Michaelis' free, online comprehensive C# tutorial and reference that is updated through C# 11.0";
+        string title = $"Essential C#{(string.IsNullOrEmpty(ViewBag.PageTitle) ? string.Empty : $": {ViewBag.PageTitle}")}";
     }
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -92,13 +92,28 @@ string title = $"Essential C#{(string.IsNullOrEmpty(ViewBag.PageTitle) ? string.
     <div id="app" class="vh-100">
         <div>
             <header class="header-background">
-                <div class="banner">
-                    <div class="menu-position">
+                <div class="banner d-flex justify-content-between">
+                    <div class="d-flex align-items-center menu-position">
                         <button class="menu-btn" v-on:click="sidebarShown = !sidebarShown">
                             <i class="fa fa-bars fa-lg icon-light"></i>
                         </button>
-                        <div>
-                            <a class="menu-brand text-light hide-on-mobile" asp-route="home">Essential C#</a>
+                        <div class="d-none d-lg-block">
+                            <ul class="nav align-items-center">
+                                <li class="nav-item d-none d-md-block">
+                                    <a class="@(string.IsNullOrEmpty(ViewBag.PageTitle) ? "active nav-link fs-4" : "nav-link fs-4")" href="/home">
+                                        Essential C#
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="@(ViewBag.PageTitle == "About" ? "active nav-link" : "nav-link")" href="/about">About</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="@(ViewBag.PageTitle == "Coding Guidelines" ? "active nav-link" : "nav-link")" href="/guidelines">Guidelines</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="@(ViewBag.PageTitle == "Announcements" ? "active nav-link" : "nav-link")" href="/announcements">Announcements</a>
+                                </li>
+                            </ul>
                         </div>
                     </div>
 
@@ -106,31 +121,20 @@ string title = $"Essential C#{(string.IsNullOrEmpty(ViewBag.PageTitle) ? string.
                         <span v-cloak>{{chapterParentPage.title}}</span>
                     </a>
 
-
-                    <div class="menu-position">
-                        <div class="menu-tooltip">
-                            <form asp-action="Guidelines">
-                                <button class="menu-btn">
-                                    <i class="fa fa-solid fa-scale-balanced fa-lg icon-light"></i>
-                                </button>
-                            </form>
-                            <span class="tooltip-text">Coding Guidelines</span>
+                    <div class="d-flex align-items-center">
+                        <div class="border-end pe-3 d-none d-md-block">
+                            <a class="btn btn-primary btn-sm rounded-pill"
+                               target="blank"
+                               href="https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas">
+                                <span class="fa fa-solid fa-comment fa-lg text-light me-1"></span>
+                                Feedback
+                            </a>
                         </div>
-                        <div class="menu-tooltip">
-                            <button class="menu-btn" target="blank"
-                                    onclick="window.open('https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas', 'blank')">
-                                <i class="fa fa-solid fa-comment fa-lg icon-light"></i>
-                            </button>
-                            <span class="tooltip-text">Feedback</span>
-                        </div>
-                        <div class="menu-tooltip">
-                            <form asp-action="Announcements">
-                                <button class="menu-btn">
-                                    <i class="fa fa-solid fa-bullhorn fa-lg icon-light"></i>
-                                </button>
-                            </form>
-                            <span class="tooltip-text">Announcements</span>
-                        </div>
+                        <a class="d-md-none"
+                           target="blank"
+                           href="https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas">
+                            <span class="fa fa-solid fa-comment icon-light fa-lg"></span>
+                        </a>
                         <partial name="_LoginPartial" />
                     </div>
                 </div>
@@ -160,9 +164,22 @@ string title = $"Essential C#{(string.IsNullOrEmpty(ViewBag.PageTitle) ? string.
                                         </span>
                                     </button>
                                 </div>
-                                <div class="show-on-mobile" style="padding-left:6px; margin-bottom:1rem;">
-                                    <a href="home" class="toc-label" style="text-decoration:none">
-                                        Home
+                                <div class="list-group list-group-flush d-md-none mb-3">
+                                    <a href="home" class="@(string.IsNullOrEmpty(ViewBag.PageTitle) ? "active list-group-item list-group-item-action" : "list-group-item list-group-item-action")">
+                                        <span class="fas fa-home me-2"></span>
+                                        <span class="fs-5">Home</span>
+                                    </a>
+                                    <a href="/About" class="@(ViewBag.PageTitle == "About" ? "active list-group-item list-group-item-action" : "list-group-item list-group-item-action")">
+                                        <span class="fas fa-book me-2"></span>
+                                        <span class="fs-5">About</span>
+                                    </a>
+                                    <a href="/Guidelines" class="@(ViewBag.PageTitle == "Coding Guidelines" ? "active list-group-item list-group-item-action" : "list-group-item list-group-item-action")">
+                                        <span class="fas fa-code me-2"></span>
+                                        <span class="fs-5">Guidelines</span>
+                                    </a>
+                                    <a href="/Announcements" class="@(ViewBag.PageTitle == "Announcements" ? "active list-group-item list-group-item-action" : "list-group-item list-group-item-action")">
+                                        <span class="fas fa-bullhorn me-2"></span>
+                                        <span class="fs-5">Announcements</span>
                                     </a>
                                 </div>
                                 <div>
@@ -184,9 +201,9 @@ string title = $"Essential C#{(string.IsNullOrEmpty(ViewBag.PageTitle) ? string.
                             <div v-cloak>
                                 <small>
                                     Build: @if (ReleaseDateAttribute.GetReleaseDate() is DateTime date)
-                        {
-                            <b>@TimeZoneInfo.ConvertTimeFromUtc(date, TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time")).ToString("d MMM, yyyy h:mm:ss tt", CultureInfo.InvariantCulture)</b>
-                        }
+                                    {
+                                        <b>@TimeZoneInfo.ConvertTimeFromUtc(date, TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time")).ToString("d MMM, yyyy h:mm:ss tt", CultureInfo.InvariantCulture)</b>
+                                    }
                                 </small>
                             </div>
                             <div v-cloak v-if="sidebarTab == 'search'" id="searchBar" class="search-window">
@@ -253,23 +270,23 @@ string title = $"Essential C#{(string.IsNullOrEmpty(ViewBag.PageTitle) ? string.
     <script>
         @{
             object GetItems(IEnumerable<SiteMapping> chapterItems, int indentLevel) => chapterItems
-                // Skip the chapter entry itself
-                .Skip(1)
-                // Examine all items up until we move up to a level higher than where we're starting,
-                // which would indicate that we've reached the end of the entries nested under `indentationLevel`
-                .TakeWhile(i => i.IndentLevel >= indentLevel)
-                // Of all the multi-level descendants we found, take only those at the current level that we're wanting to render.
-                .Where(i => i.IndentLevel == indentLevel)
-                .Select(i => new
-                {
-                    Level = indentLevel,
-                    Key = i.Key,
-                    Href = $"{i.Key}#{i.AnchorId}",
-                    Title = i.RawHeading,
-                    // Any children of this node will be /after/ this node,
-                    // so skip any items that are /before/ the current node.
-                    Items = GetItems(chapterItems.SkipWhile(q => i.Key != q.Key), indentLevel + 1)
-                });
+            // Skip the chapter entry itself
+            .Skip(1)
+            // Examine all items up until we move up to a level higher than where we're starting,
+            // which would indicate that we've reached the end of the entries nested under `indentationLevel`
+            .TakeWhile(i => i.IndentLevel >= indentLevel)
+            // Of all the multi-level descendants we found, take only those at the current level that we're wanting to render.
+            .Where(i => i.IndentLevel == indentLevel)
+            .Select(i => new
+            {
+                Level = indentLevel,
+                Key = i.Key,
+                Href = $"{i.Key}#{i.AnchorId}",
+                Title = i.RawHeading,
+                // Any children of this node will be /after/ this node,
+                // so skip any items that are /before/ the current node.
+                Items = GetItems(chapterItems.SkipWhile(q => i.Key != q.Key), indentLevel + 1)
+            });
             var tocData = _SiteMappings.SiteMappings.GroupBy(x => x.ChapterNumber).OrderBy(x => x.Key).Select(x => new
             {
                 Level = 0,
@@ -280,9 +297,9 @@ string title = $"Essential C#{(string.IsNullOrEmpty(ViewBag.PageTitle) ? string.
             });
         }
 
-        PREVIOUS_PAGE = @Json.Serialize(ViewBag.PreviousPage)
-        NEXT_PAGE = @Json.Serialize(ViewBag.NextPage)
-        TOC_DATA = @Json.Serialize(tocData)
+            PREVIOUS_PAGE = @Json.Serialize(ViewBag.PreviousPage)
+            NEXT_PAGE = @Json.Serialize(ViewBag.NextPage)
+            TOC_DATA = @Json.Serialize(tocData)
     </script>
 
     @* Recursive vue component template for rendering the table of contents. *@
@@ -291,18 +308,18 @@ string title = $"Essential C#{(string.IsNullOrEmpty(ViewBag.PageTitle) ? string.
             <details :open="expandedTocs.has(item.key)"
                      v-on:toggle="!$event.target.open ? expandedTocs.delete(item.key) : expandedTocs.add(item.key)">
                 <summary :class="{
-                        'toc-content' : item.level==0,
-                        'nested' : item.level>
-                        0,
-                        'current-section': currentPage.some(p => p.key == item.key),
-                        }" :href="item.href">{{item.title}}
+                         'toc-content' : item.level==0,
+                         'nested' : item.level>
+                    0,
+                    'current-section': currentPage.some(p => p.key == item.key),
+                    }" :href="item.href">{{item.title}}
                 </summary>
                 <ul>
                     <li :class="{
-                           ['indent-level-' + (item.level+1)]: true,
-                           'current-li' : currentPage.some(p=>
-                            p.key == item.key) && !currentPage.some(p => p.level > item.level),
-                            }" >
+                        ['indent-level-' + (item.level+1)]: true,
+                        'current-li' : currentPage.some(p=>
+                        p.key == item.key) && !currentPage.some(p => p.level > item.level),
+                        }" >
                         <a class="section-link" :class="{
                            ['indent-level-' + (item.level+1)]: true,
                            'current-section' : currentPage.some(p=>
@@ -316,10 +333,10 @@ string title = $"Essential C#{(string.IsNullOrEmpty(ViewBag.PageTitle) ? string.
             </details>
         </li>
         <li v-else :class="{
-                           ['indent-level-' + (item.level+1)]: true,
-                           'current-li' : currentPage.some(p=>
-                            p.key == item.key) && !currentPage.some(p => p.level > item.level),
-                            }" >
+            ['indent-level-' + (item.level+1)]: true,
+            'current-li' : currentPage.some(p=>
+            p.key == item.key) && !currentPage.some(p => p.level > item.level),
+            }" >
             <a class="section-link" :class="{
                ['indent-level-' + (item.level)]: true,
                'current-section' : currentPage.some(p=>
