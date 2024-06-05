@@ -103,8 +103,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ vars.DEVCONTAINER_REGISTRY }}
-          username: ${{ secrets.ESSENTIALCSHARPDEV_CLIENT_ID }}
-          password: ${{ secrets.ESSENTIALCSHARPDEV_CLIENT_SECRET }}
+          username: ${{ secrets.ESSENTIALCSHARP_ACR_USERNAME }}
+          password: ${{ secrets.ESSENTIALCSHARP_ACR_PASSWORD }}
 
       - name: Push Image to Container Registry
         if: github.event_name != 'pull_request_target'
