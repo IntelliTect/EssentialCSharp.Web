@@ -1,11 +1,11 @@
 /* Global Styles */
 
 :root {
-  --primary-color: rgb(30, 83, 160) !important;
-  --primary-color-rgb: 30, 83, 160 !important;
-  --primary-dark-color: rgb(26, 48, 70) !important;
-  --primary-medium-color: rgb(35, 119, 213) !important;
-  --primary-accent-color: rgb(127, 201, 206) !important;
+  --primary-color: rgb(30, 83, 160);
+  --primary-color-rgb: 30, 83, 160;
+  --primary-dark-color: rgb(26, 48, 70);
+  --primary-medium-color: rgb(35, 119, 213);
+  --primary-accent-color: rgb(127, 201, 206);
 
   --toolbar-height: 50px;
   --link-color: var(--primary-color);
