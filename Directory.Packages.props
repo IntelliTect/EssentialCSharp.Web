@@ -3,13 +3,13 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
     <AccessToNugetFeed>true</AccessToNugetFeed>
-    <ToolingPackagesVersion>1.1.1.3976</ToolingPackagesVersion>
+    <ToolingPackagesVersion>1.1.1.3979</ToolingPackagesVersion>
   </PropertyGroup>
   <ItemGroup Condition="$(AccessToNugetFeed)">
     <PackageVersion Include="ContentFeedNuget" Version="$(ToolingPackagesVersion)" />
   </ItemGroup>
   <ItemGroup>
-    <PackageVersion Include="EssentialCSharp.Shared.Models" Version="1.1.1.3976" />
+    <PackageVersion Include="EssentialCSharp.Shared.Models" Version="1.1.1.3979" />
     <PackageVersion Include="AspNet.Security.OAuth.GitHub" Version="8.0.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="HtmlAgilityPack" Version="1.11.61" />
