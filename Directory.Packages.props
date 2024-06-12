@@ -7,7 +7,7 @@
   </PropertyGroup>
   <ItemGroup Condition="$(AccessToNugetFeed)">
     <PackageVersion Include="ContentFeedNuget" Version="$(ToolingPackagesVersion)" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.5" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.6" />
   </ItemGroup>
   <ItemGroup>
     <PackageVersion Include="EssentialCSharp.Shared.Models" Version="1.1.1.3981" />
