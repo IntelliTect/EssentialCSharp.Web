@@ -11,7 +11,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageVersion Include="EssentialCSharp.Shared.Models" Version="1.1.1.3981" />
-    <PackageVersion Include="AspNet.Security.OAuth.GitHub" Version="8.0.0" />
+    <PackageVersion Include="AspNet.Security.OAuth.GitHub" Version="8.1.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="HtmlAgilityPack" Version="1.11.61" />
     <PackageVersion Include="IntelliTect.Multitool" Version="1.5.2" />
