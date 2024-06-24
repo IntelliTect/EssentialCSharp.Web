@@ -56,7 +56,7 @@ jobs:
 
       - name: Build Container Image
         if: github.event_name != 'pull_request_target'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           tags: ${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb:${{ github.sha }},${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb:latest,${{ vars.PRODCONTAINER_REGISTRY }}/essentialcsharpweb:${{ github.sha }},${{ vars.PRODCONTAINER_REGISTRY }}/essentialcsharpweb:latest
           file: ./EssentialCSharp.Web/Dockerfile
