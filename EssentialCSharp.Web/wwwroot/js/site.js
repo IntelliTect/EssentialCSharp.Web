@@ -6,6 +6,7 @@ import {
     markRaw,
     watch,
     computed,
+    watchEffect
 } from "vue";
 import { useWindowSize } from "vue-window-size";
 
@@ -238,8 +239,8 @@ const app = createApp({
         const searchQuery = ref('');
 
         const filteredTocData = computed(() => {
-            expandedTocs.clear();
             if (!searchQuery.value) {
+                expandedTocs.clear();
                 return tocData;
             }
             const query = normalizeString(searchQuery.value);
@@ -252,11 +253,19 @@ const app = createApp({
                 const childMatches = item.items.some(child => filterItem(child, query));
                 matches = matches || childMatches;
             }
-            if (matches) {
-                expandedTocs.add(item.key); // Add matching item to expandedTocs
-            }
             return matches;
         }
+
+        watchEffect(() => {
+            expandedTocs.clear();
+            const query = normalizeString(searchQuery.value);
+            tocData.forEach(item => {
+                if (filterItem(item, query)) {
+                    expandedTocs.add(item.key);
+                    console.log("Added ", item.key);
+                }
+            });
+        });
 
         function normalizeString(str) {
             return str.replace(/[^\w\s]|_/g, "").replace(/\s+/g, " ").toLowerCase();
