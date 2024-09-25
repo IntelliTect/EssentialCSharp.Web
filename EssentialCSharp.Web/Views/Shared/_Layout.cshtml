@@ -145,7 +145,6 @@
                     <Transition name="slide-fade">
                         <div v-cloak v-if="sidebarShown" :class="{sidebarSmall: smallScreen}" class="sidebar toc-padding" id="sidebar">
                             <div v-cloak class="toc-menu">
-
                                 <div style="display:grid; width:100%; margin-bottom:.75rem;">
                                     <button v-on:click="openSearch" type="button" class="DocSearch DocSearch-Button DocSearch-Style" aria-label="Search">
                                         <span class="DocSearch-Button-Container">
@@ -182,20 +181,23 @@
                                         <span class="fs-5">Announcements</span>
                                     </a>
                                 </div>
-                                <div>
-                                    <h5>
+                                <div style="display: flex; align-items: center;">
+                                    <h5 style="margin-right: 8px;">
                                         Contents
                                     </h5>
+                                    <i class="fa-solid fa-filter" v-on:click="enableTocFilter = enableTocFilter === 'filter' ? 'none' : 'filter';"></i>
                                 </div>
-                                <button class="toc-label hide" v-on:click="sidebarTab = 'search'" id="search-btn">
-                                    SEARCH
-                                    <div v-if="sidebarTab == 'search'" class="bottom-border" id="search-border"></div>
-                                </button>
+                                <div v-if="enableTocFilter === 'filter'" class="filter-input-container">
+                                    <input type="text" class="filter-input" v-model="searchQuery" placeholder="Search sections..." />
+                                    <button class="filter-btn">
+                                        <i class="fa fa-search icon-light"></i>
+                                    </button>
+                                </div>
                             </div>
 
                             <div v-cloak v-if="sidebarTab == 'toc'" class="toc-tree" id="toc">
                                 <ul class="tree">
-                                    <toc-tree v-for="item in tocData" :item="item" :expanded-tocs="expandedTocs" :current-page="currentPage"></toc-tree>
+                                    <toc-tree v-for="item in filteredTocData" :item="item" :expanded-tocs="expandedTocs" :current-page="currentPage"></toc-tree>
                                 </ul>
                             </div>
                             <div v-cloak>
@@ -205,14 +207,6 @@
                                         <b>@TimeZoneInfo.ConvertTimeFromUtc(date, TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time")).ToString("d MMM, yyyy h:mm:ss tt", CultureInfo.InvariantCulture)</b>
                                     }
                                 </small>
-                            </div>
-                            <div v-cloak v-if="sidebarTab == 'search'" id="searchBar" class="search-window">
-                                <div class="input">
-                                    <input type="text" />
-                                    <button class="search-btn">
-                                        <i class="fa fa-search icon-light"></i>
-                                    </button>
-                                </div>
                             </div>
                         </div>
                     </Transition>
@@ -298,8 +292,8 @@
         }
 
             PREVIOUS_PAGE = @Json.Serialize(ViewBag.PreviousPage)
-            NEXT_PAGE = @Json.Serialize(ViewBag.NextPage)
-            TOC_DATA = @Json.Serialize(tocData)
+                NEXT_PAGE = @Json.Serialize(ViewBag.NextPage)
+                    TOC_DATA = @Json.Serialize(tocData)
     </script>
 
     @* Recursive vue component template for rendering the table of contents. *@

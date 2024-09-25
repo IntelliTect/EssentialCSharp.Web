@@ -385,6 +385,37 @@ a:hover {
   }
 }
 
+.filter-input-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0.5rem;
+    box-sizing: border-box;
+}
+
+.filter-input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px 0 0 4px;
+    font-size: 1rem;
+}
+
+.filter-btn {
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-left: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+}
+
+    .filter-btn .fa-search {
+        font-size: 1rem;
+    }
+
+
 /* Table of Contents For Chapters */
 
 .toc-menu {
