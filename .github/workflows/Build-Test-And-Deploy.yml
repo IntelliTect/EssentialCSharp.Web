@@ -51,11 +51,11 @@ jobs:
         run: dotnet test --no-build --configuration Release
 
       - name: Set up Docker Buildx
-        if: github.event_name != 'pull_request_target'
+        if: github.event_name != 'pull_request_target' && github.event_name != 'pull_request'
         uses: docker/setup-buildx-action@v3
 
       - name: Build Container Image
-        if: github.event_name != 'pull_request_target'
+        if: github.event_name != 'pull_request_target' && github.event_name != 'pull_request'
         uses: docker/build-push-action@v6
         with:
           tags: ${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb:${{ github.sha }},${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb:latest,${{ vars.PRODCONTAINER_REGISTRY }}/essentialcsharpweb:${{ github.sha }},${{ vars.PRODCONTAINER_REGISTRY }}/essentialcsharpweb:latest
@@ -73,7 +73,7 @@ jobs:
           path: ${{ github.workspace }}/essentialcsharpwebimage.tar
 
   deploy-development:
-    if: github.event_name != 'pull_request_target'
+    if: github.event_name != 'pull_request_target' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     needs: build-and-test
     environment:
@@ -99,7 +99,6 @@ jobs:
           docker image ls -a
 
       - name: Log in to container registry
-        if: github.event_name != 'pull_request_target'
         uses: docker/login-action@v3
         with:
           registry: ${{ vars.DEVCONTAINER_REGISTRY }}
@@ -107,11 +106,9 @@ jobs:
           password: ${{ secrets.ESSENTIALCSHARP_ACR_PASSWORD }}
 
       - name: Push Image to Container Registry
-        if: github.event_name != 'pull_request_target'
         run: docker push --all-tags ${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb
 
       - name: Create and Deploy to Container App
-        if: github.event_name != 'pull_request_target'
         uses: azure/CLI@v2
         env:
           CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
@@ -161,7 +158,7 @@ jobs:
             az account clear
 
   deploy-production:
-    if: github.event_name != 'pull_request_target'
+    if: github.event_name != 'pull_request_target' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     needs: [deploy-development]
     environment:
@@ -187,7 +184,6 @@ jobs:
           docker image ls -a
 
       - name: Log in to container registry
-        if: github.event_name != 'pull_request_target'
         uses: docker/login-action@v3
         with:
           registry: ${{ vars.PRODCONTAINER_REGISTRY }}
@@ -195,7 +191,6 @@ jobs:
           password: ${{ secrets.ESSENTIALCSHARP_ACR_PASSWORD }}
 
       - name: Push Image to Container Registry
-        if: github.event_name != 'pull_request_target'
         run: docker push --all-tags ${{ vars.PRODCONTAINER_REGISTRY }}/essentialcsharpweb
 
       - name: Create and Deploy to Container App
