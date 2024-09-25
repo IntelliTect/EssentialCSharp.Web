@@ -6,7 +6,6 @@ import {
     markRaw,
     watch,
     computed,
-    watchEffect
 } from "vue";
 import { useWindowSize } from "vue-window-size";
 
@@ -240,7 +239,6 @@ const app = createApp({
 
         const filteredTocData = computed(() => {
             if (!searchQuery.value) {
-                expandedTocs.clear();
                 return tocData;
             }
             const query = normalizeString(searchQuery.value);
@@ -256,15 +254,23 @@ const app = createApp({
             return matches;
         }
 
-        watchEffect(() => {
-            expandedTocs.clear();
-            const query = normalizeString(searchQuery.value);
-            tocData.forEach(item => {
-                if (filterItem(item, query)) {
+        watch(searchQuery, (newQuery) => {
+            if (!newQuery) {
+                expandedTocs.clear();
+                // If a search query is removed, open the TOC for the current page.
+                for (const item of currentPage) {
                     expandedTocs.add(item.key);
-                    console.log("Added ", item.key);
                 }
-            });
+            }
+            else {
+                expandedTocs.clear();
+                const query = normalizeString(newQuery);
+                tocData.forEach(item => {
+                    if (filterItem(item, query)) {
+                        expandedTocs.add(item.key);
+                    }
+                });
+            }
         });
 
         function normalizeString(str) {
