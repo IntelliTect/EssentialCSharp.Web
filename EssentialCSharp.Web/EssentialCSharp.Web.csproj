@@ -33,6 +33,7 @@
     <PackageReference Include="Newtonsoft.Json" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" />
     <PackageReference Include="Octokit" />
+    <PackageReference Include="Sqids" />
   </ItemGroup>
   <ItemGroup>
     <Content Update="wwwroot\images\00mindmap.svg">
