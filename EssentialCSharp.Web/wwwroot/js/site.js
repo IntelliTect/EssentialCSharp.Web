@@ -234,13 +234,13 @@ const app = createApp({
         });
     });
 
-    const urlParams = new URLSearchParams(window.location.search);
-    // if REFERRER_ID is not null or empty, set
-    if (REFERRER_ID) {
-        urlParams.set('rid', REFERRER_ID);
-    } else {
-        urlParams.delete('rid');
-    }
+    //const urlParams = new URLSearchParams(window.location.search);
+    //// if REFERRER_ID is not null or empty, set
+    //if (REFERRER_ID) {
+    //    urlParams.set('rid', REFERRER_ID);
+    //} else {
+    //    urlParams.delete('rid');
+    //}
 
     return {
       previousPageUrl,

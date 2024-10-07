@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Identity;
@@ -19,7 +19,6 @@ public class ReferralMiddleware
         // Retrieve current referral Id for processing
         string referralId = context.Request.Query["rid"].ToString();
 
-
         if (context.User is { } claimsUser && claimsUser.Identity is not null && claimsUser.Identity.IsAuthenticated)
         {
             await TrackReferralAsync(referralService, referralId, claimsUser);
@@ -28,7 +27,11 @@ public class ReferralMiddleware
             EssentialCSharpWebUser? user = await userManager.GetUserAsync(claimsUser);
             if (user is not null)
             {
-                context.Items["rid"] = await referralService.GetReferralIdAsync(user.Id);
+                var userReferralId = await referralService.GetReferralIdAsync(user.Id);
+                context.Items["rid"] = userReferralId;
+                var parametersToAdd = new System.Collections.Generic.Dictionary<string, string> { { "rid", userReferralId } };
+                var someUrl = context.Request;
+                var newUri = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(someUrl, parametersToAdd);
             }
         }
         else
