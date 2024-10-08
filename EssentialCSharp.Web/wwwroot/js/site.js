@@ -152,7 +152,6 @@ const app = createApp({
         }
 
         function goToPrevious() {
-            debugger;
             if (!window.location.href.endsWith("/home")) {
                 window.location.href = "/" + PREVIOUS_PAGE;
             }
