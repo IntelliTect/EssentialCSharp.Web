@@ -171,7 +171,7 @@ const app = createApp({
                     goToPrevious();
                 }
             }
-            debugger;
+
             if (e.code == "KeyM" && e.ctrlKey) {
                 sidebarShown.value = !sidebarShown.value;
             }
