@@ -271,15 +271,13 @@ a:hover {
 }
 
 .sidebar-tooltip:hover .sidebar-tooltip-text {
-  transition-delay: 1s;
-  transition-property: visibility;
   visibility: visible;
 }
 
 .sidebar-tooltip .sidebar-tooltip-text {
   visibility: hidden;
   position: absolute;
-  width: 150px;
+  width: 80px;
   color: var(--primary-color);
   font-size: 1rem;
   background-color: var(--grey-lighten-1);
@@ -287,7 +285,7 @@ a:hover {
   padding: 10px;
   white-space: normal;
   left: 2rem; 
-  bottom: -35px;
+  bottom: -9px;
 }
 
 .nav-link {
