@@ -94,8 +94,11 @@
             <header class="header-background">
                 <div class="banner d-flex justify-content-between">
                     <div class="d-flex align-items-center menu-position">
-                        <button class="menu-btn" v-on:click="sidebarShown = !sidebarShown">
+                        <button class="menu-btn sidebar-tooltip" v-on:click="sidebarShown = !sidebarShown">
                             <i class="fa fa-bars fa-lg icon-light"></i>
+                            <span class="sidebar-tooltip-text">
+                            <b>Ctrl + M</b>
+                            </span>
                         </button>
                         <div class="d-none d-lg-block">
                             <ul class="nav align-items-center">
@@ -302,7 +305,7 @@
             <details :open="expandedTocs.has(item.key)"
                      v-on:toggle="!$event.target.open ? expandedTocs.delete(item.key) : expandedTocs.add(item.key)">
                 <summary :class="{
-                         'toc-content' : item.level==0,
+                         'toc-content' : item.level= =0,
                          'nested' : item.level>
                     0,
                     'current-section': currentPage.some(p => p.key == item.key),

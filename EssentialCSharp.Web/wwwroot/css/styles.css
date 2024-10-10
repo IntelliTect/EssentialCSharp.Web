@@ -265,6 +265,29 @@ a:hover {
   border-color: transparent transparent var(--grey-lighten-1) transparent;
 }
 
+.sidebar-tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.sidebar-tooltip:hover .sidebar-tooltip-text {
+  visibility: visible;
+}
+
+.sidebar-tooltip .sidebar-tooltip-text {
+  visibility: hidden;
+  position: absolute;
+  width: 80px;
+  color: var(--primary-color);
+  font-size: 1rem;
+  background-color: var(--grey-lighten-1);
+  border-radius: 10px;
+  padding: 10px;
+  white-space: normal;
+  left: 2rem; 
+  bottom: -9px;
+}
+
 .nav-link {
     color: white;
 }
