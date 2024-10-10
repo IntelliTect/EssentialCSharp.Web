@@ -152,10 +152,16 @@ const app = createApp({
         }
 
         function goToPrevious() {
-            window.location.href = "/" + PREVIOUS_PAGE;
+            let previousPage = PREVIOUS_PAGE;
+            if (previousPage !== null) {
+                window.location.href = "/" + previousPage;
+            }
         }
         function goToNext() {
-            window.location.href = "/" + NEXT_PAGE;
+            let nextPage = NEXT_PAGE;
+            if (nextPage !== null) {
+                window.location.href = "/" + nextPage;
+            }
         }
 
         document.addEventListener("keydown", (e) => {
