@@ -2,13 +2,13 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
-    <ToolingPackagesVersion>1.1.1.4330</ToolingPackagesVersion>
+    <ToolingPackagesVersion>1.1.1.4359</ToolingPackagesVersion>
   </PropertyGroup>
   <ItemGroup Condition="$(AccessToNugetFeed)">
     <PackageVersion Include="ContentFeedNuget" Version="$(ToolingPackagesVersion)" />
   </ItemGroup>
   <ItemGroup>
-    <PackageVersion Include="EssentialCSharp.Shared.Models" Version="1.1.1.4330" />
+    <PackageVersion Include="EssentialCSharp.Shared.Models" Version="$(ToolingPackagesVersion)" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.8" />
     <PackageVersion Include="AspNet.Security.OAuth.GitHub" Version="8.2.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
