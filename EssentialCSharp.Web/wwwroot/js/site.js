@@ -177,6 +177,10 @@ const app = createApp({
                     goToPrevious();
                 }
             }
+
+            if (e.code == "KeyM" && e.ctrlKey) {
+                sidebarShown.value = !sidebarShown.value;
+            }
         });
 
         const sidebarShown = ref(false);

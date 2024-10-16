@@ -228,12 +228,12 @@ a:hover {
   white-space: nowrap;
 }
 
-.menu-tooltip {
+.has-tooltip {
   position: relative;
   display: inline-block;
 }
 
-.menu-tooltip .tooltip-text {
+.has-tooltip .tooltip-text {
   visibility: hidden;
   width: 120px;
   background-color: var(--grey-lighten-1);
@@ -250,11 +250,11 @@ a:hover {
   z-index: 1;
 }
 
-.menu-tooltip:hover .tooltip-text {
+.has-tooltip:hover .tooltip-text {
   visibility: visible;
 }
 
-.menu-tooltip .tooltip-text::after {
+.has-tooltip .tooltip-text::after {
   content: " ";
   position: absolute;
   bottom: 100%; /* At the top of the tooltip */
@@ -263,6 +263,34 @@ a:hover {
   border-width: 5px;
   border-style: solid;
   border-color: transparent transparent var(--grey-lighten-1) transparent;
+}
+
+.has-tooltip:hover .sidebar-tooltip-text {
+  transition-delay: 1s;
+  transition-property: visibility;
+}
+
+.has-tooltip .sidebar-tooltip-text {
+  width: 90px;
+  position: relative;
+  left: 5rem;
+  border-radius: 10px;
+  padding: 10px;
+  white-space: normal;
+}
+
+.has-tooltip .sidebar-tooltip-text:after {
+  content: '';
+  display: block;
+  width: 0;
+  height: 0;
+  position: absolute;
+  border-width: 5px;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 8px solid var(--grey-lighten-1);
+  left: -9%;
+  bottom: 30%;
 }
 
 .nav-link {

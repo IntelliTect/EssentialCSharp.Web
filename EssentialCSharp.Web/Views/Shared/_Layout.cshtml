@@ -94,8 +94,11 @@
             <header class="header-background">
                 <div class="banner d-flex justify-content-between">
                     <div class="d-flex align-items-center menu-position">
-                        <button class="menu-btn" v-on:click="sidebarShown = !sidebarShown">
+                        <button class="menu-btn has-tooltip" v-on:click="sidebarShown = !sidebarShown">
                             <i class="fa fa-bars fa-lg icon-light"></i>
+                            <span class="tooltip-text sidebar-tooltip-text">
+                                <b>Ctrl + M</b>
+                            </span>
                         </button>
                         <div class="d-none d-lg-block">
                             <ul class="nav align-items-center">
