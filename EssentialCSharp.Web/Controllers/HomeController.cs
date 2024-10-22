@@ -30,6 +30,7 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
 
             ViewBag.PageTitle = siteMapping.IndentLevel is 0 ? siteMapping.ChapterTitle + " " + siteMapping.RawHeading : siteMapping.RawHeading;
             ViewBag.NextPage = FlipPage(siteMapping!.ChapterNumber, siteMapping.PageNumber, true);
+            ViewBag.CurrentPageKey = siteMapping.Key;
             ViewBag.PreviousPage = FlipPage(siteMapping.ChapterNumber, siteMapping.PageNumber, false);
             ViewBag.HeadContents = headHtml;
             ViewBag.Contents = html;

@@ -18,6 +18,7 @@ import { useWindowSize } from "vue-window-size";
  * @prop {TocItem[]} [items]
  */
 /** @type {TocItem} */
+debugger;
 const tocData = markRaw(TOC_DATA);
 
 //Add new content or features here:
@@ -210,6 +211,9 @@ const app = createApp({
 
         const currentPage = findCurrentPage([], tocData) ?? [];
 
+        const currentPageCount = CURRENT_PAGE_COUNT;
+        const totalPageCount = TOTAL_PAGE_COUNT;
+
         const chapterParentPage = currentPage.find((parent) => parent.level === 0);
 
         const sectionTitle = ref(currentPage?.[0]?.title || "Essential C#");
@@ -334,6 +338,8 @@ const app = createApp({
             tocData,
             expandedTocs,
             currentPage,
+            currentPageCount,
+            totalPageCount,
             chapterParentPage,
 
             searchQuery,
