@@ -9,7 +9,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageVersion Include="EssentialCSharp.Shared.Models" Version="$(ToolingPackagesVersion)" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.8" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.10" />
     <PackageVersion Include="AspNet.Security.OAuth.GitHub" Version="8.2.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="HtmlAgilityPack" Version="1.11.67" />
