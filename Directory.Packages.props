@@ -3,7 +3,6 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
     <ToolingPackagesVersion>1.1.1.4359</ToolingPackagesVersion>
-    <AccessToNugetFeed>true</AccessToNugetFeed>
     <RestoreSources Condition="$(AccessToNugetFeed)">
       https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json;
     </RestoreSources>
