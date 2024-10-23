@@ -213,6 +213,7 @@ const app = createApp({
 
         const currentPageCount = CURRENT_PAGE_COUNT;
         const totalPageCount = TOTAL_PAGE_COUNT;
+        const keyList = KEY_LIST
 
         const chapterParentPage = currentPage.find((parent) => parent.level === 0);
 
@@ -340,6 +341,7 @@ const app = createApp({
             currentPage,
             currentPageCount,
             totalPageCount,
+            keyList,
             chapterParentPage,
 
             searchQuery,

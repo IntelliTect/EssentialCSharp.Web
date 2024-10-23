@@ -125,7 +125,8 @@
                         <span v-cloak>{{chapterParentPage.title}}</span>
                     </a>
                     <div class="menu-chapter-title text-light">
-                        {{currentPageCount}} / {{totalPageCount}}
+                        <form 
+                        <span v-cloak>{{currentPageCount}} / {{totalPageCount}}</span>
                     </div>
 
                     <div class="d-flex align-items-center">
@@ -274,6 +275,7 @@
         }
             CURRENT_PAGE_COUNT = @Json.Serialize(currentPageCount)
             TOTAL_PAGE_COUNT = @Json.Serialize(overallCount)
+            KEY_LIST = @Json.Serialize(keyList)
             PREVIOUS_PAGE = @Json.Serialize(ViewBag.PreviousPage)
             NEXT_PAGE = @Json.Serialize(ViewBag.NextPage)
             TOC_DATA = @Json.Serialize(tocData)
