@@ -7,9 +7,11 @@
     <PlaceholderHtmlFile Include="$(ProjectDir)Placeholders/*.html" />
     <PlaceholderJsonFile Include="$(ProjectDir)Placeholders/*.json" />
   </ItemGroup>
+  <ItemGroup Condition="$(AccessToNugetFeed)">
+    <PackageReference Include="ContentFeedNuget" />
+  </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ContentFeedNuget" />
     <PackageReference Include="AspNet.Security.OAuth.GitHub" />
     <PackageReference Include="EssentialCSharp.Shared.Models" />
     <PackageReference Include="HtmlAgilityPack" />
