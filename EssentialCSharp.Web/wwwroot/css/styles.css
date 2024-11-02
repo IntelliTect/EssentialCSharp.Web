@@ -311,6 +311,7 @@ a:hover {
   top: calc(100vh - 9rem);
   top: calc(100dvh - 9rem);
   display: flex;
+  z-index: 99999; 
   justify-content: space-between;
   position: -webkit-sticky; /* Safari */
   position: sticky;
