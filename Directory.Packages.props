@@ -18,7 +18,7 @@
   <ItemGroup>
     <PackageVersion Include="EssentialCSharp.Shared.Models" Version="$(ToolingPackagesVersion)" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.10" />
-    <PackageVersion Include="AspNet.Security.OAuth.GitHub" Version="8.2.0" />
+    <PackageVersion Include="AspNet.Security.OAuth.GitHub" Version="8.3.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="HtmlAgilityPack" Version="1.11.70" />
     <PackageVersion Include="IntelliTect.Multitool" Version="1.5.2" />
