@@ -16,7 +16,7 @@ public static class SiteMappingListExtensions
         }
         foreach (string? potentialMatch in key.GetPotentialMatches())
         {
-            if (siteMappings.FirstOrDefault(x => x.Key == potentialMatch) is { } siteMap)
+            if (siteMappings.FirstOrDefault(x => x.Keys.Any(x => x == potentialMatch)) is { } siteMap)
             {
                 return siteMap;
             }

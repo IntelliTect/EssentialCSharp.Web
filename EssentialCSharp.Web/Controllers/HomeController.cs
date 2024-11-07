@@ -125,7 +125,7 @@ public class HomeController : Controller
                 return "";
             }
         }
-        return $"{siteMap.Key}#{siteMap.AnchorId}";
+        return $"{siteMap.Keys.First()}#{siteMap.AnchorId}";
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
