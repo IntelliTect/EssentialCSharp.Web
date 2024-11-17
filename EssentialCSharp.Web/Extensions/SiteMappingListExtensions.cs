@@ -1,6 +1,4 @@
-﻿using EssentialCSharp.Web.Services;
-
-namespace EssentialCSharp.Web.Extensions;
+﻿namespace EssentialCSharp.Web.Extensions;
 
 public static class SiteMappingListExtensions
 {
@@ -10,7 +8,7 @@ public static class SiteMappingListExtensions
     /// <param name="siteMappings">IList of SiteMappings</param>
     /// <param name="key">If null, uses the first key in the list</param>
     /// <returns>If found, the site mapping that matches the key, otherwise null.</returns>
-    public static Services.SiteMapping? Find(this IList<Services.SiteMapping> siteMappings, string? key)
+    public static SiteMapping? Find(this IList<SiteMapping> siteMappings, string? key)
     {
         if (string.IsNullOrWhiteSpace(key))
         {
@@ -18,7 +16,7 @@ public static class SiteMappingListExtensions
         }
         foreach (string? potentialMatch in key.GetPotentialMatches())
         {
-            if (siteMappings.FirstOrDefault(x => x.Keys.Any(k => k == potentialMatch)) is { } siteMap)
+            if (siteMappings.FirstOrDefault(x => x.Keys.Any(x => x == potentialMatch)) is { } siteMap)
             {
                 return siteMap;
             }

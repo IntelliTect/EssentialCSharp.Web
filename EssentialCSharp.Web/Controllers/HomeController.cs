@@ -25,7 +25,7 @@ public class HomeController : Controller
     public IActionResult Index(string key)
     {
         // if no key (default case), then load up home page
-        Services.SiteMapping? siteMapping = _SiteMappingService.SiteMappings.Find(key);
+        SiteMapping? siteMapping = _SiteMappingService.SiteMappings.Find(key);
 
         if (string.IsNullOrEmpty(key))
         {
@@ -107,7 +107,7 @@ public class HomeController : Controller
             page = 1;
         }
 
-        Services.SiteMapping? siteMap = _SiteMappingService.SiteMappings.FirstOrDefault(f => f.ChapterNumber == currentChapter && f.PageNumber == currentPage + page);
+        SiteMapping? siteMap = _SiteMappingService.SiteMappings.FirstOrDefault(f => f.ChapterNumber == currentChapter && f.PageNumber == currentPage + page);
 
         if (siteMap is null)
         {
