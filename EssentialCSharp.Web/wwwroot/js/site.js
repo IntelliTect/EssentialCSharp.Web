@@ -18,7 +18,6 @@ import { useWindowSize } from "vue-window-size";
  * @prop {TocItem[]} [items]
  */
 /** @type {TocItem} */
-debugger;
 const tocData = markRaw(TOC_DATA);
 
 //Add new content or features here:
@@ -211,9 +210,7 @@ const app = createApp({
 
         const currentPage = findCurrentPage([], tocData) ?? [];
 
-        const currentPageCount = CURRENT_PAGE_COUNT;
-        const totalPageCount = TOTAL_PAGE_COUNT;
-        const keyList = KEY_LIST
+        const percentComplete = ref(PERCENT_COMPLETE);
 
         const chapterParentPage = currentPage.find((parent) => parent.level === 0);
 
@@ -282,6 +279,11 @@ const app = createApp({
             return tocData.filter(item => filterItem(item, query));
         });
 
+        const isContentPage = computed(() => {
+            let path = window.location.pathname;
+            return path !== '/home' && path !== '/guidelines' && path !== '/about' && path !== '/announcements';
+        });
+
         function filterItem(item, query) {
             let matches = normalizeString(item.title).includes(query);
             if (item.items && item.items.length) {
@@ -339,14 +341,13 @@ const app = createApp({
             tocData,
             expandedTocs,
             currentPage,
-            currentPageCount,
-            totalPageCount,
-            keyList,
+            percentComplete,
             chapterParentPage,
 
             searchQuery,
             filteredTocData,
-            enableTocFilter
+            enableTocFilter,
+            isContentPage
         };
     },
 });

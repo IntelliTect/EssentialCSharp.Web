@@ -1,4 +1,6 @@
-﻿using EssentialCSharp.Web.Models;
+using System.Globalization;
+using EssentialCSharp.Common;
+using EssentialCSharp.Web.Models;
 
 namespace EssentialCSharp.Web.Services;
 
@@ -12,7 +14,6 @@ public class SiteMappingService : ISiteMappingService
         List<SiteMapping>? siteMappings = System.Text.Json.JsonSerializer.Deserialize<List<SiteMapping>>(File.OpenRead(path)) ?? throw new InvalidOperationException("No table of contents found");
         SiteMappings = siteMappings;
     }
-
     public IEnumerable<SiteMappingDto> GetTocData()
     {
         return SiteMappings.GroupBy(x => x.ChapterNumber).OrderBy(x => x.Key).Select(x =>
@@ -49,5 +50,34 @@ public class SiteMappingService : ISiteMappingService
                 // so skip any items that are /before/ the current node.
                 Items = GetItems(chapterItems.SkipWhile(q => i.Keys.First() != q.Keys.First()).Skip(1), indentLevel + 1)
             });
+    }
+
+    public string GetPercentComplete(string currentPageKey)
+    {
+        int currentMappingCount = 1;
+        int overallMappingCount = 1;
+        bool currentPageFound = false;
+        IEnumerable<IGrouping<int, SiteMapping>> chapterGroupings = SiteMappings.GroupBy(x => x.ChapterNumber).OrderBy(g => g.Key);
+        foreach (IGrouping<int, SiteMapping> chapterGrouping in chapterGroupings)
+        {
+            IEnumerable<IGrouping<int, SiteMapping>> pageGroupings = chapterGrouping.GroupBy(x => x.PageNumber).OrderBy(g => g.Key);
+            foreach (IGrouping<int, SiteMapping> pageGrouping in pageGroupings)
+            {
+                foreach (SiteMapping siteMapping in pageGrouping)
+                {
+                    if (siteMapping.Key == currentPageKey)
+                    {
+                        currentPageFound = true;
+                    }
+                    if (!currentPageFound)
+                    {
+                        currentMappingCount++;
+                    }
+                    overallMappingCount++;
+                }
+            }
+        }
+        double result = (double)currentMappingCount / overallMappingCount * 100;
+        return string.Format(CultureInfo.InvariantCulture, "{0:0.00}", result);
     }
 }
