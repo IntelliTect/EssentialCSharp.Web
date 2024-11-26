@@ -44,8 +44,6 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
         }
     }
 
-
-
     [Route("/TermsOfService",
        Name = "TermsOfService")]
     public IActionResult TermsOfService()

@@ -1,6 +1,4 @@
 using System.Globalization;
-using EssentialCSharp.Common;
-using EssentialCSharp.Web.Models;
 
 namespace EssentialCSharp.Web.Services;
 
