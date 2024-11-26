@@ -271,7 +271,7 @@
     <script>
         @{
             var tocData = _SiteMappings.GetTocData();
-            var percentComplete = _SiteMappings.GetPercentComplete(ViewBag.CurrentPageKey);
+            var percentComplete = _SiteMappings.SiteMappings.FindPercentComplete((string) ViewBag.CurrentPageKey);
         }
             PERCENT_COMPLETE = @Json.Serialize(percentComplete);
             PREVIOUS_PAGE = @Json.Serialize(ViewBag.PreviousPage)

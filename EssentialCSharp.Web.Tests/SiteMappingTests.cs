@@ -82,4 +82,61 @@ public class SiteMappingTests
         Assert.NotNull(foundSiteMap);
         Assert.Equivalent(CSyntaxFundamentalsSiteMapping, foundSiteMap);
     }
+
+    [Fact]
+    public void FindPercentComplete_KeyIsNull_ThrowsArgumentNullException()
+    {
+        // Arrange
+
+        // Act
+
+        // Assert
+        Assert.Throws<ArgumentNullException>(() =>
+        {
+            GetSiteMap().FindPercentComplete(null!);
+        });
+    }
+
+    [Theory]
+    [InlineData("   ")]
+    [InlineData("")]
+    public void FindPercentComplete_KeyIsWhiteSpace_ThrowsArgumentException(string key)
+    {
+        // Arrange
+
+        // Act
+
+        // Assert
+        Assert.Throws<ArgumentException>(() =>
+        {
+            GetSiteMap().FindPercentComplete(key);
+        });
+    }
+
+    [Theory]
+    [InlineData("hello-world", "50.00")]
+    [InlineData("c-syntax-fundamentals", "100.00")]
+    public void FindPercentComplete_ValidKey_Success(string key, string result)
+    {
+        // Arrange
+
+        // Act
+        string percent = GetSiteMap().FindPercentComplete(key);
+
+        // Assert
+        Assert.Equal(result, percent);
+    }
+
+    [Fact]
+    public void FindPercentComplete_EmptySiteMappings_ReturnsZeroPercent()
+    {
+        // Arrange
+        IList<SiteMapping> siteMappings = new List<SiteMapping>();
+
+        // Act
+        string percent = siteMappings.FindPercentComplete("test");
+
+        // Assert
+        Assert.Equal("0.00", percent);
+    }
 }
