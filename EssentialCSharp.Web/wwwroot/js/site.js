@@ -80,11 +80,13 @@ const completedFeaturesList = [
 function findCurrentPage(path, items) {
     for (const item of items) {
         const itemPath = [item, ...path];
-        if (
-            window.location.href.endsWith("/" + item.href) ||
-            window.location.href.endsWith("/" + item.key)
-        ) {
+        if (window.location.href.endsWith("/" + item.href)) {
             return itemPath;
+        }
+        for (let key of item.keys) {
+            if (window.location.href.endsWith("/" + item.key)) {
+                return itemPath;
+            }
         }
 
         const recursivePath = findCurrentPage(itemPath, item.items);
@@ -199,7 +201,7 @@ const app = createApp({
         const sectionTitle = ref(currentPage?.[0]?.title || "Essential C#");
         const expandedTocs = reactive(new Set());
         for (const item of currentPage) {
-            expandedTocs.add(item.key);
+            expandedTocs.add(item.keys);
         }
 
         // hide the sidebar when resizing to small screen
@@ -269,7 +271,7 @@ const app = createApp({
                 expandedTocs.clear();
                 // If a search query is removed, open the TOC for the current page.
                 for (const item of currentPage) {
-                    expandedTocs.add(item.key);
+                    expandedTocs.add(item.keys);
                 }
             }
             else {
@@ -277,7 +279,7 @@ const app = createApp({
                 const query = normalizeString(newQuery);
                 tocData.forEach(item => {
                     if (filterItem(item, query)) {
-                        expandedTocs.add(item.key);
+                        expandedTocs.add(item.keys);
                     }
                 });
             }

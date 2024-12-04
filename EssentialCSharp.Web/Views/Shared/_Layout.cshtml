@@ -277,7 +277,7 @@
     @* Recursive vue component template for rendering the table of contents. *@
     <template id="toc-tree">
         <li v-if="item.items.length">
-            <details :open="expandedTocs.has(item.key)"
+            <details :open="expandedTocs.has(item.keys)"
                      v-on:toggle="!$event.target.open ? expandedTocs.delete(item.key) : expandedTocs.add(item.key)">
                 <summary :class="{
                          'toc-content' : item.level==0,
@@ -312,7 +312,7 @@
             <a class="section-link" :class="{
                ['indent-level-' + (item.level)]: true,
                'current-section' : currentPage.some(p=>
-                p.key == item.key),
+                JSON.stringify(p.keys) == JSON.stringify(item.keys)),
                 }" :href="item.href"> {{item.title}}
             </a>
         </li>
