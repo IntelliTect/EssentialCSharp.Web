@@ -283,19 +283,19 @@
                          'toc-content' : item.level==0,
                          'nested' : item.level>
                     0,
-                    'current-section': currentPage.some(p => p.key == item.key),
+                    'current-section': currentPage.some(p => JSON.stringify(p.keys) == JSON.stringify(item.keys)),
                     }" :href="item.href">{{item.title}}
                 </summary>
                 <ul>
                     <li :class="{
                         ['indent-level-' + (item.level+1)]: true,
                         'current-li' : currentPage.some(p=>
-                        p.key == item.key) && !currentPage.some(p => p.level > item.level),
+                        JSON.stringify(p.keys) == JSON.stringify(item.keys)) && !currentPage.some(p => p.level > item.level),
                         }" >
                         <a class="section-link" :class="{
                            ['indent-level-' + (item.level+1)]: true,
                            'current-section' : currentPage.some(p=>
-                            p.key == item.key) && !currentPage.some(p => p.level > item.level),
+                            JSON.stringify(p.keys) == JSON.stringify(item.keys)) && !currentPage.some(p => p.level > item.level),
                             }" :href="item.href"> Introduction
                         </a>
                     </li>
@@ -307,7 +307,7 @@
         <li v-else :class="{
             ['indent-level-' + (item.level+1)]: true,
             'current-li' : currentPage.some(p=>
-            p.key == item.key) && !currentPage.some(p => p.level > item.level),
+            JSON.stringify(p.keys) == JSON.stringify(item.keys)) && !currentPage.some(p => p.level > item.level),
             }" >
             <a class="section-link" :class="{
                ['indent-level-' + (item.level)]: true,
