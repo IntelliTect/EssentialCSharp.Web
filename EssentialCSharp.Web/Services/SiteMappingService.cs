@@ -22,7 +22,7 @@ public class SiteMappingService : ISiteMappingService
             return new SiteMappingDto()
             {
                 Level = 0,
-                Key = [firstX.Keys.First()],
+                Keys = [firstX.Keys.First()],
                 Href = $"{firstX.Keys.First()}#{firstX.AnchorId}",
                 Title = $"Chapter {x.Key}: {firstX.ChapterTitle}",
                 Items = GetItems(orderedX.Skip(1), 1)
@@ -42,7 +42,7 @@ public class SiteMappingService : ISiteMappingService
             .Select(i => new SiteMappingDto()
             {
                 Level = indentLevel,
-                Key = i.Keys,
+                Keys = i.Keys,
                 Href = $"{i.Keys.First()}#{i.AnchorId}",
                 Title = i.RawHeading,
                 // Any children of this node will be /after/ this node,
