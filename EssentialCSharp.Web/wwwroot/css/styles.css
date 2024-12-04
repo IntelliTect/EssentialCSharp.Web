@@ -207,13 +207,16 @@ a:hover {
   }
 }
 
+.menu {
+  white-space: nowrap;
+  overflow: hidden;
+  text-decoration: none;
+}
+
 .menu-brand {
   font-style: normal;
   font-weight: 400;
   font-size: 1.5rem;
-  text-decoration: none;
-  white-space: nowrap;
-  overflow: hidden;
   margin-left: 5px;
 }
 
@@ -221,11 +224,14 @@ a:hover {
   font-style: normal;
   font-weight: 300;
   font-size: 1.2rem;
-  text-decoration: none;
   text-overflow: ellipsis;
-  overflow: hidden;
   cursor: pointer;
-  white-space: nowrap;
+}
+
+.menu-progress {
+  font-style: normal;
+  font-weight: 200;
+  font-size: 1rem;
 }
 
 .has-tooltip {
