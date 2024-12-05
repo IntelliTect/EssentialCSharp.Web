@@ -200,7 +200,7 @@
 
                             <div v-cloak v-if="sidebarTab == 'toc'" class="toc-tree" id="toc">
                                 <ul class="tree">
-                                    <toc-tree v-for="item in filteredTocData" :item="item" :expanded-tocs="expandedTocs" :current-page="currentPage"></toc-tree>
+                                    <toc-tree v-for="item in filteredTocData" :item="item" :expanded-tocs="expandedTocs" :current-page="currentPage" :first-or-default="firstOrDefault"></toc-tree>
                                 </ul>
                             </div>
                             <div v-cloak>
@@ -278,7 +278,7 @@
     <template id="toc-tree">
         <li v-if="item.items.length">
             <details :open="expandedTocs.has(item.keys)"
-                     v-on:toggle="!$event.target.open ? expandedTocs.delete(item.key) : expandedTocs.add(item.key)">
+                     v-on:toggle="!$event.target.open ? expandedTocs.delete(item.keys) : expandedTocs.add(item.keys)">
                 <summary :class="{
                          'toc-content' : item.level==0,
                          'nested' : item.level>
@@ -299,7 +299,7 @@
                             }" :href="item.href"> Introduction
                         </a>
                     </li>
-                    <toc-tree v-for="childItem in item.items" :item="childItem" :expanded-tocs="expandedTocs" :current-page="currentPage"></toc-tree>
+                    <toc-tree v-for="childItem in item.items" :item="childItem" :expanded-tocs="expandedTocs" :current-page="currentPage" :first-or-default="firstOrDefault"></toc-tree>
                 </ul>
                 <hr class="divider" v-if="item.level === 0" />
             </details>

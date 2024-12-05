@@ -12,7 +12,7 @@ import { useWindowSize } from "vue-window-size";
 /**
  * @typedef {Object} TocItem
  * @prop {number} [level]
- * @prop {string} [key]
+ * @prop {string[]} [keys]
  * @prop {string} [href]
  * @prop {string} [title]
  * @prop {TocItem[]} [items]
@@ -84,7 +84,7 @@ function findCurrentPage(path, items) {
             return itemPath;
         }
         for (let key of item.keys) {
-            if (window.location.href.endsWith("/" + item.key)) {
+            if (window.location.href.endsWith("/" + key)) {
                 return itemPath;
             }
         }
@@ -187,11 +187,16 @@ const app = createApp({
 
         const sidebarShown = ref(false);
 
+        /**
+        * Find the first element of a list, otherwise null
+        * @param {string[]} list
+        * @returns {string | undefined} first element or null
+        * */
         function firstOrDefault(list) {
             if (list.length > 0) {
                 return list[0];
             }
-            return null;
+            return undefined;
         }
 
         const smallScreen = computed(() => {
@@ -313,6 +318,7 @@ const app = createApp({
 
             sidebarShown,
             sidebarTab,
+            firstOrDefault,
 
             smallScreen,
 
@@ -330,7 +336,7 @@ const app = createApp({
 });
 
 app.component("toc-tree", {
-    props: ["item", "expandedTocs", "currentPage"],
+    props: ["item", "expandedTocs", "currentPage", "firstOrDefault"],
     template: "#toc-tree",
 });
 
