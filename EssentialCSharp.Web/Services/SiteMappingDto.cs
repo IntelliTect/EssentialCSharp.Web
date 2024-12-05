@@ -1,5 +1,7 @@
 ﻿namespace EssentialCSharp.Web.Services;
 
+// Data transfer object to pass necessary SiteMapping data info
+// to frontend for use in table of contents
 public class SiteMappingDto
 {
     public required int Level { get; set; }
