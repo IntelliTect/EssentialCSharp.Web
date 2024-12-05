@@ -5,7 +5,7 @@ namespace EssentialCSharp.Web.Tests;
 public class SiteMappingTests
 {
     static SiteMapping HelloWorldSiteMapping => new(
-            key: "hello-world",
+            keys: ["hello-world"],
             pagePath:
             [
                 "Chapters",
@@ -15,6 +15,7 @@ public class SiteMappingTests
             ],
             chapterNumber: 1,
             pageNumber: 1,
+            orderOnPage: 1,
             chapterTitle: "Introducing C#",
             rawHeading: "Introduction",
             anchorId: "hello-world",
@@ -22,7 +23,7 @@ public class SiteMappingTests
     );
 
     static SiteMapping CSyntaxFundamentalsSiteMapping => new(
-            key: "c-syntax-fundamentals",
+            keys: ["c-syntax-fundamentals"],
             pagePath:
             [
                 "Chapters",
@@ -32,6 +33,7 @@ public class SiteMappingTests
             ],
             chapterNumber: 1,
             pageNumber: 2,
+            orderOnPage: 1,
             chapterTitle: "Introducing C#",
             rawHeading: "C# Syntax Fundamentals",
             anchorId: "c-syntax-fundamentals",
@@ -52,7 +54,7 @@ public class SiteMappingTests
     {
         SiteMapping? foundSiteMap = GetSiteMap().Find("hello-world#hello-world");
         Assert.NotNull(foundSiteMap);
-        Assert.Equal(HelloWorldSiteMapping, foundSiteMap);
+        Assert.Equivalent(HelloWorldSiteMapping, foundSiteMap);
     }
 
     [Fact]
@@ -60,7 +62,7 @@ public class SiteMappingTests
     {
         SiteMapping? foundSiteMap = GetSiteMap().Find("C# Syntax Fundamentals");
         Assert.NotNull(foundSiteMap);
-        Assert.Equal(CSyntaxFundamentalsSiteMapping, foundSiteMap);
+        Assert.Equivalent(CSyntaxFundamentalsSiteMapping, foundSiteMap);
     }
 
     [Fact]
@@ -68,7 +70,7 @@ public class SiteMappingTests
     {
         SiteMapping? foundSiteMap = GetSiteMap().Find("C# Syntax Fundamentals#hello-world");
         Assert.NotNull(foundSiteMap);
-        Assert.Equal(CSyntaxFundamentalsSiteMapping, foundSiteMap);
+        Assert.Equivalent(CSyntaxFundamentalsSiteMapping, foundSiteMap);
     }
 
     [Fact]
@@ -76,6 +78,6 @@ public class SiteMappingTests
     {
         SiteMapping? foundSiteMap = GetSiteMap().Find("c-syntax-fundamentals#hello-world");
         Assert.NotNull(foundSiteMap);
-        Assert.Equal(CSyntaxFundamentalsSiteMapping, foundSiteMap);
+        Assert.Equivalent(CSyntaxFundamentalsSiteMapping, foundSiteMap);
     }
 }
