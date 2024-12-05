@@ -17,15 +17,15 @@ public class SiteMappingService : ISiteMappingService
     {
         return SiteMappings.GroupBy(x => x.ChapterNumber).OrderBy(x => x.Key).Select(x =>
         {
-            IEnumerable<SiteMapping> orderedX = x.OrderBy(i => i.PageNumber).ThenBy(i => i.OrderOnPage);
-            SiteMapping firstX = orderedX.First();
+            IEnumerable<SiteMapping> orderedGrouping = x.OrderBy(i => i.PageNumber).ThenBy(i => i.OrderOnPage);
+            SiteMapping firstElement = orderedGrouping.First();
             return new SiteMappingDto()
             {
                 Level = 0,
-                Keys = [firstX.Keys.First()],
-                Href = $"{firstX.Keys.First()}#{firstX.AnchorId}",
-                Title = $"Chapter {x.Key}: {firstX.ChapterTitle}",
-                Items = GetItems(orderedX.Skip(1), 1)
+                Key = firstElement.Keys.First(),
+                Href = $"{firstElement.Keys.First()}#{firstElement.AnchorId}",
+                Title = $"Chapter {x.Key}: {firstElement.ChapterTitle}",
+                Items = GetItems(orderedGrouping.Skip(1), 1)
             };
         }
         );
@@ -42,7 +42,7 @@ public class SiteMappingService : ISiteMappingService
             .Select(i => new SiteMappingDto()
             {
                 Level = indentLevel,
-                Keys = i.Keys,
+                Key = i.Keys.First(),
                 Href = $"{i.Keys.First()}#{i.AnchorId}",
                 Title = i.RawHeading,
                 // Any children of this node will be /after/ this node,

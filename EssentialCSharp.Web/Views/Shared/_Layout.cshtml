@@ -277,25 +277,25 @@
     @* Recursive vue component template for rendering the table of contents. *@
     <template id="toc-tree">
         <li v-if="item.items.length">
-            <details :open="expandedTocs.has(item.keys)"
-                     v-on:toggle="!$event.target.open ? expandedTocs.delete(item.keys) : expandedTocs.add(item.keys)">
+            <details :open="expandedTocs.has(item.key)"
+                     v-on:toggle="!$event.target.open ? expandedTocs.delete(item.key) : expandedTocs.add(item.key)">
                 <summary :class="{
                          'toc-content' : item.level==0,
                          'nested' : item.level>
                     0,
-                    'current-section': currentPage.some(p => JSON.stringify(p.keys) == JSON.stringify(item.keys)),
+                    'current-section': currentPage.some(p => p.key == item.key),
                     }" :href="item.href">{{item.title}}
                 </summary>
                 <ul>
                     <li :class="{
                         ['indent-level-' + (item.level+1)]: true,
                         'current-li' : currentPage.some(p=>
-                        JSON.stringify(p.keys) == JSON.stringify(item.keys)) && !currentPage.some(p => p.level > item.level),
+                        p.key == item.key) && !currentPage.some(p => p.level > item.level),
                         }" >
                         <a class="section-link" :class="{
                            ['indent-level-' + (item.level+1)]: true,
                            'current-section' : currentPage.some(p=>
-                            JSON.stringify(p.keys) == JSON.stringify(item.keys)) && !currentPage.some(p => p.level > item.level),
+                            p.key == item.key) && !currentPage.some(p => p.level > item.level),
                             }" :href="item.href"> Introduction
                         </a>
                     </li>
@@ -307,12 +307,12 @@
         <li v-else :class="{
             ['indent-level-' + (item.level+1)]: true,
             'current-li' : currentPage.some(p=>
-            JSON.stringify(p.keys) == JSON.stringify(item.keys)) && !currentPage.some(p => p.level > item.level),
+            p.key == item.key) && !currentPage.some(p => p.level > item.level),
             }" >
             <a class="section-link" :class="{
                ['indent-level-' + (item.level)]: true,
                'current-section' : currentPage.some(p=>
-                JSON.stringify(p.keys) == JSON.stringify(item.keys)),
+                p.key == item.key),
                 }" :href="item.href"> {{item.title}}
             </a>
         </li>

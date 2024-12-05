@@ -12,7 +12,7 @@ import { useWindowSize } from "vue-window-size";
 /**
  * @typedef {Object} TocItem
  * @prop {number} [level]
- * @prop {string[]} [keys]
+ * @prop {string} [key]
  * @prop {string} [href]
  * @prop {string} [title]
  * @prop {TocItem[]} [items]
@@ -83,10 +83,8 @@ function findCurrentPage(path, items) {
         if (window.location.href.endsWith("/" + item.href)) {
             return itemPath;
         }
-        for (let key of item.keys) {
-            if (window.location.href.endsWith("/" + key)) {
-                return itemPath;
-            }
+        if (window.location.href.endsWith("/" + item.key)) {
+            return itemPath;
         }
 
         const recursivePath = findCurrentPage(itemPath, item.items);
@@ -201,7 +199,7 @@ const app = createApp({
         const sectionTitle = ref(currentPage?.[0]?.title || "Essential C#");
         const expandedTocs = reactive(new Set());
         for (const item of currentPage) {
-            expandedTocs.add(item.keys);
+            expandedTocs.add(item.key);
         }
 
         // hide the sidebar when resizing to small screen
@@ -271,7 +269,7 @@ const app = createApp({
                 expandedTocs.clear();
                 // If a search query is removed, open the TOC for the current page.
                 for (const item of currentPage) {
-                    expandedTocs.add(item.keys);
+                    expandedTocs.add(item.key);
                 }
             }
             else {
@@ -279,7 +277,7 @@ const app = createApp({
                 const query = normalizeString(newQuery);
                 tocData.forEach(item => {
                     if (filterItem(item, query)) {
-                        expandedTocs.add(item.keys);
+                        expandedTocs.add(item.key);
                     }
                 });
             }
