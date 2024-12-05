@@ -187,6 +187,13 @@ const app = createApp({
 
         const sidebarShown = ref(false);
 
+        function firstOrDefault(list) {
+            if (list.length > 0) {
+                return list[0];
+            }
+            return null;
+        }
+
         const smallScreen = computed(() => {
             return (windowWidth.value || 0) < smallScreenSize;
         });
