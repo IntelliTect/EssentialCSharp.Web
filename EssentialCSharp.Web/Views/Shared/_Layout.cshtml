@@ -200,7 +200,7 @@
 
                             <div v-cloak v-if="sidebarTab == 'toc'" class="toc-tree" id="toc">
                                 <ul class="tree">
-                                    <toc-tree v-for="item in filteredTocData" :item="item" :expanded-tocs="expandedTocs" :current-page="currentPage" :first-or-default="firstOrDefault"></toc-tree>
+                                    <toc-tree v-for="item in filteredTocData" :item="item" :expanded-tocs="expandedTocs" :current-page="currentPage"></toc-tree>
                                 </ul>
                             </div>
                             <div v-cloak>
@@ -283,23 +283,23 @@
                          'toc-content' : item.level==0,
                          'nested' : item.level>
                     0,
-                    'current-section': currentPage.some(p => firstOrDefault(p.keys) == firstOrDefault(item.keys)),
+                    'current-section': currentPage.some(p => JSON.stringify(p.keys) == JSON.stringify(item.keys)),
                     }" :href="item.href">{{item.title}}
                 </summary>
                 <ul>
                     <li :class="{
                         ['indent-level-' + (item.level+1)]: true,
                         'current-li' : currentPage.some(p=>
-                        firstOrDefault(p.keys) == firstOrDefault(item.keys)) && !currentPage.some(p => p.level > item.level),
+                        JSON.stringify(p.keys) == JSON.stringify(item.keys)) && !currentPage.some(p => p.level > item.level),
                         }" >
                         <a class="section-link" :class="{
                            ['indent-level-' + (item.level+1)]: true,
                            'current-section' : currentPage.some(p=>
-                            firstOrDefault(p.keys) == firstOrDefault(item.keys)) && !currentPage.some(p => p.level > item.level),
+                            JSON.stringify(p.keys) == JSON.stringify(item.keys)) && !currentPage.some(p => p.level > item.level),
                             }" :href="item.href"> Introduction
                         </a>
                     </li>
-                    <toc-tree v-for="childItem in item.items" :item="childItem" :expanded-tocs="expandedTocs" :current-page="currentPage" :first-or-default="firstOrDefault"></toc-tree>
+                    <toc-tree v-for="childItem in item.items" :item="childItem" :expanded-tocs="expandedTocs" :current-page="currentPage"></toc-tree>
                 </ul>
                 <hr class="divider" v-if="item.level === 0" />
             </details>
@@ -307,12 +307,12 @@
         <li v-else :class="{
             ['indent-level-' + (item.level+1)]: true,
             'current-li' : currentPage.some(p=>
-            firstOrDefault(p.keys) == firstOrDefault(item.keys)) && !currentPage.some(p => p.level > item.level),
+            JSON.stringify(p.keys) == JSON.stringify(item.keys)) && !currentPage.some(p => p.level > item.level),
             }" >
             <a class="section-link" :class="{
                ['indent-level-' + (item.level)]: true,
                'current-section' : currentPage.some(p=>
-                firstOrDefault(p.keys) == firstOrDefault(item.keys)),
+                JSON.stringify(p.keys) == JSON.stringify(item.keys)),
                 }" :href="item.href"> {{item.title}}
             </a>
         </li>

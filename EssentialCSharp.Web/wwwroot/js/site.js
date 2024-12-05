@@ -187,18 +187,6 @@ const app = createApp({
 
         const sidebarShown = ref(false);
 
-        /**
-        * Find the first element of a list, otherwise null
-        * @param {string[]} list
-        * @returns {string | undefined} first element or null
-        * */
-        function firstOrDefault(list) {
-            if (list.length > 0) {
-                return list[0];
-            }
-            return undefined;
-        }
-
         const smallScreen = computed(() => {
             return (windowWidth.value || 0) < smallScreenSize;
         });
@@ -318,7 +306,6 @@ const app = createApp({
 
             sidebarShown,
             sidebarTab,
-            firstOrDefault,
 
             smallScreen,
 
@@ -336,7 +323,7 @@ const app = createApp({
 });
 
 app.component("toc-tree", {
-    props: ["item", "expandedTocs", "currentPage", "firstOrDefault"],
+    props: ["item", "expandedTocs", "currentPage"],
     template: "#toc-tree",
 });
 
