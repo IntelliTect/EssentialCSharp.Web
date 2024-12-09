@@ -2,7 +2,7 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
-    <ToolingPackagesVersion>1.1.1.4415</ToolingPackagesVersion>
+    <ToolingPackagesVersion>1.1.1.4437</ToolingPackagesVersion>
     <AccessToNugetFeed>true</AccessToNugetFeed>
     <RestoreSources>
       https://api.nuget.org/v3/index.json;
