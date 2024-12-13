@@ -81,7 +81,7 @@ function findCurrentPage(path, items) {
     for (const item of items) {
         const itemPath = [item, ...path];
         if (
-            window.location.href.endsWith("/" + item.href) || 
+            window.location.href.endsWith("/" + item.href) ||
             window.location.href.endsWith("/" + item.key)
         ) {
             return itemPath;
