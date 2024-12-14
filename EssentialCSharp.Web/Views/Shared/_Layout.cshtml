@@ -266,32 +266,7 @@
     @await RenderSectionAsync("Scripts", required: false);
     <script>
         @{
-            object GetItems(IEnumerable<SiteMapping> chapterItems, int indentLevel) => chapterItems
-            // Skip the chapter entry itself
-            .Skip(1)
-            // Examine all items up until we move up to a level higher than where we're starting,
-            // which would indicate that we've reached the end of the entries nested under `indentationLevel`
-            .TakeWhile(i => i.IndentLevel >= indentLevel)
-            // Of all the multi-level descendants we found, take only those at the current level that we're wanting to render.
-            .Where(i => i.IndentLevel == indentLevel)
-            .Select(i => new
-            {
-                Level = indentLevel,
-                Key = i.Key,
-                Href = $"{i.Key}#{i.AnchorId}",
-                Title = i.RawHeading,
-                // Any children of this node will be /after/ this node,
-                // so skip any items that are /before/ the current node.
-                Items = GetItems(chapterItems.SkipWhile(q => i.Key != q.Key), indentLevel + 1)
-            });
-            var tocData = _SiteMappings.SiteMappings.GroupBy(x => x.ChapterNumber).OrderBy(x => x.Key).Select(x => new
-            {
-                Level = 0,
-                Key = x.First().Key,
-                Href = $"{x.First().Key}#{x.First().AnchorId}",
-                Title = $"Chapter {x.Key}: {x.First().ChapterTitle}",
-                Items = GetItems(x, 1)
-            });
+            var tocData = _SiteMappings.GetTocData();
         }
 
             PREVIOUS_PAGE = @Json.Serialize(ViewBag.PreviousPage)
