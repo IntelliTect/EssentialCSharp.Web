@@ -18,7 +18,7 @@ To get the site that is seen at [essentialcsharp.com](https://essentialcsharp.co
 
 1. Clone Repository locally.
 2. Set any needed secrets
-3. If you have do not have access to the private nuget feed, change the line `<AccessToNugetFeed>true</AccessToNugetFeed>` to `<AccessToNugetFeed>false</AccessToNugetFeed>` in [EssentialCSharp.Web/EssentialCSharp.Web.csproj](https://github.com/IntelliTect/EssentialCSharp.Web/blob/main/EssentialCSharp.Web/EssentialCSharp.Web.csproj).
+3. If you have do not have access to the private nuget feed, change the line `<AccessToNugetFeed>true</AccessToNugetFeed>` to `<AccessToNugetFeed>false</AccessToNugetFeed>` in [Directory.Packages.props](https://github.com/IntelliTect/EssentialCSharp.Web/blob/main/Directory.Packages.props).
 
 ## Environment Prequisites
 
