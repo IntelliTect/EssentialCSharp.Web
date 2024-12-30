@@ -20,7 +20,7 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.10" />
     <PackageVersion Include="AspNet.Security.OAuth.GitHub" Version="8.3.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
-    <PackageVersion Include="HtmlAgilityPack" Version="1.11.70" />
+    <PackageVersion Include="HtmlAgilityPack" Version="1.11.72" />
     <PackageVersion Include="IntelliTect.Multitool" Version="1.5.2" />
     <PackageVersion Include="Mailjet.Api" Version="3.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="8.0.10" />
