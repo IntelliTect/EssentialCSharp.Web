@@ -18,21 +18,21 @@
   <ItemGroup>
     <PackageVersion Include="EssentialCSharp.Shared.Models" Version="$(ToolingPackagesVersion)" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.10" />
-    <PackageVersion Include="AspNet.Security.OAuth.GitHub" Version="8.3.0" />
+    <PackageVersion Include="AspNet.Security.OAuth.GitHub" Version="9.0.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
-    <PackageVersion Include="HtmlAgilityPack" Version="1.11.70" />
+    <PackageVersion Include="HtmlAgilityPack" Version="1.11.71" />
     <PackageVersion Include="IntelliTect.Multitool" Version="1.5.2" />
     <PackageVersion Include="Mailjet.Api" Version="3.0.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="8.0.10" />
-    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.10" />
-    <PackageVersion Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.11" />
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="8.0.10" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.UI" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="9.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.10" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.10" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.10" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
-    <PackageVersion Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.6" />
+    <PackageVersion Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageVersion Include="Octokit" Version="13.0.1" />
     <PackageVersion Include="xunit" Version="2.9.2" />
