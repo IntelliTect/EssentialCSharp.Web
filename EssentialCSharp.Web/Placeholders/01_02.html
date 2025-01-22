@@ -1,0 +1,3142 @@
+<html>
+<head>
+        <link rel="canonical" href="https://essentialcsharp.com/c-syntax-fundamentals" />
+
+<style>
+    :root {
+        --toolbar-height: 50px;
+        --primary-color: #11356a;
+        --secondary-color: #232732;
+        --accent-color-1: #7fc9ce;
+        --accent-color-2: #ffdd74;
+        --link-color: #0042b5;
+        --link-color-hover: #208fe4;
+        --grey: #bcbec0;
+        --grey-lighten-1: #e6e7e8;
+        --grey-lighten-2: #f1f2f2;
+        --grey-font: #616161;
+    }
+
+    body {
+        margin: 0;
+        font-family: "Roboto", Helvetica, Arial, san-serif;
+    }
+
+    .page-left-larger-side-margins {
+        margin-left: 20px;
+        margin-right: 10px;
+    }
+
+    .page-right-larger-side-margins {
+        margin-right: 20px;
+        margin-left: 10px;
+    }
+
+    .footnotes-top-section {
+        height: 10px;
+        margin-top: calc(30px - 10px);
+    }
+
+    .footnotes-top-line {
+        margin: 0;
+    }
+
+    .element-section {
+        overflow-y: hidden;
+    }
+
+    .chapter-number-container {
+        height: 45px;
+        margin-top: 10px;
+    }
+
+    .chapter-number-squares {
+        position: absolute;
+        height: 45px;
+    }
+
+    .chapter-number {
+        position: absolute;
+        width: 60px;
+        margin-left: 50px;
+        font-size: 58px;
+        font-weight: 700;
+        margin-top: -17px;
+        text-align: left;
+    }
+
+    .double-digit-chapter .chapter-number {
+        margin-left: 45px;
+    }
+
+    .chapter-title {
+        font-size: 2.3rem;
+        color: var(--primary-color);
+        margin-block-start: 10px;
+        margin-block-end: 0px;
+        font-weight: bold;
+    }
+
+    .chapter-title-underline {
+        border-bottom: 3px solid var(--accent-color-1);
+        padding-bottom: 1rem;
+        opacity: 1;
+    }
+
+    p {
+        word-wrap: break-word;
+        font-style: normal;
+        font-weight: 400;
+        line-height: 150%;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .section-heading {
+        font-weight: 700;
+    }
+
+    .H1, .Heading1 {
+        line-height: 120%;
+        margin-top: 2.3rem;
+        font-size: 1.6rem;
+    }
+
+        .H1 .CITchapbm, .Heading1 .CITchapbm {
+            font-size: 26px;
+            font-style: normal;
+        }
+
+    .first-element .H1 {
+        margin-top: 0px;
+    }
+
+    .first-element .H2 {
+        margin-top: 0px;
+    }
+
+    .H2, .SF1H1 {
+        line-height: 120%;
+        margin-top: 2.3rem;
+        font-size: 1.3rem;
+    }
+
+        .H2 .CITchapbm {
+            line-height: 100%;
+            margin-top: 20px;
+            margin-bottom: 3pt;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+    .H3 {
+        line-height: 120%;
+        margin-top: 1.8rem;
+        font-size: 1.1rem;
+        font-style: italic;
+    }
+
+    .first-element .H3 {
+        margin-top: 0px;
+    }
+
+    .H3 .CITchapbm {
+        line-height: 100%;
+        margin-top: 15.5pt;
+        margin-bottom: 3pt;
+    }
+
+    .SummaryHead {
+        font-size: 1.6rem;
+        border-bottom: 3px solid var(--accent-color-1);
+        margin-top: 2.3rem;
+        margin-bottom: 7.75pt;
+        line-height: 150%;
+    }
+
+    .HEADFIRST, .CHAPBMFIRST {
+        text-indent: 0;
+    }
+
+    .DCAP {
+        color: var(--primary-color);
+        font-style: italic;
+        font-weight: 700;
+    }
+
+    .code-block-top-section {
+        margin-top: calc(15px);
+    }
+
+    .first-element .code-block-section {
+        margin-top: 0px;
+    }
+
+    .code-block-bottom-section {
+        margin-bottom: calc(15px);
+        padding-bottom: calc(5px);
+    }
+
+    .code-block-lines {
+        background-color: var(--grey-lighten-2);
+        padding: 0.5rem;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .code-block-section, .CDTMID, .NLDPGMONLY, .DPGMONLY, .CITchapbm, .SF1DPGMONLY, .CPComment, .DPGMFIRST, .DPGMMID, .DPGMLAST, .SF1DPGMFIRST, .SF1DPGMMID, .SF2DPGMFIRST, .SF2DPGMLAST, .SF1DPGMLAST {
+        font-family: "Courier New", monospace;
+        font-size: 16px;
+        line-height: 140%;
+    }
+
+    .TableCDT1, .TableCDT, .TableCDTX, .TBLDPGMFIRST, .TABLEDPGMFIRST, .TBLDPGM, .TableDPGM, .TBLDPGMLAST, .TABLEDPGMLAST, .TBLDPGMMID, .TABLEDPGMMID, .table-cell .CPComment {
+        font-family: "Courier New", monospace;
+        font-size: 18px;
+        line-height: 140%;
+    }
+
+    .CHAPBMCON .CITCHAPBM, .CHAPBM .CITCHAPBM, .HEADFIRST .CITCHAPBM, .SF1FIRST .CITCHAPBM, .SF1LAST .CITCHAPBM, .SF1MID .CITCHAPBM, .ordered-list-item-paragraph .CITCHAPBM, .bullet-list-item-paragraph .CITCHAPBM, .bullet-list-item-paragraph-measurement .CITCHAPBM {
+        font-size: 18px;
+    }
+
+    .SF1DPGMFIRST, .SF1DPGMMID, .SF2DPGMLAST {
+        line-height: 15px;
+    }
+
+    .DPGMFIRST, .SF1DPGMONLY, .SF1DPGMFIRST, .SF2DPGMFIRST {
+        margin-top: 8px;
+    }
+
+    .DPGMFIRST, .DPGMMID, .DPGMLAST, .SF1DPGMLAST {
+        line-height: 15pt;
+    }
+
+    .DPGMLAST, .SF1DPGMONLY, .SF2DPGMLAST, .SF1DPGMLAST {
+        margin-bottom: 8px;
+    }
+
+    .TBLNOTE {
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
+
+    .code-block-heading {
+        font-family: "Roboto", Helvetica, Arial, san-serif;
+        font-weight: 700;
+        line-height: 150%;
+        margin-bottom: 5pt;
+    }
+
+        .code-block-heading .CITCHAPBM {
+            font-size: 20px;
+        }
+
+    .code-line {
+        word-break: break-all;
+    }
+
+    .CDThighlight {
+        background: var(--grey-lighten-1);
+    }
+
+    .CDTNUM {
+        font-variant: small-caps;
+    }
+
+    .CPKeyword {
+        color: blue;
+        letter-spacing: 0pt;
+        font-weight: bold;
+    }
+
+    .Maroon {
+        color: #A31515;
+    }
+
+    .Teal {
+        color: #2B91AF;
+    }
+
+    .disable-indent, .CHAPBMCON {
+        text-indent: 0 !important;
+    }
+
+    .justify-last {
+        text-align-last: justify;
+    }
+
+    .output-block-heading {
+        font-size: 1rem;
+        margin-top: 1rem;
+        margin-bottom: 5pt;
+        font-weight: bold;
+        font-variant: small-caps;
+    }
+
+    .output-image {
+        max-width: 100%;
+        display: block;
+    }
+
+    .output-line {
+        word-break: break-word;
+        white-space: normal;
+    }
+
+    .output-block-section .output-block-lines {
+        font-family: "Courier New", monospace;
+        line-height: 140%;
+        background: var(--grey-lighten-2);
+        padding: 1rem;
+    }
+
+    .output-block-top-section {
+        margin-top: calc(11px);
+    }
+
+        .output-block-top-section .output-block-lines {
+            padding-top: calc(9px);
+        }
+
+    .first-element .output-block-section .output-block-lines {
+        padding-top: calc(9px);
+    }
+
+    .output-block-bottom-section {
+        margin-bottom: calc(11px);
+    }
+
+        .output-block-bottom-section .output-block-lines {
+            padding-bottom: calc(9px);
+        }
+
+    .last-element .output-block-section .output-block-lines {
+        padding-bottom: calc(9px);
+    }
+
+    .BOLD, .STRONG {
+        font-weight: bolder;
+        color: black;
+    }
+
+    .figure-image {
+        max-height: 640px;
+        max-width: 100%;
+        margin: auto;
+        display: block;
+    }
+
+    .figure-image-with-margin {
+        margin-top: calc(25px);
+    }
+
+    .figure-image-with-margin {
+        margin-top: calc(25px);
+    }
+
+    .figure-heading {
+        margin: 1rem 0 1rem 0;
+        line-height: 140%;
+        font-size: 1rem;
+        font-weight: bold;
+    }
+
+    .FIGNUM {
+        font-variant: small-caps;
+    }
+
+    .footnote-block {
+        font-size: 16px;
+        text-indent: -30px;
+        margin-left: 30px;
+        overflow-y: unset;
+    }
+
+        .footnote-block .CITchapbm {
+            line-height: 10px;
+            font-size: inherit;
+        }
+
+    .footnote-line-break::before {
+        content: "\a";
+        white-space: pre;
+    }
+
+    .FootnoteReference {
+        position: relative;
+        top: -3pt;
+        font-size: 16px;
+    }
+
+    .footnote-separator-line {
+        margin-left: -20px;
+    }
+
+    .Superscript, .SUP, .SUPITAL {
+        position: relative;
+        top: -3pt;
+        font-size: 12px;
+    }
+
+    .SUPITAL {
+        font-style: italic;
+    }
+
+    .ordered-list-item-paragraph {
+        line-height: 150%;
+    }
+
+        .ordered-list-item-paragraph:last-child {
+            padding-bottom: 0;
+        }
+
+    .first-ordered-list-item {
+        margin-top: 15px;
+    }
+
+    .ordered-list-item {
+        display: flex;
+        margin-bottom: 16px;
+        margin-left: 15px;
+    }
+
+    .ordered-list-item-content {
+        flex: 25;
+    }
+
+    .ordered-list-item-number {
+        flex: 1;
+    }
+
+    .bullet-list-item-first-section {
+        margin-top: 7px;
+    }
+
+    .bullet-list-item {
+        padding: 10px 0 10px 0;
+        line-height: 150%;
+        display: block;
+        overflow-y: hidden;
+        flex-wrap: wrap;
+    }
+
+        .bullet-list-item .first-line {
+            margin-top: 5px;
+        }
+
+    .bullet-list-item-content {
+        flex: 16;
+        position: relative;
+        margin-left: 22pt;
+        margin-right: 5pt;
+    }
+
+    .bullet-list-item-paragraph p, .bullet-list-item-paragraph-measurement p {
+        line-height: 13.0pt;
+    }
+
+    .bullet-list-item-paragraph-measurement p {
+        margin-top: 5px;
+        text-indent: unset;
+    }
+
+    .bullet-list-item .paragraph-line {
+        line-height: 140%;
+        font-size: 20px;
+        text-align: justify;
+        text-justify: inter-word;
+        text-indent: unset;
+    }
+
+    .bullet-list-item-paragraph:last-child {
+        padding-bottom: 0;
+    }
+
+    .bullet-list-bullet {
+        flex: 1;
+        position: absolute;
+        margin-left: 10pt;
+    }
+
+    .first-bullet {
+        margin-top: calc(15px);
+    }
+
+    .SF1BLLAST.last-line, .BLLAST.last-line {
+        margin-bottom: calc(10px);
+    }
+
+    .bullet-list-item-paragraph .CITCHAPBM {
+        font-size: 20px;
+    }
+
+    .NLDPGMONLY {
+        font-family: "Courier New", monospace;
+        font-size: 18px;
+        line-height: 140%;
+    }
+
+    .DPGMONLY {
+        text-indent: unset;
+        padding-left: 20px;
+    }
+
+    .skill-topic-heading {
+        color: var(--grey-font);
+        font-size: 1.1rem;
+        font-weight: bold;
+        letter-spacing: 1pt;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+        margin-left: 22px;
+        margin-top: 8px;
+    }
+
+    .skill-topic-block-top {
+        margin-top: calc(40px);
+    }
+
+    .first-element .skill-topic-block-top {
+        margin-top: 0px;
+    }
+
+    .skill-topic-block-bottom {
+        margin-bottom: calc(20px);
+    }
+
+    .page-right-larger-side-margins .skill-topic-block {
+        border-left: 8px solid var(--accent-color-1);
+        background-color: var(--grey-lighten-2);
+        padding: 20px;
+    }
+
+    .page-left-larger-side-margins .skill-topic-block {
+        border-right: 8px solid var(--accent-color-1);
+        background-color: var(--grey-lighten-2);
+        padding: 20px;
+    }
+
+    .skill-topic-sub-heading {
+        font-size: 1.1rem;
+        font-weight: bold;
+        padding-top: 10px;
+    }
+
+        .skill-topic-sub-heading .CITchapbm {
+            font-size: 24px;
+            font-weight: bold;
+            padding-top: 4px;
+        }
+
+    .skill-topic-block .paragraph {
+        text-indent: 0;
+    }
+
+    .skill-topic-block .SF1DPGMFIRST, .skill-topic-block .SF1DPGMMID, .skill-topic-block .SF1DPGMLAST, .skill-topic-block .SF1DPGMONLY {
+        margin-left: 28px;
+    }
+
+    .skill-topic-block .element-section + .first-line {
+        text-indent: 0;
+    }
+
+    .skill-topic-overlayed-squares {
+        position: absolute;
+        height: 19px;
+        margin-top: 9px;
+    }
+
+    .guidelines-block {
+        background: #eaeaea;
+        margin-left: auto;
+        margin-right: auto;
+        width: 85%;
+    }
+
+    .inside-guidelines-block {
+        margin-left: 26px;
+        margin-right: 15px;
+    }
+
+    .guidelines-block-heading {
+        font-size: 1.1rem;
+        font-weight: bold;
+        padding-bottom: calc(0px);
+        margin-top: calc(-3px);
+    }
+
+    .guidelines-block-line {
+        margin-bottom: calc(0px);
+        line-height: 140%;
+        margin-top: calc(5px);
+    }
+
+    .last-element .guidelines-block-line {
+        padding-bottom: calc(10px);
+        margin-bottom: calc(15px);
+    }
+
+    .guidelines-block-line .CITchapbm {
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    .guidelines-first-section {
+        margin-top: calc(13px);
+    }
+
+    .first-element .guidelines-first-section {
+        margin-top: 0px;
+    }
+
+    .guidelines-last-section {
+        padding-bottom: calc(10px);
+        margin-bottom: calc(15px);
+    }
+
+    .language-contrast-block {
+        background: #e5e7e8;
+        margin-top: 10pt;
+        margin-bottom: 10pt;
+        width: 85%;
+    }
+
+    .first-element .language-contrast-block {
+        margin-top: 0px;
+    }
+
+    .inside-language-contrast-block {
+        margin-left: 18pt;
+        margin-bottom: 10pt;
+        margin-right: 18pt;
+        margin-top: 4pt;
+    }
+
+
+    .language-contrast-heading {
+        font-size: 1.1rem;
+        font-weight: bold;
+        padding-bottom: 5px;
+    }
+
+        .language-contrast-heading .CITchapbm {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+    .language-contrast-body {
+        line-height: 150%;
+    }
+
+        .language-contrast-body .SF2 {
+            text-indent: unset;
+        }
+
+        .language-contrast-body .SF2DPGMONLY {
+            font-family: "Courier New", monospace;
+            font-size: 18px;
+            line-height: 140%;
+            text-indent: unset;
+        }
+
+    .upper-left-square {
+        width: 20px;
+        height: 20px;
+    }
+
+    .green-square {
+        background: #095540;
+    }
+
+    .blue-square {
+        background: #003057;
+    }
+
+    .CITTBL {
+        font-family: "Courier New", monospace;
+        font-size: 18px;
+        line-height: 140%;
+        margin-top: 5.5pt;
+        margin-bottom: 5.5pt;
+        padding: 0in 2.9pt 0in 2.9pt;
+        text-indent: unset;
+    }
+
+    .TBL {
+        margin: 0px;
+        line-height: 140%;
+        font-size: 16px;
+        color: black;
+        text-indent: unset;
+    }
+
+    .table-cell-border {
+        border-spacing: initial;
+        border: .5px solid black;
+    }
+
+    .table-heading {
+        margin-right: 0in;
+        margin-bottom: 3pt;
+        margin-left: 0in;
+        line-height: 140%;
+        font-size: 1.1rem;
+        color: black;
+        font-weight: bold;
+        margin-top: 20px;
+    }
+
+    tr {
+        border-style: none;
+    }
+
+    .pdf-table-row, .measurement-table-row {
+        margin-bottom: calc(-2px);
+        table-layout: fixed;
+    }
+
+    .measurement-table-row {
+        table-layout: fixed;
+    }
+
+    .pdf-table-row {
+        table-layout: fixed;
+        border-collapse: collapse;
+    }
+
+    .table-cell {
+        margin: 0;
+        table-layout: fixed;
+    }
+
+    .measurement-table {
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    .first-element .table-top-section .table-heading {
+        margin-top: 0px;
+    }
+
+    .table-bottom-section {
+        border-bottom: 1px solid black;
+    }
+
+    .left-table-cell {
+        border-left: 1px solid black;
+    }
+
+    .right-table-cell {
+        border-right: 1px solid black;
+    }
+
+    .standard-table-cell {
+        padding: 6px;
+        border: 1px black solid;
+        vertical-align: top;
+    }
+
+    .table-header-row .standard-table-cell {
+        vertical-align: bottom;
+    }
+
+    .standard-table-cell p {
+        text-align: left;
+        text-indent: unset;
+        line-height: normal;
+        margin-left: -4px;
+        margin-right: -4px;
+        table-layout: fixed;
+        word-break: break-word;
+    }
+
+    .table-top-row .non-standard-cell, .first-element .table-top-section .non-standard-cell {
+        border-top: 1px solid black;
+    }
+
+    .non-standard-cell {
+        border-style: none;
+    }
+
+    .non-standard-row {
+        border-style: none;
+    }
+
+    table {
+        border-style: solid;
+    }
+
+    .final-row {
+        background: #e9e9e9;
+        border: 1px solid black;
+        height: calc(6px);
+    }
+
+        .final-row .standard-table-cell {
+            padding: 0;
+        }
+
+    .TBLCOLHD {
+        line-height: 140%;
+        font-size: 16px;
+        color: black;
+        font-weight: bold;
+        text-align: left;
+        text-indent: unset;
+    }
+
+    .header-row {
+        background: #E6E7E8;
+    }
+
+    .table-final-section {
+        margin-bottom: 20px;
+    }
+
+    .first-element .note-block {
+        margin-top: 0px;
+    }
+
+    .inside-note-block {
+        margin-left: 11pt;
+        margin-bottom: 6pt;
+        margin-right: 10pt;
+        margin-top: -2pt;
+    }
+
+    .note-block {
+        border: 4px solid var(--primary-color);
+        background: var(--grey-lighten-1);
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+        margin-left: auto;
+        margin-right: auto;
+        width: 60%;
+    }
+
+    .inside-note-block {
+        margin-left: 11pt;
+        margin-bottom: 6pt;
+        margin-right: 10pt;
+        margin-top: -2pt;
+    }
+
+    .note-block-heading {
+        color: var(--grey-font);
+        position: relative;
+        font-size: 1.1rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        margin-left: 22px;
+        margin-bottom: 2px;
+        margin-top: 8px;
+    }
+
+    .note-block-lines {
+        margin-top: 20px;
+        margin-bottom: 20px;
+        line-height: 140%;
+    }
+
+    .note-block-line {
+        margin-bottom: 2pt;
+    }
+
+    .note-block-line-bold {
+        margin-bottom: 2pt;
+        font-weight: bold;
+    }
+
+    .note-block-overlayed-squares {
+        position: absolute;
+        height: 19px;
+        margin-top: 2px;
+    }
+
+    .CPComment {
+        color: green;
+        font-style: italic;
+    }
+
+    .ITAL {
+        font-style: italic;
+    }
+
+    .BOLDITAL {
+        font-style: italic;
+        font-weight: bold;
+    }
+
+    .table-row .TBL {
+        line-height: 11pt;
+        padding-bottom: 2px;
+        padding-right: 5px;
+    }
+
+    .publisher-note {
+        background-color: gray;
+        max-width: 100px;
+        color: white;
+        text-align: center;
+        position: absolute;
+        transform: translate(495px, 0px);
+        min-width: 65px;
+        max-width: 65px;
+        font-size: 16px;
+        min-height: 22px;
+        max-height: 22px;
+        padding-top: 10px;
+        overflow-x: hidden;
+    }
+
+    .publisher-note-right {
+        transform: translate(495px, 0px);
+        text-align: left;
+        padding-left: 6px;
+    }
+
+    .publisher-note-left {
+        transform: translate(-87px, 0px);
+        text-align: right;
+        padding-right: 6px;
+    }
+
+    .heading-wrapper:not(:hover) .anchor-link:not(:focus-visible) {
+        opacity: 0;
+    }
+
+    .anchor-link {
+        border: none;
+        color: var(--link-color);
+        text-decoration: none;
+        position: absolute;
+        font-size: 14px;
+        margin: 4px 2px;
+        transition-duration: 0.4s;
+        cursor: pointer;
+        background-color: transparent;
+    }
+
+        .anchor-link:hover {
+            color: var(--link-color-hover);
+        }
+
+    .code-line-number {
+        color: gray;
+        text-align: right;
+        display: inline-block;
+        width: 30px;
+        font-family: monospace;
+    }
+
+    .no-select {
+        -webkit-touch-callout: none; /* iOS Safari */
+        -webkit-user-select: none; /* Safari, Chrome, Opera, Samsung */
+        -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Edge */
+        user-select: none; /* Modern browsers */
+    }
+</style>
+<script>
+
+	// https://stackoverflow.com/questions/10787782/full-height-of-a-html-element-div-including-border-padding-and-margin
+	function getAbsoluteHeight(el) {
+		// Get the DOM Node if you pass in a string
+		el = (typeof el === 'string') ? document.querySelector(el) : el;
+
+		const styles = window.getComputedStyle(el);
+		const previousElement = el.previousElementSibling;
+		const nextElement = el.nextElementSibling;
+		let marginTop = parseFloat(styles['marginTop']);
+		let marginBottom = parseFloat(styles['marginBottom']);
+
+		if (previousElement !== null) {
+			const previousStyles = window.getComputedStyle(previousElement);
+			const previousBottomMargin = parseFloat(previousStyles['marginBottom']);
+			if (previousBottomMargin > marginTop) {
+				marginTop = 0;
+			}
+		}
+
+		if (nextElement !== null) {
+			const nextStyles = window.getComputedStyle(nextElement);
+			const nextTopMargin = parseFloat(nextStyles['marginTop']);
+			if (nextTopMargin > marginBottom) {
+				marginBottom = 0;
+			}
+		}
+    
+		const margin = marginTop + marginBottom
+
+		return el.getBoundingClientRect().height + margin;
+	}
+
+	function getAbsoluteWidth(el) {
+		// Get the DOM Node if you pass in a string
+		el = (typeof el === 'string') ? document.querySelector(el) : el;
+
+		const styles = window.getComputedStyle(el);
+		const margin = parseFloat(styles['marginLeft']) +
+			parseFloat(styles['marginRight']);
+
+		return el.offsetWidth + margin;
+	}
+
+	function measureSingleSectionElement(id) {
+
+		const element = document.querySelector(`[data-element-id='${id}']`);
+
+		const heightInPixels = getAbsoluteHeight(element);
+		const widthInPixels = getAbsoluteWidth(element);
+
+		return {
+			id,
+			heightInPixels,
+			widthInPixels
+		};
+	}
+
+	function measureLinesInElement(id) {
+		const element = document.querySelector(`[data-element-id='${id}']`);
+
+		const heightInPixels = getAbsoluteHeight(element);
+		const widthInPixels = getAbsoluteWidth(element);
+
+		const wordElements = element.getElementsByTagName('fakeTag');
+
+		const lineHeight = parseFloat(document.defaultView.getComputedStyle(element, null).getPropertyValue("line-height"));
+
+		const lines = [];
+		let line = null;
+		let lineWords = [];
+		let lineLeft = 0;
+
+		for (const word of wordElements) {
+			if ((line == null) || word.getBoundingClientRect().left < lineLeft) {
+				if (line != null) {
+					const measurement = measureLine(lineWords);
+					line.heightInPixels = measurement.lineHeight;
+					line.widthInPixels = measurement.lineWidth;
+					lineWords = [];
+
+					lines.push(line);
+				}
+				line = {
+					firstWordId: word.dataset.taggedWordId,
+					heightInPixelsOld: lineHeight
+				};
+			}
+
+			lineWords.push(word);
+			line.lastWordId = word.dataset.taggedWordId;
+			lineLeft = word.getBoundingClientRect().left;
+		}
+
+		if (line != null) {
+			const measurement = measureLine(lineWords);
+			line.heightInPixels = measurement.lineHeight;
+			line.widthInPixels = measurement.lineWidth;
+			lines.push(line);
+		}
+
+		if (lines.length > 0) {
+			const styles = window.getComputedStyle(element)
+			const topLineExtra = parseFloat(styles['marginTop']) + parseFloat(styles['paddingTop']);
+			const bottomLineExtra = parseFloat(styles['marginBottom']) + parseFloat(styles['paddingBottom']);
+			lines[0].heightInPixels += topLineExtra;
+			lines[lines.length - 1].heightInPixels += bottomLineExtra;
+		}
+
+		return {
+			id,
+			heightInPixels,
+			widthInPixels,
+			lines
+		};
+	}
+
+	function measureLine(lineWords) {
+		let lineWrapper = document.createElement('fakeLine');
+
+		lineWords[0].parentNode.insertBefore(lineWrapper, lineWords[0]);
+
+		for (const lineWord of lineWords) {
+			lineWrapper.appendChild(lineWord);
+		}
+
+		lineWrapper.style.textIndent = 0;
+		const lineWidth = getAbsoluteWidth(lineWrapper);
+		lineWrapper.style.display = 'block';
+
+		const lineHeight = getAbsoluteHeight(lineWrapper);
+
+		lineWrapper.style.display = null;
+		lineWrapper.style.textIndent = null;
+
+		return {
+			lineHeight,
+			lineWidth,
+		};
+	}
+
+	function highlightSizeMiscalculations(threshold = 2) {
+		const elements = document.querySelectorAll(`[data-calculated-height]`);
+
+		let pixelsOverEstimated = 0;
+		let pixelsUnderEstimated = 0;
+		let incorrectlyEstimatedElements = [];
+
+
+
+		for (const element of elements) {
+			const calculatedHeight = element.dataset.calculatedHeight;
+
+			element.style.overflowY = 'hidden';
+			element.style.overflowX = 'hidden';
+
+			const actualHeight = getAbsoluteHeight(element);
+
+			const heightDifference = calculatedHeight - actualHeight;
+			const absoluteHeightDifference = Math.abs(heightDifference);
+
+			element.dataset.heightDifference = heightDifference;
+
+			if (actualHeight === 0) { //Ignore height differences of zero-height elements. This includes version notes.
+				continue;
+			}
+
+			// ignoring a small difference due to rounding issues
+			if (absoluteHeightDifference <= threshold) {
+				element.style.backgroundColor = 'transparent';
+				continue;
+			}
+
+			for (const child of element.children) {
+				child.style.position = 'relative';
+				child.style.zIndex = -1;
+			}
+
+			const clampedColorDifference = Math.max(0, 220 - absoluteHeightDifference * 10);
+			if (heightDifference != 0) {
+
+				let incorrectElement = {
+					expected: calculatedHeight, actual: actualHeight, difference: absoluteHeightDifference, elementStyles: element.className,
+					childrenStyles: Array.from(element.children, (e) => e.className), childrenText: Array.from(element.children, (e) => e.textContent)
+				}
+
+				if (heightDifference > 1) {
+					pixelsOverEstimated += absoluteHeightDifference;
+					element.style.backgroundColor = `rgba(${clampedColorDifference}, 255, ${clampedColorDifference}, 0.4)`;
+
+					incorrectElement.type = "OVERESTIMATED";
+				} else {
+
+					pixelsUnderEstimated += absoluteHeightDifference;
+					element.style.backgroundColor = `rgba(255, ${clampedColorDifference}, ${clampedColorDifference}, 0.4)`;
+
+					incorrectElement.type = "UNDERESTIMATED";
+				}
+
+				incorrectlyEstimatedElements.push(incorrectElement);
+			}
+		}
+
+		incorrectlyEstimatedElements.sort((a, b) => a.type.charCodeAt(0) - b.type.charCodeAt(0));
+
+		console.log(`Over estimated: ${pixelsOverEstimated} pixels`);
+		console.log(`Under estimated: ${pixelsUnderEstimated} pixels`);
+		console.log(`Total miscalculation: ${pixelsOverEstimated - pixelsUnderEstimated} pixels`);
+		return {
+			overEstimated: pixelsOverEstimated,
+			underEstimated: pixelsUnderEstimated,
+			incorrectlyEstimatedElements: incorrectlyEstimatedElements
+		}
+	}
+
+	function addPageBorders() {
+		const cutPages = document.getElementsByClassName('cut-page');
+
+		for (const cutPage of cutPages) {
+			cutPage.style.outline = '1px solid black';
+			let availableSpace = 0;
+			let filledSpace = 0;
+			let pageNumber = '';
+
+			const contentHeightDiv = cutPage.getElementsByClassName('content-height')[0];
+			if (contentHeightDiv) {
+				contentHeightDiv.style.outline = '1px dashed red';
+				availableSpace = contentHeightDiv.clientHeight;
+			}
+
+			const pageNumDiv = cutPage.getElementsByClassName('page-number-content')[0];
+			pageNumber = pageNumDiv?.innerHTML ?? 'unknown';
+
+			const header = cutPage.getElementsByClassName('page-header-box')[0];
+			filledSpace += header ? getAbsoluteHeight(header) : 0;
+
+			const pageContent = cutPage.getElementsByClassName('page-content')[0];
+			filledSpace += pageContent ? getAbsoluteHeight(pageContent) : 0;
+
+			const footNotes = cutPage.getElementsByClassName('footnotes-section')[0];
+			filledSpace += footNotes ? getAbsoluteHeight(footNotes) : 0;
+
+			cutPage.appendChild(document.createElement('div')).innerHTML = `<br/>Page: ${pageNumber}<br/>Filled Space: ${filledSpace}px/${availableSpace}px<br/>Unused Space: ${availableSpace - filledSpace}px<br/>`;
+		}
+	}
+   
+	function checkAllPageHeight(lowerThreshold = 400, upperThreshold = 0) {
+		const pages = document.getElementsByClassName('content-height');
+		let maxPageHeight = upperThreshold;
+		if (maxPageHeight === 0){
+			maxPageHeight = document.querySelector('.content-height').getBoundingClientRect().height;
+		}
+		const pagesTooLarge = [];
+		const pagesBelowThreshold = [];
+
+		for (i = 0; i < pages.length; i++) {
+			let heightElements = pages[i].children;
+			let totalPageHeight = 0;
+			for (const el of heightElements) {
+				totalPageHeight += getAbsoluteHeight(el);
+			}
+			if (totalPageHeight > maxPageHeight) {
+				pagesTooLarge.push({ pageNumber: i + 1, pageHeight: totalPageHeight });
+			} else if (totalPageHeight < lowerThreshold) {
+				pagesBelowThreshold.push({ pageNumber: i + 1, pageHeight: totalPageHeight });
+			}
+		}
+
+		return {
+			maxPageHeight: maxPageHeight,
+			pagesTooLarge: pagesTooLarge,
+			pagesBelowThreshold: pagesBelowThreshold,
+		}
+	}
+
+</script>
+</head>
+
+<body>
+   <div class="page-right-larger-side-margins">
+
+
+
+<div id="c-syntax-fundamentals" data-element-id="769db44e-3227-462b-a8a3-68404bc83136" class="element-section section-heading Heading1">
+    <span class="heading-wrapper">
+<span id="c-syntax-fundamentals">C# Syntax Fundamentals</span>            <button class="anchor-link" v-on:click="copyToClipboard('c-syntax-fundamentals#c-syntax-fundamentals')">
+                <i class="fa-solid fa-link"></i>
+            </button>
+    </span>
+</div>
+
+
+<p data-element-id="d1413128-9f13-4a4c-ba5a-8b9e6d591eb9" class="element-section paragraph CHAPBMCON" >
+Once you successfully compile and run the <span class="CITchapbm">HelloWorld</span> program, you are ready to start dissecting the code to learn its individual parts. Of course, <span class="CDTNUM">Listing 1.1</span> is the simplest of C# programs with only a single statement.</p>
+
+<div id="statements-and-statement-delimiters" data-element-id="b9b601c1-1f18-41b4-9bc2-e5335a12c019" class="element-section section-heading Heading2">
+    <span class="heading-wrapper">
+<span id="statements-and-statement-delimiters">Statements and Statement Delimiters</span>            <button class="anchor-link" v-on:click="copyToClipboard('statements-and-statement-delimiters#statements-and-statement-delimiters')">
+                <i class="fa-solid fa-link"></i>
+            </button>
+    </span>
+</div>
+
+
+<p data-element-id="0c6757ea-8422-4219-bdd6-54909a321d31" class="element-section paragraph CHAPBMCON" >
+The single statement is <span class="CITchapbm">Console.WriteLine()</span>, which is used to write a line of text to the console. C# generally uses a semicolon to indicate the end of a <span class="BOLD">statement</span>, where a statement comprises one or more actions that the code will perform. Declaring a variable, controlling the program flow, and calling a method are typical uses of statements.</p>
+
+
+<div data-element-id="23d53a09-8c12-4e12-80f6-ac07604cb8c9" class="element-section skill-topic-block skill-topic-block-top skill-topic-block-bottom">
+    <img class="skill-topic-overlayed-squares" src="data:image/svg&#x2B;xml;base64,PHN2ZyB3aWR0aD0iMjk2IiBoZWlnaHQ9IjEyMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgb3ZlcmZsb3c9ImhpZGRlbiI&#x2B;DQogICAgPGRlZnM&#x2B;DQogICAgICAgIDxjbGlwUGF0aCBpZD0iY2xpcDAiPg0KICAgICAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSIyOTYiIGhlaWdodD0iMTIxIiAvPg0KICAgICAgICA8L2NsaXBQYXRoPg0KICAgIDwvZGVmcz4NCiAgICA8ZyBjbGlwLXBhdGg9InVybCgjY2xpcDApIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNDEzIC0yNzIpIj4NCiAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzQxNDE0MSIgLz4NCiAgICAgICAgPHJlY3QgeD0iNDY4IiB5PSIzMjciIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzI2MjYyNiIgLz4NCiAgICA8L2c&#x2B;DQo8L3N2Zz4="/>
+    <div class="skill-topic-heading">AdVanced Topic</div>
+    <div class="skill-topic-sub-heading">Statements without Semicolons</div>
+
+
+
+
+<p data-element-id="e7bc2ffd-8c73-4af1-be4e-6d7a76b6e427" class="element-section paragraph SF1FIRST" >
+Many programming elements in C# end with a semicolon. One example that does not include the semicolon is a <span class="CITchapbm">switch</span> statement. Because curly braces are always included in a <span class="CITchapbm">switch</span> statement, C# does not require a semicolon following the statement. In fact, code blocks themselves are considered statements (they are also composed of statements), and they don&#x2019;t require ending with a semicolon. Similarly, there are cases, such as the <span class="CITchapbm">using</span> declaration, in which a semicolon appears as a postfix, but it is not a statement.</p></div>
+
+
+<p data-element-id="78f24435-d697-471d-9429-bb80b5a0905d" class="element-section paragraph CHAPBM" >
+Since creation of a newline does not separate statements, you can place multiple statements on the same line, and the C# compiler will interpret the line as having multiple instructions. For example, <span class="CDTNUM">Listing </span><span class="TBLNUM">1</span><span class="CDTNUM">.3</span> contains two statements on a single line that, in combination, display <span class="CITchapbm">Up</span> and <span class="CITchapbm">Down</span> on two separate lines.</p>
+
+<div data-element-id="587a8d8d-3fcd-433b-9e8a-1ddd53c8b591" class="element-section code-block-top-section code-block-bottom-section code-block-section">
+
+    <div class="code-block-heading">
+<span class="CDTNUM">Listing </span><span class="TBLNUM">1</span><span class="CDTNUM">.3</span><span class="FIGNUM">: </span>Multiple Statements on One Line    </div>
+
+    <div class="code-block-lines">
+            <div class='code-line '>
+                <span class="code-line-number no-select">1.</span>
+Console.WriteLine(<span class="Maroon" v-pre>&quot;Up&quot;</span>);&nbsp;Console.WriteLine(<span class="Maroon" v-pre>&quot;Down&quot;</span>);            </div>
+    </div>
+</div>
+
+
+
+<p data-element-id="a2c8b9a0-1f39-4271-a557-c5c05212f14e" class="element-section paragraph CHAPBMCON" >
+Similarly, each statement can be placed on its own line, as shown in <span class="CDTNUM">Listing </span><span class="TBLNUM">1.</span><span class="CDTNUM">4</span>.</p>
+
+<div data-element-id="1936bf9b-862e-4835-9566-d3f18780399b" class="element-section code-block-top-section code-block-bottom-section code-block-section">
+
+    <div class="code-block-heading">
+<span class="CDTNUM">Listing </span><span class="TBLNUM">1.</span><span class="CDTNUM">4</span><span class="FIGNUM">: </span>Multiple Statements Each on Separate Lines    </div>
+
+    <div class="code-block-lines">
+            <div class='code-line '>
+                <span class="code-line-number no-select">1.</span>
+Console.WriteLine(<span class="Maroon" v-pre>&quot;Down&quot;</span>);            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">2.</span>
+Console.WriteLine(<span class="Maroon" v-pre>&quot;Side&quot;</span>);            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">3.</span>
+Console.WriteLine(<span class="Maroon" v-pre>&quot;Up&quot;</span>);            </div>
+    </div>
+</div>
+
+
+
+<p data-element-id="abfb3171-c7b2-49ae-95a9-91de9227bf16" class="element-section paragraph CHAPBM" >
+C# also allows the splitting of a statement across multiple lines. Again, the C# compiler looks for a semicolon to indicate the end of a statement. In <span class="CDTNUM">Listing </span><span class="TBLNUM">1.</span><span class="CDTNUM">5</span>, for example, the original <span class="CITchapbm">WriteLine()</span> statement from the <span class="CITchapbm">HelloWorld</span> program is split across multiple lines.</p>
+
+<div data-element-id="f261cf74-3310-4c27-b5dc-442890b77315" class="element-section code-block-top-section code-block-bottom-section code-block-section">
+
+    <div class="code-block-heading">
+<span class="CDTNUM">Listing </span><span class="TBLNUM">1.</span><span class="CDTNUM">5</span><span class="FIGNUM">: </span> Splitting a Single Statement across Multiple Lines    </div>
+
+    <div class="code-block-lines">
+            <div class='code-line '>
+                <span class="code-line-number no-select">1.</span>
+Console.WriteLine(            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">2.</span>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="Maroon" v-pre>&quot;Hello.&nbsp;My&nbsp;name&nbsp;is&nbsp;Inigo&nbsp;Montoya.&quot;</span>);            </div>
+    </div>
+</div>
+
+
+<div id="introducing-a-class-and-a-method" data-element-id="25908ca4-6c27-475f-b520-26854a9e6c94" class="element-section section-heading Heading2">
+    <span class="heading-wrapper">
+<span id="introducing-a-class-and-a-method">Introducing a Class and a Method</span>            <button class="anchor-link" v-on:click="copyToClipboard('introducing-a-class-and-a-method#introducing-a-class-and-a-method')">
+                <i class="fa-solid fa-link"></i>
+            </button>
+    </span>
+</div>
+
+
+<p data-element-id="4419d6d9-fc2d-4f55-83de-29d0b9862e4e" class="element-section paragraph CHAPBMCON" >
+In the listings shown so far, the statements are independent of any other C# constructs and appear this way in only a single file. The previous listings are the simplest of C# programs, a HelloWorld program, after all. Programs can, however, get vastly more complicated, and structure can be added to organize the code. The simplest structure is to add methods and to place those methods within classes. <span class="CDTNUM">Listing </span><span class="TBLNUM">1.</span><span class="CDTNUM">6</span> provides an example.</p>
+
+<div data-element-id="d0d1cdfd-45ab-4f0c-919b-5066a1fe6b5e" class="element-section code-block-top-section code-block-bottom-section code-block-section">
+
+    <div class="code-block-heading">
+<span class="CDTNUM">Listing </span><span class="TBLNUM">1.</span><span class="CDTNUM">6: </span><span class="CIT">HelloWorld</span> with Class and Method    </div>
+
+    <div class="code-block-lines">
+            <div class='code-line '>
+                <span class="code-line-number no-select">1.</span>
+<span class="CPKeyword" v-pre>public</span>&nbsp;<span class="CPKeyword" v-pre>class</span>&nbsp;Program            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">2.</span>
+{            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">3.</span>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="CPKeyword" v-pre>public</span>&nbsp;<span class="CPKeyword" v-pre>static</span>&nbsp;<span class="CPKeyword" v-pre>void</span>&nbsp;Main()            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">4.</span>
+&nbsp;&nbsp;&nbsp;&nbsp;{            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">5.</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;System.Console.WriteLine(<span class="Maroon" v-pre>&quot;Hello.&nbsp;My&nbsp;name&nbsp;is&nbsp;Inigo&nbsp;Montoya.&quot;</span>);            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">6.</span>
+&nbsp;&nbsp;&nbsp;&nbsp;}            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">7.</span>
+}            </div>
+    </div>
+</div>
+
+
+
+<p data-element-id="1fed982c-9004-4ffc-b0a1-069926962298" class="element-section paragraph CHAPBMCON" >
+In this listing, the HelloWorld statement is placed into a method called <span class="CITchapbm">Main</span>, which is placed into a class called <span class="CITchapbm">Program</span>.</p>
+
+
+<p data-element-id="d65db0d5-3f98-4808-98c0-feed8d328156" class="element-section paragraph CHAPBM" >
+Those experienced in programming with Java, C, or C&#x2B;&#x2B; will immediately see similarities. Like Java, C# inherits its basic syntax from C and C&#x2B;&#x2B;.<span class="Superscript">8</span> Syntactic punctuation (such as semicolons and curly braces), features (such as case sensitivity), and keywords (such as <span class="CITchapbm">class</span>, <span class="CITchapbm">public</span>, and <span class="CITchapbm">void</span>) are familiar to programmers experienced in these languages.</p>
+
+
+<p data-element-id="cc721415-3470-4bf3-8fe9-50e31d8b3bbf" class="element-section paragraph CHAPBM" >
+</p>
+
+<div data-element-id="abb6ebaa-951b-4821-bf33-8f12cef7ae5e" class="element-section note-block">
+
+    <div class=inside-note-block>
+        <img class="note-block-overlayed-squares" src="data:image/svg&#x2B;xml;base64,PHN2ZyB3aWR0aD0iMjk2IiBoZWlnaHQ9IjEyMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgb3ZlcmZsb3c9ImhpZGRlbiI&#x2B;DQogICAgPGRlZnM&#x2B;DQogICAgICAgIDxjbGlwUGF0aCBpZD0iY2xpcDAiPg0KICAgICAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSIyOTYiIGhlaWdodD0iMTIxIiAvPg0KICAgICAgICA8L2NsaXBQYXRoPg0KICAgIDwvZGVmcz4NCiAgICA8ZyBjbGlwLXBhdGg9InVybCgjY2xpcDApIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNDEzIC0yNzIpIj4NCiAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzQxNDE0MSIgLz4NCiAgICAgICAgPHJlY3QgeD0iNDY4IiB5PSIzMjciIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzI2MjYyNiIgLz4NCiAgICA8L2c&#x2B;DQo8L3N2Zz4=" />
+        <div class="note-block-heading">
+ note        </div>
+
+        <div class="note-block-lines">
+
+                    <div class="note-block-line">
+C# is a case-sensitive language: Incorrect case prevents the code from compiling successfully.                    </div>
+        </div>
+    </div>
+</div>
+
+
+
+<p data-element-id="18cb9169-693d-437b-bbb3-8da00f3cbbf7" class="element-section paragraph CHAPBM" >
+</p>
+
+
+
+<p data-element-id="a2499a1b-54ec-4ca5-9f26-91c29df34792" class="element-section paragraph CHAPBM" >
+</p>
+
+<div data-element-id="bc9fc774-ef69-4be0-b998-6862bd9f1881" class="element-section language-contrast-block">
+
+    <div class="upper-left-square green-square"></div>
+
+    <div class=inside-language-contrast-block> 
+        <div class="language-contrast-heading">
+Language Contrast: Java&#x2014;Filename Must Match Class Name        </div>
+
+        <div class="language-contrast-body">
+        
+
+
+
+<p data-element-id="b0ec0f5d-80ec-4723-9a0c-4e79bae3fc31" class="element-section paragraph SF2" >
+In Java, the filename must follow the name of the class. In C#, this convention is frequently followed but is not required. In C#, it is possible to have two classes in one file, and even to have a single class span multiple files, with a feature called a <span class="BOLD">partial class</span>.</p>        </div>
+    </div>
+</div>
+
+
+
+<p data-element-id="bc49c8f0-98e1-41ab-8a8d-a29a863b0405" class="element-section paragraph CHAPBM" >
+</p>
+
+
+
+<div data-element-id="3616fa39-d911-477e-9fcb-7057190130de" class="element-section skill-topic-block skill-topic-block-top skill-topic-block-bottom">
+    <img class="skill-topic-overlayed-squares" src="data:image/svg&#x2B;xml;base64,PHN2ZyB3aWR0aD0iMjk2IiBoZWlnaHQ9IjEyMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgb3ZlcmZsb3c9ImhpZGRlbiI&#x2B;DQogICAgPGRlZnM&#x2B;DQogICAgICAgIDxjbGlwUGF0aCBpZD0iY2xpcDAiPg0KICAgICAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSIyOTYiIGhlaWdodD0iMTIxIiAvPg0KICAgICAgICA8L2NsaXBQYXRoPg0KICAgIDwvZGVmcz4NCiAgICA8ZyBjbGlwLXBhdGg9InVybCgjY2xpcDApIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNDEzIC0yNzIpIj4NCiAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzQxNDE0MSIgLz4NCiAgICAgICAgPHJlY3QgeD0iNDY4IiB5PSIzMjciIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzI2MjYyNiIgLz4NCiAgICA8L2c&#x2B;DQo8L3N2Zz4="/>
+    <div class="skill-topic-heading">Beginner Topic</div>
+    <div class="skill-topic-sub-heading">Keywords</div>
+
+
+
+
+<p data-element-id="943a4ea7-3672-4164-a21d-d6619024a57d" class="element-section paragraph SF1FIRST" >
+To enable the compiler to interpret the code, certain words within C# have special status and meaning. Known as <span class="BOLD">keywords</span>, they provide the concrete syntax that the compiler uses to interpret the expressions the programmer writes. In the <span class="CITchapbm">HelloWorld</span> program, <span class="CITchapbm">class</span>, <span class="CITchapbm">static</span>, and <span class="CITchapbm">void</span> are examples of keywords.</p>
+
+
+<p data-element-id="eddf7e13-cbab-449a-af92-6a53f8bd203c" class="element-section paragraph SF1LAST" >
+The compiler uses the keywords to identify the structure and organization of the code. Because the compiler interprets these words with elevated significance, C# requires that developers place keywords only in certain locations. When programmers violate these rules, the compiler issues errors.</p></div>
+
+
+
+
+
+
+
+
+
+
+
+<div id="c-keywords" data-element-id="e6828e3c-1385-4f24-ad02-f8db31aad371" class="element-section section-heading Heading2">
+    <span class="heading-wrapper">
+<span id="c-keywords">C# Keywords</span>            <button class="anchor-link" v-on:click="copyToClipboard('c-keywords#c-keywords')">
+                <i class="fa-solid fa-link"></i>
+            </button>
+    </span>
+</div>
+
+
+<p data-element-id="97d5539b-47ab-4ac2-8e36-3543e0784dbe" class="element-section paragraph CHAPBMCON" >
+Keywords are another construct common to other programming languages. Table <span class="TBLNUM">1.</span><span class="CDTNUM">1</span> shows the C# keywords.</p>
+
+
+<div data-element-id="de678077-06d6-49c8-a1d8-7a2bdaaf76b1" class="element-section table">
+    <div class="table-heading"><span class="TBLNUM">Table 1.1:</span><span class="FIGNUM"> </span>C# Keywords</div>
+    <table class="table-cell-border">
+    
+
+
+<tr data-element-id="6e6f9998-b2c8-46ec-bc61-3f894182552d" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="b1af0b97-4565-4ede-b8e5-dee6fce30939" class="element-section paragraph TBL" >
+<span class="CITTBL">abstract</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="2c4e51fe-1998-489b-9d0a-8f9b3907c1ec" class="element-section paragraph TBL" >
+<span class="CITTBL">add*(1)</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="a96157ee-4cc8-46b3-bdd6-cff0f7c61b4d" class="element-section paragraph TBL" >
+<span class="CITTBL">alias*(2)</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="4388adc0-0658-42fa-b3fa-28418e1f5a85" class="element-section paragraph TBL" >
+<span class="CITTBL">and*</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="3fe7b7bc-ea99-4542-a882-8fbe23ef4ba4" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="6d805756-8fc3-4647-90fd-3c043f9b6517" class="element-section paragraph TBL" >
+<span class="CITTBL">args*</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="e8911fe8-e491-4c5c-b063-23170dc63453" class="element-section paragraph TBL" >
+<span class="CITTBL">as</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="723d3ae0-724f-4a85-9d97-d5d1d39f2cbf" class="element-section paragraph TBL" >
+<span class="CITTBL">ascending*(3)</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="d6615f56-e2d0-4eb1-acc1-d8b5875bfa09" class="element-section paragraph TBL" >
+<span class="CITTBL">async*(5)</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="a06669af-35c2-4956-bfb4-3214f3bbc1e2" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="e8283930-a0fd-4ee2-9abc-513ab434af0a" class="element-section paragraph TBL" >
+<span class="CITTBL">await*(5)</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="4ec1e5d3-cf07-45d7-bcf3-bb6b14462fac" class="element-section paragraph TBL" >
+<span class="CITTBL">base</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="443cfaf1-285f-460c-90e2-e90b3dfee906" class="element-section paragraph TBL" >
+<span class="CITTBL">bool</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="9594bdc5-65ad-4d8b-9a76-13d129c5c20f" class="element-section paragraph TBL" >
+<span class="CITTBL">break</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="c6dd991b-4f27-454e-bd4c-6c219c088145" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="cfd954b8-2b95-4736-84bb-f361e5068b8f" class="element-section paragraph TBL" >
+<span class="CITTBL">by*(3)</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="c222a080-aecf-43d2-ac1d-0bb235dcf52b" class="element-section paragraph TBL" >
+<span class="CITTBL">byte</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="3a4bd878-0439-4f2f-b23a-3436b2070b64" class="element-section paragraph TBL" >
+<span class="CITTBL">case</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="08005e83-64a5-46ac-ba25-b5ef291f0c65" class="element-section paragraph TBL" >
+<span class="CITTBL">catch</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="22ca3213-6404-4d78-a943-067e65358415" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="11667818-f6fb-493d-9e7b-aa44558c6795" class="element-section paragraph TBL" >
+<span class="CITTBL">char</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="7d5a36f5-b785-42e6-a1fa-457c4156cf2f" class="element-section paragraph TBL" >
+<span class="CITTBL">checked</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="94d8f056-6f28-4aba-a7cc-bb815f238325" class="element-section paragraph TBL" >
+<span class="CITTBL">class</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="b706bc4c-3c02-4546-96ff-1e637da78e06" class="element-section paragraph TBL" >
+<span class="CITTBL">const</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="f0a8ba16-66c9-4db1-aad0-52d1367e43a0" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="ebfefac0-c7dc-4303-8411-db40f85444cd" class="element-section paragraph TBL" >
+<span class="CITTBL">continue</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="3b877b7b-e59b-4d68-8a60-c7180839efe9" class="element-section paragraph TBL" >
+<span class="CITTBL">decimal</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="32e7febb-5ef8-49ba-aa2e-0a2ff4962916" class="element-section paragraph TBL" >
+<span class="CITTBL">default</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="ebabb150-8b2f-4e62-b231-ce167e708b67" class="element-section paragraph TBL" >
+<span class="CITTBL">delegate</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="842f36de-b746-4264-92cc-01a2394f816d" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="29a33546-fca8-4c01-90f2-9cabd67a209b" class="element-section paragraph TBL" >
+<span class="CITTBL">descending*(3)</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="fdc2005b-4a7c-4518-b3f3-3020fd23a60a" class="element-section paragraph TBL" >
+<span class="CITTBL">do</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="59576574-953c-47a7-8dd9-19d8e56355c4" class="element-section paragraph TBL" >
+<span class="CITTBL">double</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="70e01f7d-325c-4429-8523-584f77c4cf24" class="element-section paragraph TBL" >
+<span class="CITTBL">dynamic*(4)</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="c8ae9e38-9312-4bca-a5fe-6795ee6668e1" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="a00c3800-b27b-490c-8148-cb934728b3ca" class="element-section paragraph TBL" >
+<span class="CITTBL">else</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="2b1bdf35-a21f-4fce-bc60-cf85d86053f8" class="element-section paragraph TBL" >
+<span class="CITTBL">enum</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="7f175004-accd-444d-9910-e4db0f5a8ef0" class="element-section paragraph TBL" >
+<span class="CITTBL">equals*(3)</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="a4ac68a5-31b9-4500-ab00-2a23f4362a6d" class="element-section paragraph TBL" >
+<span class="CITTBL">event</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="e41e077d-68c3-4d13-8195-8a8160cdb231" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="8c27e31c-649f-47ce-96a4-69c22fb079c9" class="element-section paragraph TBL" >
+<span class="CITTBL">explicit</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="5f770d0d-98b1-4844-817e-d0b4a3854752" class="element-section paragraph TBL" >
+<span class="CITTBL">extern</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="a4213dc1-658d-406a-b35d-5d1280999e8b" class="element-section paragraph TBL" >
+<span class="CITTBL">false</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="f1a06936-9f04-46d4-890d-43cb62c34c14" class="element-section paragraph TBL" >
+<span class="CITTBL">file*</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="16441aca-3b68-4b84-8717-052e2267ad8d" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="9b26becc-7021-42a7-91ea-6719e8574882" class="element-section paragraph TBL" >
+<span class="CITTBL">finally</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="6dda1225-89bb-4832-9d03-49a123dccc52" class="element-section paragraph TBL" >
+<span class="CITTBL">fixed</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="2058dfa8-ce08-4919-ada9-210952f2c3cf" class="element-section paragraph TBL" >
+<span class="CITTBL">float</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="df9b510e-0fe4-43a9-a729-bb5880f65b3d" class="element-section paragraph TBL" >
+<span class="CITTBL">for</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="6fbd9d73-34e9-4f2d-a558-be51bed87028" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="12f8affa-3105-4c3b-bd73-bcc3caac7391" class="element-section paragraph TBL" >
+<span class="CITTBL">foreach</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="991f54ad-b655-416b-9264-5c31c9825159" class="element-section paragraph TBL" >
+<span class="CITTBL">from*(3)</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="3b8ea2ce-56df-4f17-a8bb-60deab737021" class="element-section paragraph TBL" >
+<span class="CITTBL">get*(1)</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="90882ab6-d0c8-4503-b0e9-742fa0acd166" class="element-section paragraph TBL" >
+<span class="CITTBL">global*(2)</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="f11e8c27-d427-470a-a06d-fd5c45842078" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="4c93a4ee-6b2b-49f4-bcfb-b80ea784f121" class="element-section paragraph TBL" >
+<span class="CITTBL">goto</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="d8c128a1-5b93-476c-8551-b4afa6531244" class="element-section paragraph TBL" >
+<span class="CITTBL">group*(3)</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="27fcd4ca-8254-4601-a6c2-0d9de4427376" class="element-section paragraph TBL" >
+<span class="CITTBL">if</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="fab3e2e1-5e9d-4b1b-a129-d81cc6803581" class="element-section paragraph TBL" >
+<span class="CITTBL">implicit</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="116c6d84-c22a-47ce-afaf-dae83e1751dd" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="0777eec8-f2fc-4669-a56c-ab4475ea369d" class="element-section paragraph TBL" >
+<span class="CITTBL">in</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="5c969192-a9d7-4801-bcfe-f91b6ead42ae" class="element-section paragraph TBL" >
+<span class="CITTBL">init*(9)</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="e322397c-b49f-44af-8078-abe7b354cd83" class="element-section paragraph TBL" >
+<span class="CITTBL">int</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="976b9483-d1de-4400-babf-f59b77bec6fd" class="element-section paragraph TBL" >
+<span class="CITTBL">interface</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="0eddd6a5-694f-48f0-b9ac-3d8adace7980" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="8774bee1-9a41-4a8c-aab3-5bccf7c430f1" class="element-section paragraph TBL" >
+<span class="CITTBL">internal</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="03b632d3-01e8-41ac-9188-609f30633814" class="element-section paragraph TBL" >
+<span class="CITTBL">into*(3)</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="0fe05f2d-6b9c-491d-8db4-6fea466eccba" class="element-section paragraph TBL" >
+<span class="CITTBL">is</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="a5be59e7-a9d0-40a8-891c-d865b2c3bc43" class="element-section paragraph TBL" >
+<span class="CITTBL">join*(3)</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="8a3eb7f5-f3c6-4467-aaff-3664fd0036bb" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="3a4d89bc-39cb-46fb-936a-a30dead131ee" class="element-section paragraph TBL" >
+<span class="CITTBL">let*(3)</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="8433076f-1e2b-4dc5-81bc-64a08ea8ce1b" class="element-section paragraph TBL" >
+<span class="CITTBL">lock</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="fd6f87e1-e6fa-43a4-a672-d7b9519eac07" class="element-section paragraph TBL" >
+<span class="CITTBL">long</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="f8cad046-11ed-4583-b912-b880a954b5d4" class="element-section paragraph TBL" >
+<span class="CITTBL">nameof*(6)</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="318c5dd1-ffd6-4b55-a397-e7314e433b0a" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="95eea225-e7ec-47f2-b26c-d4c6b15fd379" class="element-section paragraph TBL" >
+<span class="CITTBL">namespace</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="dcfb4bd4-88f6-4738-bb51-0ea1620c9664" class="element-section paragraph TBL" >
+<span class="CITTBL">new</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="e4e6dde0-1076-4fef-8e27-9b9f840274e7" class="element-section paragraph TBL" >
+<span class="CITTBL">nint*(9)</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="fb22ace6-498f-47e1-9a67-7d362bd2beed" class="element-section paragraph TBL" >
+<span class="CITTBL">not*</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="48a8cfa2-2ae2-4f1b-886f-223d33927ad8" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="f459bebf-7d76-4eae-9b66-493bf7ee100a" class="element-section paragraph TBL" >
+<span class="CITTBL">notnull*(8)</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="41cac4d9-02f5-43c1-8bd5-ca8fa679865e" class="element-section paragraph TBL" >
+<span class="CITTBL">null</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="25db4c50-4d72-4d20-9898-9fda4c9a62d5" class="element-section paragraph TBL" >
+<span class="CITTBL">nunit*(9)</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="4a79793b-d2cd-4d6d-8be7-1b808792d4cf" class="element-section paragraph TBL" >
+<span class="CITTBL">object</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="87065f86-b709-45f5-b4ea-0dc27d6abe66" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="09ab558e-ba3e-4a16-95aa-5b1f57f8b5f7" class="element-section paragraph TBL" >
+<span class="CITTBL">on*(3)</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="648e3860-359e-4748-ad72-35687f3bf003" class="element-section paragraph TBL" >
+<span class="CITTBL">operator</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="813eece8-3c05-4061-8c6c-aa113aafa60f" class="element-section paragraph TBL" >
+<span class="CITTBL">or*</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="abe5fcfe-af27-4c22-af76-0a3983ed5408" class="element-section paragraph TBL" >
+<span class="CITTBL">orderby*(3)</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="74a735e8-f151-4739-b756-49fad85f3f93" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="6ac53ccf-0e28-489a-8b9c-2da68c811593" class="element-section paragraph TBL" >
+<span class="CITTBL">out</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="d5949e6a-1074-4ab3-a2e1-2545fe5ad748" class="element-section paragraph TBL" >
+<span class="CITTBL">override</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="1f1b61e4-b2a6-40fb-94c2-47d1f1e8e821" class="element-section paragraph TBL" >
+<span class="CITTBL">params</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="4aca6f46-847a-4062-8aae-ff22c6382c3b" class="element-section paragraph TBL" >
+<span class="CITTBL">partial*(2)</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="e75d3779-75b1-4787-9057-bd0aa42c53a2" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="24234ec1-9143-4076-a6a7-ae70ae4fd2ba" class="element-section paragraph TBL" >
+<span class="CITTBL">private</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="eff1b640-c3e5-45f4-8455-cb5161db0473" class="element-section paragraph TBL" >
+<span class="CITTBL">protected</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="1ed830b2-1012-42ce-90c7-298ba0ea521e" class="element-section paragraph TBL" >
+<span class="CITTBL">public</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="013e94ae-8809-4922-9ebc-8454a1268183" class="element-section paragraph TBL" >
+<span class="CITTBL">readonly</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="9ccdc9f1-8465-4f90-82c1-1b149547553b" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="5322bade-d1de-4baa-bf6d-0861535fe576" class="element-section paragraph TBL" >
+<span class="CITTBL">record*</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="d7a62ad5-d2b0-4590-b03e-e90cccca3f4e" class="element-section paragraph TBL" >
+<span class="CITTBL">ref</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="dfdbbd00-c3ea-44f3-b2d0-966aedd0e111" class="element-section paragraph TBL" >
+<span class="CITTBL">remove*(1)</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="64363dae-236b-40fd-81f8-7af2704dd619" class="element-section paragraph TBL" >
+<span class="CITTBL">required*(11)</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="e15e997d-29ff-4ab7-8aef-cd81aa3522e8" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="ab63b59b-f7fe-42dc-905f-7b235357cf7a" class="element-section paragraph TBL" >
+<span class="CITTBL">return</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="9fa73241-2e80-4459-9a78-27f7def1a571" class="element-section paragraph TBL" >
+<span class="CITTBL">sbyte</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="95802720-eace-44e1-888a-4982ca10a2aa" class="element-section paragraph TBL" >
+<span class="CITTBL">scoped*</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="3fd4d7a9-222e-4554-9821-b4b50a3d0a51" class="element-section paragraph TBL" >
+<span class="CITTBL">sealed</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="d12015d1-f687-4d07-b707-8bf1f64d8269" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="de1240a9-8fb5-476e-abf9-05a6bbc07d4a" class="element-section paragraph TBL" >
+<span class="CITTBL">select*(3)</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="7b4e1205-7d30-4e75-8133-fc04506ff120" class="element-section paragraph TBL" >
+<span class="CITTBL">set*(1)</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="22ab2ff7-6a31-4910-967c-cc5fc2ef250c" class="element-section paragraph TBL" >
+<span class="CITTBL">short</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="87f83db0-22b6-42fc-aa8c-7f25f86ef624" class="element-section paragraph TBL" >
+<span class="CITTBL">sizeof</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="da2021ad-2543-4a86-b100-8e2322de1846" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="dd65d8d8-3791-4ee3-bf04-f722733022f4" class="element-section paragraph TBL" >
+<span class="CITTBL">stackalloc</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="f6707db0-ad6c-4050-b3c2-590adc136413" class="element-section paragraph TBL" >
+<span class="CITTBL">static</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="b59a740e-0697-47da-afa7-6d56ca7b959c" class="element-section paragraph TBL" >
+<span class="CITTBL">string</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="cca15a57-f265-49da-ad2d-c0a60ac2b367" class="element-section paragraph TBL" >
+<span class="CITTBL">struct</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="77b016c0-46ab-40ce-986d-cc648923075a" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="d5d3ab9c-3ffb-4aff-9974-abbe78228442" class="element-section paragraph TBL" >
+<span class="CITTBL">switch</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="73001fb4-f7ca-4790-a0d8-5519e32c1c8d" class="element-section paragraph TBL" >
+<span class="CITTBL">this</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="479d8cee-ff29-4787-b1c8-ac0c88b5fdc8" class="element-section paragraph TBL" >
+<span class="CITTBL">throw</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="07a21b50-a3f7-42ed-82d7-c47dda8c34b2" class="element-section paragraph TBL" >
+<span class="CITTBL">TRUE</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="640bd5c4-43bd-4b5b-af44-0bf5e034cc01" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="87889637-05e9-48b1-be70-3ec7b72e943b" class="element-section paragraph TBL" >
+<span class="CITTBL">try</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="0fd911f8-6df6-48d6-84cc-5eb881e70ea5" class="element-section paragraph TBL" >
+<span class="CITTBL">typeof</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="12a3636c-8752-43f0-83d3-d4cda27a06f6" class="element-section paragraph TBL" >
+<span class="CITTBL">uint</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="47c12104-eb1c-4e12-b9a6-f25248f4de9b" class="element-section paragraph TBL" >
+<span class="CITTBL">ulong</span></p>        </td>
+
+</tr>
+
+<tr data-element-id="b2323db5-dabb-4c8c-adf5-95a881d464d1" class="  non-standard-row">
+        <td class="table-cell
+        left-table-cell
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="559c7d92-5bbe-45d2-a393-220bae2a6352" class="element-section paragraph TBL" >
+<span class="CITTBL">unchecked</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="0cad2144-8f41-4118-b630-3ab0103377d8" class="element-section paragraph TBL" >
+<span class="CITTBL">unmanaged*(7.3)</span></p>        </td>
+        <td class="table-cell
+        
+        
+        non-standard-cell" width="23%">
+      
+
+
+
+<p data-element-id="99085a4e-53b2-472c-9d5b-fc622f3a894a" class="element-section paragraph TBL" >
+<span class="CITTBL">unsafe</span></p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        non-standard-cell" width="31%">
+      
+
+
+
+<p data-element-id="a021a871-9255-4e5e-b818-4e929834e552" class="element-section paragraph TBL" >
+<span class="CITTBL">ushort</span></p>        </td>
+
+</tr>    </table>
+</div>
+
+
+<p data-element-id="cb626e2b-849d-4851-abf5-31562eadedd6" class="element-section paragraph TBLNOTE" >
+* Contextual keyword. Numbers in parentheses (<span class="ITAL">n</span>) identify in which version the contextual keyword was added.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p data-element-id="8440474a-7666-410a-9cbc-dfc457ec8a4a" class="element-section paragraph CHAPBM" >
+After C# 1.0, no new <span class="BOLD">reserved keywords</span> were introduced to C#. However, some constructs in later versions use <span class="BOLD">contextual keywords</span>, which are significant only in specific locations. Outside these designated locations, contextual keywords have no special significance.<span class="Superscript">9</span> By this method, even C# 1.0 code is compatible with the later standards.<span class="Superscript">10</span></p>
+
+
+<div id="identifiers" data-element-id="fbad79ab-f763-4484-a582-84c1ac2d2b6d" class="element-section section-heading Heading2">
+    <span class="heading-wrapper">
+<span id="identifiers">Identifiers</span>            <button class="anchor-link" v-on:click="copyToClipboard('identifiers#identifiers')">
+                <i class="fa-solid fa-link"></i>
+            </button>
+    </span>
+</div>
+
+
+<p data-element-id="9d7f3c73-af26-42ca-804a-571224416df2" class="element-section paragraph CHAPBMCON" >
+Like other languages, C# includes <span class="BOLD">identifiers</span> to identify constructs that the programmer codes. In <span class="CDTNUM">Listing </span><span class="TBLNUM">1.</span><span class="CDTNUM">6</span>, <span class="CITchapbm">HelloWorld</span> and <span class="CITchapbm">Main</span> are examples of identifiers. The identifiers assigned to a construct are used to refer to the construct later, so it is important that the names the developer assigns are meaningful rather than arbitrary.</p>
+
+
+<p data-element-id="f0fc8849-0ffd-4d5b-ba6d-c7c125012f4d" class="element-section paragraph CHAPBMCON" >
+</p>
+
+<div data-element-id="a0078f17-3873-4125-846c-d1c793c490dd" class="element-section note-block">
+
+    <div class=inside-note-block>
+        <img class="note-block-overlayed-squares" src="data:image/svg&#x2B;xml;base64,PHN2ZyB3aWR0aD0iMjk2IiBoZWlnaHQ9IjEyMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgb3ZlcmZsb3c9ImhpZGRlbiI&#x2B;DQogICAgPGRlZnM&#x2B;DQogICAgICAgIDxjbGlwUGF0aCBpZD0iY2xpcDAiPg0KICAgICAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSIyOTYiIGhlaWdodD0iMTIxIiAvPg0KICAgICAgICA8L2NsaXBQYXRoPg0KICAgIDwvZGVmcz4NCiAgICA8ZyBjbGlwLXBhdGg9InVybCgjY2xpcDApIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNDEzIC0yNzIpIj4NCiAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzQxNDE0MSIgLz4NCiAgICAgICAgPHJlY3QgeD0iNDY4IiB5PSIzMjciIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzI2MjYyNiIgLz4NCiAgICA8L2c&#x2B;DQo8L3N2Zz4=" />
+        <div class="note-block-heading">
+ note        </div>
+
+        <div class="note-block-lines">
+
+                    <div class="note-block-line">
+A keen ability to select succinct and indicative names is an important characteristic of a strong programmer because it means the resultant code will be easier to understand and reuse.                    </div>
+        </div>
+    </div>
+</div>
+
+
+
+<p data-element-id="716f6e0f-c2a0-4430-bc35-7b88062b2be8" class="element-section paragraph CHAPBM" >
+</p>
+
+
+<p data-element-id="dd5b3043-00f8-4efa-bafd-febe5fcba455" class="element-section paragraph CHAPBM" >
+Clarity coupled with consistency is important enough that the Framework Design Guidelines (<a target="_blank" rel="noreferrer noopener" href="http://bit.ly/dotnetguidelines" style="text-decoration:none">http://bit.ly/dotnetguidelines</a>) advise against the use of abbreviations or contractions in identifier names and even recommend avoiding acronyms that are not widely accepted. If an acronym is sufficiently well established (e.g., HTML), you should use it consistently. Avoid spelling out the accepted acronym in some cases but not in others. Generally, adding the constraint that all acronyms be included in a glossary of terms places enough overhead on the use of acronyms that they are not used flippantly. Ultimately, select clear, possibly even verbose names&#x2014;especially when working on a team or when developing a library that other developers will use.</p>
+
+
+<p data-element-id="ba851edd-0a59-42e2-a197-2e1d6598d417" class="element-section paragraph CHAPBM" >
+There are two basic casing formats for an identifier. <span class="BOLD">Pascal case</span> (henceforth <span class="BOLD">PascalCase</span>), as the .NET framework creators refer to it because of its popularity in the Pascal programming language, capitalizes the first letter of each word in an identifier name; examples include <span class="CITchapbm">ComponentModel</span>, <span class="CITchapbm">Configuration</span>, and <span class="CITchapbm">HttpFileCollection</span>. As <span class="CITchapbm">HttpFileCollection</span> demonstrates with HTTP, when using acronyms that are more than two letters long, only the first letter is capitalized. The second format, <span class="BOLD">camel case</span> (henceforth <span class="BOLD">camelCase</span>), follows the same convention except that the first letter is lowercase; examples include <span class="CITchapbm">quotient</span>, <span class="CITchapbm">firstName</span>, <span class="CITchapbm">httpFileCollection</span>, <span class="CITchapbm">ioStream</span>, and <span class="CITchapbm">theDreadPirateRoberts</span>.</p>
+
+
+<p data-element-id="fafe9445-62bf-4dcb-a3e5-8ce78b0cc602" class="element-section paragraph CHAPBM" >
+</p>
+
+<div data-element-id="cd1613e5-c42d-4fcc-b272-22eedbcde8df" class="element-section guidelines-block guidelines-first-section guidelines-last-section">
+
+    <div class="upper-left-square blue-square"></div>
+
+    <div class=inside-guidelines-block> 
+        <div class="guidelines-block-heading">
+Guidelines        </div>
+
+            <div class="guidelines-block-line">
+<span class="BOLD">DO</span> favor clarity over brevity when naming identifiers.            </div>
+            <div class="guidelines-block-line">
+<span class="BOLD">DO NOT</span> use abbreviations or contractions within identifier names.            </div>
+            <div class="guidelines-block-line">
+<span class="BOLD">DO NOT</span> use any acronyms unless they are widely accepted, in which case use them consistently.            </div>
+    </div>
+</div>
+
+
+
+<p data-element-id="967191ea-6835-4196-b49c-1d01d365b033" class="element-section paragraph CHAPBM" >
+</p>
+
+
+<p data-element-id="67e242c3-6eba-4858-a97b-72cb5ffd5797" class="element-section paragraph CHAPBM" >
+Notice that although underscores are legal, generally there are no underscores, hyphens, or other nonalphanumeric characters in identifier names. Furthermore, C# doesn&#x2019;t follow its predecessors in that Hungarian notation (prefixing a name with a data type abbreviation) is not used. This convention avoids the variable rename that is necessary when data types change, or the inconsistency introduced due to failure to adjust the data type prefix when using Hungarian notation.</p>
+
+
+<p data-element-id="8abedf8d-85f8-4e3c-adca-d3681aae2991" class="element-section paragraph CHAPBM" >
+In rare cases, some identifiers, such as <span class="CITchapbm">Main</span>, can have a special meaning in the C# language.</p>
+
+
+<p data-element-id="917600ee-62bd-4934-a403-d520c7ff5555" class="element-section paragraph CHAPBM" >
+While naming guidelines may seem relatively trivial, especially when coming from other languages where such guidelines are ambiguous or missing entirely, violations of these guidelines will be glaring to an experienced C#/.NET programmer and indicate poor quality or inexperience. To avoid this, learn the guidelines, and follow them religiously.</p>
+
+
+<p data-element-id="09fc23ce-e5a4-45c9-a21b-b639346e1420" class="element-section paragraph CHAPBM" >
+</p>
+
+<div data-element-id="99582b21-def7-47f2-8107-38b287e0bd5d" class="element-section guidelines-block guidelines-first-section guidelines-last-section">
+
+    <div class="upper-left-square blue-square"></div>
+
+    <div class=inside-guidelines-block> 
+        <div class="guidelines-block-heading">
+Guidelines        </div>
+
+            <div class="guidelines-block-line">
+<span class="BOLD">DO</span> capitalize both characters in two-character acronyms, except for the first word of a camelCased identifier.            </div>
+            <div class="guidelines-block-line">
+<span class="BOLD">DO</span> capitalize only the first character in acronyms with three or more characters, except for the first word of a camelCased identifier.            </div>
+            <div class="guidelines-block-line">
+<span class="BOLD">DO NOT</span> capitalize any of the characters in acronyms at the beginning of a camelCased identifier.            </div>
+            <div class="guidelines-block-line">
+<span class="BOLD">DO NOT</span> use Hungarian notation (that is, do not encode the type of a variable in its name).            </div>
+    </div>
+</div>
+
+
+
+<p data-element-id="a993c210-8b92-4cd6-8b06-a793433c9547" class="element-section paragraph CHAPBM" >
+</p>
+
+
+<p data-element-id="954a2eff-86e3-43ad-8857-5965dc903fec" class="element-section paragraph CHAPBM" >
+</p>
+
+
+<div data-element-id="87c43a4c-0ae1-4fb4-88a0-d48492a5545c" class="element-section skill-topic-block skill-topic-block-top skill-topic-block-bottom">
+    <img class="skill-topic-overlayed-squares" src="data:image/svg&#x2B;xml;base64,PHN2ZyB3aWR0aD0iMjk2IiBoZWlnaHQ9IjEyMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgb3ZlcmZsb3c9ImhpZGRlbiI&#x2B;DQogICAgPGRlZnM&#x2B;DQogICAgICAgIDxjbGlwUGF0aCBpZD0iY2xpcDAiPg0KICAgICAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSIyOTYiIGhlaWdodD0iMTIxIiAvPg0KICAgICAgICA8L2NsaXBQYXRoPg0KICAgIDwvZGVmcz4NCiAgICA8ZyBjbGlwLXBhdGg9InVybCgjY2xpcDApIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNDEzIC0yNzIpIj4NCiAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzQxNDE0MSIgLz4NCiAgICAgICAgPHJlY3QgeD0iNDY4IiB5PSIzMjciIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzI2MjYyNiIgLz4NCiAgICA8L2c&#x2B;DQo8L3N2Zz4="/>
+    <div class="skill-topic-heading">AdVanced Topic</div>
+    <div class="skill-topic-sub-heading">Keywords</div>
+
+
+
+
+<p data-element-id="381b35db-003d-4a2f-abde-13bcafad1640" class="element-section paragraph SF1FIRST" >
+Although it is rare, keywords may be used as identifiers if they include <span class="CITchapbm">@</span> as a prefix. For example, you could name a local variable <span class="CITchapbm">@return</span>. Similarly (although it doesn&#x2019;t conform to the casing standards of C# coding standards), it is possible to name a method <span class="CITchapbm">@throw</span>, with parentheses following:<span class="CITchapbm"> @throw()</span>.</p>
+
+
+<p data-element-id="d89e8da0-c103-42f2-b2f2-06e3c200a2fd" class="element-section paragraph SF1FIRST" >
+&#x200E;There are also four undocumented reserved keywords in the Microsoft implementation: <span class="CITchapbm">__arglist</span>, <span class="CITchapbm">__makeref</span>, <span class="CITchapbm">__reftype</span>, and <span class="CITchapbm">__refvalue</span>. These are required only in rare interop scenarios, and you can ignore them for all practical purposes. Note that these four special keywords begin with two underscores. The designers of C# reserve the right to make any identifier that begins with two underscores into a keyword in a future version; for safety, avoid ever creating such an identifier yourself.</p></div>
+
+<div id="type-definition" data-element-id="9b543ea3-ba77-42cf-87f7-a3930e6eccd2" class="element-section section-heading Heading2">
+    <span class="heading-wrapper">
+<span id="type-definition">Type Definition</span>            <button class="anchor-link" v-on:click="copyToClipboard('type-definition#type-definition')">
+                <i class="fa-solid fa-link"></i>
+            </button>
+    </span>
+</div>
+
+
+<p data-element-id="a3596b36-6633-4a40-9c9f-53339420c775" class="element-section paragraph SF1LAST" >
+A class definition is the section of code that generally begins with <span class="CITchapbm">class &lt;identifier&gt; { ... }</span>, as shown in <span class="CDTNUM">Listing </span><span class="TBLNUM">1.</span><span class="CDTNUM">7</span>, where <span class="CITchapbm">HelloWorld</span> is the identifier.</p>
+
+<div data-element-id="9a808bd0-7d55-45bc-a475-9f2dde5ba00a" class="element-section code-block-top-section code-block-bottom-section code-block-section">
+
+    <div class="code-block-heading">
+<span class="CDTNUM">Listing </span><span class="TBLNUM">1.</span><span class="CDTNUM">7</span><span class="FIGNUM">: </span><span class="CDTNUM"> </span>Basic Class Declaration    </div>
+
+    <div class="code-block-lines">
+            <div class='code-line '>
+                <span class="code-line-number no-select">1.</span>
+<span class="CPKeyword" v-pre>public</span>&nbsp;<span class="CPKeyword" v-pre>class</span>&nbsp;HelloWorld            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">2.</span>
+{            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">3.</span>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="CPComment" v-pre>//&nbsp;...</span>            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">4.</span>
+}            </div>
+    </div>
+</div>
+
+
+
+<p data-element-id="bbc5a139-6291-4a5a-982e-4d86323093c5" class="element-section paragraph CHAPBM" >
+The name used for the type (in this case, <span class="CITchapbm">HelloWorld</span>) can vary, but by convention, it must be PascalCased. For this example, therefore, other possible names are <span class="CITchapbm">Greetings</span>, <span class="CITchapbm">HelloInigoMontoya</span>, <span class="CITchapbm">Hello</span>, or simply <span class="CITchapbm">Program</span>. (<span class="CITchapbm">Program</span> is a good convention to follow when the class contains the <span class="CITchapbm">Main()</span> method, described next.)</p>
+
+
+<p data-element-id="58c05393-66fb-4b40-8db3-14d05ee3fd35" class="element-section paragraph CHAPBM" >
+</p>
+
+<div data-element-id="b7736861-98af-42c5-adba-57ede10f1e2d" class="element-section guidelines-block guidelines-first-section guidelines-last-section">
+
+    <div class="upper-left-square blue-square"></div>
+
+    <div class=inside-guidelines-block> 
+        <div class="guidelines-block-heading">
+Guidelines        </div>
+
+            <div class="guidelines-block-line">
+<span class="BOLD">DO</span> name classes with nouns or noun phrases.            </div>
+            <div class="guidelines-block-line">
+<span class="BOLD">DO</span> use PascalCasing for all class names.            </div>
+    </div>
+</div>
+
+
+
+<p data-element-id="efc7f0e1-2b12-4a70-a8f5-ec8045f6dc74" class="element-section paragraph CHAPBM" >
+</p>
+
+
+<p data-element-id="ae6cfb2d-dabc-4a0f-b57a-6418342d4c6d" class="element-section paragraph CHAPBM" >
+Generally, programs contain multiple types, each containing multiple methods.</p>
+
+
+<p data-element-id="72fd6e65-6780-42f6-b414-88491f4c59d8" class="element-section paragraph CHAPBM" >
+</p>
+
+
+<div data-element-id="83a4aaaf-d00b-4bcb-a198-5830edf1295e" class="element-section skill-topic-block skill-topic-block-top skill-topic-block-bottom">
+    <img class="skill-topic-overlayed-squares" src="data:image/svg&#x2B;xml;base64,PHN2ZyB3aWR0aD0iMjk2IiBoZWlnaHQ9IjEyMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgb3ZlcmZsb3c9ImhpZGRlbiI&#x2B;DQogICAgPGRlZnM&#x2B;DQogICAgICAgIDxjbGlwUGF0aCBpZD0iY2xpcDAiPg0KICAgICAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSIyOTYiIGhlaWdodD0iMTIxIiAvPg0KICAgICAgICA8L2NsaXBQYXRoPg0KICAgIDwvZGVmcz4NCiAgICA8ZyBjbGlwLXBhdGg9InVybCgjY2xpcDApIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNDEzIC0yNzIpIj4NCiAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzQxNDE0MSIgLz4NCiAgICAgICAgPHJlY3QgeD0iNDY4IiB5PSIzMjciIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzI2MjYyNiIgLz4NCiAgICA8L2c&#x2B;DQo8L3N2Zz4="/>
+    <div class="skill-topic-heading">Beginner Topic</div>
+    <div class="skill-topic-sub-heading">What Is a Method?</div>
+
+
+
+
+<p data-element-id="11ca5853-2508-4423-bd8e-eaad8ab5b082" class="element-section paragraph SF1FIRST" >
+Syntactically, a <span class="BOLD">method</span> in C# is a named block of code introduced by a method declaration (e.g., <span class="CITchapbm">static void Main()</span>) and (usually) followed by zero or more statements within curly braces. Methods perform computations and/or actions. Like paragraphs in written languages, methods provide a means of structuring and organizing code so that it is more readable. More important, methods can be reused and called from multiple places and so avoid the need to duplicate code. The method declaration introduces the method and defines the method name along with the data passed to and from the method. In <span class="CDTNUM">Listing </span><span class="TBLNUM">1.</span><span class="CDTNUM">8</span>, <span class="CITchapbm">Main()</span> followed by <span class="CITchapbm">{ ... }</span> is an example of a C# method.</p></div>
+
+<div id="main-method" data-element-id="e31c447c-841d-4a44-8f40-70acfe2121ed" class="element-section section-heading Heading2">
+    <span class="heading-wrapper">
+<span id="main-method">Main Method</span>            <button class="anchor-link" v-on:click="copyToClipboard('main-method#main-method')">
+                <i class="fa-solid fa-link"></i>
+            </button>
+    </span>
+</div>
+
+
+<p data-element-id="56c1cd18-b30e-4dea-abab-97b8c1cb9347" class="element-section paragraph CHAPBMFIRST" >
+The location where C# programs begin execution is the <span class="BOLD">Main method</span>, which begins with <span class="CITchapbm">static void Main()</span>. When you execute the program by typing <span class="CITchapbm">dotnet run</span> on the terminal, the program starts with the Main method and begins executing the first statement, as identified in <span class="CDTNUM">Listing </span><span class="TBLNUM">1.</span><span class="CDTNUM">8</span>.</p>
+
+
+
+<div data-element-id="b57026fa-bc08-4e6a-bae7-1ab3bdefc67d" class="element-section code-block-top-section code-block-bottom-section code-block-section">
+
+    <div class="code-block-heading">
+<span class="CDTNUM">Listing </span><span class="TBLNUM">1.</span><span class="CDTNUM">8</span><span class="FIGNUM">: </span> Breaking Apart <span class="CITchapbm">HelloWorld</span>    </div>
+
+    <div class="code-block-lines">
+            <div class='code-line '>
+                <span class="code-line-number no-select">1.</span>
+<span class="CPKeyword" v-pre>public</span>&nbsp;<span class="CPKeyword" v-pre>class</span>&nbsp;Program&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="CPComment" v-pre>//&nbsp;BEGIN&nbsp;Class&nbsp;definition</span>            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">2.</span>
+{            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">3.</span>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="CPKeyword" v-pre>public</span>&nbsp;<span class="CPKeyword" v-pre>static</span>&nbsp;<span class="CPKeyword" v-pre>void</span>&nbsp;Main()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="CPComment" v-pre>//&nbsp;Method&nbsp;declaration</span>            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">4.</span>
+&nbsp;&nbsp;&nbsp;&nbsp;{&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="CPComment" v-pre>//&nbsp;BEGIN&nbsp;method&nbsp;implementation</span>            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">5.</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Console.WriteLine(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="CPComment" v-pre>//&nbsp;This&nbsp;statement&nbsp;spans&nbsp;2&nbsp;lines</span>            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">6.</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="Maroon" v-pre>&quot;Hello,&nbsp;My&nbsp;name&nbsp;is&nbsp;Inigo&nbsp;Montoya&quot;</span>);            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">7.</span>
+&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="CPComment" v-pre>//&nbsp;END&nbsp;method&nbsp;implementation</span>            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">8.</span>
+}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="CPComment" v-pre>//&nbsp;END&nbsp;class&nbsp;definition</span>            </div>
+    </div>
+</div>
+
+
+
+<p data-element-id="1096ea65-e8f0-4e0c-944e-393ed3460dbc" class="element-section paragraph CHAPBM" >
+Although the Main method declaration can vary to some degree, <span class="CITchapbm">static</span> and the method name, <span class="CITchapbm">Main</span>, are always required for a program (see &#x201C;Advanced Topic: Declaration of the Main Method&#x201D;).</p>
+
+
+<p data-element-id="64ab96e8-9b8e-4013-b6f4-39287f5de1c2" class="element-section paragraph CHAPBM" >
+The <span class="BOLD">comments</span>, text that begins with <span class="CITchapbm">//</span> in <span class="CDTNUM">Listing </span><span class="TBLNUM">1.</span><span class="CDTNUM">8</span>, are explained later in the chapter. They are included to identify the various constructs in the listing.</p>
+
+
+<div data-element-id="51fc807e-0d87-4367-a8ff-99cb87c16ef2" class="element-section skill-topic-block skill-topic-block-top skill-topic-block-bottom">
+    <img class="skill-topic-overlayed-squares" src="data:image/svg&#x2B;xml;base64,PHN2ZyB3aWR0aD0iMjk2IiBoZWlnaHQ9IjEyMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgb3ZlcmZsb3c9ImhpZGRlbiI&#x2B;DQogICAgPGRlZnM&#x2B;DQogICAgICAgIDxjbGlwUGF0aCBpZD0iY2xpcDAiPg0KICAgICAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSIyOTYiIGhlaWdodD0iMTIxIiAvPg0KICAgICAgICA8L2NsaXBQYXRoPg0KICAgIDwvZGVmcz4NCiAgICA8ZyBjbGlwLXBhdGg9InVybCgjY2xpcDApIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNDEzIC0yNzIpIj4NCiAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzQxNDE0MSIgLz4NCiAgICAgICAgPHJlY3QgeD0iNDY4IiB5PSIzMjciIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzI2MjYyNiIgLz4NCiAgICA8L2c&#x2B;DQo8L3N2Zz4="/>
+    <div class="skill-topic-heading">AdVanced Topic</div>
+    <div class="skill-topic-sub-heading">Declaration of the Main Method</div>
+
+
+
+
+<p data-element-id="c57515b4-5f55-4e4f-a645-0ca6560766d0" class="element-section paragraph SF1FIRST" >
+C# requires that the Main method return either <span class="CITchapbm">void</span> or <span class="CITchapbm">int</span> and that it take either no parameters or a single array of strings. <span class="CDTNUM">Listing </span><span class="TBLNUM">1.</span><span class="CDTNUM">9</span> shows the full declaration of the Main method. The <span class="CITchapbm">args</span> parameter is an array of strings corresponding to the command-line arguments. The executable name is not included in the <span class="CITchapbm">args</span> array (unlike in C and C&#x2B;&#x2B;). To retrieve the full command used to execute the program, including the program name, use <span class="CITchapbm">Environment.CommandLine</span>.</p>
+
+<div data-element-id="7812b586-4a5b-47ab-b1f7-c272cf79e14b" class="element-section code-block-top-section code-block-bottom-section code-block-section">
+
+    <div class="code-block-heading">
+<span class="CDTNUM">Listing </span><span class="TBLNUM">1.</span><span class="CDTNUM">9</span><span class="FIGNUM">:</span><span class="CDTNUM"> </span>The Main Method with Parameters and a Return    </div>
+
+    <div class="code-block-lines">
+            <div class='code-line '>
+                <span class="code-line-number no-select">1.</span>
+<span class="CPKeyword" v-pre>public</span>&nbsp;<span class="CPKeyword" v-pre>static</span>&nbsp;<span class="CPKeyword" v-pre>int</span>&nbsp;Main(<span class="CPKeyword" v-pre>string</span>[]&nbsp;<span class="CPKeyword" v-pre>args</span>)            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">2.</span>
+{            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">3.</span>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="CPComment" v-pre>//&nbsp;...</span>            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">4.</span>
+}            </div>
+    </div>
+</div>
+
+
+
+<p data-element-id="24b58e6e-7fa5-4dda-8d3e-1cba2247ffd3" class="element-section paragraph SF2" >
+The <span class="CITchapbm">int</span> returned from <span class="CITchapbm">Main()</span> is the status code, and it indicates the success of the program&#x2019;s execution. A return of a nonzero value generally indicates an error.</p>
+
+
+<p data-element-id="dd2ab243-6190-4b66-a982-3dc23e576451" class="element-section paragraph SF2" >
+C# 7.1 also added support for <span class="CITchapbm">async/await</span> on the Main method, in which case you would use <span class="CITchapbm">Task</span>-based types in the return.</p></div>
+
+
+<p data-element-id="b05b5a95-d4e8-4682-aa1c-1849a8803b60" class="element-section paragraph CHAPBM" >
+</p>
+
+<div data-element-id="eec46acb-e522-4e10-9d38-310722ea862f" class="element-section note-block">
+
+    <div class=inside-note-block>
+        <img class="note-block-overlayed-squares" src="data:image/svg&#x2B;xml;base64,PHN2ZyB3aWR0aD0iMjk2IiBoZWlnaHQ9IjEyMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgb3ZlcmZsb3c9ImhpZGRlbiI&#x2B;DQogICAgPGRlZnM&#x2B;DQogICAgICAgIDxjbGlwUGF0aCBpZD0iY2xpcDAiPg0KICAgICAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSIyOTYiIGhlaWdodD0iMTIxIiAvPg0KICAgICAgICA8L2NsaXBQYXRoPg0KICAgIDwvZGVmcz4NCiAgICA8ZyBjbGlwLXBhdGg9InVybCgjY2xpcDApIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNDEzIC0yNzIpIj4NCiAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzQxNDE0MSIgLz4NCiAgICAgICAgPHJlY3QgeD0iNDY4IiB5PSIzMjciIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzI2MjYyNiIgLz4NCiAgICA8L2c&#x2B;DQo8L3N2Zz4=" />
+        <div class="note-block-heading">
+ note        </div>
+
+        <div class="note-block-lines">
+
+                    <div class="note-block-line">
+<span class="BOLD">All Lowercase</span>                    </div>
+                    <div class="note-block-line">
+Unlike its C-style predecessors, C# uses an uppercase <span class="ITAL">M</span> for the Main method to be consistent with the PascalCased naming conventions of C#.                    </div>
+        </div>
+    </div>
+</div>
+
+
+
+<p data-element-id="15ead4a1-85c7-41f8-9e45-9736002713a6" class="element-section paragraph CHAPBM" >
+</p>
+
+
+<p data-element-id="437b45c3-0cc3-4b36-8153-4aa4feebdec9" class="element-section paragraph CHAPBM" >
+The designation of the Main method as <span class="CITchapbm">static</span> indicates that other methods may call it directly off the class definition. Without the <span class="CITchapbm">static</span> designation, the terminal that started the program would need to perform additional work (known as <span class="BOLD">instantiation</span>) before calling the method. (Chapter 6 contains an entire section devoted to the topic of static members.)</p>
+
+
+<p data-element-id="5e752fd5-5aca-46e9-94cc-2a56fcc5bede" class="element-section paragraph CHAPBM" >
+Placing <span class="CITchapbm">void</span> prior to <span class="CITchapbm">Main()</span> indicates that this method does not return any data. (This is explained further in Chapter 2.)</p>
+
+
+<p data-element-id="de9abaa8-6442-48ac-a1ea-31ad0e4300ef" class="element-section paragraph CHAPBM" >
+One distinctive C/C&#x2B;&#x2B;-style characteristic followed by C# is the use of curly braces for the body of a construct, such as the class or the method. For example, the Main method contains curly braces that surround its implementation; in this case, only one statement appears in the method.</p>
+
+
+<div data-element-id="d50b3dae-f7b5-4ebe-93b2-9d39142b8e3f" class="element-section skill-topic-block skill-topic-block-top skill-topic-block-bottom">
+    <img class="skill-topic-overlayed-squares" src="data:image/svg&#x2B;xml;base64,PHN2ZyB3aWR0aD0iMjk2IiBoZWlnaHQ9IjEyMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgb3ZlcmZsb3c9ImhpZGRlbiI&#x2B;DQogICAgPGRlZnM&#x2B;DQogICAgICAgIDxjbGlwUGF0aCBpZD0iY2xpcDAiPg0KICAgICAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSIyOTYiIGhlaWdodD0iMTIxIiAvPg0KICAgICAgICA8L2NsaXBQYXRoPg0KICAgIDwvZGVmcz4NCiAgICA8ZyBjbGlwLXBhdGg9InVybCgjY2xpcDApIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNDEzIC0yNzIpIj4NCiAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzQxNDE0MSIgLz4NCiAgICAgICAgPHJlY3QgeD0iNDY4IiB5PSIzMjciIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzI2MjYyNiIgLz4NCiAgICA8L2c&#x2B;DQo8L3N2Zz4="/>
+    <div class="skill-topic-heading">Beginner Topic</div>
+    <div class="skill-topic-sub-heading">What Is Whitespace?</div>
+
+
+
+
+<p data-element-id="7c223d7c-862e-4d12-87dc-a9919b0a0dad" class="element-section paragraph SF1FIRST" >
+<span class="BOLD">Whitespace</span> is the combination of one or more consecutive formatting characters such as tab, space, and newline characters. Eliminating all whitespace between words is obviously significant, as is including whitespace within a quoted string.</p></div>
+
+<div id="whitespace" data-element-id="5da95ec3-b4c4-4417-8656-e341854437d2" class="element-section section-heading Heading2">
+    <span class="heading-wrapper">
+<span id="whitespace">Whitespace</span>            <button class="anchor-link" v-on:click="copyToClipboard('whitespace#whitespace')">
+                <i class="fa-solid fa-link"></i>
+            </button>
+    </span>
+</div>
+
+
+<p data-element-id="1e59f8fc-30ed-42f3-be21-8cef436059d8" class="element-section paragraph CHAPBMCON" >
+The semicolon makes it possible for the C# compiler to ignore whitespace in code. Apart from a few exceptions, C# allows developers to insert whitespace throughout the code without altering its semantic meaning. In <span class="CDTNUM">Listing </span><span class="TBLNUM">1.</span><span class="CDTNUM">8</span> and <span class="CDTNUM">Listing </span><span class="TBLNUM">1.</span><span class="CDTNUM">9</span>, it didn&#x2019;t matter whether a newline was inserted within a statement, between statements, or eliminated entirely, and doing so had no effect on the resultant executable created by the compiler.</p>
+
+
+<p data-element-id="544ffbed-5a4d-4385-bd2c-29327e18a797" class="element-section paragraph CHAPBM" >
+Frequently, programmers use whitespace to indent code for greater readability. Consider the two variations on <span class="CITchapbm">HelloWorld</span> shown in <span class="CDTNUM">Listing </span><span class="TBLNUM">1.</span><span class="CDTNUM">10</span> and <span class="CDTNUM">Listing </span><span class="TBLNUM">1.</span><span class="CDTNUM">11</span>. Although these two examples look significantly different from the original program, the C# compiler sees them as semantically equivalent.</p>
+
+<div data-element-id="0ebeaee8-1546-4966-bc15-1326a3e30932" class="element-section code-block-top-section code-block-bottom-section code-block-section">
+
+    <div class="code-block-heading">
+<span class="CDTNUM">Listing </span><span class="TBLNUM">1.</span><span class="CDTNUM">10</span><span class="FIGNUM">: </span> No Indentation Formatting    </div>
+
+    <div class="code-block-lines">
+            <div class='code-line '>
+                <span class="code-line-number no-select">1.</span>
+<span class="CPKeyword" v-pre>public</span>&nbsp;<span class="CPKeyword" v-pre>class</span>&nbsp;HelloWorld            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">2.</span>
+{            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">3.</span>
+<span class="CPKeyword" v-pre>public</span>&nbsp;<span class="CPKeyword" v-pre>static</span>&nbsp;<span class="CPKeyword" v-pre>void</span>&nbsp;Main()            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">4.</span>
+{            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">5.</span>
+Console.WriteLine(<span class="Maroon" v-pre>&quot;Hello&nbsp;Inigo&nbsp;Montoya&quot;</span>);            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">6.</span>
+}            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">7.</span>
+}            </div>
+    </div>
+</div>
+
+
+<div data-element-id="6bf92250-7325-4879-9919-10e870291ccb" class="element-section code-block-top-section code-block-bottom-section code-block-section">
+
+    <div class="code-block-heading">
+<span class="CDTNUM">Listing </span><span class="TBLNUM">1.</span><span class="CDTNUM">11</span><span class="FIGNUM">: </span>Removing Whitespace    </div>
+
+    <div class="code-block-lines">
+            <div class='code-line '>
+                <span class="code-line-number no-select">1.</span>
+<span class="CPKeyword" v-pre>public</span>&nbsp;<span class="CPKeyword" v-pre>class</span>&nbsp;HelloWorld{<span class="CPKeyword" v-pre>public</span>&nbsp;<span class="CPKeyword" v-pre>static</span>&nbsp;<span class="CPKeyword" v-pre>void</span>&nbsp;Main()            </div>
+            <div class='code-line '>
+                <span class="code-line-number no-select">2.</span>
+{Console.WriteLine(<span class="Maroon" v-pre>&quot;Hello&nbsp;Inigo&nbsp;Montoya&quot;</span>);}}            </div>
+    </div>
+</div>
+
+
+
+<p data-element-id="7484e8d7-2d8f-430d-ba15-ca4766a26a70" class="element-section paragraph CHAPBMCON" >
+</p>
+
+
+<div data-element-id="e73a04ea-1a5c-4164-901a-a7976e869c81" class="element-section skill-topic-block skill-topic-block-top skill-topic-block-bottom">
+    <img class="skill-topic-overlayed-squares" src="data:image/svg&#x2B;xml;base64,PHN2ZyB3aWR0aD0iMjk2IiBoZWlnaHQ9IjEyMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgb3ZlcmZsb3c9ImhpZGRlbiI&#x2B;DQogICAgPGRlZnM&#x2B;DQogICAgICAgIDxjbGlwUGF0aCBpZD0iY2xpcDAiPg0KICAgICAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSIyOTYiIGhlaWdodD0iMTIxIiAvPg0KICAgICAgICA8L2NsaXBQYXRoPg0KICAgIDwvZGVmcz4NCiAgICA8ZyBjbGlwLXBhdGg9InVybCgjY2xpcDApIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNDEzIC0yNzIpIj4NCiAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzQxNDE0MSIgLz4NCiAgICAgICAgPHJlY3QgeD0iNDY4IiB5PSIzMjciIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzI2MjYyNiIgLz4NCiAgICA8L2c&#x2B;DQo8L3N2Zz4="/>
+    <div class="skill-topic-heading">Beginner Topic</div>
+    <div class="skill-topic-sub-heading">Formatting Code with Whitespace</div>
+
+
+
+
+<p data-element-id="345ce245-187d-49ac-a165-5482e6eaebef" class="element-section paragraph SF1FIRST" >
+Indenting the code using whitespace is important for greater readability. As you begin writing code, you need to follow established coding standards and conventions to enhance code readability.</p>
+
+
+<p data-element-id="574c9198-fbba-4452-b3fb-4006895bf39c" class="element-section paragraph SF1MID" >
+The convention used in this book is to place curly braces on their own line and to indent the code contained between the curly brace pair. If another curly brace pair appears within the first pair, all the code within the second set of braces is also indented.</p>
+
+
+<p data-element-id="7f8f28c4-7f78-4699-914e-413c2fcdc888" class="element-section paragraph SF1LAST" >
+This is not a uniform C# standard but a stylistic preference.</p></div>
+
+
+<p data-element-id="0fd356e9-8157-481a-87b3-03e94bacfa8e" class="element-section paragraph footnote-separator-line" >
+________________________________________</p>
+
+<div data-element-id="072a87da-f710-420d-a000-f9cc4b333349" class="element-section footnote-block">
+    8.
+<span class="FootnoteReference"></span> When creating C#, the language creators reviewed the specifications for C/C&#x2B;&#x2B;, literally crossing out the features they didn&#x2019;t like and creating a list of the ones they did like. The group also included designers with strong backgrounds in other languages.</div>
+
+<div data-element-id="2b4448cb-2122-4a4e-bab8-7a0043745d68" class="element-section footnote-block">
+    9.
+ For example, early in the design of C# 2.0, the language designers designated <span class="CITchapbm">yield</span> as a keyword, and Microsoft released alpha versions of the C# 2.0 compiler, with <span class="CITchapbm">yield</span> as a designated keyword, to thousands of developers. However, the language designers eventually determined that by using <span class="CITchapbm">yield return</span> rather than <span class="CITchapbm">yield</span>, they could ultimately avoid adding <span class="CITchapbm">yield</span> as a keyword because it would have no special significance outside its proximity to <span class="CITchapbm">return</span>.</div>
+
+<div data-element-id="04e028b3-75ba-4f04-8dce-8d417fc5e1b0" class="element-section footnote-block">
+    10.
+ There are some rare and unfortunate incompatibilities, such as the following: C# 2.0 requires implementation of <span class="CITchapbm">IDisposable</span> with the using statement rather than simply using a <span class="CITchapbm">Dispose()</span> method.&nbsp; Some rare generic expressions are different between versions. For example, <span class="CITchapbm">F(G&lt;A,B&gt;(7))</span> means <span class="CITchapbm">F((G&lt;A), (B&gt;7))</span> in C# 1.0, but in C# 2.0, it means to call generic method <span class="CITchapbm">G&lt;A,B&gt;</span> with argument <span class="CITchapbm">7</span> and pass the result to <span class="CITchapbm">F</span>.</div>    </div>
+</body>
+</html>
