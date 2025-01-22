@@ -24,6 +24,9 @@ jobs:
         env:
           NUGET_AUTH_TOKEN: ${{ secrets.AZURE_DEVOPS_PAT }}
 
+      - run: |
+          [[ -z "${{ secrets.AZURE_DEVOPS_PAT }}" ]] && echo 'does not exist' || echo "exists"
+
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
