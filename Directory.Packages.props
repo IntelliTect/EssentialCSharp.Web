@@ -16,6 +16,7 @@
     <PackageVersion Include="ContentFeedNuget" Version="$(ToolingPackagesVersion)" />
   </ItemGroup>
   <ItemGroup>
+    <PackageVersion Include="Microsoft.AspNetCore.Components" Version="9.0.1" />
     <PackageVersion Include="EssentialCSharp.Shared.Models" Version="$(ToolingPackagesVersion)" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.10" />
     <PackageVersion Include="AspNet.Security.OAuth.GitHub" Version="8.3.0" />
