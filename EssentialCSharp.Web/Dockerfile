@@ -1,5 +1,6 @@
 #syntax=docker/dockerfile:1.2
 ARG ACCESS_TO_NUGET_FEED=true
+ENV ACCESS_TO_NUGET_FEED=$ACCESS_TO_NUGET_FEED
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
