@@ -1,0 +1,1835 @@
+<html>
+<head>
+        <link rel="canonical" href="https://essentialcsharp.com/multiple-net-frameworks" />
+
+<style>
+    :root {
+        --toolbar-height: 50px;
+        --primary-color: #11356a;
+        --secondary-color: #232732;
+        --accent-color-1: #7fc9ce;
+        --accent-color-2: #ffdd74;
+        --link-color: #0042b5;
+        --link-color-hover: #208fe4;
+        --grey: #bcbec0;
+        --grey-lighten-1: #e6e7e8;
+        --grey-lighten-2: #f1f2f2;
+        --grey-font: #616161;
+    }
+
+    body {
+        margin: 0;
+        font-family: "Roboto", Helvetica, Arial, san-serif;
+    }
+
+    .page-left-larger-side-margins {
+        margin-left: 20px;
+        margin-right: 10px;
+    }
+
+    .page-right-larger-side-margins {
+        margin-right: 20px;
+        margin-left: 10px;
+    }
+
+    .footnotes-top-section {
+        height: 10px;
+        margin-top: calc(30px - 10px);
+    }
+
+    .footnotes-top-line {
+        margin: 0;
+    }
+
+    .element-section {
+        overflow-y: hidden;
+    }
+
+    .chapter-number-container {
+        height: 45px;
+        margin-top: 10px;
+    }
+
+    .chapter-number-squares {
+        position: absolute;
+        height: 45px;
+    }
+
+    .chapter-number {
+        position: absolute;
+        width: 60px;
+        margin-left: 50px;
+        font-size: 58px;
+        font-weight: 700;
+        margin-top: -17px;
+        text-align: left;
+    }
+
+    .double-digit-chapter .chapter-number {
+        margin-left: 45px;
+    }
+
+    .chapter-title {
+        font-size: 2.3rem;
+        color: var(--primary-color);
+        margin-block-start: 10px;
+        margin-block-end: 0px;
+        font-weight: bold;
+    }
+
+    .chapter-title-underline {
+        border-bottom: 3px solid var(--accent-color-1);
+        padding-bottom: 1rem;
+        opacity: 1;
+    }
+
+    p {
+        word-wrap: break-word;
+        font-style: normal;
+        font-weight: 400;
+        line-height: 150%;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .section-heading {
+        font-weight: 700;
+    }
+
+    .H1, .Heading1 {
+        line-height: 120%;
+        margin-top: 2.3rem;
+        font-size: 1.6rem;
+    }
+
+        .H1 .CITchapbm, .Heading1 .CITchapbm {
+            font-size: 26px;
+            font-style: normal;
+        }
+
+    .first-element .H1 {
+        margin-top: 0px;
+    }
+
+    .first-element .H2 {
+        margin-top: 0px;
+    }
+
+    .H2, .SF1H1 {
+        line-height: 120%;
+        margin-top: 2.3rem;
+        font-size: 1.3rem;
+    }
+
+        .H2 .CITchapbm {
+            line-height: 100%;
+            margin-top: 20px;
+            margin-bottom: 3pt;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+    .H3 {
+        line-height: 120%;
+        margin-top: 1.8rem;
+        font-size: 1.1rem;
+        font-style: italic;
+    }
+
+    .first-element .H3 {
+        margin-top: 0px;
+    }
+
+    .H3 .CITchapbm {
+        line-height: 100%;
+        margin-top: 15.5pt;
+        margin-bottom: 3pt;
+    }
+
+    .SummaryHead {
+        font-size: 1.6rem;
+        border-bottom: 3px solid var(--accent-color-1);
+        margin-top: 2.3rem;
+        margin-bottom: 7.75pt;
+        line-height: 150%;
+    }
+
+    .HEADFIRST, .CHAPBMFIRST {
+        text-indent: 0;
+    }
+
+    .DCAP {
+        color: var(--primary-color);
+        font-style: italic;
+        font-weight: 700;
+    }
+
+    .code-block-top-section {
+        margin-top: calc(15px);
+    }
+
+    .first-element .code-block-section {
+        margin-top: 0px;
+    }
+
+    .code-block-bottom-section {
+        margin-bottom: calc(15px);
+        padding-bottom: calc(5px);
+    }
+
+    .code-block-lines {
+        background-color: var(--grey-lighten-2);
+        padding: 0.5rem;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .code-block-section, .CDTMID, .NLDPGMONLY, .DPGMONLY, .CITchapbm, .SF1DPGMONLY, .CPComment, .DPGMFIRST, .DPGMMID, .DPGMLAST, .SF1DPGMFIRST, .SF1DPGMMID, .SF2DPGMFIRST, .SF2DPGMLAST, .SF1DPGMLAST {
+        font-family: "Courier New", monospace;
+        font-size: 16px;
+        line-height: 140%;
+    }
+
+    .TableCDT1, .TableCDT, .TableCDTX, .TBLDPGMFIRST, .TABLEDPGMFIRST, .TBLDPGM, .TableDPGM, .TBLDPGMLAST, .TABLEDPGMLAST, .TBLDPGMMID, .TABLEDPGMMID, .table-cell .CPComment {
+        font-family: "Courier New", monospace;
+        font-size: 18px;
+        line-height: 140%;
+    }
+
+    .CHAPBMCON .CITCHAPBM, .CHAPBM .CITCHAPBM, .HEADFIRST .CITCHAPBM, .SF1FIRST .CITCHAPBM, .SF1LAST .CITCHAPBM, .SF1MID .CITCHAPBM, .ordered-list-item-paragraph .CITCHAPBM, .bullet-list-item-paragraph .CITCHAPBM, .bullet-list-item-paragraph-measurement .CITCHAPBM {
+        font-size: 18px;
+    }
+
+    .SF1DPGMFIRST, .SF1DPGMMID, .SF2DPGMLAST {
+        line-height: 15px;
+    }
+
+    .DPGMFIRST, .SF1DPGMONLY, .SF1DPGMFIRST, .SF2DPGMFIRST {
+        margin-top: 8px;
+    }
+
+    .DPGMFIRST, .DPGMMID, .DPGMLAST, .SF1DPGMLAST {
+        line-height: 15pt;
+    }
+
+    .DPGMLAST, .SF1DPGMONLY, .SF2DPGMLAST, .SF1DPGMLAST {
+        margin-bottom: 8px;
+    }
+
+    .TBLNOTE {
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
+
+    .code-block-heading {
+        font-family: "Roboto", Helvetica, Arial, san-serif;
+        font-weight: 700;
+        line-height: 150%;
+        margin-bottom: 5pt;
+    }
+
+        .code-block-heading .CITCHAPBM {
+            font-size: 20px;
+        }
+
+    .code-line {
+        word-break: break-all;
+    }
+
+    .CDThighlight {
+        background: var(--grey-lighten-1);
+    }
+
+    .CDTNUM {
+        font-variant: small-caps;
+    }
+
+    .CPKeyword {
+        color: blue;
+        letter-spacing: 0pt;
+        font-weight: bold;
+    }
+
+    .Maroon {
+        color: #A31515;
+    }
+
+    .Teal {
+        color: #2B91AF;
+    }
+
+    .disable-indent, .CHAPBMCON {
+        text-indent: 0 !important;
+    }
+
+    .justify-last {
+        text-align-last: justify;
+    }
+
+    .output-block-heading {
+        font-size: 1rem;
+        margin-top: 1rem;
+        margin-bottom: 5pt;
+        font-weight: bold;
+        font-variant: small-caps;
+    }
+
+    .output-image {
+        max-width: 100%;
+        display: block;
+    }
+
+    .output-line {
+        word-break: break-word;
+        white-space: normal;
+    }
+
+    .output-block-section .output-block-lines {
+        font-family: "Courier New", monospace;
+        line-height: 140%;
+        background: var(--grey-lighten-2);
+        padding: 1rem;
+    }
+
+    .output-block-top-section {
+        margin-top: calc(11px);
+    }
+
+        .output-block-top-section .output-block-lines {
+            padding-top: calc(9px);
+        }
+
+    .first-element .output-block-section .output-block-lines {
+        padding-top: calc(9px);
+    }
+
+    .output-block-bottom-section {
+        margin-bottom: calc(11px);
+    }
+
+        .output-block-bottom-section .output-block-lines {
+            padding-bottom: calc(9px);
+        }
+
+    .last-element .output-block-section .output-block-lines {
+        padding-bottom: calc(9px);
+    }
+
+    .BOLD, .STRONG {
+        font-weight: bolder;
+        color: black;
+    }
+
+    .figure-image {
+        max-height: 640px;
+        max-width: 100%;
+        margin: auto;
+        display: block;
+    }
+
+    .figure-image-with-margin {
+        margin-top: calc(25px);
+    }
+
+    .figure-image-with-margin {
+        margin-top: calc(25px);
+    }
+
+    .figure-heading {
+        margin: 1rem 0 1rem 0;
+        line-height: 140%;
+        font-size: 1rem;
+        font-weight: bold;
+    }
+
+    .FIGNUM {
+        font-variant: small-caps;
+    }
+
+    .footnote-block {
+        font-size: 16px;
+        text-indent: -30px;
+        margin-left: 30px;
+        overflow-y: unset;
+    }
+
+        .footnote-block .CITchapbm {
+            line-height: 10px;
+            font-size: inherit;
+        }
+
+    .footnote-line-break::before {
+        content: "\a";
+        white-space: pre;
+    }
+
+    .FootnoteReference {
+        position: relative;
+        top: -3pt;
+        font-size: 16px;
+    }
+
+    .footnote-separator-line {
+        margin-left: -20px;
+    }
+
+    .Superscript, .SUP, .SUPITAL {
+        position: relative;
+        top: -3pt;
+        font-size: 12px;
+    }
+
+    .SUPITAL {
+        font-style: italic;
+    }
+
+    .ordered-list-item-paragraph {
+        line-height: 150%;
+    }
+
+        .ordered-list-item-paragraph:last-child {
+            padding-bottom: 0;
+        }
+
+    .first-ordered-list-item {
+        margin-top: 15px;
+    }
+
+    .ordered-list-item {
+        display: flex;
+        margin-bottom: 16px;
+        margin-left: 15px;
+    }
+
+    .ordered-list-item-content {
+        flex: 25;
+    }
+
+    .ordered-list-item-number {
+        flex: 1;
+    }
+
+    .bullet-list-item-first-section {
+        margin-top: 7px;
+    }
+
+    .bullet-list-item {
+        padding: 10px 0 10px 0;
+        line-height: 150%;
+        display: block;
+        overflow-y: hidden;
+        flex-wrap: wrap;
+    }
+
+        .bullet-list-item .first-line {
+            margin-top: 5px;
+        }
+
+    .bullet-list-item-content {
+        flex: 16;
+        position: relative;
+        margin-left: 22pt;
+        margin-right: 5pt;
+    }
+
+    .bullet-list-item-paragraph p, .bullet-list-item-paragraph-measurement p {
+        line-height: 13.0pt;
+    }
+
+    .bullet-list-item-paragraph-measurement p {
+        margin-top: 5px;
+        text-indent: unset;
+    }
+
+    .bullet-list-item .paragraph-line {
+        line-height: 140%;
+        font-size: 20px;
+        text-align: justify;
+        text-justify: inter-word;
+        text-indent: unset;
+    }
+
+    .bullet-list-item-paragraph:last-child {
+        padding-bottom: 0;
+    }
+
+    .bullet-list-bullet {
+        flex: 1;
+        position: absolute;
+        margin-left: 10pt;
+    }
+
+    .first-bullet {
+        margin-top: calc(15px);
+    }
+
+    .SF1BLLAST.last-line, .BLLAST.last-line {
+        margin-bottom: calc(10px);
+    }
+
+    .bullet-list-item-paragraph .CITCHAPBM {
+        font-size: 20px;
+    }
+
+    .NLDPGMONLY {
+        font-family: "Courier New", monospace;
+        font-size: 18px;
+        line-height: 140%;
+    }
+
+    .DPGMONLY {
+        text-indent: unset;
+        padding-left: 20px;
+    }
+
+    .skill-topic-heading {
+        color: var(--grey-font);
+        font-size: 1.1rem;
+        font-weight: bold;
+        letter-spacing: 1pt;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+        margin-left: 22px;
+        margin-top: 8px;
+    }
+
+    .skill-topic-block-top {
+        margin-top: calc(40px);
+    }
+
+    .first-element .skill-topic-block-top {
+        margin-top: 0px;
+    }
+
+    .skill-topic-block-bottom {
+        margin-bottom: calc(20px);
+    }
+
+    .page-right-larger-side-margins .skill-topic-block {
+        border-left: 8px solid var(--accent-color-1);
+        background-color: var(--grey-lighten-2);
+        padding: 20px;
+    }
+
+    .page-left-larger-side-margins .skill-topic-block {
+        border-right: 8px solid var(--accent-color-1);
+        background-color: var(--grey-lighten-2);
+        padding: 20px;
+    }
+
+    .skill-topic-sub-heading {
+        font-size: 1.1rem;
+        font-weight: bold;
+        padding-top: 10px;
+    }
+
+        .skill-topic-sub-heading .CITchapbm {
+            font-size: 24px;
+            font-weight: bold;
+            padding-top: 4px;
+        }
+
+    .skill-topic-block .paragraph {
+        text-indent: 0;
+    }
+
+    .skill-topic-block .SF1DPGMFIRST, .skill-topic-block .SF1DPGMMID, .skill-topic-block .SF1DPGMLAST, .skill-topic-block .SF1DPGMONLY {
+        margin-left: 28px;
+    }
+
+    .skill-topic-block .element-section + .first-line {
+        text-indent: 0;
+    }
+
+    .skill-topic-overlayed-squares {
+        position: absolute;
+        height: 19px;
+        margin-top: 9px;
+    }
+
+    .guidelines-block {
+        background: #eaeaea;
+        margin-left: auto;
+        margin-right: auto;
+        width: 85%;
+    }
+
+    .inside-guidelines-block {
+        margin-left: 26px;
+        margin-right: 15px;
+    }
+
+    .guidelines-block-heading {
+        font-size: 1.1rem;
+        font-weight: bold;
+        padding-bottom: calc(0px);
+        margin-top: calc(-3px);
+    }
+
+    .guidelines-block-line {
+        margin-bottom: calc(0px);
+        line-height: 140%;
+        margin-top: calc(5px);
+    }
+
+    .last-element .guidelines-block-line {
+        padding-bottom: calc(10px);
+        margin-bottom: calc(15px);
+    }
+
+    .guidelines-block-line .CITchapbm {
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    .guidelines-first-section {
+        margin-top: calc(13px);
+    }
+
+    .first-element .guidelines-first-section {
+        margin-top: 0px;
+    }
+
+    .guidelines-last-section {
+        padding-bottom: calc(10px);
+        margin-bottom: calc(15px);
+    }
+
+    .language-contrast-block {
+        background: #e5e7e8;
+        margin-top: 10pt;
+        margin-bottom: 10pt;
+        width: 85%;
+    }
+
+    .first-element .language-contrast-block {
+        margin-top: 0px;
+    }
+
+    .inside-language-contrast-block {
+        margin-left: 18pt;
+        margin-bottom: 10pt;
+        margin-right: 18pt;
+        margin-top: 4pt;
+    }
+
+
+    .language-contrast-heading {
+        font-size: 1.1rem;
+        font-weight: bold;
+        padding-bottom: 5px;
+    }
+
+        .language-contrast-heading .CITchapbm {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+    .language-contrast-body {
+        line-height: 150%;
+    }
+
+        .language-contrast-body .SF2 {
+            text-indent: unset;
+        }
+
+        .language-contrast-body .SF2DPGMONLY {
+            font-family: "Courier New", monospace;
+            font-size: 18px;
+            line-height: 140%;
+            text-indent: unset;
+        }
+
+    .upper-left-square {
+        width: 20px;
+        height: 20px;
+    }
+
+    .green-square {
+        background: #095540;
+    }
+
+    .blue-square {
+        background: #003057;
+    }
+
+    .CITTBL {
+        font-family: "Courier New", monospace;
+        font-size: 18px;
+        line-height: 140%;
+        margin-top: 5.5pt;
+        margin-bottom: 5.5pt;
+        padding: 0in 2.9pt 0in 2.9pt;
+        text-indent: unset;
+    }
+
+    .TBL {
+        margin: 0px;
+        line-height: 140%;
+        font-size: 16px;
+        color: black;
+        text-indent: unset;
+    }
+
+    .table-cell-border {
+        border-spacing: initial;
+        border: .5px solid black;
+    }
+
+    .table-heading {
+        margin-right: 0in;
+        margin-bottom: 3pt;
+        margin-left: 0in;
+        line-height: 140%;
+        font-size: 1.1rem;
+        color: black;
+        font-weight: bold;
+        margin-top: 20px;
+    }
+
+    tr {
+        border-style: none;
+    }
+
+    .pdf-table-row, .measurement-table-row {
+        margin-bottom: calc(-2px);
+        table-layout: fixed;
+    }
+
+    .measurement-table-row {
+        table-layout: fixed;
+    }
+
+    .pdf-table-row {
+        table-layout: fixed;
+        border-collapse: collapse;
+    }
+
+    .table-cell {
+        margin: 0;
+        table-layout: fixed;
+    }
+
+    .measurement-table {
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    .first-element .table-top-section .table-heading {
+        margin-top: 0px;
+    }
+
+    .table-bottom-section {
+        border-bottom: 1px solid black;
+    }
+
+    .left-table-cell {
+        border-left: 1px solid black;
+    }
+
+    .right-table-cell {
+        border-right: 1px solid black;
+    }
+
+    .standard-table-cell {
+        padding: 6px;
+        border: 1px black solid;
+        vertical-align: top;
+    }
+
+    .table-header-row .standard-table-cell {
+        vertical-align: bottom;
+    }
+
+    .standard-table-cell p {
+        text-align: left;
+        text-indent: unset;
+        line-height: normal;
+        margin-left: -4px;
+        margin-right: -4px;
+        table-layout: fixed;
+        word-break: break-word;
+    }
+
+    .table-top-row .non-standard-cell, .first-element .table-top-section .non-standard-cell {
+        border-top: 1px solid black;
+    }
+
+    .non-standard-cell {
+        border-style: none;
+    }
+
+    .non-standard-row {
+        border-style: none;
+    }
+
+    table {
+        border-style: solid;
+    }
+
+    .final-row {
+        background: #e9e9e9;
+        border: 1px solid black;
+        height: calc(6px);
+    }
+
+        .final-row .standard-table-cell {
+            padding: 0;
+        }
+
+    .TBLCOLHD {
+        line-height: 140%;
+        font-size: 16px;
+        color: black;
+        font-weight: bold;
+        text-align: left;
+        text-indent: unset;
+    }
+
+    .header-row {
+        background: #E6E7E8;
+    }
+
+    .table-final-section {
+        margin-bottom: 20px;
+    }
+
+    .first-element .note-block {
+        margin-top: 0px;
+    }
+
+    .inside-note-block {
+        margin-left: 11pt;
+        margin-bottom: 6pt;
+        margin-right: 10pt;
+        margin-top: -2pt;
+    }
+
+    .note-block {
+        border: 4px solid var(--primary-color);
+        background: var(--grey-lighten-1);
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+        margin-left: auto;
+        margin-right: auto;
+        width: 60%;
+    }
+
+    .inside-note-block {
+        margin-left: 11pt;
+        margin-bottom: 6pt;
+        margin-right: 10pt;
+        margin-top: -2pt;
+    }
+
+    .note-block-heading {
+        color: var(--grey-font);
+        position: relative;
+        font-size: 1.1rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        margin-left: 22px;
+        margin-bottom: 2px;
+        margin-top: 8px;
+    }
+
+    .note-block-lines {
+        margin-top: 20px;
+        margin-bottom: 20px;
+        line-height: 140%;
+    }
+
+    .note-block-line {
+        margin-bottom: 2pt;
+    }
+
+    .note-block-line-bold {
+        margin-bottom: 2pt;
+        font-weight: bold;
+    }
+
+    .note-block-overlayed-squares {
+        position: absolute;
+        height: 19px;
+        margin-top: 2px;
+    }
+
+    .CPComment {
+        color: green;
+        font-style: italic;
+    }
+
+    .ITAL {
+        font-style: italic;
+    }
+
+    .BOLDITAL {
+        font-style: italic;
+        font-weight: bold;
+    }
+
+    .table-row .TBL {
+        line-height: 11pt;
+        padding-bottom: 2px;
+        padding-right: 5px;
+    }
+
+    .publisher-note {
+        background-color: gray;
+        max-width: 100px;
+        color: white;
+        text-align: center;
+        position: absolute;
+        transform: translate(495px, 0px);
+        min-width: 65px;
+        max-width: 65px;
+        font-size: 16px;
+        min-height: 22px;
+        max-height: 22px;
+        padding-top: 10px;
+        overflow-x: hidden;
+    }
+
+    .publisher-note-right {
+        transform: translate(495px, 0px);
+        text-align: left;
+        padding-left: 6px;
+    }
+
+    .publisher-note-left {
+        transform: translate(-87px, 0px);
+        text-align: right;
+        padding-right: 6px;
+    }
+
+    .heading-wrapper:not(:hover) .anchor-link:not(:focus-visible) {
+        opacity: 0;
+    }
+
+    .anchor-link {
+        border: none;
+        color: var(--link-color);
+        text-decoration: none;
+        position: absolute;
+        font-size: 14px;
+        margin: 4px 2px;
+        transition-duration: 0.4s;
+        cursor: pointer;
+        background-color: transparent;
+    }
+
+        .anchor-link:hover {
+            color: var(--link-color-hover);
+        }
+
+    .code-line-number {
+        color: gray;
+        text-align: right;
+        display: inline-block;
+        width: 30px;
+        font-family: monospace;
+    }
+
+    .no-select {
+        -webkit-touch-callout: none; /* iOS Safari */
+        -webkit-user-select: none; /* Safari, Chrome, Opera, Samsung */
+        -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Edge */
+        user-select: none; /* Modern browsers */
+    }
+</style>
+<script>
+
+	// https://stackoverflow.com/questions/10787782/full-height-of-a-html-element-div-including-border-padding-and-margin
+	function getAbsoluteHeight(el) {
+		// Get the DOM Node if you pass in a string
+		el = (typeof el === 'string') ? document.querySelector(el) : el;
+
+		const styles = window.getComputedStyle(el);
+		const previousElement = el.previousElementSibling;
+		const nextElement = el.nextElementSibling;
+		let marginTop = parseFloat(styles['marginTop']);
+		let marginBottom = parseFloat(styles['marginBottom']);
+
+		if (previousElement !== null) {
+			const previousStyles = window.getComputedStyle(previousElement);
+			const previousBottomMargin = parseFloat(previousStyles['marginBottom']);
+			if (previousBottomMargin > marginTop) {
+				marginTop = 0;
+			}
+		}
+
+		if (nextElement !== null) {
+			const nextStyles = window.getComputedStyle(nextElement);
+			const nextTopMargin = parseFloat(nextStyles['marginTop']);
+			if (nextTopMargin > marginBottom) {
+				marginBottom = 0;
+			}
+		}
+    
+		const margin = marginTop + marginBottom
+
+		return el.getBoundingClientRect().height + margin;
+	}
+
+	function getAbsoluteWidth(el) {
+		// Get the DOM Node if you pass in a string
+		el = (typeof el === 'string') ? document.querySelector(el) : el;
+
+		const styles = window.getComputedStyle(el);
+		const margin = parseFloat(styles['marginLeft']) +
+			parseFloat(styles['marginRight']);
+
+		return el.offsetWidth + margin;
+	}
+
+	function measureSingleSectionElement(id) {
+
+		const element = document.querySelector(`[data-element-id='${id}']`);
+
+		const heightInPixels = getAbsoluteHeight(element);
+		const widthInPixels = getAbsoluteWidth(element);
+
+		return {
+			id,
+			heightInPixels,
+			widthInPixels
+		};
+	}
+
+	function measureLinesInElement(id) {
+		const element = document.querySelector(`[data-element-id='${id}']`);
+
+		const heightInPixels = getAbsoluteHeight(element);
+		const widthInPixels = getAbsoluteWidth(element);
+
+		const wordElements = element.getElementsByTagName('fakeTag');
+
+		const lineHeight = parseFloat(document.defaultView.getComputedStyle(element, null).getPropertyValue("line-height"));
+
+		const lines = [];
+		let line = null;
+		let lineWords = [];
+		let lineLeft = 0;
+
+		for (const word of wordElements) {
+			if ((line == null) || word.getBoundingClientRect().left < lineLeft) {
+				if (line != null) {
+					const measurement = measureLine(lineWords);
+					line.heightInPixels = measurement.lineHeight;
+					line.widthInPixels = measurement.lineWidth;
+					lineWords = [];
+
+					lines.push(line);
+				}
+				line = {
+					firstWordId: word.dataset.taggedWordId,
+					heightInPixelsOld: lineHeight
+				};
+			}
+
+			lineWords.push(word);
+			line.lastWordId = word.dataset.taggedWordId;
+			lineLeft = word.getBoundingClientRect().left;
+		}
+
+		if (line != null) {
+			const measurement = measureLine(lineWords);
+			line.heightInPixels = measurement.lineHeight;
+			line.widthInPixels = measurement.lineWidth;
+			lines.push(line);
+		}
+
+		if (lines.length > 0) {
+			const styles = window.getComputedStyle(element)
+			const topLineExtra = parseFloat(styles['marginTop']) + parseFloat(styles['paddingTop']);
+			const bottomLineExtra = parseFloat(styles['marginBottom']) + parseFloat(styles['paddingBottom']);
+			lines[0].heightInPixels += topLineExtra;
+			lines[lines.length - 1].heightInPixels += bottomLineExtra;
+		}
+
+		return {
+			id,
+			heightInPixels,
+			widthInPixels,
+			lines
+		};
+	}
+
+	function measureLine(lineWords) {
+		let lineWrapper = document.createElement('fakeLine');
+
+		lineWords[0].parentNode.insertBefore(lineWrapper, lineWords[0]);
+
+		for (const lineWord of lineWords) {
+			lineWrapper.appendChild(lineWord);
+		}
+
+		lineWrapper.style.textIndent = 0;
+		const lineWidth = getAbsoluteWidth(lineWrapper);
+		lineWrapper.style.display = 'block';
+
+		const lineHeight = getAbsoluteHeight(lineWrapper);
+
+		lineWrapper.style.display = null;
+		lineWrapper.style.textIndent = null;
+
+		return {
+			lineHeight,
+			lineWidth,
+		};
+	}
+
+	function highlightSizeMiscalculations(threshold = 2) {
+		const elements = document.querySelectorAll(`[data-calculated-height]`);
+
+		let pixelsOverEstimated = 0;
+		let pixelsUnderEstimated = 0;
+		let incorrectlyEstimatedElements = [];
+
+
+
+		for (const element of elements) {
+			const calculatedHeight = element.dataset.calculatedHeight;
+
+			element.style.overflowY = 'hidden';
+			element.style.overflowX = 'hidden';
+
+			const actualHeight = getAbsoluteHeight(element);
+
+			const heightDifference = calculatedHeight - actualHeight;
+			const absoluteHeightDifference = Math.abs(heightDifference);
+
+			element.dataset.heightDifference = heightDifference;
+
+			if (actualHeight === 0) { //Ignore height differences of zero-height elements. This includes version notes.
+				continue;
+			}
+
+			// ignoring a small difference due to rounding issues
+			if (absoluteHeightDifference <= threshold) {
+				element.style.backgroundColor = 'transparent';
+				continue;
+			}
+
+			for (const child of element.children) {
+				child.style.position = 'relative';
+				child.style.zIndex = -1;
+			}
+
+			const clampedColorDifference = Math.max(0, 220 - absoluteHeightDifference * 10);
+			if (heightDifference != 0) {
+
+				let incorrectElement = {
+					expected: calculatedHeight, actual: actualHeight, difference: absoluteHeightDifference, elementStyles: element.className,
+					childrenStyles: Array.from(element.children, (e) => e.className), childrenText: Array.from(element.children, (e) => e.textContent)
+				}
+
+				if (heightDifference > 1) {
+					pixelsOverEstimated += absoluteHeightDifference;
+					element.style.backgroundColor = `rgba(${clampedColorDifference}, 255, ${clampedColorDifference}, 0.4)`;
+
+					incorrectElement.type = "OVERESTIMATED";
+				} else {
+
+					pixelsUnderEstimated += absoluteHeightDifference;
+					element.style.backgroundColor = `rgba(255, ${clampedColorDifference}, ${clampedColorDifference}, 0.4)`;
+
+					incorrectElement.type = "UNDERESTIMATED";
+				}
+
+				incorrectlyEstimatedElements.push(incorrectElement);
+			}
+		}
+
+		incorrectlyEstimatedElements.sort((a, b) => a.type.charCodeAt(0) - b.type.charCodeAt(0));
+
+		console.log(`Over estimated: ${pixelsOverEstimated} pixels`);
+		console.log(`Under estimated: ${pixelsUnderEstimated} pixels`);
+		console.log(`Total miscalculation: ${pixelsOverEstimated - pixelsUnderEstimated} pixels`);
+		return {
+			overEstimated: pixelsOverEstimated,
+			underEstimated: pixelsUnderEstimated,
+			incorrectlyEstimatedElements: incorrectlyEstimatedElements
+		}
+	}
+
+	function addPageBorders() {
+		const cutPages = document.getElementsByClassName('cut-page');
+
+		for (const cutPage of cutPages) {
+			cutPage.style.outline = '1px solid black';
+			let availableSpace = 0;
+			let filledSpace = 0;
+			let pageNumber = '';
+
+			const contentHeightDiv = cutPage.getElementsByClassName('content-height')[0];
+			if (contentHeightDiv) {
+				contentHeightDiv.style.outline = '1px dashed red';
+				availableSpace = contentHeightDiv.clientHeight;
+			}
+
+			const pageNumDiv = cutPage.getElementsByClassName('page-number-content')[0];
+			pageNumber = pageNumDiv?.innerHTML ?? 'unknown';
+
+			const header = cutPage.getElementsByClassName('page-header-box')[0];
+			filledSpace += header ? getAbsoluteHeight(header) : 0;
+
+			const pageContent = cutPage.getElementsByClassName('page-content')[0];
+			filledSpace += pageContent ? getAbsoluteHeight(pageContent) : 0;
+
+			const footNotes = cutPage.getElementsByClassName('footnotes-section')[0];
+			filledSpace += footNotes ? getAbsoluteHeight(footNotes) : 0;
+
+			cutPage.appendChild(document.createElement('div')).innerHTML = `<br/>Page: ${pageNumber}<br/>Filled Space: ${filledSpace}px/${availableSpace}px<br/>Unused Space: ${availableSpace - filledSpace}px<br/>`;
+		}
+	}
+   
+	function checkAllPageHeight(lowerThreshold = 400, upperThreshold = 0) {
+		const pages = document.getElementsByClassName('content-height');
+		let maxPageHeight = upperThreshold;
+		if (maxPageHeight === 0){
+			maxPageHeight = document.querySelector('.content-height').getBoundingClientRect().height;
+		}
+		const pagesTooLarge = [];
+		const pagesBelowThreshold = [];
+
+		for (i = 0; i < pages.length; i++) {
+			let heightElements = pages[i].children;
+			let totalPageHeight = 0;
+			for (const el of heightElements) {
+				totalPageHeight += getAbsoluteHeight(el);
+			}
+			if (totalPageHeight > maxPageHeight) {
+				pagesTooLarge.push({ pageNumber: i + 1, pageHeight: totalPageHeight });
+			} else if (totalPageHeight < lowerThreshold) {
+				pagesBelowThreshold.push({ pageNumber: i + 1, pageHeight: totalPageHeight });
+			}
+		}
+
+		return {
+			maxPageHeight: maxPageHeight,
+			pagesTooLarge: pagesTooLarge,
+			pagesBelowThreshold: pagesBelowThreshold,
+		}
+	}
+
+</script>
+</head>
+
+<body>
+   <div class="page-right-larger-side-margins">
+
+
+
+<div id="multiple-net-frameworks" data-element-id="ce5c4ba9-e33b-4e86-bf1d-ccfa054cf91d" class="element-section section-heading Heading1">
+    <span class="heading-wrapper">
+<span id="multiple-net-frameworks">Multiple .NET Frameworks</span>            <button class="anchor-link" v-on:click="copyToClipboard('multiple-net-frameworks#multiple-net-frameworks')">
+                <i class="fa-solid fa-link"></i>
+            </button>
+    </span>
+</div>
+
+
+<p data-element-id="315dd766-ce56-4090-bcca-c4c08a585051" class="element-section paragraph CHAPBMCON" >
+As briefly mentioned earlier in the chapter, there are multiple .NET frameworks. The large number of offerings is driven mainly by the desire to provide .NET implementations across multiple operating systems and, potentially, even different hardware platforms. <span class="TBLNUM">Table 1.</span><span class="CDTNUM">3</span> shows those that are predominant.</p>
+
+<div data-element-id="5cda5f50-af1d-4e3c-b1e3-390c6c669896" class="element-section table">
+    <div class="table-heading"><span class="TBLNUM">Table 1.</span><span class="CDTNUM">3</span><span class="FIGNUM">: </span> Predominant .NET Framework Implementations</div>
+    <table class="table-cell-border">
+    
+
+
+<tr data-element-id="9a43832c-aff8-4bed-9e89-90eb7c3e2f18" class="header-row  ">
+        <td class="table-cell
+        left-table-cell
+        
+        standard-table-cell" width="32%">
+      
+
+
+
+<p data-element-id="54023056-204c-4ba4-9ad0-258d2c35a3c8" class="element-section paragraph TBLCOLHD" >
+Comment Type</p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        standard-table-cell" width="68%">
+      
+
+
+
+<p data-element-id="7fb9b134-d7a3-4ebc-8b7d-1ef3ca9ec9d7" class="element-section paragraph TBLCOLHD" >
+Description</p>        </td>
+
+</tr>
+
+<tr data-element-id="3f05b3f0-1d70-4150-a7d6-a641869bcaf1" class="  ">
+        <td class="table-cell
+        left-table-cell
+        
+        standard-table-cell" width="32%">
+      
+
+
+
+<p data-element-id="08922fbf-3a75-4790-8335-0890000037f9" class="element-section paragraph TBL" >
+NET 6 and later</p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        standard-table-cell" width="68%">
+      
+
+
+
+<p data-element-id="0ed480e1-f328-4793-8719-ed7620655bd8" class="element-section paragraph TBL" >
+Starting with NET 6 (following .NET Core 5.0), the Core suffix was dropped to indicate .NET Core and the .NET Framework have essentially unified into one framework.</p>        </td>
+
+</tr>
+
+<tr data-element-id="cc701734-fac1-4c65-99ea-a81ad1f840b8" class="  ">
+        <td class="table-cell
+        left-table-cell
+        
+        standard-table-cell" width="32%">
+      
+
+
+
+<p data-element-id="946ab517-4cbb-42c0-89db-6f812d6cf3f8" class="element-section paragraph TBL" >
+.NET Core</p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        standard-table-cell" width="68%">
+      
+
+
+
+<p data-element-id="9c0f8156-c2b2-4246-aa95-ce457649df8d" class="element-section paragraph TBL" >
+A truly cross-platform and open source .NET framework that supports a highly modularized set of APIs for both the server and command-line applications.</p>        </td>
+
+</tr>
+
+<tr data-element-id="09b7bda8-1291-4737-b8b3-c6c40b2e33e8" class="  ">
+        <td class="table-cell
+        left-table-cell
+        
+        standard-table-cell" width="32%">
+      
+
+
+
+<p data-element-id="60ca709a-f2a6-43b2-9ecb-cb5c4eae9d7c" class="element-section paragraph TBL" >
+Microsoft .NET Framework</p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        standard-table-cell" width="68%">
+      
+
+
+
+<p data-element-id="f4de9baf-5dda-4c30-a68c-a751cc3e4a80" class="element-section paragraph TBL" >
+The first of the .NET frameworks&#x2014;slowly being supplanted by .NET.</p>        </td>
+
+</tr>
+
+<tr data-element-id="96e1c6d6-3a39-4df4-91cf-caed181d1776" class="  ">
+        <td class="table-cell
+        left-table-cell
+        
+        standard-table-cell" width="32%">
+      
+
+
+
+<p data-element-id="3f0773e4-38f9-49ed-8a78-13f74c75bb58" class="element-section paragraph TBL" >
+Xamarin</p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        standard-table-cell" width="68%">
+      
+
+
+
+<p data-element-id="210506d2-ba5c-4502-9588-4a4da43cf382" class="element-section paragraph TBL" >
+With the release of NET 6.0, this effectively becomes a legacy mobile platform implementation of .NET that works with both iOS and Android and enables the development of mobile applications from a single code base while still enabling access to native platform APIs.</p>        </td>
+
+</tr>
+
+<tr data-element-id="ddd942e8-d783-477f-9052-52801be4584a" class="  ">
+        <td class="table-cell
+        left-table-cell
+        
+        standard-table-cell" width="32%">
+      
+
+
+
+<p data-element-id="05cbb797-3f9c-40d6-bf28-dbc88c704a4d" class="element-section paragraph TBL" >
+Mono</p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        standard-table-cell" width="68%">
+      
+
+
+
+<p data-element-id="a3a1b91d-e11f-4248-92ed-52cac983990f" class="element-section paragraph TBL" >
+The oldest open source implementation of .NET that formed the foundation upon which Xamarin and Unity were built. Mono has been replaced by .NET Core for new development.</p>        </td>
+
+</tr>
+
+<tr data-element-id="7262be8d-dc17-490c-9adf-a12a61bb6e15" class="  ">
+        <td class="table-cell
+        left-table-cell
+        
+        standard-table-cell" width="32%">
+      
+
+
+
+<p data-element-id="b3891cf3-a1e7-468f-9646-17e88db2652a" class="element-section paragraph TBL" >
+Unity</p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        standard-table-cell" width="68%">
+      
+
+
+
+<p data-element-id="bca1a267-dfa1-48da-a410-e7099e4328ea" class="element-section paragraph TBL" >
+A cross-platform game engine used to develop video games for game consoles, PCs, mobile devices, and even websites. (The Unity engine is the first public implementation to support projections into the Microsoft Hololens augmented reality realm.)</p>        </td>
+
+</tr>    </table>
+</div>
+
+
+<p data-element-id="f82111b6-77f5-454b-a13f-96be129d0452" class="element-section paragraph CHAPBM" >
+</p>
+
+
+<p data-element-id="a20c1be8-822d-4ef7-9178-9084c39ad2e2" class="element-section paragraph CHAPBM" >
+All the samples in the book work for .NET, at a minimum, unless they specifically indicate otherwise.</p>
+
+
+<p data-element-id="561ad1ae-18fa-4a50-8a54-ab1d07162916" class="element-section paragraph CHAPBM" >
+</p>
+
+<div data-element-id="1294e107-9d14-4dd8-a8ce-33ec7ad29d68" class="element-section note-block">
+
+    <div class=inside-note-block>
+        <img class="note-block-overlayed-squares" src="data:image/svg&#x2B;xml;base64,PHN2ZyB3aWR0aD0iMjk2IiBoZWlnaHQ9IjEyMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgb3ZlcmZsb3c9ImhpZGRlbiI&#x2B;DQogICAgPGRlZnM&#x2B;DQogICAgICAgIDxjbGlwUGF0aCBpZD0iY2xpcDAiPg0KICAgICAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSIyOTYiIGhlaWdodD0iMTIxIiAvPg0KICAgICAgICA8L2NsaXBQYXRoPg0KICAgIDwvZGVmcz4NCiAgICA8ZyBjbGlwLXBhdGg9InVybCgjY2xpcDApIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNDEzIC0yNzIpIj4NCiAgICAgICAgPHJlY3QgeD0iNDEzIiB5PSIyNzIiIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzQxNDE0MSIgLz4NCiAgICAgICAgPHJlY3QgeD0iNDY4IiB5PSIzMjciIHdpZHRoPSI1NSIgaGVpZ2h0PSI1NSIgZmlsbD0iIzI2MjYyNiIgLz4NCiAgICA8L2c&#x2B;DQo8L3N2Zz4=" />
+        <div class="note-block-heading">
+ note        </div>
+
+        <div class="note-block-lines">
+
+                    <div class="note-block-line">
+Throughout the book, <span class="ITAL">.NET framework</span> (lowercase) refers to the framework supported by .NET implementations in general. In contrast, <span class="ITAL">Microsoft .NET Framework</span> refers to the specific .NET framework implementation that runs only on Microsoft Windows and was <span class="ITAL">first</span> released by Microsoft in 2001.                    </div>
+        </div>
+    </div>
+</div>
+
+
+
+<p data-element-id="b2cb2630-5228-4a68-a74e-66f5467a0ada" class="element-section paragraph CHAPBM" >
+</p>
+
+<div id="application-programming-interface" data-element-id="6aa285de-124e-4595-ae9a-bd2904d3f8d7" class="element-section section-heading Heading2">
+    <span class="heading-wrapper">
+<span id="application-programming-interface">Application Programming Interface</span>            <button class="anchor-link" v-on:click="copyToClipboard('application-programming-interface#application-programming-interface')">
+                <i class="fa-solid fa-link"></i>
+            </button>
+    </span>
+</div>
+
+
+<p data-element-id="9645d6c1-1706-4a56-b268-7a9e7c26ff33" class="element-section paragraph CHAPBMCON" >
+All the methods (or more generically, the members) found on a data type such as <span class="CITchapbm">Console</span> are what define the <span class="CITchapbm">Console</span>&#x2019;s <span class="BOLD">application programming interface (API)</span>. The API defines how a software program interacts with a component. As such, it is found not just with a single data type, but more generically; the combination of all the APIs for a set of data types is said to create an API for the collective set of components. In .NET, for example, all the types (and the members within those types) in an assembly are said to form the assembly&#x2019;s API. Likewise, given a combination of assemblies, such as those found in .NET, the collective group of assemblies forms a larger API. Often, this larger group of APIs is referred to as the <span class="BOLD">framework</span>&#x2014;hence the term .NET <span class="ITAL">framework</span> in reference to the APIs exposed by all the assemblies included with the .NET. Generically, the API comprises the set of interfaces and protocols (or instructions) for programming against a set of components. In fact, with .NET, the protocols themselves are the rules for how .NET assemblies execute.</p>
+
+<div id="c-and-net-versioning" data-element-id="9316f06d-a6e7-48c6-b662-4b02c481f273" class="element-section section-heading Heading2">
+    <span class="heading-wrapper">
+<span id="c-and-net-versioning">C# and .NET Versioning</span>            <button class="anchor-link" v-on:click="copyToClipboard('c-and-net-versioning#c-and-net-versioning')">
+                <i class="fa-solid fa-link"></i>
+            </button>
+    </span>
+</div>
+
+
+<p data-element-id="7d26ee19-c520-46f1-bf89-24c3c3f6fbff" class="element-section paragraph CHAPBMCON" >
+Historically, the development life cycle of .NET frameworks has not always been consistent with that of the C# language; therefore, the version of the underlying .NET framework and the corresponding version of the C# language end up with different numbers. This means if you compile with the C# 11.0 compiler, it will, by default, compile against the .NET 7.0, for example. <span class="CDTNUM">Table 1.4</span> is a brief overview of the C# and .NET releases for the Microsoft .NET Framework and .NET Core.</p>
+
+
+
+
+
+
+
+
+
+
+
+<div data-element-id="da01f3cb-82d8-4564-9260-15766f36cb9f" class="element-section table">
+    <div class="table-heading">Table <span class="TBLNUM">1.</span><span class="CDTNUM">4</span><span class="FIGNUM">: </span> C# and .NET Versions</div>
+    <table class="table-cell-border">
+    
+
+
+<tr data-element-id="874e7c8c-141e-4a2c-8ce4-66e8948a7852" class="header-row  ">
+        <td class="table-cell
+        left-table-cell
+        
+        standard-table-cell" width="32%">
+      
+
+
+
+<p data-element-id="43cd1687-dc55-4c32-b20e-b15e5e0fa6b2" class="element-section paragraph TBLCOLHD" >
+Comment Type</p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        standard-table-cell" width="68%">
+      
+
+
+
+<p data-element-id="45cb2597-13ca-455f-8df8-e12fd602be36" class="element-section paragraph TBLCOLHD" >
+Description</p>        </td>
+
+</tr>
+
+<tr data-element-id="f4586384-1420-4000-a1ea-ab77ac249c1a" class="  ">
+        <td class="table-cell
+        left-table-cell
+        
+        standard-table-cell" width="32%">
+      
+
+
+
+<p data-element-id="69ded995-506f-42c0-a1eb-01497096b34e" class="element-section paragraph TBL" >
+C# 1.0 with Microsoft .NET Framework 1.0/1.1 (Visual Studio 2002 and 2003)</p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        standard-table-cell" width="68%">
+      
+
+
+
+<p data-element-id="f5ca431e-9a2f-437b-9901-4f954632ce05" class="element-section paragraph TBL" >
+The initial release of C#. A language built from the ground up to support .NET programming.</p>        </td>
+
+</tr>
+
+<tr data-element-id="dd26b269-7bc7-4742-9621-0954b677b54c" class="  ">
+        <td class="table-cell
+        left-table-cell
+        
+        standard-table-cell" width="32%">
+      
+
+
+
+<p data-element-id="2df8773d-54ca-4ff0-a124-a4b61804a89a" class="element-section paragraph TBL" >
+C# 2.0 with Microsoft .NET Framework 2.0 (Visual Studio 2005)</p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        standard-table-cell" width="68%">
+      
+
+
+
+<p data-element-id="40bbb72e-f8e4-4610-8648-e7e10c561b2d" class="element-section paragraph TBL" >
+Added generics to the C# language and libraries that supported generics to the Microsoft .NET Framework 2.0.</p>        </td>
+
+</tr>
+
+<tr data-element-id="14ef80cb-1ced-4df5-8d1a-f65753313887" class="  ">
+        <td class="table-cell
+        left-table-cell
+        
+        standard-table-cell" width="32%">
+      
+
+
+
+<p data-element-id="5db814a5-6532-42dc-9058-a6853c537053" class="element-section paragraph TBL" >
+Microsoft .NET Framework 3.0</p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        standard-table-cell" width="68%">
+      
+
+
+
+<p data-element-id="c15481a4-f7cd-4cfa-8cbc-b5d25675ff46" class="element-section paragraph TBL" >
+An additional set of APIs for distributed communications (Windows Communication Foundation [WCF]), rich client presentation (Windows Presentation Foundation [WPF]), workflow (Windows Workflow [WF]), and Web authentication (Cardspaces).</p>        </td>
+
+</tr>
+
+<tr data-element-id="46baf544-298f-4235-bddb-2f507ca056d6" class="  ">
+        <td class="table-cell
+        left-table-cell
+        
+        standard-table-cell" width="32%">
+      
+
+
+
+<p data-element-id="8dcf4ed8-93e1-4623-8131-ccb854d6f93e" class="element-section paragraph TBL" >
+C# 3.0 with Microsoft .NET Framework 3.5 (Visual Studio 2008)</p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        standard-table-cell" width="68%">
+      
+
+
+
+<p data-element-id="5ccafb05-fe05-47ff-b50d-0ca1dda38f1a" class="element-section paragraph TBL" >
+Added support for LINQ, a significant improvement to the APIs used for programming collections. The Microsoft .NET Framework 3.5 provided libraries that extended existing APIs to make LINQ possible.</p>        </td>
+
+</tr>
+
+<tr data-element-id="7d5751b1-984d-429d-91a1-e7f6cff9ceab" class="  ">
+        <td class="table-cell
+        left-table-cell
+        
+        standard-table-cell" width="32%">
+      
+
+
+
+<p data-element-id="b776741b-03b7-49e5-9bfb-66c3eeaffb37" class="element-section paragraph TBL" >
+C# 4.0 with Microsoft .NET Framework 4 (Visual Studio 2010)</p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        standard-table-cell" width="68%">
+      
+
+
+
+<p data-element-id="fc95f5da-d8f0-4080-9bc4-b288f96bfdc0" class="element-section paragraph TBL" >
+Added support for dynamic typing along with significant improvements in the API for writing multithreaded programs that capitalized on multiple processors and cores within those processors.</p>        </td>
+
+</tr>
+
+<tr data-element-id="c6235f2c-bbef-48b8-a92c-e54d7c7b0f3c" class="  ">
+        <td class="table-cell
+        left-table-cell
+        
+        standard-table-cell" width="32%">
+      
+
+
+
+<p data-element-id="76219b86-c2c9-4239-9b05-0319d85dc74d" class="element-section paragraph TBL" >
+C# 5.0 with Microsoft .NET Framework 4.5 (Visual Studio 2012) and WinRT integration</p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        standard-table-cell" width="68%">
+      
+
+
+
+<p data-element-id="819581ca-832c-4c47-adbc-37039157f0fe" class="element-section paragraph TBL" >
+Added support for asynchronous method invocation without the explicit registration of a delegate callback. An additional change in the framework was support for interoperability with the Windows Runtime (WinRT).</p>        </td>
+
+</tr>
+
+<tr data-element-id="c98b54fd-e5ff-4fcd-9690-460a75b3841c" class="  ">
+        <td class="table-cell
+        left-table-cell
+        
+        standard-table-cell" width="32%">
+      
+
+
+
+<p data-element-id="56723146-e75e-4222-a3d0-cf6936e9fc34" class="element-section paragraph TBL" >
+C# 6.0 with Microsoft .NET Framework 4.6 and .NET Core 1.X (Visual Studio 2015)</p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        standard-table-cell" width="68%">
+      
+
+
+
+<p data-element-id="084e863a-5a2d-4485-9e86-3d4adc2ad621" class="element-section paragraph TBL" >
+Added string interpolation, null propagating member access, exception filters, dictionary initializers, and numerous other features.</p>        </td>
+
+</tr>
+
+<tr data-element-id="c0780049-036e-4bf8-8d7c-dfd9fe5c62cd" class="  ">
+        <td class="table-cell
+        left-table-cell
+        
+        standard-table-cell" width="32%">
+      
+
+
+
+<p data-element-id="852e000f-6837-4272-8a04-265dc0847f2c" class="element-section paragraph TBL" >
+C# 7.0 with Microsoft .NET Framework 4.7 and .NET Core 1.1 or 2.0 (Visual Studio 2017)</p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        standard-table-cell" width="68%">
+      
+
+
+
+<p data-element-id="141b3fc5-f113-41e2-8d9e-83a9b7401479" class="element-section paragraph TBL" >
+Added tuples, deconstructors, pattern matching, local functions, return by reference, and more.</p>        </td>
+
+</tr>
+
+<tr data-element-id="e1c1a57d-fa95-4f6c-b4c7-d56f7bf9976f" class="  ">
+        <td class="table-cell
+        left-table-cell
+        
+        standard-table-cell" width="32%">
+      
+
+
+
+<p data-element-id="815b59ce-d630-40df-b1c4-9037bb39c246" class="element-section paragraph TBL" >
+C# 8.0 with Microsoft .NET Framework 4.8 and .NET Core 3.0</p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        standard-table-cell" width="68%">
+      
+
+
+
+<p data-element-id="b6a9100d-819b-4741-8d67-333a2320e728" class="element-section paragraph TBL" >
+Added support for nullable reference types, advanced pattern matching, using declarations, static local functions, disposable ref structs, ranges and indices, and async streams (although Microsoft .NET Framework 4.8 does not support the last two features).</p>        </td>
+
+</tr>
+
+<tr data-element-id="029d6316-956f-4eab-a722-80a9ef2ee664" class="  ">
+        <td class="table-cell
+        left-table-cell
+        
+        standard-table-cell" width="32%">
+      
+
+
+
+<p data-element-id="bad6a2ec-b654-4ff6-a382-56e701008207" class="element-section paragraph TBL" >
+C# 9.0 with Microsoft .NET 5.0 (most of the .NET Framework functionality was merged into .NET Core)</p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        standard-table-cell" width="68%">
+      
+
+
+
+<p data-element-id="f986368b-e02d-4c28-9db2-417e52f0fbb5" class="element-section paragraph TBL" >
+Added support for records, relational pattern matching, top-level statements, source generators, and function pointers.</p>        </td>
+
+</tr>
+
+<tr data-element-id="f59bed5f-12a9-4f38-9b30-cacbdb5db5a0" class="  ">
+        <td class="table-cell
+        left-table-cell
+        
+        standard-table-cell" width="32%">
+      
+
+
+
+<p data-element-id="26ca6ca2-d3b7-4bbe-b50e-519f33ea0a41" class="element-section paragraph TBL" >
+C# 10.0 with .NET 6.0</p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        standard-table-cell" width="68%">
+      
+
+
+
+<p data-element-id="ab943e2a-8fb3-48b3-a99a-5501ac66494e" class="element-section paragraph TBL" >
+Added simplifications included record structs, global using directives, file-scoped namespaces, extended property patterns. In addition, caller argument expressions and more were added.</p>        </td>
+
+</tr>
+
+<tr data-element-id="8f5d7b25-5492-4c5a-aafd-bd9dcc21dcd9" class="  ">
+        <td class="table-cell
+        left-table-cell
+        
+        standard-table-cell" width="32%">
+      
+
+
+
+<p data-element-id="6067340f-b419-4bb9-81d3-19d542f3431c" class="element-section paragraph TBL" >
+C# 11 with .NET 7.0</p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        standard-table-cell" width="68%">
+      
+
+
+
+<p data-element-id="57bd41c9-38f0-4f93-82c6-8a16baee90b5" class="element-section paragraph TBL" >
+Added support for file-scoped types, generic math support, default struct initialization, raw literal strings, generic attributes, list patterns, required members, and more.</p>        </td>
+
+</tr>
+
+<tr data-element-id="48382a7a-5c7c-4c8e-b212-e25dce4f91d0" class="  ">
+        <td class="table-cell
+        left-table-cell
+        
+        standard-table-cell" width="32%">
+      
+
+
+
+<p data-element-id="7d05991a-fc71-4d69-9f32-ed6e9d837482" class="element-section paragraph TBL" >
+C# with .NET 8.0</p>        </td>
+        <td class="table-cell
+        
+        right-table-cell
+        standard-table-cell" width="68%">
+      
+
+
+
+<p data-element-id="fb199727-da82-4e70-9452-84ddc8b92415" class="element-section paragraph TBL" >
+Extended use of primary constructors beyond records, and the using alias directive to any type. Added optional parameters in lambda expressions, and more.</p>        </td>
+
+</tr>    </table>
+</div>
+
+
+
+
+
+
+<p data-element-id="941d9327-e535-4de8-9767-dcbca7a8b463" class="element-section paragraph CHAPBM" >
+Perhaps the most important framework feature add occurred alongside C# 6.0&#x2014;that is, cross-platform compilation. In other words, not only would the Microsoft .NET Framework run on Windows, but Microsoft also provided the .NET Core implementation that would run on Windows, Linux, and macOS. This means that with the same code base it is possible to compile and execute applications that run across multiple platforms. .NET Core, renamed to simply .NET with version 5.0, is an entire SDK with everything from the .NET Compiler Platform (&#x201C;Roslyn&#x201D;), which itself executes on Linux and macOS, to the .NET runtime, along with tools such as the dotnet command-line utility, dotnet CLI (which was introduced around the time of C# 7.0).</p>
+
+
+
+
+
+    </div>
+</body>
+</html>

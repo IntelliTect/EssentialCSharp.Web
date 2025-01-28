@@ -1,6 +1,8 @@
 [
   {
-    "Key": "hello-world",
+    "Keys": [
+      "introducing-c"
+    ],
     "PagePath": [
       "Chapters",
       "01",
@@ -9,9 +11,772 @@
     ],
     "ChapterNumber": 1,
     "PageNumber": 1,
-    "ChapterTitle": "Hello World",
-    "RawHeading": "Local Development Placeholder",
-    "AnchorId": "helloworld",
-    "IndentLevel": 0
+    "OrderOnPage": 0,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Overview",
+    "ContentHash": "74B5",
+    "AnchorId": "overview",
+    "IndentLevel": 0,
+    "IncludeInSitemapXml": true
+  },
+  {
+    "Keys": [
+      "hello-world"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "01.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 1,
+    "OrderOnPage": 1,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Hello, World",
+    "ContentHash": "C68C",
+    "AnchorId": "hello-world",
+    "IndentLevel": 1,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "creating-editing-compiling-and-running-c-source-code"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "01.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 1,
+    "OrderOnPage": 2,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Creating, Editing, Compiling, and Running C# Source Code",
+    "ContentHash": "8185",
+    "AnchorId": "creating-editing-compiling-and-running-c-source-code",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "with-dotnet-cli"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "01.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 1,
+    "OrderOnPage": 3,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "With Dotnet CLI",
+    "ContentHash": "E879",
+    "AnchorId": "with-dotnet-cli",
+    "IndentLevel": 3,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "with-visual-studio-2022-windows-or-mac"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "01.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 1,
+    "OrderOnPage": 4,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "With Visual Studio 2022 (Windows or Mac)",
+    "ContentHash": "ECF8",
+    "AnchorId": "with-visual-studio-2022-windows-or-mac",
+    "IndentLevel": 3,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "understanding-a-project"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "01.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 1,
+    "OrderOnPage": 5,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Understanding a Project",
+    "ContentHash": "E9E5",
+    "AnchorId": "understanding-a-project",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "compilation-and-execution"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "01.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 1,
+    "OrderOnPage": 6,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Compilation and Execution",
+    "ContentHash": "A4C6",
+    "AnchorId": "compilation-and-execution",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "essential-c-source-code"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "01.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 1,
+    "OrderOnPage": 7,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Essential C# Source Code",
+    "ContentHash": "527F",
+    "AnchorId": "essential-c-source-code",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "c-syntax-fundamentals"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "02.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 2,
+    "OrderOnPage": 0,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "C# Syntax Fundamentals",
+    "ContentHash": "983A",
+    "AnchorId": "c-syntax-fundamentals",
+    "IndentLevel": 1,
+    "IncludeInSitemapXml": true
+  },
+  {
+    "Keys": [
+      "statements-and-statement-delimiters"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "02.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 2,
+    "OrderOnPage": 1,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Statements and Statement Delimiters",
+    "ContentHash": "A624",
+    "AnchorId": "statements-and-statement-delimiters",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "introducing-a-class-and-a-method"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "02.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 2,
+    "OrderOnPage": 2,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Introducing a Class and a Method",
+    "ContentHash": "F9FF",
+    "AnchorId": "introducing-a-class-and-a-method",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "c-keywords"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "02.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 2,
+    "OrderOnPage": 3,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "C# Keywords",
+    "ContentHash": "1E24",
+    "AnchorId": "c-keywords",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "identifiers"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "02.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 2,
+    "OrderOnPage": 4,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Identifiers",
+    "ContentHash": "8156",
+    "AnchorId": "identifiers",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "type-definition"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "02.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 2,
+    "OrderOnPage": 5,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Type Definition",
+    "ContentHash": "FA33",
+    "AnchorId": "type-definition",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "main-method"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "02.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 2,
+    "OrderOnPage": 6,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Main Method",
+    "ContentHash": "52B1",
+    "AnchorId": "main-method",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "whitespace"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "02.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 2,
+    "OrderOnPage": 7,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Whitespace",
+    "ContentHash": "0151",
+    "AnchorId": "whitespace",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "working-with-variables"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "03.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 3,
+    "OrderOnPage": 0,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Working with Variables",
+    "ContentHash": "134A",
+    "AnchorId": "working-with-variables",
+    "IndentLevel": 1,
+    "IncludeInSitemapXml": true
+  },
+  {
+    "Keys": [
+      "introducing-data-types"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "03.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 3,
+    "OrderOnPage": 1,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Introducing Data Types",
+    "ContentHash": "EC83",
+    "AnchorId": "introducing-data-types",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "declaring-a-variable"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "03.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 3,
+    "OrderOnPage": 2,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Declaring a Variable",
+    "ContentHash": "98A8",
+    "AnchorId": "declaring-a-variable",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "assigning-a-variable"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "03.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 3,
+    "OrderOnPage": 3,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Assigning a Variable",
+    "ContentHash": "0143",
+    "AnchorId": "assigning-a-variable",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "using-a-variable"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "03.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 3,
+    "OrderOnPage": 4,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Using a Variable",
+    "ContentHash": "8C38",
+    "AnchorId": "using-a-variable",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "console-input-and-output"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "04.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 4,
+    "OrderOnPage": 0,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Console Input and Output",
+    "ContentHash": "C93C",
+    "AnchorId": "console-input-and-output",
+    "IndentLevel": 1,
+    "IncludeInSitemapXml": true
+  },
+  {
+    "Keys": [
+      "getting-input-from-the-console"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "04.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 4,
+    "OrderOnPage": 1,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Getting Input from the Console",
+    "ContentHash": "A17C",
+    "AnchorId": "getting-input-from-the-console",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "writing-output-to-the-console"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "04.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 4,
+    "OrderOnPage": 2,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Writing Output to the Console",
+    "ContentHash": "A935",
+    "AnchorId": "writing-output-to-the-console",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "comments"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "04.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 4,
+    "OrderOnPage": 3,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Comments",
+    "ContentHash": "F51C",
+    "AnchorId": "comments",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "debugging"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "04.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 4,
+    "OrderOnPage": 4,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Debugging",
+    "ContentHash": "B9AA",
+    "AnchorId": "debugging",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "managed-execution-and-the-common-language-infrastructure"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "05.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 5,
+    "OrderOnPage": 0,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Managed Execution and the Common Language Infrastructure",
+    "ContentHash": "0B6A",
+    "AnchorId": "managed-execution-and-the-common-language-infrastructure",
+    "IndentLevel": 1,
+    "IncludeInSitemapXml": true
+  },
+  {
+    "Keys": [
+      "common-intermediate-language-and-ildasm"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "05.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 5,
+    "OrderOnPage": 1,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Common Intermediate Language and Ildasm",
+    "ContentHash": "2200",
+    "AnchorId": "common-intermediate-language-and-ildasm",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "multiple-net-frameworks"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "06.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 6,
+    "OrderOnPage": 0,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Multiple .NET Frameworks",
+    "ContentHash": "9CE9",
+    "AnchorId": "multiple-net-frameworks",
+    "IndentLevel": 1,
+    "IncludeInSitemapXml": true
+  },
+  {
+    "Keys": [
+      "application-programming-interface"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "06.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 6,
+    "OrderOnPage": 1,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Application Programming Interface",
+    "ContentHash": "941F",
+    "AnchorId": "application-programming-interface",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "c-and-net-versioning"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "06.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 6,
+    "OrderOnPage": 2,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "C# and .NET Versioning",
+    "ContentHash": "3503",
+    "AnchorId": "c-and-net-versioning",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "chapter-1-summary"
+    ],
+    "PagePath": [
+      "Chapters",
+      "01",
+      "Pages",
+      "07.html"
+    ],
+    "ChapterNumber": 1,
+    "PageNumber": 7,
+    "OrderOnPage": 0,
+    "ChapterTitle": "Introducing C#",
+    "RawHeading": "Chapter 1: Summary",
+    "ContentHash": "DE96",
+    "AnchorId": "chapter-1-summary",
+    "IndentLevel": 1,
+    "IncludeInSitemapXml": true
+  },
+  {
+    "Keys": [
+      "data-types"
+    ],
+    "PagePath": [
+      "Chapters",
+      "02",
+      "Pages",
+      "01.html"
+    ],
+    "ChapterNumber": 2,
+    "PageNumber": 1,
+    "OrderOnPage": 0,
+    "ChapterTitle": "Data Types",
+    "RawHeading": "Overview",
+    "ContentHash": "61DD",
+    "AnchorId": "overview",
+    "IndentLevel": 0,
+    "IncludeInSitemapXml": true
+  },
+  {
+    "Keys": [
+      "type-name-forms"
+    ],
+    "PagePath": [
+      "Chapters",
+      "02",
+      "Pages",
+      "01.html"
+    ],
+    "ChapterNumber": 2,
+    "PageNumber": 1,
+    "OrderOnPage": 1,
+    "ChapterTitle": "Data Types",
+    "RawHeading": "Type Name Forms",
+    "ContentHash": "BAB3",
+    "AnchorId": "type-name-forms",
+    "IndentLevel": 1,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "fundamental-numeric-types"
+    ],
+    "PagePath": [
+      "Chapters",
+      "02",
+      "Pages",
+      "02.html"
+    ],
+    "ChapterNumber": 2,
+    "PageNumber": 2,
+    "OrderOnPage": 0,
+    "ChapterTitle": "Data Types",
+    "RawHeading": "Fundamental Numeric Types",
+    "ContentHash": "7EC2",
+    "AnchorId": "fundamental-numeric-types",
+    "IndentLevel": 1,
+    "IncludeInSitemapXml": true
+  },
+  {
+    "Keys": [
+      "integer-types"
+    ],
+    "PagePath": [
+      "Chapters",
+      "02",
+      "Pages",
+      "02.html"
+    ],
+    "ChapterNumber": 2,
+    "PageNumber": 2,
+    "OrderOnPage": 1,
+    "ChapterTitle": "Data Types",
+    "RawHeading": "Integer Types",
+    "ContentHash": "FB7E",
+    "AnchorId": "integer-types",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "floating-point-types-float-double"
+    ],
+    "PagePath": [
+      "Chapters",
+      "02",
+      "Pages",
+      "02.html"
+    ],
+    "ChapterNumber": 2,
+    "PageNumber": 2,
+    "OrderOnPage": 2,
+    "ChapterTitle": "Data Types",
+    "RawHeading": "Floating-Point Types (float, double)",
+    "ContentHash": "95AB",
+    "AnchorId": "floating-point-types-float-double",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "decimal-type"
+    ],
+    "PagePath": [
+      "Chapters",
+      "02",
+      "Pages",
+      "02.html"
+    ],
+    "ChapterNumber": 2,
+    "PageNumber": 2,
+    "OrderOnPage": 3,
+    "ChapterTitle": "Data Types",
+    "RawHeading": "Decimal Type",
+    "ContentHash": "7C20",
+    "AnchorId": "decimal-type",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
+  },
+  {
+    "Keys": [
+      "literal-values"
+    ],
+    "PagePath": [
+      "Chapters",
+      "02",
+      "Pages",
+      "02.html"
+    ],
+    "ChapterNumber": 2,
+    "PageNumber": 2,
+    "OrderOnPage": 4,
+    "ChapterTitle": "Data Types",
+    "RawHeading": "Literal Values",
+    "ContentHash": "BFB8",
+    "AnchorId": "literal-values",
+    "IndentLevel": 2,
+    "IncludeInSitemapXml": false
   }
 ]

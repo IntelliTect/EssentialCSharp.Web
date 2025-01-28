@@ -1,0 +1,1930 @@
+[
+  {
+    "Type": 1,
+    "Guideline": "DO NOT define a struct unless it logically represents a single value, consumes 16 bytes or less of storage, is immutable, and is infrequently boxed.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": ""
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use record struct when declaring a struct (C# 10.0).",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Structs",
+    "ActualSubsection": "Record Struct Code Generation"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use record class (C# 10.0) for clarity, rather than the abbreviated record-only syntax.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Structs",
+    "ActualSubsection": "Record Struct Code Generation"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use records, where possible, if you want equality based on data rather than identity.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Classes",
+    "ActualSubsection": "Record Classes"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use PascalCase for the positional parameters of the record (C# 9.0).",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Data Storage with Properties"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO define all reference type positional parameters as nullable if not providing a custom property implementation that checks for null.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Data Storage with Properties"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO implement custom non-nullable properties for all non-nullable positional parameters.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Data Storage with Properties"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use the readonly modifier on a struct definition, making value types immutable.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Types",
+    "ActualSubsection": "Immutable Value Types"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use read-only or init-only setter automatically implemented properties rather than fields within structs.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Types",
+    "ActualSubsection": "Immutable Value Types"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO ensure that the default value of a struct is valid; encapsulation cannot prevent obtaining the default \u201Call zero\u201D value of a struct.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Structs",
+    "ActualSubsection": "Record Struct Initialization"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT rely on either default constructors or member initialization at declaration to run on a value type.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Structs",
+    "ActualSubsection": "Record Struct Initialization"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO override ToString() whenever useful developer-oriented diagnostic strings can be returned.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "ToString()",
+    "ActualSubsection": "Overriding ToString()"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER trying to keep the string returned from ToString() short.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "ToString()",
+    "ActualSubsection": "Overriding ToString()"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT return an empty string or null from ToString().",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "ToString()",
+    "ActualSubsection": "Overriding ToString()"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT throw exceptions or make observable side effects (change the object state) from ToString().",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "ToString()",
+    "ActualSubsection": "Overriding ToString()"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO provide an overloaded ToString(string format) or implement IFormattable if the return value requires formatting or is culture-sensitive (e.g., DateTime).",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "ToString()",
+    "ActualSubsection": "Overriding ToString()"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER returning a unique string from ToString() so as to identify the object instance.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "ToString()",
+    "ActualSubsection": "Overriding ToString()"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT use the enum type name as part of the values name.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Enums",
+    "ActualSubsection": "Enums"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use an enum type name that is singular unless the enum is a flag.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Enums",
+    "ActualSubsection": "Enums"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER using the default 32-bit integer type as the underlying type of an enum. Use a smaller type only if you must do so for interoperability; use a larger type only if you are creating a flags enum with more than 32 flags.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": null
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER adding new members to existing enums, but keep in mind the compatibility risk.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": null
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID creating enums that represent an \u201Cincomplete\u201D set of values, such as product version numbers.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": null
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID creating \u201Creserved for future use\u201D values in an enum.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": null
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID enums that contain a single value.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": null
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO provide a value of 0 (none) for simple enums, knowing that 0 will be the default value when no explicit initialization is provided.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": null
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID direct enum/string conversions where the string must be localized into the user\u2019s language.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Enums",
+    "ActualSubsection": "Converting between Enums and Strings"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use the FlagsAttribute to mark enums that contain flag values.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Enums",
+    "ActualSubsection": "Enums as Flags"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO provide a None value equal to 0 for all enums.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Enums",
+    "ActualSubsection": "Enums as Flags"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID creating flag enums where the zero value has a meaning other than \u201Cno flags are set.\u201D",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Enums",
+    "ActualSubsection": "Enums as Flags"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER providing special values for commonly used combinations of flags.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Enums",
+    "ActualSubsection": "Enums as Flags"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT include \u201Csentinel\u201D values (such as a value called Maximum); such values can be confusing to the user.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Enums",
+    "ActualSubsection": "Enums as Flags"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use powers of 2 to ensure that all flag combinations are represented uniquely.",
+    "ChapterNumber": 9,
+    "ChapterTitle": "Introducing Structs and Records",
+    "SanitizedSubsection": "Enums",
+    "ActualSubsection": "Enums as Flags"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO check that the value of a delegate is not null before invoking it.",
+    "ChapterNumber": 14,
+    "ChapterTitle": "Events",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Check for null"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use the null-conditional operator prior to calling Invoke() starting in C# 6.0.",
+    "ChapterNumber": 14,
+    "ChapterTitle": "Events",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Check for null"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO check that the value of a delegate is not null before invoking it (possibly by using the null-conditional operator in C# 6.0).",
+    "ChapterNumber": 14,
+    "ChapterTitle": "Events",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Coding Conventions"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO pass the instance of the class as the value of the sender for nonstatic events.",
+    "ChapterNumber": 14,
+    "ChapterTitle": "Events",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Coding Conventions"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO pass null as the sender for static events.",
+    "ChapterNumber": 14,
+    "ChapterTitle": "Events",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Coding Conventions"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT pass null as the value of the eventArgs argument.",
+    "ChapterNumber": 14,
+    "ChapterTitle": "Events",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Coding Conventions"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use System.EventArgs or a type that derives from System.EventArgs for a TEventArgs type.",
+    "ChapterNumber": 14,
+    "ChapterTitle": "Events",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Coding Conventions"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER using a subclass of System.EventArgs as the event argument type (TEventArgs) unless you are sure the event will never need to carry any data.",
+    "ChapterNumber": 14,
+    "ChapterTitle": "Events",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Coding Conventions"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO throw an ArgumentException or one of its subtypes if bad arguments are passed to a member. Prefer the most derived exception type (e.g., ArgumentNullException), if applicable.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Types",
+    "ActualSubsection": "Multiple Exception Types"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT throw a System.SystemException or an exception type that derives from it.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Types",
+    "ActualSubsection": "Multiple Exception Types"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT throw a System.Exception, System.NullReferenceException, or System.ApplicationException.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Types",
+    "ActualSubsection": "Multiple Exception Types"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER terminating the process by calling System.Environment.FailFast() if the program encounters a scenario where it is unsafe to continue execution.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Types",
+    "ActualSubsection": "Multiple Exception Types"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use nameof for the paramName argument passed into argument exception types that take such a parameter. Examples of such exceptions include ArgumentException, ArgumentOutOfRangeException, and ArgumentNullException.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Types",
+    "ActualSubsection": "Multiple Exception Types"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID exception reporting or logging lower in the call stack.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Guidelines for Exception Handling"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT over-catch. Exceptions should be allowed to propagate up the call stack unless it is clearly understood how to programmatically address those errors lower in the stack.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Guidelines for Exception Handling"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER catching a specific exception when you understand why it was thrown in a given context and can respond to the failure programmatically.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Guidelines for Exception Handling"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID catching System.Exception or System.SystemException except in top-level exception handlers that perform final cleanup operations before rethrowing the exception.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Guidelines for Exception Handling"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use throw; rather than throw \u003Cexception object\u003E inside a catch block.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Guidelines for Exception Handling"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use exception filters to avoid rethrowing an exception from within a catch block.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Guidelines for Exception Handling"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use caution when rethrowing different exceptions.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Guidelines for Exception Handling"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID throwing exceptions from exception filters.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Guidelines for Exception Handling"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID exception filters with logic that might implicitly change over time.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Guidelines for Exception Handling"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID deep exception hierarchies.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Defining Custom Exceptions"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT create a new exception type if the exception would not be handled differently than an existing CLR exception. Throw the existing framework exception instead.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Defining Custom Exceptions"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO create a new exception type to communicate a unique program error that cannot be communicated using an existing CLR exception and that can be programmatically handled in a different way than any other existing CLR exception type.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Defining Custom Exceptions"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO provide a parameterless constructor on all custom exception types. Also provide constructors that take a message and an inner exception.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Defining Custom Exceptions"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO name exception classes with the \u201CException\u201D suffix.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Defining Custom Exceptions"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO make exceptions runtime-serializable.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Defining Custom Exceptions"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER providing exception properties for programmatic access to extra information relevant to the exception.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Defining Custom Exceptions"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER wrapping specific exceptions thrown from the lower layer in a more appropriate exception if the lower-layer exception does not make sense in the context of the higher-layer operation.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Rethrowing a Wrapped Exception"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO specify the inner exception when wrapping exceptions.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Rethrowing a Wrapped Exception"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO target developers as the audience for exceptions, identifying both the problem and the mechanism to resolve it, where possible.",
+    "ChapterNumber": 11,
+    "ChapterTitle": "Exception Handling",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Rethrowing a Wrapped Exception"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO create public managed wrappers around unmanaged methods that use the conventions of managed code, such as structured exception handling.",
+    "ChapterNumber": 23,
+    "ChapterTitle": "Platform Interoperability and Unsafe Code",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Error Handling"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT unnecessarily replicate existing managed classes that already perform the function of the unmanaged API.",
+    "ChapterNumber": 23,
+    "ChapterTitle": "Platform Interoperability and Unsafe Code",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "P/Invoke Guidelines"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO declare extern methods as private or internal.",
+    "ChapterNumber": 23,
+    "ChapterTitle": "Platform Interoperability and Unsafe Code",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "P/Invoke Guidelines"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO provide public wrapper methods that use managed conventions such as structured exception handling, use of enums for special values, and so on.",
+    "ChapterNumber": 23,
+    "ChapterTitle": "Platform Interoperability and Unsafe Code",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "P/Invoke Guidelines"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO simplify the wrapper methods by choosing default values for unnecessary parameters.",
+    "ChapterNumber": 23,
+    "ChapterTitle": "Platform Interoperability and Unsafe Code",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "P/Invoke Guidelines"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use the SetLastErrorAttribute on Windows to turn APIs that use SetLastError error codes into methods that throw Win32Exception.",
+    "ChapterNumber": 23,
+    "ChapterTitle": "Platform Interoperability and Unsafe Code",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "P/Invoke Guidelines"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO extend SafeHandle or implement IDisposable and create a finalizer to ensure that unmanaged resources can be cleaned up effectively.",
+    "ChapterNumber": 23,
+    "ChapterTitle": "Platform Interoperability and Unsafe Code",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "P/Invoke Guidelines"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use delegate types that match the signature of the desired method when an unmanaged API requires a function pointer.",
+    "ChapterNumber": 23,
+    "ChapterTitle": "Platform Interoperability and Unsafe Code",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "P/Invoke Guidelines"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use ref parameters rather than pointer types when possible.",
+    "ChapterNumber": 23,
+    "ChapterTitle": "Platform Interoperability and Unsafe Code",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "P/Invoke Guidelines"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO ensure that custom comparison logic produces a consistent \u201Ctotal order.\u201D",
+    "ChapterNumber": 17,
+    "ChapterTitle": "Building Custom Collections",
+    "SanitizedSubsection": "Equality",
+    "ActualSubsection": "Total Ordering"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT make any unwarranted assumptions about the order in which elements of a collection will be enumerated. If the collection is not documented as enumerating its elements in a particular order, it is not guaranteed to produce elements in any particular order.",
+    "ChapterNumber": 17,
+    "ChapterTitle": "Building Custom Collections",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Dictionary Collections: Dictionary\u003CTKey, TValue\u003E"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT represent an empty collection with a null reference.",
+    "ChapterNumber": 17,
+    "ChapterTitle": "Building Custom Collections",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Returning null or an Empty Collection"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER using the Enumerable.Empty\u003CT\u003E() method instead.",
+    "ChapterNumber": 17,
+    "ChapterTitle": "Building Custom Collections",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Returning null or an Empty Collection"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER whether the readability benefit of defining your own delegate type outweighs the convenience of using a predefined generic delegate type.",
+    "ChapterNumber": 13,
+    "ChapterTitle": "Delegates and Lambda Expressions",
+    "SanitizedSubsection": "Types",
+    "ActualSubsection": "General-Purpose Delegate Types: System.Func and System.Action"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER omitting the types from lambda formal parameter lists when the types are obvious to the reader or when they are an insignificant detail.",
+    "ChapterNumber": 13,
+    "ChapterTitle": "Delegates and Lambda Expressions",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Statement Lambdas"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID the anonymous method syntax in new code; prefer the more compact lambda expression syntax.",
+    "ChapterNumber": 13,
+    "ChapterTitle": "Delegates and Lambda Expressions",
+    "SanitizedSubsection": "Methods",
+    "ActualSubsection": "Anonymous Methods"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID using implicitly typed local variables (var) unless the data type of the assigned value is obvious.",
+    "ChapterNumber": 3,
+    "ChapterTitle": "More with Data Types",
+    "SanitizedSubsection": "Variables",
+    "ActualSubsection": "Implicitly Typed Local Variables"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use camelCasing for variable declarations using tuple syntax.",
+    "ChapterNumber": 3,
+    "ChapterTitle": "More with Data Types",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Tuples"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER using PascalCasing for all tuple item names.",
+    "ChapterNumber": 3,
+    "ChapterTitle": "More with Data Types",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Tuples"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER checking the array length before indexing into an array rather than assuming the length.",
+    "ChapterNumber": 3,
+    "ChapterTitle": "More with Data Types",
+    "SanitizedSubsection": "Arrays",
+    "ActualSubsection": "Using an Array"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER using the index from end operator (^) rather than Length - 1 with C# 8.0 or higher.",
+    "ChapterNumber": 3,
+    "ChapterTitle": "More with Data Types",
+    "SanitizedSubsection": "Arrays",
+    "ActualSubsection": "Using an Array"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use System.Linq.Enumerable.Any() rather than calling patents.Count() when checking whether there are more than zero items.",
+    "ChapterNumber": 15,
+    "ChapterTitle": "Collection Interfaces with Standard Query Operators",
+    "SanitizedSubsection": "Methods",
+    "ActualSubsection": "Counting Elements with Count()"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use a collection\u2019s Count property (if available) instead of calling the System.Linq.Enumerable.Count() method.",
+    "ChapterNumber": 15,
+    "ChapterTitle": "Collection Interfaces with Standard Query Operators",
+    "SanitizedSubsection": "Methods",
+    "ActualSubsection": "Counting Elements with Count()"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT call an OrderBy() following a prior OrderBy() method call. Use ThenBy() to sequence items by more than one value.",
+    "ChapterNumber": 15,
+    "ChapterTitle": "Collection Interfaces with Standard Query Operators",
+    "SanitizedSubsection": "Methods",
+    "ActualSubsection": "Sorting with OrderBy() and ThenBy()"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO cancel unfinished tasks rather than allowing them to run during application shutdown.",
+    "ChapterNumber": 19,
+    "ChapterTitle": "Introducing Multithreading",
+    "SanitizedSubsection": "Tasks",
+    "ActualSubsection": "Canceling a Task"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO inform the task factory that a newly created task is likely to be long-running so that it can manage it appropriately.",
+    "ChapterNumber": 19,
+    "ChapterTitle": "Introducing Multithreading",
+    "SanitizedSubsection": "Tasks",
+    "ActualSubsection": "Long-Running Tasks"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use TaskCreationOptions.LongRunning sparingly.",
+    "ChapterNumber": 19,
+    "ChapterTitle": "Introducing Multithreading",
+    "SanitizedSubsection": "Tasks",
+    "ActualSubsection": "Long-Running Tasks"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID calling Thread.Sleep() in production code.",
+    "ChapterNumber": 19,
+    "ChapterTitle": "Introducing Multithreading",
+    "SanitizedSubsection": "Threads",
+    "ActualSubsection": "Working with System.Threading"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use tasks and related APIs in favor of System.Theading classes such as Thread and ThreadPool.",
+    "ChapterNumber": 19,
+    "ChapterTitle": "Introducing Multithreading",
+    "SanitizedSubsection": "Threads",
+    "ActualSubsection": "Working with System.Threading"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use PascalCasing and an \u201CI\u201D prefix for interface names.",
+    "ChapterNumber": 8,
+    "ChapterTitle": "Interfaces",
+    "SanitizedSubsection": "Interfaces",
+    "ActualSubsection": "Introducing Interfaces"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT add members without a default implementation to a published interface.",
+    "ChapterNumber": 8,
+    "ChapterTitle": "Interfaces",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Versioning"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER using extension methods or an additional interface in place of default interface members when adding methods to a published interface.",
+    "ChapterNumber": 8,
+    "ChapterTitle": "Interfaces",
+    "SanitizedSubsection": "Methods",
+    "ActualSubsection": "Extension Methods versus Default Interface Members"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use extension methods when the interface providing the polymorphic behavior is not under your control.",
+    "ChapterNumber": 8,
+    "ChapterTitle": "Interfaces",
+    "SanitizedSubsection": "Methods",
+    "ActualSubsection": "Extension Methods versus Default Interface Members"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER defining an interface if you need to support its functionality on types that already inherit from some other type.",
+    "ChapterNumber": 8,
+    "ChapterTitle": "Interfaces",
+    "SanitizedSubsection": "Interfaces",
+    "ActualSubsection": "Interfaces Compared with Abstract Classes"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID using \u201Cmarker\u201D interfaces with no members; use attributes instead.",
+    "ChapterNumber": 8,
+    "ChapterTitle": "Interfaces",
+    "SanitizedSubsection": "Interfaces",
+    "ActualSubsection": "Interfaces Compared with Attributes"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO favor clarity over brevity when naming identifiers.",
+    "ChapterNumber": 1,
+    "ChapterTitle": "Introducing C#",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Identifiers"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT use abbreviations or contractions within identifier names.",
+    "ChapterNumber": 1,
+    "ChapterTitle": "Introducing C#",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Identifiers"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT use any acronyms unless they are widely accepted, in which case use them consistently.",
+    "ChapterNumber": 1,
+    "ChapterTitle": "Introducing C#",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Identifiers"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO capitalize both characters in two-character acronyms, except for the first word of a camelCased identifier.",
+    "ChapterNumber": 1,
+    "ChapterTitle": "Introducing C#",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": null
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO capitalize only the first character in acronyms with three or more characters, except for the first word of a camelCased identifier.",
+    "ChapterNumber": 1,
+    "ChapterTitle": "Introducing C#",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": null
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT capitalize any of the characters in acronyms at the beginning of a camelCased identifier.",
+    "ChapterNumber": 1,
+    "ChapterTitle": "Introducing C#",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": null
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT use Hungarian notation (that is, do not encode the type of a variable in its name).",
+    "ChapterNumber": 1,
+    "ChapterTitle": "Introducing C#",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": null
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO name classes with nouns or noun phrases.",
+    "ChapterNumber": 1,
+    "ChapterTitle": "Introducing C#",
+    "SanitizedSubsection": "Types",
+    "ActualSubsection": "Type Definition"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use PascalCasing for all class names.",
+    "ChapterNumber": 1,
+    "ChapterTitle": "Introducing C#",
+    "SanitizedSubsection": "Types",
+    "ActualSubsection": "Type Definition"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use camelCasing for local variable names.",
+    "ChapterNumber": 1,
+    "ChapterTitle": "Introducing C#",
+    "SanitizedSubsection": "Variables",
+    "ActualSubsection": "Declaring a Variable"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT use comments unless they describe something that is not obvious to someone other than the developer who wrote the code.",
+    "ChapterNumber": 1,
+    "ChapterTitle": "Introducing C#",
+    "SanitizedSubsection": "Comments",
+    "ActualSubsection": "Comments"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO favor writing clearer code over entering comments to clarify a complicated algorithm.",
+    "ChapterNumber": 1,
+    "ChapterTitle": "Introducing C#",
+    "SanitizedSubsection": "Comments",
+    "ActualSubsection": "Comments"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID locking on this, System.Type, or a string.",
+    "ChapterNumber": 22,
+    "ChapterTitle": "Thread Synchronization",
+    "SanitizedSubsection": "Threads",
+    "ActualSubsection": "Why to Avoid Locking on this, typeof(type), and string"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO declare a separate, read-only synchronization variable of type object for the synchronization target.",
+    "ChapterNumber": 22,
+    "ChapterTitle": "Thread Synchronization",
+    "SanitizedSubsection": "Threads",
+    "ActualSubsection": "Why to Avoid Locking on this, typeof(type), and string"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID using the MethodImplAttribute for synchronization.",
+    "ChapterNumber": 22,
+    "ChapterTitle": "Thread Synchronization",
+    "SanitizedSubsection": "Synchronization",
+    "ActualSubsection": "Avoid Synchronizing with MethodImplAttribute"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT request exclusive ownership of the same two or more synchronization targets in different orders.",
+    "ChapterNumber": 22,
+    "ChapterTitle": "Thread Synchronization",
+    "SanitizedSubsection": "Threads",
+    "ActualSubsection": "Avoiding Unnecessary Locking"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO ensure that code that concurrently holds multiple locks always acquires them in the same order.",
+    "ChapterNumber": 22,
+    "ChapterTitle": "Thread Synchronization",
+    "SanitizedSubsection": "Threads",
+    "ActualSubsection": "Avoiding Unnecessary Locking"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO encapsulate mutable static data in public APIs with synchronization logic.",
+    "ChapterNumber": 22,
+    "ChapterTitle": "Thread Synchronization",
+    "SanitizedSubsection": "Threads",
+    "ActualSubsection": "Avoiding Unnecessary Locking"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID synchronization on simple reading or writing of values no bigger than a native (pointer-size) integer, as such operations are automatically atomic.",
+    "ChapterNumber": 22,
+    "ChapterTitle": "Thread Synchronization",
+    "SanitizedSubsection": "Threads",
+    "ActualSubsection": "Avoiding Unnecessary Locking"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO apply AssemblyVersionAttribute to assemblies with public types.",
+    "ChapterNumber": 18,
+    "ChapterTitle": "Reflection, Attributes, and Dynamic Programming",
+    "SanitizedSubsection": "Assemblies",
+    "ActualSubsection": "Attributes"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER applying AssemblyFileVersionAttribute and AssemblyCopyrightAttribute to provide additional information about the assembly.",
+    "ChapterNumber": 18,
+    "ChapterTitle": "Reflection, Attributes, and Dynamic Programming",
+    "SanitizedSubsection": "Assemblies",
+    "ActualSubsection": "Attributes"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO apply the following information assembly attributes: System.Reflection.AssemblyCompanyAttribute, System.Reflection.AssemblyCopyrightAttribute, System.Reflection.AssemblyDescriptionAttribute, and System.Reflection.AssemblyProductAttribute.",
+    "ChapterNumber": 18,
+    "ChapterTitle": "Reflection, Attributes, and Dynamic Programming",
+    "SanitizedSubsection": "Assemblies",
+    "ActualSubsection": "Attributes"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO name custom attribute classes with the suffix Attribute.",
+    "ChapterNumber": 18,
+    "ChapterTitle": "Reflection, Attributes, and Dynamic Programming",
+    "SanitizedSubsection": "Assemblies",
+    "ActualSubsection": "Custom Attributes"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO provide get-only properties (without public setters) on attributes with required property values.",
+    "ChapterNumber": 18,
+    "ChapterTitle": "Reflection, Attributes, and Dynamic Programming",
+    "SanitizedSubsection": "Assemblies",
+    "ActualSubsection": "Initializing an Attribute through a Constructor"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO provide constructor parameters to initialize properties on attributes with required properties. Each parameter should have the same name (albeit with different casing) as the corresponding property.",
+    "ChapterNumber": 18,
+    "ChapterTitle": "Reflection, Attributes, and Dynamic Programming",
+    "SanitizedSubsection": "Assemblies",
+    "ActualSubsection": "Initializing an Attribute through a Constructor"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID providing constructor parameters to initialize attribute properties corresponding to the optional arguments (and, therefore, avoid overloading custom attribute constructors).",
+    "ChapterNumber": 18,
+    "ChapterTitle": "Reflection, Attributes, and Dynamic Programming",
+    "SanitizedSubsection": "Assemblies",
+    "ActualSubsection": "Initializing an Attribute through a Constructor"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO apply the AttributeUsageAttribute class to custom attributes.",
+    "ChapterNumber": 18,
+    "ChapterTitle": "Reflection, Attributes, and Dynamic Programming",
+    "SanitizedSubsection": "Assemblies",
+    "ActualSubsection": "System.AttributeUsageAttribute"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT explicitly pass arguments for Caller* attribute decorated parameters.",
+    "ChapterNumber": 18,
+    "ChapterTitle": "Reflection, Attributes, and Dynamic Programming",
+    "SanitizedSubsection": "Assemblies",
+    "ActualSubsection": "Caller* Attributes"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use non-nullable string for the data type of Caller* attribute decorated string parameters.",
+    "ChapterNumber": 18,
+    "ChapterTitle": "Reflection, Attributes, and Dynamic Programming",
+    "SanitizedSubsection": "Assemblies",
+    "ActualSubsection": "Caller* Attributes"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO assign null! for the default value of Caller* attribute decorated string parameters.",
+    "ChapterNumber": 18,
+    "ChapterTitle": "Reflection, Attributes, and Dynamic Programming",
+    "SanitizedSubsection": "Assemblies",
+    "ActualSubsection": "Caller* Attributes"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO choose meaningful names for type parameters and prefix the name with T.",
+    "ChapterNumber": 12,
+    "ChapterTitle": "Generics",
+    "SanitizedSubsection": "Types",
+    "ActualSubsection": "Type Parameter Naming Guidelines"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER indicating a constraint in the name of a type parameter.",
+    "ChapterNumber": 12,
+    "ChapterTitle": "Generics",
+    "SanitizedSubsection": "Types",
+    "ActualSubsection": "Type Parameter Naming Guidelines"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO place multiple generic semantically equivalent classes into a single file if they differ only by the number of generic parameters.",
+    "ChapterNumber": 12,
+    "ChapterTitle": "Generics",
+    "SanitizedSubsection": "Parameters",
+    "ActualSubsection": "Multiple Type Parameters"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID shadowing a type parameter of an outer type with an identically named type parameter of a nested type.",
+    "ChapterNumber": 12,
+    "ChapterTitle": "Generics",
+    "SanitizedSubsection": "Types",
+    "ActualSubsection": "Nested Generic Types"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID unsafe array covariance. Instead, CONSIDER converting the array to the read-only interface IEnumerable\u003CT\u003E, which can be safely converted via covariant conversions.",
+    "ChapterNumber": 12,
+    "ChapterTitle": "Generics",
+    "SanitizedSubsection": "Arrays",
+    "ActualSubsection": "Support for Unsafe Covariance in Arrays"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use parallel loops when the computations performed can be easily split up into many mutually independent processor-bound computations that can be executed in any order on any thread.",
+    "ChapterNumber": 21,
+    "ChapterTitle": "Iterating in Parallel",
+    "SanitizedSubsection": "Branches",
+    "ActualSubsection": "Executing Loop Iterations in Parallel"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID placing more than one class in a single source file.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Classes",
+    "ActualSubsection": "Declaring and Instantiating a Class"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO name the source file with the name of the public type it contains.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Classes",
+    "ActualSubsection": "Declaring and Instantiating a Class"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID target-typed new expressions when the data type of the constructor is not obvious.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": null
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER use target-typed new expressions when the data type of the constructor is obvious.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": null
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use properties for simple access to simple data with simple computations.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Property and Field Guidelines"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID throwing exceptions from property getters.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Property and Field Guidelines"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO preserve the original property value if the property throws an exception.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Property and Field Guidelines"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER using the same casing on a property\u2019s backing field as that used in the property, distinguishing the backing field with an \u201C_\u201D prefix.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Property and Field Guidelines"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO name properties using a noun, noun phrase, or adjective.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Property and Field Guidelines"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER giving a property the same name as its type.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Property and Field Guidelines"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID naming fields with camelCase.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Property and Field Guidelines"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO favor prefixing Boolean properties with \u201CIs,\u201D \u201CCan,\u201D or \u201CHas,\u201D when that practice adds value.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Property and Field Guidelines"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO declare all instance fields as private (and expose them via a property).",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Property and Field Guidelines"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO name properties with PascalCase.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Property and Field Guidelines"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO favor automatically implemented properties over fields.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Property and Field Guidelines"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO favor automatically implemented properties over using fully expanded ones if there is no additional implementation logic.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Property and Field Guidelines"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID accessing the backing field of a property outside the property, even from within the containing class.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Using Properties with Validation"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO create read-only properties if the property value should not be changed.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Read-Only and Write-Only Properties"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO create read-only automatically implemented properties, rather than read-only properties with a backing field if the property value should not be changed.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Read-Only and Write-Only Properties"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO apply appropriate accessibility modifiers on implementations of getters and setters on all properties.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Access Modifiers on Getters and Setters"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT provide set-only properties or properties with the setter having broader accessibility than the getter.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Access Modifiers on Getters and Setters"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO provide sensible defaults for all properties, ensuring that defaults do not result in a security hole or significantly inefficient code.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Object Initializers"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO allow properties to be set in any order, even if this results in a temporarily invalid object state.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Object Initializers"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use the same name for constructor parameters (camelCase) and properties (PascalCase) if the constructor parameters are used to simply set the property.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Overloading Constructors"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO provide constructor optional parameters or constructor overloads that initialize properties with good defaults.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Overloading Constructors"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO implement non-nullable read/write reference fully implemented properties with a nullable backing field, a null-forgiveness operator when returning the field from the getter, and non-null validation in the property setter.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Read-Only Automatically Implemented Reference Type Properties"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO assign non-nullable reference type properties before instantiation completes.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Read-Only Automatically Implemented Reference Type Properties"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO implement non-nullable reference type automatically implemented properties as read-only.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Read-Only Automatically Implemented Reference Type Properties"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use a nullable check for all reference type properties and fields that are not initialized before instantiation completes.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Properties",
+    "ActualSubsection": "Read-Only Automatically Implemented Reference Type Properties"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT use constructor parameters to initialize required properties; instead, rely on object initializer\u2013specified values.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "required Modifier"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT use the SetRequiredParameters attribute unless all required parameters are assigned valid values during construction.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "required Modifier"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER having a default constructor only on types with required parameters, relying on the object initializer to set both required and non-required members.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "required Modifier"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID adding required members to released types to avoid breaking the compile on existing code.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "required Modifier"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID required members where the default value of the type is valid.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "required Modifier"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER initializing static fields inline rather than explicitly using static constructors or declaration assigned values.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Static Constructors"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID frivolously defining extension methods, especially on types you don\u2019t own.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Methods",
+    "ActualSubsection": "Extension Methods"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use constant fields for values that will never change.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Fields",
+    "ActualSubsection": "const"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID constant fields for values that will change over time.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Fields",
+    "ActualSubsection": "const"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO favor read-only automatically implemented properties over read-only fields.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "readonly"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID publicly exposed nested types. The only exception is if the declaration of such a type is unlikely or pertains to an advanced customization scenario.",
+    "ChapterNumber": 6,
+    "ChapterTitle": "Classes",
+    "SanitizedSubsection": "Classes",
+    "ActualSubsection": "Nested Classes"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use query expression syntax to make queries easier to read, particularly if they involve complex from, let, join, or group clauses.",
+    "ChapterNumber": 16,
+    "ChapterTitle": "LINQ with Query Expressions",
+    "SanitizedSubsection": "Methods",
+    "ActualSubsection": "Query Expressions Are Just Method Invocations"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER using the standard query operators (method call form) if the query involves operations that do not have a query expression syntax, such as Count(), TakeWhile(), or Distinct().",
+    "ChapterNumber": 16,
+    "ChapterTitle": "LINQ with Query Expressions",
+    "SanitizedSubsection": "Methods",
+    "ActualSubsection": "Query Expressions Are Just Method Invocations"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use the C# keyword rather than the unqualified name when specifying a data type (e.g., string rather than String).",
+    "ChapterNumber": 2,
+    "ChapterTitle": "Data Types",
+    "SanitizedSubsection": "Types",
+    "ActualSubsection": "Type Name Forms"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO favor consistency rather than variety within your code.",
+    "ChapterNumber": 2,
+    "ChapterTitle": "Data Types",
+    "SanitizedSubsection": "Types",
+    "ActualSubsection": "Type Name Forms"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use uppercase literal suffixes (e.g., 1.618033988749895M).",
+    "ChapterNumber": 2,
+    "ChapterTitle": "Data Types",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Literal Values"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO rely on System.Console.WriteLine() and System.Environment.NewLine rather than \\n to accommodate Windows-specific operating system idiosyncrasies with the same code that runs on Linux and macOS.",
+    "ChapterNumber": 2,
+    "ChapterTitle": "Data Types",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Newline"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT throw exceptions from within the implementation of operator overloading.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Comparison Operators (==, !=, \u003C, \u003E, \u003C=, \u003E=)"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT provide an implicit conversion operator if the conversion is lossy.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Conversions",
+    "ActualSubsection": "Guidelines for Conversion Operators"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT throw exceptions from implicit conversions.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Conversions",
+    "ActualSubsection": "Guidelines for Conversion Operators"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use file-scoped namespaces (C# 10.0 or later).",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Namespaces",
+    "ActualSubsection": "Defining Namespaces"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO prefix namespace names with a company name to prevent namespaces from different companies having the same name.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Namespaces",
+    "ActualSubsection": "Defining Namespaces"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use a stable, version-independent product name at the second level of a namespace name.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Namespaces",
+    "ActualSubsection": "Defining Namespaces"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT define types without placing them into a namespace.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Namespaces",
+    "ActualSubsection": "Defining Namespaces"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER creating a folder structure that matches the namespace hierarchy.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Namespaces",
+    "ActualSubsection": "Defining Namespaces"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO provide XML comments on public APIs when they provide more context than the API signature alone. This includes member descriptions, parameter descriptions, and examples of calling the API.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Files",
+    "ActualSubsection": "Generating an XML Documentation File"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO implement the dispose pattern on objects with resources that are scarce or expensive.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Garbage Collection, Finalization, and IDisposable"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO implement IDisposable to support possible deterministic finalization on classes with finalizers.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Garbage Collection, Finalization, and IDisposable"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO implement finalizer methods only on objects with resources that don\u0027t have finalizers but still require cleanup.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Garbage Collection, Finalization, and IDisposable"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO refactor a finalization method to call the same code as IDisposable, perhaps simply by calling the Dispose() method.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Garbage Collection, Finalization, and IDisposable"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT throw exceptions from finalizer methods.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Garbage Collection, Finalization, and IDisposable"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER registering the finalization code with the AppDomain.ProcessExit to increase the probability that resource cleanup will execute before the process exits.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Garbage Collection, Finalization, and IDisposable"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO unregister any AppDomain.ProcessExit events during dispose.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Garbage Collection, Finalization, and IDisposable"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO call System.GC.SuppressFinalize() from Dispose() to avoid repeating resource cleanup and delaying garbage collection on an object.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Garbage Collection, Finalization, and IDisposable"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO ensure that Dispose() is idempotent (it should be possible to call Dispose() multiple times).",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Garbage Collection, Finalization, and IDisposable"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO keep Dispose() simple, focusing on the resource cleanup required by finalization.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Garbage Collection, Finalization, and IDisposable"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID calling Dispose() on owned objects that have a finalizer. Instead, rely on the finalization queue to clean up the instance.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Garbage Collection, Finalization, and IDisposable"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID referencing other objects that are not being finalized during finalization.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Garbage Collection, Finalization, and IDisposable"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO invoke a base class\u2019s Dispose() method when overriding Dispose().",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Garbage Collection, Finalization, and IDisposable"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER ensuring that an object becomes unusable after Dispose() is called. After an object has been disposed, methods other than Dispose() (which could potentially be called multiple times) should throw an ObjectDisposedException.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Garbage Collection, Finalization, and IDisposable"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO implement IDisposable on types that own disposable fields (or properties) and dispose of those instances.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Garbage Collection, Finalization, and IDisposable"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO invoke a base class\u2019s Dispose() method from the Dispose(bool disposing) method if one exists.",
+    "ChapterNumber": 10,
+    "ChapterTitle": "Well-Formed Types",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Garbage Collection, Finalization, and IDisposable"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO favor composite formatting over use of the addition operator for concatenating strings when localization is a possibility.",
+    "ChapterNumber": 4,
+    "ChapterTitle": "Operators and Control Flow",
+    "SanitizedSubsection": "Strings",
+    "ActualSubsection": "Using the Addition Operator with Strings"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID binary floating-point types when exact decimal arithmetic is required; use the decimal floating-point type instead.",
+    "ChapterNumber": 4,
+    "ChapterTitle": "Operators and Control Flow",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Special Floating-Point Characteristics"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID using equality conditionals with binary floating-point types. Either subtract the two values and see if their difference is less than a tolerance or use the decimal type.",
+    "ChapterNumber": 4,
+    "ChapterTitle": "Operators and Control Flow",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": null
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID confusing usage of the increment and decrement operators.",
+    "ChapterNumber": 4,
+    "ChapterTitle": "Operators and Control Flow",
+    "SanitizedSubsection": "Increment/decrement",
+    "ActualSubsection": "Increment and Decrement Operators (\u002B\u002B, --)"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO be cautious when porting code between C, C\u002B\u002B, and C# that uses increment and decrement operators; C and C\u002B\u002B implementations need not follow the same rules as C#.",
+    "ChapterNumber": 4,
+    "ChapterTitle": "Operators and Control Flow",
+    "SanitizedSubsection": "Increment/decrement",
+    "ActualSubsection": "Increment and Decrement Operators (\u002B\u002B, --)"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT use a constant for any value that can possibly change over time. The value of pi and the number of protons in an atom of gold are constants; the price of gold, the name of your company, and the version number of your program can change.",
+    "ChapterNumber": 4,
+    "ChapterTitle": "Operators and Control Flow",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Constant Expressions and Constant Locals"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID omitting braces, except for the simplest of single-line if statements.",
+    "ChapterNumber": 4,
+    "ChapterTitle": "Operators and Control Flow",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Code Blocks ({})"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER using an if-else statement instead of an overly complicated conditional expression.",
+    "ChapterNumber": 4,
+    "ChapterTitle": "Operators and Control Flow",
+    "SanitizedSubsection": "Branches",
+    "ActualSubsection": "Conditional Operator (?:)"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER refactoring the method to make the control flow easier to understand if you find yourself writing for loops with complex conditionals and multiple loop variables.",
+    "ChapterNumber": 4,
+    "ChapterTitle": "Operators and Control Flow",
+    "SanitizedSubsection": "Branches",
+    "ActualSubsection": "The for Loop"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use the for loop when the number of loop iterations is known in advance and the \u201Ccounter\u201D that gives the number of iterations executed is needed in the loop.",
+    "ChapterNumber": 4,
+    "ChapterTitle": "Operators and Control Flow",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": null
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use the while loop when the number of loop iterations is not known in advance and a counter is not needed.",
+    "ChapterNumber": 4,
+    "ChapterTitle": "Operators and Control Flow",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": null
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT use continue as the jump statement that exits a switch section. This is legal when the switch is inside a loop, but it is easy to become confused about the meaning of break in a later switch section.",
+    "ChapterNumber": 4,
+    "ChapterTitle": "Operators and Control Flow",
+    "SanitizedSubsection": "Branches",
+    "ActualSubsection": "The Basic switch Statement"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID using goto.",
+    "ChapterNumber": 4,
+    "ChapterTitle": "Operators and Control Flow",
+    "SanitizedSubsection": "Branches",
+    "ActualSubsection": "The goto Statement"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO give methods names that are verbs or verb phrases.",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Methods",
+    "ActualSubsection": "Calling a Method"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use PascalCasing for namespace names.",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Namespaces",
+    "ActualSubsection": "Namespaces"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER organizing the directory hierarchy for source code files to match the namespace hierarchy.",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Namespaces",
+    "ActualSubsection": "Namespaces"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use camelCasing for parameter names.",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Parameters",
+    "ActualSubsection": "Formal Parameter Declaration"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use parameter arrays when a method can handle any number\u2014including zero\u2014of additional arguments.",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Arrays",
+    "ActualSubsection": "Parameter Arrays (params)"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO provide good defaults for all parameters where possible.",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Parameters",
+    "ActualSubsection": "Optional Parameters"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO provide simple method overloads that have a small number of required parameters.",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Parameters",
+    "ActualSubsection": "Optional Parameters"
+  },
+  {
+    "Type": 3,
+    "Guideline": "CONSIDER organizing overloads from the simplest to the most complex.",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Parameters",
+    "ActualSubsection": "Optional Parameters"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO treat parameter names as part of the API, and avoid changing the names if version compatibility between APIs is important.",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": null
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID explicitly throwing exceptions from finally blocks. (Implicitly thrown exceptions resulting from method calls are acceptable.)",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Trapping Errors"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO favor try/finally and avoid using try/catch for cleanup code.",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Trapping Errors"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO throw exceptions that describe which exceptional circumstance occurred and, if possible, how to prevent it.",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Trapping Errors"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID general catch blocks and replace them with a catch of System.Exception.",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": null
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID catching exceptions for which the appropriate action is unknown. It is better to let an exception go unhandled than to handle it incorrectly.",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": null
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO prefer using an empty throw when catching and rethrowing an exception, to preserve the call stack.",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Reporting Errors Using a throw Statement"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO report execution failures by throwing exceptions rather than returning error codes.",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Reporting Errors Using a throw Statement"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT have public members that return exceptions as return values or an out parameter. Throw exceptions to indicate errors; do not use them as return values to indicate errors.",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Reporting Errors Using a throw Statement"
+  },
+  {
+    "Type": 2,
+    "Guideline": "AVOID catching and logging an exception before rethrowing it. Instead, allow the exception to escape until it can be handled appropriately.",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Reporting Errors Using a throw Statement"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO verify that non-null reference types parameters are not null and throw an ArgumentNullException when they are.",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Reporting Null Argument Exceptions"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use ArgumentException.ThrowIfNull() to verify values are null in .NET 7.0 or later.",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Reporting Null Argument Exceptions"
+  },
+  {
+    "Type": 4,
+    "Guideline": "DO use nameof(value) (which resolves to \u0022value\u0022) for the paramName argument when creating ArgumentException() or ArgumentNullException() type exceptions. (value is the implicit name of the parameter on property setters.)",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Miscellaneous",
+    "ActualSubsection": "Introducing the nameof Operator"
+  },
+  {
+    "Type": 1,
+    "Guideline": "DO NOT use exceptions for handling normal, expected conditions; use them for exceptional, unexpected conditions.",
+    "ChapterNumber": 5,
+    "ChapterTitle": "Parameters and Methods",
+    "SanitizedSubsection": "Exceptions",
+    "ActualSubsection": "Avoid Using Exception Handling to Deal with Expected Situations"
+  }
+]
