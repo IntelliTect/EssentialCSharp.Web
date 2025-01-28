@@ -35,7 +35,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore /p:AccessToNugetFeed=false
 
       - name: Run .NET Tests
-        run: dotnet test --no-build --configuration Release /p:AccessToNugetFeed=false
+        run: dotnet test --no-build --configuration Release
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -48,3 +48,4 @@ jobs:
           outputs: type=docker,dest=${{ github.workspace }}/essentialcsharpwebimage.tar
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: ACCESS_TO_NUGET_FEED=false
