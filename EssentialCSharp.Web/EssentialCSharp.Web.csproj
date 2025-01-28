@@ -1,10 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PlaceholderHtmlFile Include="$(ProjectDir)Placeholders/*.html" />
-    <PlaceholderJsonFile Include="$(ProjectDir)Placeholders/*.json" />
+    <PlaceholderChapterOneHtmlFile Include="$(ProjectDir)/Placeholders/Chapters/01/Pages/*.html" />
+    <PlaceholderChapterTwoHtmlFile Include="$(ProjectDir)/Placeholders/Chapters/02/Pages/*.html" />
+    <PlaceholderJsonFile Include="$(ProjectDir)/Placeholders/*.json" />
   </ItemGroup>
 
   <ItemGroup Condition="$(AccessToNugetFeed)">
@@ -41,7 +42,8 @@
   </ItemGroup>
   <Target Condition="!$(AccessToNugetFeed)" Name="CopyPlaceholderContent" BeforeTargets="Build">
     <Copy SourceFiles="@(PlaceholderJsonFile)" DestinationFolder="$(ProjectDir)/Chapters/" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="@(PlaceholderHtmlFile)" DestinationFolder="$(ProjectDir)/Chapters/01/Pages/" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(PlaceholderChapterOneHtmlFile)" DestinationFolder="$(ProjectDir)/Chapters/01/Pages/" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(PlaceholderChapterTwoHtmlFile)" DestinationFolder="$(ProjectDir)/Chapters/02/Pages/" SkipUnchangedFiles="true" />
   </Target>
 
   <PropertyGroup>
