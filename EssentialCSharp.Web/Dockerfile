@@ -1,11 +1,11 @@
 #syntax=docker/dockerfile:1.2
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0.101 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0.200 AS build
 ARG ACCESS_TO_NUGET_FEED=true
 ENV ACCESS_TO_NUGET_FEED=$ACCESS_TO_NUGET_FEED
 RUN sh -c "$(curl -fsSL https://aka.ms/install-artifacts-credprovider.sh)"

@@ -13,8 +13,6 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     environment: "BuildAndUploadImage"
-    env:
-      TEST_TAG: user/app:test
 
     steps:
       - uses: actions/checkout@v4
