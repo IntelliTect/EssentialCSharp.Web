@@ -5,15 +5,19 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-FROM mcr.microsoft.com/dotnet/sdk:9.0.101 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0.101 AS build
+ARG ACCESS_TO_NUGET_FEED=true
+ENV ACCESS_TO_NUGET_FEED=$ACCESS_TO_NUGET_FEED
 RUN sh -c "$(curl -fsSL https://aka.ms/install-artifacts-credprovider.sh)"
 WORKDIR /src
 COPY . .
 RUN --mount=type=secret,id=nuget_auth_token \
-    auth_token=$(cat /run/secrets/nuget_auth_token) && \
-    export VSS_NUGET_EXTERNAL_FEED_ENDPOINTS="{\"endpointCredentials\": [{\"endpoint\":\"https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json\", \"password\":\"$auth_token\"}]}" && \
-    dotnet restore "EssentialCSharp.Web.sln" && \
-    dotnet build "EssentialCSharp.Web.sln" -c Release --no-restore && \
+    if [ "$ACCESS_TO_NUGET_FEED" = "true" ]; then \
+      auth_token=$(cat /run/secrets/nuget_auth_token) && \
+      export VSS_NUGET_EXTERNAL_FEED_ENDPOINTS="{\"endpointCredentials\": [{\"endpoint\":\"https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json\", \"password\":\"$auth_token\"}]}"; \
+    fi && \
+    dotnet restore "EssentialCSharp.Web.sln" -p:AccessToNugetFeed=$ACCESS_TO_NUGET_FEED && \
+    dotnet build "EssentialCSharp.Web.sln" -c Release --no-restore -p:AccessToNugetFeed=$ACCESS_TO_NUGET_FEED && \
     dotnet publish "EssentialCSharp.Web.sln" -c Release -p:PublishDir=/app/publish -p:UseAppHost=false --no-build
 
 FROM base AS final

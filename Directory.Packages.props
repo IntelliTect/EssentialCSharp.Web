@@ -3,7 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
     <ToolingPackagesVersion>1.1.1.4632</ToolingPackagesVersion>
-    <AccessToNugetFeed>true</AccessToNugetFeed>
+    <AccessToNugetFeed>false</AccessToNugetFeed>
     <RestoreSources>
       https://api.nuget.org/v3/index.json;
     </RestoreSources>
@@ -17,12 +17,14 @@
   </ItemGroup>
   <ItemGroup>
     <PackageVersion Include="Microsoft.AspNetCore.Components" Version="9.0.1" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="4.8.0" />
     <PackageVersion Include="EssentialCSharp.Shared.Models" Version="$(ToolingPackagesVersion)" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.10" />
     <PackageVersion Include="AspNet.Security.OAuth.GitHub" Version="8.3.0" />
-    <PackageVersion Include="coverlet.collector" Version="6.0.3" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="HtmlAgilityPack" Version="1.11.72" />
-    <PackageVersion Include="IntelliTect.Multitool" Version="1.5.2" />
+    <PackageVersion Include="IntelliTect.Multitool" Version="1.5.3" />
     <PackageVersion Include="Mailjet.Api" Version="3.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="8.0.12" />
     <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.12" />
