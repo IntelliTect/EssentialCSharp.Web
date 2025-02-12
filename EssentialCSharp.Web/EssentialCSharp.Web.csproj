@@ -1,10 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PlaceholderHtmlFile Include="$(ProjectDir)Placeholders/*.html" />
-    <PlaceholderJsonFile Include="$(ProjectDir)Placeholders/*.json" />
+    <PlaceholderChapterOneHtmlFile Include="$(ProjectDir)/Placeholders/Chapters/01/Pages/*.html" />
+    <PlaceholderChapterTwoHtmlFile Include="$(ProjectDir)/Placeholders/Chapters/02/Pages/*.html" />
+    <PlaceholderSitemapJsonFile Include="$(ProjectDir)/Placeholders/sitemap.json" />
+    <PlaceholderGuidelinesJsonFile Include="$(ProjectDir)/Placeholders/guidelines.json" />
   </ItemGroup>
 
   <ItemGroup Condition="$(AccessToNugetFeed)">
@@ -20,6 +22,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -40,8 +43,10 @@
     </Content>
   </ItemGroup>
   <Target Condition="!$(AccessToNugetFeed)" Name="CopyPlaceholderContent" BeforeTargets="Build">
-    <Copy SourceFiles="@(PlaceholderJsonFile)" DestinationFolder="$(ProjectDir)/Chapters/" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="@(PlaceholderHtmlFile)" DestinationFolder="$(ProjectDir)/Chapters/01/Pages/" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(PlaceholderSitemapJsonFile)" DestinationFolder="$(ProjectDir)/Chapters/" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(PlaceholderGuidelinesJsonFile)" DestinationFolder="$(ProjectDir)/Guidelines/" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(PlaceholderChapterOneHtmlFile)" DestinationFolder="$(ProjectDir)/Chapters/01/Pages/" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(PlaceholderChapterTwoHtmlFile)" DestinationFolder="$(ProjectDir)/Chapters/02/Pages/" SkipUnchangedFiles="true" />
   </Target>
 
   <PropertyGroup>
