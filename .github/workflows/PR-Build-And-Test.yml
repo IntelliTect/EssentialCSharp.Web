@@ -1,0 +1,51 @@
+name: PR Build and Test EssentialCSharp.Web
+
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Set up dependency caching for faster builds
+        uses: actions/cache@v4
+        id: nuget-cache
+        with:
+          path: |
+            ~/.nuget/packages
+            ${{ github.workspace }}/**/obj/project.assets.json
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+            ${{ runner.os }}-nuget-
+
+      - name: Restore with dotnet
+        run: dotnet restore /p:AccessToNugetFeed=false
+
+      - name: Build with dotnet
+        run: dotnet build --configuration Release --no-restore /p:AccessToNugetFeed=false
+
+      - name: Run .NET Tests
+        run: dotnet test --no-build --configuration Release
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Container Image
+        uses: docker/build-push-action@v6
+        with:
+          file: ./EssentialCSharp.Web/Dockerfile
+          context: .
+          outputs: type=docker,dest=${{ github.workspace }}/essentialcsharpwebimage.tar
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: ACCESS_TO_NUGET_FEED=false
