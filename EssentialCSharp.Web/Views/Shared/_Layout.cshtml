@@ -4,6 +4,21 @@
 @using IntelliTect.Multitool
 @using EssentialCSharp.Common
 @inject ISiteMappingService _SiteMappings
+@using Microsoft.AspNetCore.Components
+@{
+    var prodMap = new ImportMapDefinition(
+        new Dictionary<string, string>
+                        {
+            { "vue", "./lib/vue/dist/vue.esm-browser.prod.js" },
+            { "vue-window-size", "./lib/vue-window-size/composition-api/dist/index.js" },
+                        }, null, null);
+    var devMap = new ImportMapDefinition(
+    new Dictionary<string, string>
+                    {
+            { "vue", "./lib/vue/dist/vue.esm-browser.js" },
+            { "vue-window-size", "./lib/vue-window-size/composition-api/dist/index.js" },
+                    }, null, null);
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -46,24 +61,10 @@
     @*So that Safari can import modules*@
     <script async src="/lib/es-module-shims/dist/es-module-shims.js"></script>
     <environment include="Development">
-        <script type="importmap">
-            {
-                "imports": {
-                    "vue": "./lib/vue/dist/vue.esm-browser.js",
-                    "vue-window-size": "./lib/vue-window-size/composition-api/dist/index.js"
-                }
-            }
-        </script>
+        <script type="importmap" asp-importmap="@devMap"></script>
     </environment>
     <environment exclude="Development">
-        <script type="importmap">
-            {
-                "imports": {
-                    "vue": "./lib/vue/dist/vue.esm-browser.prod.js",
-                    "vue-window-size": "./lib/vue-window-size/composition-api/dist/index.js"
-                }
-            }
-        </script>
+        <script type="importmap" asp-importmap="@prodMap"></script>
     </environment>
     <script type="text/javascript">
         (function (c, l, a, r, i, t, y) {
