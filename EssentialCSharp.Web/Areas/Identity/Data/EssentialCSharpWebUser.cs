@@ -9,5 +9,7 @@ public class EssentialCSharpWebUser : IdentityUser
     public virtual string? FirstName { get; set; }
     [ProtectedPersonalData]
     public virtual string? LastName { get; set; }
+    public string? ReferrerId { get; set; }
+    public int ReferralCount { get; set; }
 }
 

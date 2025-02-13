@@ -110,9 +110,10 @@ public partial class Program
         {
             // This is a shuffled version of the default alphabet so the id's are at least unique to this site.
             // This being open source, it will be easy to decode the ids, but these id's are not meant to be secure.
-            Alphabet = "imx4BSz2Ys7GZLXDqT5IAkUOEnyvwbPKJtp13NWdeuH6rFfRhCcQogjaM8V09l",
-            MinLength = 10,
+            Alphabet = "imx4z2Ys7GZLXDqT5IkUOEnyvwPKJtp13NWdeuH6rRhCcQogjM8V09l",
+            MinLength = 7,
         }));
+        builder.Services.AddScoped<IReferralService, ReferralService>();
 
         if (!builder.Environment.IsDevelopment())
         {
@@ -154,12 +155,6 @@ public partial class Program
 
         WebApplication app = builder.Build();
 
-        app.Use((context, next) =>
-        {
-            context.Request.Scheme = "https";
-            return next(context);
-        });
-
         app.UseForwardedHeaders();
 
         // Configure the HTTP request pipeline.
@@ -180,14 +175,21 @@ public partial class Program
 
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseMiddleware<ReferralMiddleware>();
+
+        app.Use((context, next) =>
+        {
+            context.Request.Scheme = "https";
+            return next(context);
+        });
 
         app.MapDefaultControllerRoute();
+        app.MapRazorPages();
 
         app.MapControllerRoute(
             name: "slug",
             pattern: "{*key}",
             defaults: new { controller = "Home", action = "Index" });
-        app.MapRazorPages();
 
         app.Run();
     }
