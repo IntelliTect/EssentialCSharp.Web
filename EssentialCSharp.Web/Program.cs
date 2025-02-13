@@ -4,6 +4,7 @@ using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Extensions;
 using EssentialCSharp.Web.Middleware;
 using EssentialCSharp.Web.Services;
+using EssentialCSharp.Web.Services.Referrals;
 using Mailjet.Client;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;

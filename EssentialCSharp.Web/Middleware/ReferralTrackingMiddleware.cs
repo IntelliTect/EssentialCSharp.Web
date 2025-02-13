@@ -1,13 +1,13 @@
 using System.Security.Claims;
 using System.Web;
 using EssentialCSharp.Web.Areas.Identity.Data;
-using EssentialCSharp.Web.Services;
+using EssentialCSharp.Web.Services.Referrals;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Identity;
 
 namespace EssentialCSharp.Web.Middleware;
 
-public class ReferralMiddleware
+public sealed class ReferralMiddleware
 {
     private readonly RequestDelegate _Next;
 
@@ -23,7 +23,7 @@ public class ReferralMiddleware
         string? referralId = query["rid"];
         string? userReferralId;
 
-        if (context.User is { } claimsUser && claimsUser.Identity is not null && claimsUser.Identity.IsAuthenticated)
+        if (context.User is { Identity.IsAuthenticated: true } claimsUser)
         {
             if (!string.IsNullOrWhiteSpace(referralId))
             {
@@ -71,7 +71,7 @@ public class ReferralMiddleware
         {
             if (!string.IsNullOrWhiteSpace(referralId))
             {
-                _ = await referralService.TrackReferralAsync(referralId, claimsUser);
+                await referralService.TrackReferralAsync(referralId, claimsUser);
             }
         }
     }

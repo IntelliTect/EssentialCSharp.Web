@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Sqids;
 
-namespace EssentialCSharp.Web.Services;
+namespace EssentialCSharp.Web.Services.Referrals;
 
 public class ReferralService(EssentialCSharpWebContext dbContext, SqidsEncoder<int> sqids, UserManager<EssentialCSharpWebUser> userManager) : IReferralService
 {
@@ -25,7 +25,7 @@ public class ReferralService(EssentialCSharpWebContext dbContext, SqidsEncoder<i
             }
             else
             {
-                Random random = new();
+                Random random = Random.Shared;
                 string referrerId = sqids.Encode(random.Next());
                 user.ReferrerId = referrerId;
 
@@ -41,38 +41,38 @@ public class ReferralService(EssentialCSharpWebContext dbContext, SqidsEncoder<i
     /// </summary>
     /// <param name="referralId">The referrer ID to track.</param>
     /// <returns>True if the referral was successfully tracked, otherwise false.</returns>
-    public async Task<bool> TrackReferralAsync(string referralId, ClaimsPrincipal? user)
+    public async Task TrackReferralAsync(string referralId, ClaimsPrincipal? user)
     {
         EssentialCSharpWebUser? claimsUser = user is null ? null : await userManager.GetUserAsync(user);
         if (claimsUser is null)
         {
-            return await TrackReferral(dbContext, referralId);
+            await TrackReferral(dbContext, referralId);
         }
         else
         {
             // If the user is the referrer, do not track the referral
             if (claimsUser.ReferrerId == referralId)
             {
-                return false;
+                return;
             }
             else
             {
-                return await TrackReferral(dbContext, referralId);
+                await TrackReferral(dbContext, referralId);
             }
         }
 
-        static async Task<bool> TrackReferral(EssentialCSharpWebContext dbContext, string referralId)
+        static async Task TrackReferral(EssentialCSharpWebContext dbContext, string referralId)
         {
             EssentialCSharpWebUser? dbUser = await dbContext.Users.SingleOrDefaultAsync(u => u.ReferrerId == referralId);
             if (dbUser is null)
             {
-                return false;
+                return;
             }
             else
             {
                 dbUser.ReferralCount++;
                 await dbContext.SaveChangesAsync();
-                return true;
+                return;
             }
         }
     }

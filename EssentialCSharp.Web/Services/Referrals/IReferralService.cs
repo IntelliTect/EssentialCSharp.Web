@@ -1,9 +1,9 @@
 ﻿using System.Security.Claims;
 
-namespace EssentialCSharp.Web.Services;
+namespace EssentialCSharp.Web.Services.Referrals;
 
 public interface IReferralService
 {
-    Task<bool> TrackReferralAsync(string referralId, ClaimsPrincipal? user);
+    Task TrackReferralAsync(string referralId, ClaimsPrincipal? user);
     Task<string?> GetReferralIdAsync(string userId);
 }
