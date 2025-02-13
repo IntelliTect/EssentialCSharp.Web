@@ -305,6 +305,18 @@ a:hover {
     color: var(--primary-accent-color);
 }
 
+.account-nav-link {
+    color: black;
+}
+
+.account-nav-link:hover {
+    color: var(--primary-accent-color);
+}
+
+.account-nav-item .active {
+    color: var(--primary-accent-color);
+}
+
 /* Page Navigation Arrow Buttons */
 
 .turn-page {
@@ -809,9 +821,9 @@ details > summary::-webkit-details-marker {
 
 .nav-pills .nav-link.active,
 .nav-pills .show > .nav-link {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+    color: #fff;
+    background-color: #1b6ec2;
+    border-color: #1861ac;
 }
 
 button.accept-policy {
