@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Data;
 using Microsoft.AspNetCore.Identity;
@@ -70,9 +70,42 @@ public class ReferralService(EssentialCSharpWebContext dbContext, SqidsEncoder<i
             }
             else
             {
-                dbUser.ReferralCount++;
-                await dbContext.SaveChangesAsync();
-                return;
+                bool saved = false;
+                while (!saved)
+                {
+                    try
+                    {
+                        dbUser.ReferralCount++;
+                        await dbContext.SaveChangesAsync();
+                        saved = true;
+                    }
+                    catch (DbUpdateConcurrencyException ex)
+                    {
+                        foreach (var entry in ex.Entries)
+                        {
+                            if (entry.Entity is EssentialCSharpWebUser)
+                            {
+                                var proposedValues = entry.CurrentValues;
+                                var databaseValues = await entry.GetDatabaseValuesAsync();
+
+                                if (databaseValues is not null)
+                                {
+                                    var databaseReferralCount = (int?)databaseValues[nameof(EssentialCSharpWebUser.ReferralCount)];
+                                    proposedValues[nameof(EssentialCSharpWebUser.ReferralCount)] = databaseReferralCount + 1;
+
+                                    // Refresh original values to bypass next concurrency check
+                                    entry.OriginalValues.SetValues(databaseValues);
+                                }
+                            }
+                            else
+                            {
+                                throw new NotSupportedException(
+                                    "Don't know how to handle concurrency conflicts for "
+                                    + entry.Metadata.Name);
+                            }
+                        }
+                    }
+                }
             }
         }
     }
