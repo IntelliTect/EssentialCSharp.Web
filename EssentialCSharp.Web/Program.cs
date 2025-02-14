@@ -25,7 +25,7 @@ public partial class Program
         builder.Logging.AddConsole();
         builder.Services.AddHealthChecks();
 
-        builder.Services.AddDbContextFactory<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString));
+        builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString));
         builder.Services.AddDefaultIdentity<EssentialCSharpWebUser>(options =>
         {
             // Password settings

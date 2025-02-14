@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using EssentialCSharp.Web.Areas.Identity.Data;
+using EssentialCSharp.Web.Services.Referrals;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +8,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
-public class LoginModel(SignInManager<EssentialCSharpWebUser> signInManager, UserManager<EssentialCSharpWebUser> userManager, ILogger<LoginModel> logger) : PageModel
+public class LoginModel(SignInManager<EssentialCSharpWebUser> signInManager, UserManager<EssentialCSharpWebUser> userManager, ILogger<LoginModel> logger, IReferralService referralService) : PageModel
 {
     private InputModel? _Input;
     [BindProperty]
@@ -77,6 +78,8 @@ public class LoginModel(SignInManager<EssentialCSharpWebUser> signInManager, Use
             if (foundUser is not null)
             {
                 result = await signInManager.PasswordSignInAsync(foundUser, Input.Password, Input.RememberMe, lockoutOnFailure: true);
+                // Call the referral service to get the referral ID and set it onto the user claim
+                _ = await referralService.GetReferralIdAsync(foundUser);
             }
             else
             {

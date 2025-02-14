@@ -12,6 +12,11 @@ public class ReferralService(EssentialCSharpWebContext dbContext, SqidsEncoder<i
     public async Task<string?> GetReferralIdAsync(string userId)
     {
         EssentialCSharpWebUser? user = await userManager.FindByIdAsync(userId);
+        return await GetReferralIdAsync(user);
+    }
+
+    public async Task<string?> GetReferralIdAsync(EssentialCSharpWebUser? user)
+    {
         if (user is null)
         {
             return null;
