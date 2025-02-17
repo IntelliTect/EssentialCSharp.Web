@@ -4,6 +4,7 @@ using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Extensions;
 using EssentialCSharp.Web.Middleware;
 using EssentialCSharp.Web.Services;
+using EssentialCSharp.Web.Services.Referrals;
 using Mailjet.Client;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
@@ -105,7 +106,7 @@ public partial class Program
         builder.Services.AddCaptchaService(builder.Configuration.GetSection(CaptchaOptions.CaptchaSender));
         builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
         builder.Services.AddHostedService<DatabaseMigrationService>();
-
+        builder.Services.AddScoped<IReferralService, ReferralService>();
 
         if (!builder.Environment.IsDevelopment())
         {
@@ -147,12 +148,6 @@ public partial class Program
 
         WebApplication app = builder.Build();
 
-        app.Use((context, next) =>
-        {
-            context.Request.Scheme = "https";
-            return next(context);
-        });
-
         app.UseForwardedHeaders();
 
         // Configure the HTTP request pipeline.
@@ -173,14 +168,21 @@ public partial class Program
 
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseMiddleware<ReferralMiddleware>();
+
+        app.Use((context, next) =>
+        {
+            context.Request.Scheme = "https";
+            return next(context);
+        });
 
         app.MapDefaultControllerRoute();
+        app.MapRazorPages();
 
         app.MapControllerRoute(
             name: "slug",
             pattern: "{*key}",
             defaults: new { controller = "Home", action = "Index" });
-        app.MapRazorPages();
 
         app.Run();
     }

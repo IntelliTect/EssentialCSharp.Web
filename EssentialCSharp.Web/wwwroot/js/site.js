@@ -125,8 +125,13 @@ const app = createApp({
         const snackbarColor = ref();
 
         function copyToClipboard(copyText) {
+            let url = window.location.origin + "/" + copyText;
+            let referralId = REFERRAL_ID;
+            if (referralId && referralId.trim()) {
+                url = addQueryParam(url, 'rid', referralId);
+            }
             navigator.clipboard
-                .writeText(window.location.origin + "/" + copyText)
+                .writeText(url)
                 .then(
                     function () {
                         /* Success */
@@ -149,6 +154,12 @@ const app = createApp({
                 () => (snackbarMessage.value = null),
                 3000
             );
+        }
+
+        function addQueryParam(url, key, value) {
+            let urlObj = new URL(url, window.location.origin);
+            urlObj.searchParams.set(key, value);
+            return urlObj.toString();
         }
 
         function goToPrevious() {
