@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Data;
+using EssentialCSharp.Web.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Sqids;
@@ -12,10 +13,15 @@ public class ReferralService(EssentialCSharpWebContext dbContext, SqidsEncoder<i
     public async Task<string?> GetReferralIdAsync(string userId)
     {
         EssentialCSharpWebUser? user = await userManager.FindByIdAsync(userId);
-        return await GetReferralIdAsync(user);
+        return await EnsureReferralIdAsync(user);
     }
 
-    public async Task<string?> GetReferralIdAsync(EssentialCSharpWebUser? user)
+    /// <summary>
+    /// Ensure that the user has a referral ID. If the user does not have a referral ID, generate one and save it to the user.
+    /// </summary>
+    /// <param name="user"></param>
+    /// <returns></returns>
+    public async Task<string?> EnsureReferralIdAsync(EssentialCSharpWebUser? user)
     {
         if (user is null)
         {
@@ -24,19 +30,23 @@ public class ReferralService(EssentialCSharpWebContext dbContext, SqidsEncoder<i
         else
         {
             // Check if the user already has a referrer ID
-            if (!string.IsNullOrEmpty(user.ReferrerId))
+            string? referrerId = dbContext.UserClaims.FirstOrDefault(claim => claim.UserId == user.Id && claim.ClaimType == ClaimsExtensions.ReferrerIdClaimType)?.ClaimValue;
+            if (!string.IsNullOrEmpty(referrerId))
             {
-                return user.ReferrerId;
+                // Add the referrer ID to the user's claims if it does not exist
+                if (!(await userManager.GetClaimsAsync(user)).Any(claim => claim.Type == ClaimsExtensions.ReferrerIdClaimType))
+                {
+                    await userManager.AddClaimAsync(user, new Claim(ClaimsExtensions.ReferrerIdClaimType, referrerId));
+                }
+                return referrerId;
             }
             else
             {
                 Random random = Random.Shared;
-                string referrerId = sqids.Encode(random.Next());
-                user.ReferrerId = referrerId;
+                referrerId = sqids.Encode(random.Next());
 
-                await userManager.AddClaimAsync(user, new Claim("ReferrerId", referrerId));
-                await userManager.UpdateAsync(user);
-                return user.ReferrerId;
+                await userManager.AddClaimAsync(user, new Claim(ClaimsExtensions.ReferrerIdClaimType, referrerId));
+                return referrerId;
             }
         }
     }
@@ -46,72 +56,28 @@ public class ReferralService(EssentialCSharpWebContext dbContext, SqidsEncoder<i
     /// </summary>
     /// <param name="referralId">The referrer ID to track.</param>
     /// <returns>True if the referral was successfully tracked, otherwise false.</returns>
-    public async Task TrackReferralAsync(string referralId, ClaimsPrincipal? user)
+    public void TrackReferralAsync(string referralId, ClaimsPrincipal? user)
     {
-        EssentialCSharpWebUser? claimsUser = user is null ? null : await userManager.GetUserAsync(user);
-        if (claimsUser is null)
+        // Check if the referrer ID exists in the claims principal
+        string? claimsReferrerId = user?.Claims.FirstOrDefault(c => c.Type == ClaimsExtensions.ReferrerIdClaimType)?.Value;
+
+        if (claimsReferrerId == referralId)
         {
-            await TrackReferral(dbContext, referralId);
-        }
-        else
-        {
-            // If the user is the referrer, do not track the referral
-            if (claimsUser.ReferrerId == referralId)
-            {
-                return;
-            }
-            else
-            {
-                await TrackReferral(dbContext, referralId);
-            }
+            // If the referrer ID in the claims principal matches the referral ID, do not track the referral
+            return;
         }
 
-        static async Task TrackReferral(EssentialCSharpWebContext dbContext, string referralId)
+        TrackReferral(dbContext, referralId);
+    }
+
+    static void TrackReferral(EssentialCSharpWebContext dbContext, string referralId)
+    {
+        var userClaim = dbContext.UserClaims.FirstOrDefault(claim => claim.ClaimType == ClaimsExtensions.ReferrerIdClaimType && claim.ClaimValue == referralId);
+        if (userClaim is null)
         {
-            EssentialCSharpWebUser? dbUser = await dbContext.Users.SingleOrDefaultAsync(u => u.ReferrerId == referralId);
-            if (dbUser is null)
-            {
-                return;
-            }
-            else
-            {
-                bool saved = false;
-                while (!saved)
-                {
-                    try
-                    {
-                        dbUser.ReferralCount++;
-                        await dbContext.SaveChangesAsync();
-                        saved = true;
-                    }
-                    catch (DbUpdateConcurrencyException ex)
-                    {
-                        foreach (var entry in ex.Entries)
-                        {
-                            if (entry.Entity is EssentialCSharpWebUser)
-                            {
-                                var proposedValues = entry.CurrentValues;
-                                var databaseValues = await entry.GetDatabaseValuesAsync();
-
-                                if (databaseValues is not null)
-                                {
-                                    var databaseReferralCount = (int?)databaseValues[nameof(EssentialCSharpWebUser.ReferralCount)];
-                                    proposedValues[nameof(EssentialCSharpWebUser.ReferralCount)] = databaseReferralCount + 1;
-
-                                    // Refresh original values to bypass next concurrency check
-                                    entry.OriginalValues.SetValues(databaseValues);
-                                }
-                            }
-                            else
-                            {
-                                throw new NotSupportedException(
-                                    "Don't know how to handle concurrency conflicts for "
-                                    + entry.Metadata.Name);
-                            }
-                        }
-                    }
-                }
-            }
+            return;
         }
+
+        dbContext.Users.Where(user => user.Id == userClaim.UserId).ExecuteUpdate(setters => setters.SetProperty(b => b.ReferralCount, b => b.ReferralCount + 1));
     }
 }

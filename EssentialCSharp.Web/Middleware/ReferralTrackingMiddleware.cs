@@ -22,20 +22,20 @@ public sealed class ReferralMiddleware
         string? referralId = query["rid"];
         if (context.User is { Identity.IsAuthenticated: true } claimsUser)
         {
-            await TrackReferralAsync(referralService, referralId, claimsUser);
+            TrackReferralAsync(referralService, referralId, claimsUser);
         }
         else
         {
-            await TrackReferralAsync(referralService, referralId, null);
+            TrackReferralAsync(referralService, referralId, null);
         }
 
         await _Next(context);
 
-        static async Task TrackReferralAsync(IReferralService referralService, string? referralId, ClaimsPrincipal? claimsUser)
+        static void TrackReferralAsync(IReferralService referralService, string? referralId, ClaimsPrincipal? claimsUser)
         {
             if (!string.IsNullOrWhiteSpace(referralId))
             {
-                await referralService.TrackReferralAsync(referralId, claimsUser);
+                referralService.TrackReferralAsync(referralId, claimsUser);
             }
         }
     }

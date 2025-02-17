@@ -79,7 +79,7 @@ public class LoginModel(SignInManager<EssentialCSharpWebUser> signInManager, Use
             {
                 result = await signInManager.PasswordSignInAsync(foundUser, Input.Password, Input.RememberMe, lockoutOnFailure: true);
                 // Call the referral service to get the referral ID and set it onto the user claim
-                _ = await referralService.GetReferralIdAsync(foundUser);
+                _ = await referralService.EnsureReferralIdAsync(foundUser);
             }
             else
             {

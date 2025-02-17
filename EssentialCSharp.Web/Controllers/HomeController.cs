@@ -32,7 +32,7 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
             ViewBag.HeadContents = headHtml;
             ViewBag.Contents = html;
             // Set the referral Id for use in the front end if available
-            ViewBag.ReferralId = httpContextAccessor.HttpContext?.User?.Claims?.FirstOrDefault(f => f.Type == "ReferrerId")?.Value;
+            ViewBag.ReferralId = httpContextAccessor.HttpContext?.User?.Claims?.FirstOrDefault(f => f.Type == ClaimsExtensions.ReferrerIdClaimType)?.Value;
             return View();
         }
         else
