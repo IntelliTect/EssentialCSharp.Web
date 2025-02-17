@@ -4,11 +4,11 @@ using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Sqids;
+using Microsoft.IdentityModel.Tokens;
 
 namespace EssentialCSharp.Web.Services.Referrals;
 
-public class ReferralService(EssentialCSharpWebContext dbContext, SqidsEncoder<int> sqids, UserManager<EssentialCSharpWebUser> userManager) : IReferralService
+public class ReferralService(EssentialCSharpWebContext dbContext, UserManager<EssentialCSharpWebUser> userManager) : IReferralService
 {
     public async Task<string?> GetReferralIdAsync(string userId)
     {
@@ -42,8 +42,11 @@ public class ReferralService(EssentialCSharpWebContext dbContext, SqidsEncoder<i
             }
             else
             {
-                Random random = Random.Shared;
-                referrerId = sqids.Encode(random.Next());
+                do
+                {
+                    referrerId = Base64UrlEncoder.Encode(Guid.NewGuid().ToByteArray())[..8];
+                }
+                while (dbContext.UserClaims.Any(claim => claim.ClaimType == ClaimsExtensions.ReferrerIdClaimType && claim.ClaimValue == referrerId));
 
                 await userManager.AddClaimAsync(user, new Claim(ClaimsExtensions.ReferrerIdClaimType, referrerId));
                 return referrerId;

@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
-using Sqids;
 
 namespace EssentialCSharp.Web;
 
@@ -107,13 +106,6 @@ public partial class Program
         builder.Services.AddCaptchaService(builder.Configuration.GetSection(CaptchaOptions.CaptchaSender));
         builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
         builder.Services.AddHostedService<DatabaseMigrationService>();
-        builder.Services.AddSingleton(new SqidsEncoder<int>(new()
-        {
-            // This is a shuffled version of the default alphabet so the id's are at least unique to this site.
-            // This being open source, it will be easy to decode the ids, but these id's are not meant to be secure.
-            Alphabet = "imx4z2Ys7GZLXDqT5IkUOEnyvwPKJtp13NWdeuH6rRhCcQogjM8V09l",
-            MinLength = 7,
-        }));
         builder.Services.AddScoped<IReferralService, ReferralService>();
 
         if (!builder.Environment.IsDevelopment())
