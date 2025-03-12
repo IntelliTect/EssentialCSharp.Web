@@ -73,7 +73,7 @@ public class ReferralService(EssentialCSharpWebContext dbContext, UserManager<Es
         TrackReferral(dbContext, referralId);
     }
 
-    static void TrackReferral(EssentialCSharpWebContext dbContext, string referralId)
+    private static void TrackReferral(EssentialCSharpWebContext dbContext, string referralId)
     {
         var userClaim = dbContext.UserClaims.FirstOrDefault(claim => claim.ClaimType == ClaimsExtensions.ReferrerIdClaimType && claim.ClaimValue == referralId);
         if (userClaim is null)

@@ -20,23 +20,18 @@ public sealed class ReferralMiddleware
         // Retrieve current referral Id for processing
         System.Collections.Specialized.NameValueCollection query = HttpUtility.ParseQueryString(context.Request.QueryString.Value!);
         string? referralId = query["rid"];
+        if (string.IsNullOrWhiteSpace(referralId))
+        {
+            await _Next(context);
+            return;
+        }
         if (context.User is { Identity.IsAuthenticated: true } claimsUser)
         {
-            TrackReferralAsync(referralService, referralId, claimsUser);
+            referralService.TrackReferralAsync(referralId, claimsUser);
         }
         else
         {
-            TrackReferralAsync(referralService, referralId, null);
-        }
-
-        await _Next(context);
-
-        static void TrackReferralAsync(IReferralService referralService, string? referralId, ClaimsPrincipal? claimsUser)
-        {
-            if (!string.IsNullOrWhiteSpace(referralId))
-            {
-                referralService.TrackReferralAsync(referralId, claimsUser);
-            }
+            referralService.TrackReferralAsync(referralId, null);
         }
     }
 }

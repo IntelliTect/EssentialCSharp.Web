@@ -10,7 +10,7 @@ public class ReferralsDataModel : PageModel
     private readonly UserManager<EssentialCSharpWebUser> _UserManager;
     private readonly ILogger<ReferralsDataModel> _Logger;
 
-    public int ReferralCount { get; set; }
+    public int ReferralCount { get; private set; }
 
     public ReferralsDataModel(
         UserManager<EssentialCSharpWebUser> userManager,
