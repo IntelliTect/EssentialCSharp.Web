@@ -305,6 +305,18 @@ a:hover {
     color: var(--primary-accent-color);
 }
 
+.account-nav-link {
+    color: black;
+}
+
+.account-nav-link:hover {
+    color: var(--primary-accent-color);
+}
+
+.account-nav-item .active {
+    color: var(--primary-accent-color);
+}
+
 /* Page Navigation Arrow Buttons */
 
 .turn-page {
