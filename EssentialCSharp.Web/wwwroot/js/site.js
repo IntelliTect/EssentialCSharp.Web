@@ -179,15 +179,20 @@ const app = createApp({
             }
 
             if (e.code == "KeyM" && e.ctrlKey) {
-                sidebarShown.value = !sidebarShown.value;
+                toggleSidebar();
             }
         });
 
-        const sidebarShown = ref(false);
+        const sidebarShown = ref(localStorage.getItem('sidebarShown'));
 
         const smallScreen = computed(() => {
             return (windowWidth.value || 0) < smallScreenSize;
         });
+
+        function toggleSidebar() {
+            sidebarShown.value = !sidebarShown.value;
+            localStorage.setItem('sidebarShown', sidebarShown.value);
+        }
 
         /** @type {import("vue").Ref<"toc" | "search">} */
         const sidebarTab = ref("toc");
@@ -207,13 +212,16 @@ const app = createApp({
         watch(windowWidth, (newWidth, oldWidth) => {
             //+ 50 so that the side bar diappears before the css media class changes the sidebar to take
             // over the full screen
-            if (newWidth < smallScreenSize) {
-                sidebarShown.value = false;
-            }
-            // when making screen bigger reveal sidebar
-            else {
-                if (!sidebarShown.value) {
-                    sidebarShown.value = true;
+            // If a setting is set in storage already, follow that
+            if (sidebarShown.value === null) {
+                if (newWidth < smallScreenSize) {
+                    sidebarShown.value = false;
+                }
+                // when making screen bigger reveal sidebar
+                else {
+                    if (!sidebarShown.value) {
+                        sidebarShown.value = true;
+                    }
                 }
             }
         });
@@ -230,8 +238,11 @@ const app = createApp({
         });
 
         onMounted(() => {
-            if (windowWidth.value > smallScreenSize) {
-                sidebarShown.value = true;
+            // If a setting is set in storage already, follow that
+            if (sidebarShown.value === null) {
+                if (windowWidth.value > smallScreenSize) {
+                    sidebarShown.value = true;
+                }
             }
 
             // Scroll the current selected page in the TOC into view of the TOC.
@@ -304,6 +315,7 @@ const app = createApp({
 
             sidebarShown,
             sidebarTab,
+            toggleSidebar,
 
             smallScreen,
 
