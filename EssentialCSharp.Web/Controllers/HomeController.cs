@@ -7,25 +7,12 @@ using Microsoft.CodeAnalysis;
 
 namespace EssentialCSharp.Web.Controllers;
 
-public class HomeController : Controller
+public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment hostingEnvironment, ISiteMappingService siteMappingService, IHttpContextAccessor httpContextAccessor) : Controller
 {
-    private readonly IConfiguration _Configuration;
-    private readonly IWebHostEnvironment _HostingEnvironment;
-    private readonly ISiteMappingService _SiteMappingService;
-    private readonly ILogger<HomeController> _Logger;
-
-    public HomeController(ILogger<HomeController> logger, IWebHostEnvironment hostingEnvironment, ISiteMappingService siteMappingService, IConfiguration configuration)
-    {
-        _Logger = logger;
-        _HostingEnvironment = hostingEnvironment;
-        _SiteMappingService = siteMappingService;
-        _Configuration = configuration;
-    }
-
     public IActionResult Index(string key)
     {
         // if no key (default case), then load up home page
-        SiteMapping? siteMapping = _SiteMappingService.SiteMappings.Find(key);
+        SiteMapping? siteMapping = siteMappingService.SiteMappings.Find(key);
 
         if (string.IsNullOrEmpty(key))
         {
@@ -33,7 +20,7 @@ public class HomeController : Controller
         }
         else if (siteMapping is not null)
         {
-            string filePath = Path.Combine(_HostingEnvironment.ContentRootPath, Path.Combine(siteMapping.PagePath));
+            string filePath = Path.Combine(hostingEnvironment.ContentRootPath, Path.Combine(siteMapping.PagePath));
             HtmlDocument doc = new();
             doc.Load(filePath);
             string headHtml = doc.DocumentNode.Element("html").Element("head").InnerHtml;
@@ -44,6 +31,8 @@ public class HomeController : Controller
             ViewBag.PreviousPage = FlipPage(siteMapping.ChapterNumber, siteMapping.PageNumber, false);
             ViewBag.HeadContents = headHtml;
             ViewBag.Contents = html;
+            // Set the referral Id for use in the front end if available
+            ViewBag.ReferralId = httpContextAccessor.HttpContext?.User?.Claims?.FirstOrDefault(f => f.Type == ClaimsExtensions.ReferrerIdClaimType)?.Value;
             return View();
         }
         else
@@ -84,19 +73,19 @@ public class HomeController : Controller
     public IActionResult Guidelines()
     {
         ViewBag.PageTitle = "Coding Guidelines";
-        FileInfo fileInfo = new(Path.Combine(_HostingEnvironment.ContentRootPath, "Guidelines", "guidelines.json"));
+        FileInfo fileInfo = new(Path.Combine(hostingEnvironment.ContentRootPath, "Guidelines", "guidelines.json"));
         if (!fileInfo.Exists)
         {
             return RedirectToAction(nameof(Error), new { errorMessage = "Guidelines could not be found", statusCode = 404 });
         }
-        ViewBag.Guidelines = fileInfo.ReadGuidelineJsonFromInputDirectory(_Logger);
+        ViewBag.Guidelines = fileInfo.ReadGuidelineJsonFromInputDirectory(logger);
         ViewBag.GuidelinesUrl = Request.Path.Value;
         return View();
     }
 
     private string FlipPage(int currentChapter, int currentPage, bool next)
     {
-        if (_SiteMappingService.SiteMappings.Count == 0)
+        if (siteMappingService.SiteMappings.Count == 0)
         {
             return "";
         }
@@ -107,18 +96,18 @@ public class HomeController : Controller
             page = 1;
         }
 
-        SiteMapping? siteMap = _SiteMappingService.SiteMappings.FirstOrDefault(f => f.ChapterNumber == currentChapter && f.PageNumber == currentPage + page);
+        SiteMapping? siteMap = siteMappingService.SiteMappings.FirstOrDefault(f => f.ChapterNumber == currentChapter && f.PageNumber == currentPage + page);
 
         if (siteMap is null)
         {
             if (next)
             {
-                siteMap = _SiteMappingService.SiteMappings.FirstOrDefault(f => f.ChapterNumber == currentChapter + 1 && f.PageNumber == 1);
+                siteMap = siteMappingService.SiteMappings.FirstOrDefault(f => f.ChapterNumber == currentChapter + 1 && f.PageNumber == 1);
             }
             else
             {
-                int? previousPage = _SiteMappingService.SiteMappings.LastOrDefault(f => f.ChapterNumber == currentChapter - 1)?.PageNumber;
-                siteMap = _SiteMappingService.SiteMappings.FirstOrDefault(f => f.ChapterNumber == currentChapter - 1 && f.PageNumber == previousPage);
+                int? previousPage = siteMappingService.SiteMappings.LastOrDefault(f => f.ChapterNumber == currentChapter - 1)?.PageNumber;
+                siteMap = siteMappingService.SiteMappings.FirstOrDefault(f => f.ChapterNumber == currentChapter - 1 && f.PageNumber == previousPage);
             }
             if (siteMap is null)
             {

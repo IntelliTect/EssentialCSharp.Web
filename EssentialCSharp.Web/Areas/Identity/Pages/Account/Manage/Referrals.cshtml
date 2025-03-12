@@ -1,0 +1,18 @@
+﻿@page
+@model ReferralsDataModel
+@{
+    ViewData["Title"] = "Referrals";
+    ViewData["ActivePage"] = ManageNavPages.Referrals;
+}
+
+<h3>@ViewData["Title"]</h3>
+
+<div>
+    <p>
+        You have <strong>@Model.ReferralCount</strong> referrals.
+    </p>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
