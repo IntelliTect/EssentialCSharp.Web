@@ -41,7 +41,7 @@ jobs:
         run: dotnet restore
 
       - name: Build with dotnet
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build -p:ContinuousIntegrationBuild=True -p:ReleaseDateAttribute=True --configuration Release --no-restore
 
       - name: Run .NET Tests
         run: dotnet test --no-build --configuration Release
