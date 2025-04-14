@@ -126,13 +126,11 @@ public partial class Program
              {
                  microsoftoptions.ClientId = configuration["authentication:microsoft:clientid"] ?? throw new InvalidOperationException("authentication:microsoft:clientid unexpectedly null");
                  microsoftoptions.ClientSecret = configuration["authentication:microsoft:clientsecret"] ?? throw new InvalidOperationException("authentication:microsoft:clientsecret unexpectedly null");
-                 microsoftoptions.CallbackPath = "/signin-microsoft";
              })
              .AddGitHub(o =>
              {
                  o.ClientId = configuration["authentication:github:clientId"] ?? throw new InvalidOperationException("github:clientId unexpectedly null");
                  o.ClientSecret = configuration["authentication:github:clientSecret"] ?? throw new InvalidOperationException("github:clientSecret unexpectedly null");
-                 o.CallbackPath = "/signin-github";
 
                  // Grants access to read a user's profile data.
                  // https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps
@@ -176,8 +174,8 @@ public partial class Program
             return next(context);
         });
 
-        app.MapDefaultControllerRoute();
         app.MapRazorPages();
+        app.MapDefaultControllerRoute();
 
         app.MapControllerRoute(
             name: "slug",
