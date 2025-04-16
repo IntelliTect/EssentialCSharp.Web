@@ -145,6 +145,11 @@ public partial class Program
         });
 
         WebApplication app = builder.Build();
+        app.Use((context, next) =>
+        {
+            context.Request.Scheme = "https";
+            return next(context);
+        });
 
         app.UseForwardedHeaders();
 
@@ -168,11 +173,6 @@ public partial class Program
         app.UseAuthorization();
         app.UseMiddleware<ReferralMiddleware>();
 
-        app.Use((context, next) =>
-        {
-            context.Request.Scheme = "https";
-            return next(context);
-        });
 
         app.MapRazorPages();
         app.MapDefaultControllerRoute();
