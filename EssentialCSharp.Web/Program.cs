@@ -177,10 +177,8 @@ public partial class Program
         app.MapRazorPages();
         app.MapDefaultControllerRoute();
 
-        app.MapControllerRoute(
-            name: "slug",
-            pattern: "{*key}",
-            defaults: new { controller = "Home", action = "Index" });
+
+        app.MapFallbackToController("Index", "Home");
 
         app.Run();
     }
