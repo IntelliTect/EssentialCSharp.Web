@@ -23,6 +23,12 @@ public partial class Program
         {
             options.ForwardedHeaders =
                 ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+
+            // Only loopback proxies are allowed by default.
+            // Clear that restriction because forwarders are enabled by explicit 
+            // configuration.
+            options.KnownNetworks.Clear();
+            options.KnownProxies.Clear();
         });
 
         ConfigurationManager configuration = builder.Configuration;
@@ -163,14 +169,6 @@ public partial class Program
             app.UseForwardedHeaders();
         }
 
-        //app.Use((context, next) =>
-        //{
-        //    context.Request.Scheme = "https";
-        //    return next(context);
-        //});
-
-
-
         app.MapHealthChecks("/healthz");
 
         app.UseHttpsRedirection();
@@ -185,7 +183,6 @@ public partial class Program
 
         app.MapRazorPages();
         app.MapDefaultControllerRoute();
-
 
         app.MapFallbackToController("Index", "Home");
 
