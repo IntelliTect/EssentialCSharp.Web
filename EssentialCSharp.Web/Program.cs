@@ -145,13 +145,13 @@ public partial class Program
         });
 
         WebApplication app = builder.Build();
+        app.UseForwardedHeaders();
         app.Use((context, next) =>
         {
             context.Request.Scheme = "https";
             return next(context);
         });
 
-        app.UseForwardedHeaders();
 
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
