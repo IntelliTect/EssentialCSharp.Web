@@ -18,6 +18,13 @@ public partial class Program
     private static void Main(string[] args)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+        builder.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders =
+                ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        });
+
         ConfigurationManager configuration = builder.Configuration;
         string connectionString = builder.Configuration.GetConnectionString("EssentialCSharpWebContextConnection") ?? throw new InvalidOperationException("Connection string 'EssentialCSharpWebContextConnection' not found.");
 
@@ -138,29 +145,31 @@ public partial class Program
              });
         }
 
-        builder.Services.Configure<ForwardedHeadersOptions>(options =>
-        {
-            options.ForwardedHeaders =
-                ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-        });
+
 
         WebApplication app = builder.Build();
-        app.UseForwardedHeaders();
-        app.Use((context, next) =>
-        {
-            context.Request.Scheme = "https";
-            return next(context);
-        });
-
-
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
         {
             app.UseExceptionHandler("/Error");
+            app.UseForwardedHeaders();
             app.UseHsts();
             app.UseSecurityHeadersMiddleware(new SecurityHeadersBuilder()
                 .AddDefaultSecurePolicy());
         }
+        else
+        {
+            app.UseDeveloperExceptionPage();
+            app.UseForwardedHeaders();
+        }
+
+        //app.Use((context, next) =>
+        //{
+        //    context.Request.Scheme = "https";
+        //    return next(context);
+        //});
+
+
 
         app.MapHealthChecks("/healthz");
 
