@@ -17,7 +17,7 @@ RUN --mount=type=secret,id=nuget_auth_token \
       export VSS_NUGET_EXTERNAL_FEED_ENDPOINTS="{\"endpointCredentials\": [{\"endpoint\":\"https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json\", \"password\":\"$auth_token\"}]}"; \
     fi && \
     dotnet restore "EssentialCSharp.Web.sln" -p:AccessToNugetFeed=$ACCESS_TO_NUGET_FEED && \
-    dotnet build "EssentialCSharp.Web.sln" -c Release --no-restore -p:AccessToNugetFeed=$ACCESS_TO_NUGET_FEED && \
+    dotnet build "EssentialCSharp.Web.sln" -c Release --no-restore -p:AccessToNugetFeed=$ACCESS_TO_NUGET_FEED -p:ReleaseDateAttribute=True && \
     dotnet publish "EssentialCSharp.Web.sln" -c Release -p:PublishDir=/app/publish -p:UseAppHost=false --no-build
 
 FROM base AS final
