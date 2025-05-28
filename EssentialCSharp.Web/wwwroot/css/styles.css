@@ -336,22 +336,27 @@ a:hover {
 /* Page Navigation Arrow Buttons */
 
 .turn-page {
-  top: calc(100vh - 9rem);
-  top: calc(100dvh - 9rem);
+  position: fixed !important;
+  left: 0;
+  right: 0;
+  bottom: 2rem;
+  top: auto !important;
+  transform: none !important;
+  z-index: 99999;
   display: flex;
-  z-index: 99999; 
   justify-content: space-between;
-  position: -webkit-sticky; /* Safari */
-  position: sticky;
-  padding: 0 0.5rem 0 0.5rem;
-  transform: translate(0, 3rem);
-  height: 0;
+  padding: 0 0.5rem;
+  height: auto;
+  pointer-events: none; /* allow buttons to be clickable only */
+}
+
+.turn-page .arrow-btn {
+  pointer-events: auto;
 }
 
 @media only screen and (max-width: 768px) {
   .turn-page {
-    top: calc(100vh - 13rem);
-    top: calc(100dvh - 9rem);
+    bottom: 4rem;
   }
 }
 
