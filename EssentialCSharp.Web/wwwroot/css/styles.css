@@ -337,12 +337,12 @@ a:hover {
 /* Page Navigation Arrow Buttons */
 
 .turn-page {
-  position: fixed !important;
+  position: fixed;
   left: 0;
   right: 0;
   bottom: 2rem;
-  top: auto !important;
-  transform: none !important;
+  top: auto;
+  transform: none;
   z-index: 1000;
   display: flex;
   justify-content: space-between;
