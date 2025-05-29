@@ -144,7 +144,7 @@
                 </div>
             </header>
 
-            <main class="layout">
+            <main :class="{ layout: true, 'has-sidebar': sidebarShown && !smallScreen }">
                 <div id="sidebarContainer" class="background-grey-lighten-2">
                     <Transition name="slide-fade">
                         <div v-cloak v-if="sidebarShown" :class="{sidebarSmall: smallScreen}" class="sidebar toc-padding" id="sidebar">

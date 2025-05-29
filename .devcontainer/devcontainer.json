@@ -1,0 +1,9 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/dotnet",
+  "features": {
+    "ghcr.io/devcontainers/features/dotnet:2": {
+      "version": "latest"
+    }
+  },
+  "postCreateCommand": "dotnet --list-sdks"
+}
