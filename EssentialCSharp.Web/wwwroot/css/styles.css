@@ -166,6 +166,23 @@ a:hover {
   margin-top: var(--toolbar-height);
 }
 
+/* Prevent horizontal overflow on main content */
+.container {
+  max-width: 100vw;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Ensure code blocks, tables, and pre elements wrap or scroll within themselves */
+.container pre,
+.container code,
+.container table {
+  max-width: 100%;
+  overflow-x: auto;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
 /* Search Bar Styles */
 
 @media (max-width: 768px) {
@@ -320,22 +337,41 @@ a:hover {
 /* Page Navigation Arrow Buttons */
 
 .turn-page {
-  top: calc(100vh - 9rem);
-  top: calc(100dvh - 9rem);
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 2rem;
+  top: auto;
+  transform: none;
+  z-index: 1000;
   display: flex;
-  z-index: 99999; 
   justify-content: space-between;
-  position: -webkit-sticky; /* Safari */
-  position: sticky;
-  padding: 0 0.5rem 0 0.5rem;
-  transform: translate(0, 3rem);
-  height: 0;
+  padding: 0 0.5rem;
+  height: auto;
+  pointer-events: none; /* allow buttons to be clickable only */
+  margin-left: 0;
 }
 
+.turn-page .arrow-btn {
+  pointer-events: auto;
+}
+
+/* Hide turn-page buttons on mobile when sidebar is open */
 @media only screen and (max-width: 768px) {
+  .layout.has-sidebar .turn-page {
+    display: none;
+  }
+  
   .turn-page {
-    top: calc(100vh - 13rem);
-    top: calc(100dvh - 9rem);
+    bottom: 4rem;
+    margin-left: 0;
+  }
+}
+
+/* Adjust turn-page positioning when sidebar is visible on larger screens */
+@media only screen and (min-width: 769px) {
+  .layout.has-sidebar .turn-page {
+    margin-left: 375px; /* Same as sidebar width */
   }
 }
 
