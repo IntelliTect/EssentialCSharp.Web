@@ -7,7 +7,8 @@ registries:
     password: ${{secrets.AZURE_DEVOPS_PAT}}
 updates:
   - package-ecosystem: "nuget" # See documentation for possible values
-    directory: "/" # Location of package manifests
+    directories:
+      - "**/*"
     registries:
       - nuget-azure-artifacts
     schedule:
