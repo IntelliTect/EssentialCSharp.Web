@@ -358,7 +358,8 @@ a:hover {
 
 /* Hide turn-page buttons on mobile when sidebar is open */
 @media only screen and (max-width: 768px) {
-  .layout.has-sidebar .turn-page {
+  /* Hide buttons when sidebar is open on mobile (sidebarSmall class is used) */
+  body:has(.sidebarSmall) .turn-page {
     display: none;
   }
   
