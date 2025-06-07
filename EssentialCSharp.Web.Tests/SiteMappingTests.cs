@@ -6,6 +6,7 @@ public class SiteMappingTests
 {
     static SiteMapping HelloWorldSiteMapping => new(
             keys: ["hello-world"],
+            primaryKey: "hello-world",
             pagePath:
             [
                 "Chapters",
@@ -24,6 +25,7 @@ public class SiteMappingTests
 
     static SiteMapping CSyntaxFundamentalsSiteMapping => new(
             keys: ["c-syntax-fundamentals"],
+            primaryKey: "c-syntax-fundamentals",
             pagePath:
             [
                 "Chapters",
