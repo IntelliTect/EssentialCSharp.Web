@@ -18,6 +18,19 @@ public partial class Program
     private static void Main(string[] args)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+        builder.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders =
+                ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+
+            // Only loopback proxies are allowed by default.
+            // Clear that restriction because forwarders are enabled by explicit 
+            // configuration.
+            options.KnownNetworks.Clear();
+            options.KnownProxies.Clear();
+        });
+
         ConfigurationManager configuration = builder.Configuration;
         string connectionString = builder.Configuration.GetConnectionString("EssentialCSharpWebContextConnection") ?? throw new InvalidOperationException("Connection string 'EssentialCSharpWebContextConnection' not found.");
 
@@ -126,13 +139,11 @@ public partial class Program
              {
                  microsoftoptions.ClientId = configuration["authentication:microsoft:clientid"] ?? throw new InvalidOperationException("authentication:microsoft:clientid unexpectedly null");
                  microsoftoptions.ClientSecret = configuration["authentication:microsoft:clientsecret"] ?? throw new InvalidOperationException("authentication:microsoft:clientsecret unexpectedly null");
-                 microsoftoptions.CallbackPath = "/signin-microsoft";
              })
              .AddGitHub(o =>
              {
                  o.ClientId = configuration["authentication:github:clientId"] ?? throw new InvalidOperationException("github:clientId unexpectedly null");
                  o.ClientSecret = configuration["authentication:github:clientSecret"] ?? throw new InvalidOperationException("github:clientSecret unexpectedly null");
-                 o.CallbackPath = "/signin-github";
 
                  // Grants access to read a user's profile data.
                  // https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps
@@ -140,23 +151,22 @@ public partial class Program
              });
         }
 
-        builder.Services.Configure<ForwardedHeadersOptions>(options =>
-        {
-            options.ForwardedHeaders =
-                ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-        });
+
 
         WebApplication app = builder.Build();
-
-        app.UseForwardedHeaders();
-
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
         {
             app.UseExceptionHandler("/Error");
+            app.UseForwardedHeaders();
             app.UseHsts();
             app.UseSecurityHeadersMiddleware(new SecurityHeadersBuilder()
                 .AddDefaultSecurePolicy());
+        }
+        else
+        {
+            app.UseDeveloperExceptionPage();
+            app.UseForwardedHeaders();
         }
 
         app.MapHealthChecks("/healthz");
@@ -170,19 +180,11 @@ public partial class Program
         app.UseAuthorization();
         app.UseMiddleware<ReferralMiddleware>();
 
-        app.Use((context, next) =>
-        {
-            context.Request.Scheme = "https";
-            return next(context);
-        });
 
-        app.MapDefaultControllerRoute();
         app.MapRazorPages();
+        app.MapDefaultControllerRoute();
 
-        app.MapControllerRoute(
-            name: "slug",
-            pattern: "{*key}",
-            defaults: new { controller = "Home", action = "Index" });
+        app.MapFallbackToController("Index", "Home");
 
         app.Run();
     }
