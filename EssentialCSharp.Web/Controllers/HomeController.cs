@@ -9,8 +9,10 @@ namespace EssentialCSharp.Web.Controllers;
 
 public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment hostingEnvironment, ISiteMappingService siteMappingService, IHttpContextAccessor httpContextAccessor) : Controller
 {
-    public IActionResult Index(string key)
+    public IActionResult Index()
     {
+        string? key = Request.Path.Value?.TrimStart('/');
+
         // if no key (default case), then load up home page
         SiteMapping? siteMapping = siteMappingService.SiteMappings.Find(key);
 
