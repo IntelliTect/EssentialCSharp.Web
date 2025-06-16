@@ -47,8 +47,16 @@ jobs:
         run: dotnet test --no-build --configuration Release
 
       - name: Set up Docker Buildx
-        if: github.event_name != 'pull_request_target' && github.event_name != 'pull_request'
         uses: docker/setup-buildx-action@v3
+
+# Build but no push with a PR
+      - name: Docker build (no push)
+        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+        uses: docker/build-push-action@v6
+        with:
+          push: false
+          tags: temp-pr-validation
+          file: ./EssentialCSharp.Web/Dockerfile
 
       - name: Build Container Image
         if: github.event_name != 'pull_request_target' && github.event_name != 'pull_request'
