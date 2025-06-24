@@ -35,7 +35,14 @@ jobs:
         run: dotnet build --configuration Release --no-restore /p:AccessToNugetFeed=false
 
       - name: Run .NET Tests
-        run: dotnet test --no-build --configuration Release
+        run: dotnet test --no-build --configuration Release --logger trx --results-directory ${{ runner.temp }}
+      
+      - name: Convert TRX to VS Playlist
+        if: failure()
+        uses: BenjaminMichaelis/trx-to-vsplaylist@v1
+        with:
+          trx-file-path: '${{ runner.temp }}/*.trx'
+          output-directory: '${{ runner.temp }}/vsplaylists'
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
