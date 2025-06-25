@@ -9,7 +9,7 @@ For any bugs, questions, or anything else with specifically the code found insid
 ## What You Will Need
 
 - [Visual Studio](https://visualstudio.microsoft.com/) (or your preferred IDE)
-- [.NET 8.0 SDK](https://dotnet.microsoft.com/download)
+- [.NET 9.0 SDK](https://dotnet.microsoft.com/download)
   - If you already have .NET installed you can check the version by typing `dotnet --info` into cmd to make sure you have the right version
 
 ## Startup Steps
@@ -35,6 +35,7 @@ Authentication:github:clientSecret = anotherimportantclientsecret
 Authentication:github:clientId = anotherimportantclientid
 HCaptcha:SiteKey = captchaSiteKey
 HCaptcha:SecretKey = captchaSecretKey
+APPLICATIONINSIGHTS_CONNECTION_STRING = "InstrumentationKey=your-instrumentation-key-here;IngestionEndpoint=https://region.in.applicationinsights.azure.com/;LiveEndpoint=https://region.livediagnostics.monitor.azure.com/"
 
 Testing Secret Values:
 Some Value Secrets for Testing/Development Purposes:
