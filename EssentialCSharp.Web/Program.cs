@@ -5,6 +5,7 @@ using EssentialCSharp.Web.Extensions;
 using EssentialCSharp.Web.Middleware;
 using EssentialCSharp.Web.Services;
 using EssentialCSharp.Web.Services.Referrals;
+using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Mailjet.Client;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
@@ -36,6 +37,11 @@ public partial class Program
 
         builder.Logging.AddConsole();
         builder.Services.AddHealthChecks();
+
+        // Configure Azure Application Insights with OpenTelemetry
+        builder.Services.AddOpenTelemetry().UseAzureMonitor();
+        builder.Services.AddApplicationInsightsTelemetry();
+        builder.Services.AddServiceProfiler();
 
         builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString));
         builder.Services.AddDefaultIdentity<EssentialCSharpWebUser>(options =>
