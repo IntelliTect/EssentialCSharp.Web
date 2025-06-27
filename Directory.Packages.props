@@ -18,6 +18,8 @@
   <ItemGroup>
     <PackageVersion Include="AspNet.Security.OAuth.GitHub" Version="8.3.0" />
     <PackageVersion Include="Azure.Identity" Version="1.12.1" />
+    <PackageVersion Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.3.0" />
+    <PackageVersion Include="Microsoft.ApplicationInsights.Profiler.AspNetCore" Version="2.6.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="EssentialCSharp.Shared.Models" Version="$(ToolingPackagesVersion)" />
     <PackageVersion Include="HtmlAgilityPack" Version="1.11.72" />

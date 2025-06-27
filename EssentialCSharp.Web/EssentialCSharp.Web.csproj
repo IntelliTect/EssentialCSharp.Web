@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Identity" />
+    <PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" />
     <PackageReference Include="AspNet.Security.OAuth.GitHub" />
     <PackageReference Include="EssentialCSharp.Shared.Models" />
     <PackageReference Include="HtmlAgilityPack" />
@@ -22,6 +23,7 @@
     <PackageReference Include="Mailjet.Api" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" />
+    <PackageReference Include="Microsoft.ApplicationInsights.Profiler.AspNetCore" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" />

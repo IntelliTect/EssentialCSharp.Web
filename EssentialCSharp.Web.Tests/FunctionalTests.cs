@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 
 namespace EssentialCSharp.Web.Tests;
 
@@ -9,6 +9,7 @@ public class FunctionalTests
     [InlineData("/hello-world")]
     [InlineData("/hello-world#hello-world")]
     [InlineData("/guidelines")]
+    [InlineData("/healthz")]
     public async Task WhenTheApplicationStarts_ItCanLoadLoadPages(string relativeUrl)
     {
         using WebApplicationFactory factory = new();

@@ -1,3 +1,4 @@
+using Azure.Monitor.OpenTelemetry.AspNetCore;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
 using EssentialCSharp.Web.Data;
@@ -36,6 +37,14 @@ public partial class Program
 
         builder.Logging.AddConsole();
         builder.Services.AddHealthChecks();
+
+        if (!builder.Environment.IsDevelopment())
+        {
+            // Configure Azure Application Insights with OpenTelemetry
+            builder.Services.AddOpenTelemetry().UseAzureMonitor();
+            builder.Services.AddApplicationInsightsTelemetry();
+            builder.Services.AddServiceProfiler();
+        }
 
         builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString));
         builder.Services.AddDefaultIdentity<EssentialCSharpWebUser>(options =>
