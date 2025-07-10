@@ -1,5 +1,4 @@
-﻿using EssentialCSharp.Common;
-using System.Globalization;
+﻿using System.Globalization;
 
 namespace EssentialCSharp.Web.Extensions;
 
@@ -58,7 +57,7 @@ public static class SiteMappingListExtensions
                         currentMappingCount++;
                     }
                     overallMappingCount++;
-                    if (siteMapping.Key == key)
+                    if (siteMapping.PrimaryKey == key)
                     {
                         currentPageFound = true;
                     }
