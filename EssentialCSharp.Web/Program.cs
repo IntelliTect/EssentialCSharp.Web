@@ -51,7 +51,11 @@ public partial class Program
 
             if (!string.IsNullOrEmpty(appInsightsConnectionString))
             {
-                builder.Services.AddOpenTelemetry().UseAzureMonitor();
+            builder.Services.AddOpenTelemetry().UseAzureMonitor(
+                options =>
+                {
+                    options.ConnectionString = appInsightsConnectionString;
+                });
                 builder.Services.AddApplicationInsightsTelemetry();
                 builder.Services.AddServiceProfiler();
             }
