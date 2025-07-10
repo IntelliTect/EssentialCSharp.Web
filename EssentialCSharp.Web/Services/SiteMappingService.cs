@@ -1,4 +1,4 @@
-﻿using EssentialCSharp.Web.Models;
+using System.Globalization;
 
 namespace EssentialCSharp.Web.Services;
 
@@ -12,7 +12,6 @@ public class SiteMappingService : ISiteMappingService
         List<SiteMapping>? siteMappings = System.Text.Json.JsonSerializer.Deserialize<List<SiteMapping>>(File.OpenRead(path)) ?? throw new InvalidOperationException("No table of contents found");
         SiteMappings = siteMappings;
     }
-
     public IEnumerable<SiteMappingDto> GetTocData()
     {
         return SiteMappings.GroupBy(x => x.ChapterNumber).OrderBy(x => x.Key).Select(x =>

@@ -1,4 +1,6 @@
-﻿namespace EssentialCSharp.Web.Extensions;
+﻿using System.Globalization;
+
+namespace EssentialCSharp.Web.Extensions;
 
 public static class SiteMappingListExtensions
 {
@@ -22,5 +24,52 @@ public static class SiteMappingListExtensions
             }
         }
         return null;
+    }
+    /// <summary>
+    /// Finds percent complete based on a key.
+    /// </summary>
+    /// <param name="siteMappings">IList of SiteMappings</param>
+    /// <param name="key">The key to search for. If null, returns null.</param>
+    /// <returns>Returns a formatted double for use as the percent complete.</returns>
+    public static string? FindPercentComplete(this IList<SiteMapping> siteMappings, string? key)
+    {
+        if (key is null)
+        {
+            return null;
+        }
+        if (key.Trim().Length is 0)
+        {
+            throw new ArgumentException("Parameter 'key' cannot be null or whitespace.", nameof(key));
+        }
+        int currentMappingCount = 0;
+        int overallMappingCount = 0;
+        bool currentPageFound = false;
+        IEnumerable<IGrouping<int, SiteMapping>> chapterGroupings = siteMappings.GroupBy(x => x.ChapterNumber).OrderBy(g => g.Key);
+        foreach (IGrouping<int, SiteMapping> chapterGrouping in chapterGroupings)
+        {
+            IEnumerable<IGrouping<int, SiteMapping>> pageGroupings = chapterGrouping.GroupBy(x => x.PageNumber).OrderBy(g => g.Key);
+            foreach (IGrouping<int, SiteMapping> pageGrouping in pageGroupings)
+            {
+                foreach (SiteMapping siteMapping in pageGrouping)
+                {
+                    if (!currentPageFound)
+                    {
+                        currentMappingCount++;
+                    }
+                    overallMappingCount++;
+                    if (siteMapping.PrimaryKey == key)
+                    {
+                        currentPageFound = true;
+                    }
+                }
+            }
+        }
+        if (overallMappingCount is 0 || !currentPageFound)
+        {
+            return "0.00";
+        }
+
+        double result = (double)currentMappingCount / overallMappingCount * 100;
+        return string.Format(CultureInfo.InvariantCulture, "{0:0.00}", result);
     }
 }
