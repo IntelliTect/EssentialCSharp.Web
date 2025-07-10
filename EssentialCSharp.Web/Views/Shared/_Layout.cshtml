@@ -121,10 +121,10 @@
                         </div>
                     </div>
 
-                    <a v-if="chapterParentPage" :href="chapterParentPage.href" class="menu menu-chapter-title text-light">
+                    <a v-if="chapterParentPage" :href="chapterParentPage.href" class="page-menu menu-chapter-title text-light">
                         <span v-cloak>{{chapterParentPage.title}}</span>
                     </a>
-                    <div class="menu menu-progress text-light" v-if="isContentPage">
+                    <div class="page-menu menu-progress text-light" v-if="isContentPage">
                         <span v-cloak>{{percentComplete}}%</span>
                     </div>
 

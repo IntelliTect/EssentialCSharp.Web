@@ -29,7 +29,7 @@ public static class SiteMappingListExtensions
     /// Finds percent complete based on a key.
     /// </summary>
     /// <param name="siteMappings">IList of SiteMappings</param>
-    /// <param name="key">If null, uses the first key in the list</param>
+    /// <param name="key">The key to search for. If null, returns null.</param>
     /// <returns>Returns a formatted double for use as the percent complete.</returns>
     public static string? FindPercentComplete(this IList<SiteMapping> siteMappings, string? key)
     {
@@ -39,7 +39,7 @@ public static class SiteMappingListExtensions
         }
         if (key.Trim().Length is 0)
         {
-            throw new ArgumentException("Parameter key is whitespace or empty: ", nameof(key));
+            throw new ArgumentException("Parameter 'key' cannot be null or whitespace.", nameof(key));
         }
         int currentMappingCount = 0;
         int overallMappingCount = 0;

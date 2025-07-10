@@ -84,7 +84,7 @@ public class SiteMappingTests
     }
 
     [Fact]
-    public void FindPercentComplete_KeyIsNull_ThrowsArgumentNullException()
+    public void FindPercentComplete_KeyIsNull_ReturnsNull()
     {
         // Arrange
 
