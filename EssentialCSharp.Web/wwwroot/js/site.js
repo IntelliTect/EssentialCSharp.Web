@@ -210,6 +210,8 @@ const app = createApp({
 
         const currentPage = findCurrentPage([], tocData) ?? [];
 
+        const percentComplete = ref(PERCENT_COMPLETE);
+
         const chapterParentPage = currentPage.find((parent) => parent.level === 0);
 
         const sectionTitle = ref(currentPage?.[0]?.title || "Essential C#");
@@ -277,6 +279,11 @@ const app = createApp({
             return tocData.filter(item => filterItem(item, query));
         });
 
+        const isContentPage = computed(() => {
+            let path = window.location.pathname;
+            return path !== '/home' && path !== '/guidelines' && path !== '/about' && path !== '/announcements';
+        });
+
         function filterItem(item, query) {
             let matches = normalizeString(item.title).includes(query);
             if (item.items && item.items.length) {
@@ -334,11 +341,13 @@ const app = createApp({
             tocData,
             expandedTocs,
             currentPage,
+            percentComplete,
             chapterParentPage,
 
             searchQuery,
             filteredTocData,
-            enableTocFilter
+            enableTocFilter,
+            isContentPage
         };
     },
 });

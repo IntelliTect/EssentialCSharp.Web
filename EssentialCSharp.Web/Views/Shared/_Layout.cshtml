@@ -121,9 +121,12 @@
                         </div>
                     </div>
 
-                    <a v-if="chapterParentPage" :href="chapterParentPage.href" class="menu-chapter-title text-light">
+                    <a v-if="chapterParentPage" :href="chapterParentPage.href" class="page-menu menu-chapter-title text-light">
                         <span v-cloak>{{chapterParentPage.title}}</span>
                     </a>
+                    <div class="page-menu menu-progress text-light" v-if="isContentPage">
+                        <span v-cloak>{{percentComplete}}%</span>
+                    </div>
 
                     <div class="d-flex align-items-center">
                         <div class="border-end pe-3 d-none d-md-block">
@@ -268,8 +271,9 @@
     <script>
         @{
             var tocData = _SiteMappings.GetTocData();
+            var percentComplete = _SiteMappings.SiteMappings.FindPercentComplete((string) ViewBag.CurrentPageKey);
         }
-
+            PERCENT_COMPLETE = @Json.Serialize(percentComplete);
             PREVIOUS_PAGE = @Json.Serialize(ViewBag.PreviousPage)
             NEXT_PAGE = @Json.Serialize(ViewBag.NextPage)
             TOC_DATA = @Json.Serialize(tocData)
@@ -320,6 +324,5 @@
         </li>
     </template>
     <script src="~/js/site.js" type="module" asp-append-version="true"></script>
-
 </body>
 </html>
