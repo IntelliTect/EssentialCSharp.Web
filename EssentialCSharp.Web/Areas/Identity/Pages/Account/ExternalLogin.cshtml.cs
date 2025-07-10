@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
 using EssentialCSharp.Web.Areas.Identity.Data;
+using EssentialCSharp.Web.Services.Referrals;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -19,7 +20,8 @@ public class ExternalLoginModel(
     IUserStore<EssentialCSharpWebUser> userStore,
     ILogger<ExternalLoginModel> logger,
     IEmailSender emailSender,
-    IUserEmailStore<EssentialCSharpWebUser> emailStore) : PageModel
+    IUserEmailStore<EssentialCSharpWebUser> emailStore,
+    IReferralService referralService) : PageModel
 {
     private InputModel? _Input;
     [BindProperty]
@@ -73,6 +75,12 @@ public class ExternalLoginModel(
         if (result.Succeeded)
         {
             logger.LogInformation("{Name} logged in with {LoginProvider} provider.", info.Principal.Identity?.Name, info.LoginProvider);
+            // Ensure referral ID is set for the user
+            var user = await userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+            if (user != null)
+            {
+                await referralService.EnsureReferralIdAsync(user);
+            }
             return LocalRedirect(returnUrl);
         }
         if (result.IsLockedOut)
