@@ -38,12 +38,27 @@ public partial class Program
         builder.Logging.AddConsole();
         builder.Services.AddHealthChecks();
 
+        // Create a temporary logger for startup logging
+        using var loggerFactory = LoggerFactory.Create(loggingBuilder =>
+            loggingBuilder.AddConsole().SetMinimumLevel(LogLevel.Information));
+        var logger = loggerFactory.CreateLogger<Program>();
+
         if (!builder.Environment.IsDevelopment())
         {
-            // Configure Azure Application Insights with OpenTelemetry
-            builder.Services.AddOpenTelemetry().UseAzureMonitor();
-            builder.Services.AddApplicationInsightsTelemetry();
-            builder.Services.AddServiceProfiler();
+            // Configure Azure Application Insights with OpenTelemetry only if connection string is available
+            var appInsightsConnectionString = builder.Configuration.GetConnectionString("ApplicationInsights")
+                ?? builder.Configuration["ApplicationInsights:ConnectionString"];
+
+            if (!string.IsNullOrEmpty(appInsightsConnectionString))
+            {
+                builder.Services.AddOpenTelemetry().UseAzureMonitor();
+                builder.Services.AddApplicationInsightsTelemetry();
+                builder.Services.AddServiceProfiler();
+            }
+            else
+            {
+                logger.LogWarning("Application Insights connection string not found. Telemetry collection will be disabled.");
+            }
         }
 
         builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString));
@@ -163,6 +178,7 @@ public partial class Program
 
 
         WebApplication app = builder.Build();
+
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
         {
