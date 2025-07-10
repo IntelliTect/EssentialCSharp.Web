@@ -64,10 +64,11 @@ public static class SiteMappingListExtensions
                 }
             }
         }
-        if (overallMappingCount is 0)
+        if (overallMappingCount is 0 || !currentPageFound)
         {
             return "0.00";
         }
+
         double result = (double)currentMappingCount / overallMappingCount * 100;
         return string.Format(CultureInfo.InvariantCulture, "{0:0.00}", result);
     }

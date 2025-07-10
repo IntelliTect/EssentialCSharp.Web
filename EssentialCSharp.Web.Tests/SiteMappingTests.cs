@@ -137,4 +137,16 @@ public class SiteMappingTests
         // Assert
         Assert.Equal("0.00", percent);
     }
+
+    [Fact]
+    public void FindPercentComplete_KeyNotFound_ReturnsZeroPercent()
+    {
+        // Arrange
+
+        // Act
+        string? percent = GetSiteMap().FindPercentComplete("non-existent-key");
+
+        // Assert
+        Assert.Equal("0.00", percent);
+    }
 }
