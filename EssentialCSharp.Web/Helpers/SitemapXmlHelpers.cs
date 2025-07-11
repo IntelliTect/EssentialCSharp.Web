@@ -1,45 +1,43 @@
 using DotnetSitemapGenerator;
 using DotnetSitemapGenerator.Serialization;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
+using EssentialCSharp.Web.Services;
 
 namespace EssentialCSharp.Web.Helpers;
 
 public static class SitemapXmlHelpers
 {
-    private const string RootUrl = "https://essentialcsharp.com/";
-
     public static void EnsureSitemapHealthy(List<SiteMapping> siteMappings)
     {
         var groups = siteMappings.GroupBy(item => new { item.ChapterNumber, item.PageNumber });
         foreach (var group in groups)
         {
-            try
+            var count = group.Count(item => item.IncludeInSitemapXml);
+            if (count != 1)
             {
-                SiteMapping result = group.Single(item => item.IncludeInSitemapXml);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Sitemap error: Chapter {group.Key.ChapterNumber}, Page {group.Key.PageNumber} has more than one canonical link, or none: {ex.Message}", ex);
+                throw new InvalidOperationException($"Sitemap error: Chapter {group.Key.ChapterNumber}, Page {group.Key.PageNumber} has more than one canonical link, or none");
             }
         }
     }
 
-    public static void GenerateAndSerializeSitemapXml(DirectoryInfo wwwrootDirectory, List<SiteMapping> siteMappings, ILogger logger, IActionDescriptorCollectionProvider actionDescriptorCollectionProvider)
+    public static void GenerateAndSerializeSitemapXml(DirectoryInfo wwwrootDirectory, List<SiteMapping> siteMappings, ILogger logger, IRouteConfigurationService routeConfigurationService, string baseUrl)
     {
-        GenerateSitemapXml(wwwrootDirectory, siteMappings, actionDescriptorCollectionProvider, out string xmlPath, out List<SitemapNode> nodes);
+        GenerateSitemapXml(wwwrootDirectory, siteMappings, routeConfigurationService, baseUrl, out List<SitemapNode> nodes);
         XmlSerializer sitemapProvider = new();
+        var xmlPath = Path.Combine(wwwrootDirectory.FullName, "sitemap.xml");
         sitemapProvider.Serialize(new SitemapModel(nodes), xmlPath, true);
         logger.LogInformation("sitemap.xml successfully written to {XmlPath}", xmlPath);
     }
 
-    public static void GenerateSitemapXml(DirectoryInfo wwwrootDirectory, List<SiteMapping> siteMappings, IActionDescriptorCollectionProvider actionDescriptorCollectionProvider, out string xmlPath, out List<SitemapNode> nodes)
+    public static void GenerateSitemapXml(DirectoryInfo wwwrootDirectory, List<SiteMapping> siteMappings, IRouteConfigurationService routeConfigurationService, string baseUrl, out List<SitemapNode> nodes)
     {
-        xmlPath = Path.Combine(wwwrootDirectory.FullName, "sitemap.xml");
         DateTime newDateTime = DateTime.UtcNow;
+
+        // Routes should end up with leading slash
+        baseUrl = baseUrl.TrimEnd('/');
 
         // Start with the root URL
         nodes = new() {
-            new($"{RootUrl}")
+            new($"{baseUrl}/")
             {
                 LastModificationDate = newDateTime,
                 ChangeFrequency = ChangeFrequency.Daily,
@@ -47,11 +45,19 @@ public static class SitemapXmlHelpers
             }
         };
 
-        // Add routes dynamically discovered from controllers (excluding Identity routes)
-        var controllerRoutes = GetControllerRoutes(actionDescriptorCollectionProvider);
+        // Add routes dynamically discovered from controllers
+        var allRoutes = routeConfigurationService.GetStaticRoutes();
+        var controllerRoutes = allRoutes
+            .Where(route => !route.Contains("error", StringComparison.OrdinalIgnoreCase)) // Skip Error actions for sitemap
+            .Where(route => !route.Contains("index", StringComparison.OrdinalIgnoreCase)) // Skip Index actions for sitemap
+            .Where(route => !route.Contains("identity", StringComparison.OrdinalIgnoreCase)) // Skip Identity actions for sitemap
+        // All routes should have leading slash
+            .Select(route => $"/{route}") // Add leading slash for sitemap URLs
+            .ToList();
+
         foreach (var route in controllerRoutes)
         {
-            nodes.Add(new($"{RootUrl.TrimEnd('/')}{route}")
+            nodes.Add(new($"{baseUrl}{route}")
             {
                 LastModificationDate = newDateTime,
                 ChangeFrequency = GetChangeFrequencyForRoute(route),
@@ -60,45 +66,12 @@ public static class SitemapXmlHelpers
         }
 
         // Add site mappings from content
-        nodes.AddRange(siteMappings.Where(item => item.IncludeInSitemapXml).Select<SiteMapping, SitemapNode>(siteMapping => new($"{RootUrl}{siteMapping.Keys.First()}")
+        nodes.AddRange(siteMappings.Where(item => item.IncludeInSitemapXml).Select<SiteMapping, SitemapNode>(siteMapping => new($"{baseUrl.TrimEnd('/')}/{siteMapping.Keys.First()}")
         {
             LastModificationDate = newDateTime,
             ChangeFrequency = ChangeFrequency.Daily,
             Priority = 0.8M
         }));
-    }
-
-    private static List<string> GetControllerRoutes(IActionDescriptorCollectionProvider actionDescriptorCollectionProvider)
-    {
-        var routes = new List<string>();
-
-        foreach (var actionDescriptor in actionDescriptorCollectionProvider.ActionDescriptors.Items)
-        {
-            // Skip Identity area routes
-            if (actionDescriptor.RouteValues.TryGetValue("area", out var area) && area == "Identity")
-                continue;
-
-            // Skip the default fallback route (Index action in HomeController)
-            if (actionDescriptor.RouteValues.TryGetValue("action", out var action) && action == "Index")
-                continue;
-
-            // Skip Error actions
-            if (action == "Error")
-                continue;
-
-            // Get the route template or attribute route
-            if (actionDescriptor.AttributeRouteInfo?.Template is string template)
-            {
-                // Clean up the template (remove parameters, etc.)
-                var cleanRoute = template.TrimStart('/');
-                if (!string.IsNullOrEmpty(cleanRoute) && !routes.Contains($"/{cleanRoute}"))
-                {
-                    routes.Add($"/{cleanRoute}");
-                }
-            }
-        }
-
-        return routes.Distinct().OrderBy(r => r).ToList();
     }
 
     private static ChangeFrequency GetChangeFrequencyForRoute(string route)

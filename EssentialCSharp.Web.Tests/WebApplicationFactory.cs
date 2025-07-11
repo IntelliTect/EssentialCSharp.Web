@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace EssentialCSharp.Web.Tests;
 
-internal sealed class WebApplicationFactory : WebApplicationFactory<Program>
+public sealed class WebApplicationFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -35,5 +35,29 @@ internal sealed class WebApplicationFactory : WebApplicationFactory<Program>
             db.Database.OpenConnection();
             db.Database.EnsureCreated();
         });
+    }
+
+    /// <summary>
+    /// Executes an action within a service scope, handling scope creation and cleanup automatically.
+    /// </summary>
+    /// <typeparam name="T">The return type of the action</typeparam>
+    /// <param name="action">The action to execute with the scoped service provider</param>
+    /// <returns>The result of the action</returns>
+    public T InServiceScope<T>(Func<IServiceProvider, T> action)
+    {
+        var factory = Services.GetRequiredService<IServiceScopeFactory>();
+        using var scope = factory.CreateScope();
+        return action(scope.ServiceProvider);
+    }
+
+    /// <summary>
+    /// Executes an action within a service scope, handling scope creation and cleanup automatically.
+    /// </summary>
+    /// <param name="action">The action to execute with the scoped service provider</param>
+    public void InServiceScope(Action<IServiceProvider> action)
+    {
+        var factory = Services.GetRequiredService<IServiceScopeFactory>();
+        using var scope = factory.CreateScope();
+        action(scope.ServiceProvider);
     }
 }

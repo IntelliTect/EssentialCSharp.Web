@@ -220,13 +220,19 @@ public partial class Program
         // Generate sitemap.xml at startup
         var wwwrootDirectory = new DirectoryInfo(app.Environment.WebRootPath);
         var siteMappingService = app.Services.GetRequiredService<ISiteMappingService>();
-        var actionDescriptorCollectionProvider = app.Services.GetRequiredService<IActionDescriptorCollectionProvider>();
         var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
+        // Extract base URL from configuration
+        var baseUrl = configuration.GetSection("SiteSettings")["BaseUrl"] ?? "https://essentialcsharp.com";
 
         try
         {
+            // Create a scope to resolve scoped services
+            using var scope = app.Services.CreateScope();
+            var routeConfigurationService = scope.ServiceProvider.GetRequiredService<IRouteConfigurationService>();
+            
             SitemapXmlHelpers.EnsureSitemapHealthy(siteMappingService.SiteMappings.ToList());
-            SitemapXmlHelpers.GenerateAndSerializeSitemapXml(wwwrootDirectory, siteMappingService.SiteMappings.ToList(), logger, actionDescriptorCollectionProvider);
+            SitemapXmlHelpers.GenerateAndSerializeSitemapXml(wwwrootDirectory, siteMappingService.SiteMappings.ToList(), logger, routeConfigurationService, baseUrl);
             logger.LogInformation("Sitemap.xml generation completed successfully during application startup");
         }
         catch (Exception ex)
