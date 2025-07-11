@@ -4,12 +4,12 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace EssentialCSharp.Web.Tests;
 
-public class RouteConfigurationServiceTests : IClassFixture<WebApplicationFactory<Program>>
+public class RouteConfigurationServiceTests : IClassFixture<WebApplicationFactory>
 {
-    private readonly WebApplicationFactory<Program> _Factory;
+    private readonly WebApplicationFactory _Factory;
     private readonly IRouteConfigurationService _RouteConfigurationService;
 
-    public RouteConfigurationServiceTests(WebApplicationFactory<Program> factory)
+    internal RouteConfigurationServiceTests(WebApplicationFactory factory)
     {
         _Factory = factory;
 
