@@ -66,6 +66,10 @@ public partial class Program
         }
 
         builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString));
+        
+        // Add Data Protection services
+        builder.Services.AddDataProtection();
+        
         builder.Services.AddDefaultIdentity<EssentialCSharpWebUser>(options =>
         {
             // Password settings
@@ -83,12 +87,15 @@ public partial class Program
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(30);
             options.Lockout.MaxFailedAccessAttempts = 3;
 
-            //TODO: Implement IProtectedUserStore
-            //options.Stores.ProtectPersonalData = true;
+            // Enable personal data protection for properties marked with [ProtectedPersonalData]
+            options.Stores.ProtectPersonalData = true;
         })
             .AddEntityFrameworkStores<EssentialCSharpWebContext>()
              .AddPasswordValidator<UsernameOrEmailAsPasswordValidator<EssentialCSharpWebUser>>()
              .AddPasswordValidator<Top100000PasswordValidator<EssentialCSharpWebUser>>();
+
+        // Register personal data protector for IProtectedUserStore functionality
+        builder.Services.AddScoped<IPersonalDataProtector, PersonalDataProtectionService>();
 
         builder.Configuration
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
