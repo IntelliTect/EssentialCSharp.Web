@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace EssentialCSharp.Web.Tests;
 
-internal sealed class WebApplicationFactory : WebApplicationFactory<Program>
+public sealed class WebApplicationFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
