@@ -43,7 +43,7 @@ public partial class Program
         // Create a temporary logger for startup logging
         using var loggerFactory = LoggerFactory.Create(loggingBuilder =>
             loggingBuilder.AddConsole().SetMinimumLevel(LogLevel.Information));
-        var logger = loggerFactory.CreateLogger<Program>();
+        var initialLogger = loggerFactory.CreateLogger<Program>();
 
         if (!builder.Environment.IsDevelopment())
         {
@@ -53,17 +53,17 @@ public partial class Program
 
             if (!string.IsNullOrEmpty(appInsightsConnectionString))
             {
-            builder.Services.AddOpenTelemetry().UseAzureMonitor(
-                options =>
-                {
-                    options.ConnectionString = appInsightsConnectionString;
-                });
+                builder.Services.AddOpenTelemetry().UseAzureMonitor(
+                    options =>
+                    {
+                        options.ConnectionString = appInsightsConnectionString;
+                    });
                 builder.Services.AddApplicationInsightsTelemetry();
                 builder.Services.AddServiceProfiler();
             }
             else
             {
-                logger.LogWarning("Application Insights connection string not found. Telemetry collection will be disabled.");
+                initialLogger.LogWarning("Application Insights connection string not found. Telemetry collection will be disabled.");
             }
         }
 
