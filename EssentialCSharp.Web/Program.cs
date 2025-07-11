@@ -3,6 +3,7 @@ using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
 using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Extensions;
+using EssentialCSharp.Web.Helpers;
 using EssentialCSharp.Web.Middleware;
 using EssentialCSharp.Web.Services;
 using EssentialCSharp.Web.Services.Referrals;
@@ -10,6 +11,7 @@ using Mailjet.Client;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
 namespace EssentialCSharp.Web;
@@ -146,6 +148,7 @@ public partial class Program
         builder.Services.AddRazorPages();
         builder.Services.AddCaptchaService(builder.Configuration.GetSection(CaptchaOptions.CaptchaSender));
         builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
+        builder.Services.AddScoped<IRouteConfigurationService, RouteConfigurationService>();
         builder.Services.AddHostedService<DatabaseMigrationService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
 
@@ -182,7 +185,6 @@ public partial class Program
 
 
         WebApplication app = builder.Build();
-
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
         {
@@ -214,6 +216,24 @@ public partial class Program
         app.MapDefaultControllerRoute();
 
         app.MapFallbackToController("Index", "Home");
+
+        // Generate sitemap.xml at startup
+        var wwwrootDirectory = new DirectoryInfo(app.Environment.WebRootPath);
+        var siteMappingService = app.Services.GetRequiredService<ISiteMappingService>();
+        var actionDescriptorCollectionProvider = app.Services.GetRequiredService<IActionDescriptorCollectionProvider>();
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
+        try
+        {
+            SitemapXmlHelpers.EnsureSitemapHealthy(siteMappingService.SiteMappings.ToList());
+            SitemapXmlHelpers.GenerateAndSerializeSitemapXml(wwwrootDirectory, siteMappingService.SiteMappings.ToList(), logger, actionDescriptorCollectionProvider);
+            logger.LogInformation("Sitemap.xml generation completed successfully during application startup");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to generate sitemap.xml during application startup");
+            // Continue startup even if sitemap generation fails
+        }
 
         app.Run();
     }
