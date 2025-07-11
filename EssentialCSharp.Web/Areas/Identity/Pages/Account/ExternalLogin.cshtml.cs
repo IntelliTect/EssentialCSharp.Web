@@ -80,6 +80,8 @@ public class ExternalLoginModel(
             if (user != null)
             {
                 await referralService.EnsureReferralIdAsync(user);
+                // Refresh sign-in to pick up the newly added referral ID claim
+                await signInManager.RefreshSignInAsync(user);
             }
             return LocalRedirect(returnUrl);
         }
@@ -189,6 +191,8 @@ public class ExternalLoginModel(
             return RedirectToPage("./RegisterConfirmation", new { Email = Input.Email });
         }
 
+        // Ensure referral ID is set for the new user before signing in
+        await referralService.EnsureReferralIdAsync(user);
         await signInManager.SignInAsync(user, isPersistent: false, info.LoginProvider);
         return LocalRedirect(returnUrl);
     }
