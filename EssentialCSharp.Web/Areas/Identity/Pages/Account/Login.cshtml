@@ -29,6 +29,9 @@
                         @Html.DisplayNameFor(m => m.Input.RememberMe)
                     </label>
                 </div>
+                <div class="form-group">
+                    <div class="h-captcha" data-sitekey=@Model.CaptchaOptions.SiteKey></div>
+                </div>
                 <div>
                     <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
                 </div>
@@ -82,5 +85,6 @@
 </div>
 
 @section Scripts {
+    <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
     <partial name="_ValidationScriptsPartial" />
 }
