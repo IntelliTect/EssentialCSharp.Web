@@ -41,6 +41,23 @@ public class FunctionalTests
         Assert.Contains("<html", content, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Theory]
+    [InlineData("/guidelines?rid=")]
+    [InlineData("/about?rid=   ")]
+    public async Task WhenPagesAreAccessedWithEmptyRidParameter_TheyStillWork(string relativeUrl)
+    {
+        using WebApplicationFactory factory = new();
+
+        HttpClient client = factory.CreateClient();
+        using HttpResponseMessage response = await client.GetAsync(relativeUrl);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        
+        string content = await response.Content.ReadAsStringAsync();
+        Assert.NotEmpty(content);
+        Assert.Contains("<html", content, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public async Task WhenTheApplicationStarts_NonExistingPage_GivesCorrectStatusCode()
     {
