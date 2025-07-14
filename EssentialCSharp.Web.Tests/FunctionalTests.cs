@@ -20,6 +20,31 @@ public class FunctionalTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    [Theory]
+    [InlineData("/guidelines?rid=test-referral-id")]
+    [InlineData("/about?rid=abc123")]
+    [InlineData("/hello-world?rid=user-referral")]
+    [InlineData("/guidelines?rid=")]
+    [InlineData("/about?rid=   ")]
+    [InlineData("/guidelines?foo=bar")]
+    [InlineData("/about?someOtherParam=value")]
+    public async Task WhenPagesAreAccessed_TheyReturnHtml(string relativeUrl)
+    {
+        using WebApplicationFactory factory = new();
+
+        HttpClient client = factory.CreateClient();
+        using HttpResponseMessage response = await client.GetAsync(relativeUrl);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        
+        // Ensure the response has content (not blank)
+        string content = await response.Content.ReadAsStringAsync();
+        Assert.NotEmpty(content);
+        
+        // Verify it's actually HTML content, not just whitespace
+        Assert.Contains("<html", content, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public async Task WhenTheApplicationStarts_NonExistingPage_GivesCorrectStatusCode()
     {

@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using System.Web;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Services.Referrals;
@@ -25,6 +24,7 @@ public sealed class ReferralMiddleware
             await _Next(context);
             return;
         }
+
         if (context.User is { Identity.IsAuthenticated: true } claimsUser)
         {
             referralService.TrackReferralAsync(referralId, claimsUser);
@@ -33,5 +33,7 @@ public sealed class ReferralMiddleware
         {
             referralService.TrackReferralAsync(referralId, null);
         }
+
+        await _Next(context);
     }
 }
