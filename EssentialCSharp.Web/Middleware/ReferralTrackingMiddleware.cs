@@ -8,12 +8,10 @@ namespace EssentialCSharp.Web.Middleware;
 public sealed class ReferralMiddleware
 {
     private readonly RequestDelegate _Next;
-    private readonly ILogger<ReferralMiddleware> _Logger;
 
-    public ReferralMiddleware(RequestDelegate next, ILogger<ReferralMiddleware> logger)
+    public ReferralMiddleware(RequestDelegate next)
     {
         _Next = next;
-        _Logger = logger;
     }
 
     public async Task InvokeAsync(HttpContext context, IReferralService referralService, UserManager<EssentialCSharpWebUser> userManager)
@@ -27,20 +25,13 @@ public sealed class ReferralMiddleware
             return;
         }
 
-        try
+        if (context.User is { Identity.IsAuthenticated: true } claimsUser)
         {
-            if (context.User is { Identity.IsAuthenticated: true } claimsUser)
-            {
-                referralService.TrackReferralAsync(referralId, claimsUser);
-            }
-            else
-            {
-                referralService.TrackReferralAsync(referralId, null);
-            }
+            referralService.TrackReferralAsync(referralId, claimsUser);
         }
-        catch (Exception ex)
+        else
         {
-            _Logger.LogError(ex, "Failed to track referral ID {ReferralId}", referralId);
+            referralService.TrackReferralAsync(referralId, null);
         }
 
         await _Next(context);
