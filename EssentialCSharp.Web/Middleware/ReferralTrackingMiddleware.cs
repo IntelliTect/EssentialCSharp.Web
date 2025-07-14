@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using System.Web;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Services.Referrals;
@@ -9,12 +8,12 @@ namespace EssentialCSharp.Web.Middleware;
 public sealed class ReferralMiddleware
 {
     private readonly RequestDelegate _Next;
-    private readonly ILogger<ReferralMiddleware> _logger;
+    private readonly ILogger<ReferralMiddleware> _Logger;
 
     public ReferralMiddleware(RequestDelegate next, ILogger<ReferralMiddleware> logger)
     {
         _Next = next;
-        _logger = logger;
+        _Logger = logger;
     }
 
     public async Task InvokeAsync(HttpContext context, IReferralService referralService, UserManager<EssentialCSharpWebUser> userManager)
@@ -27,29 +26,16 @@ public sealed class ReferralMiddleware
             await _Next(context);
             return;
         }
-        
-        // Track the referral, but don't let exceptions prevent the page from loading
-        try
+
+        if (context.User is { Identity.IsAuthenticated: true } claimsUser)
         {
-            if (context.User is { Identity.IsAuthenticated: true } claimsUser)
-            {
-                referralService.TrackReferralAsync(referralId, claimsUser);
-            }
-            else
-            {
-                referralService.TrackReferralAsync(referralId, null);
-            }
+            referralService.TrackReferralAsync(referralId, claimsUser);
         }
-        catch (Exception ex)
+        else
         {
-            // Log the exception but continue processing the request
-            // The referral tracking failure should not break the user experience
-            _logger.LogError(ex, "Failed to track referral ID {ReferralId} for user {UserId}", 
-                referralId, context.User?.Identity?.Name ?? "anonymous");
+            referralService.TrackReferralAsync(referralId, null);
         }
-        
-        // Continue processing the request pipeline
+
         await _Next(context);
     }
-}
 }
