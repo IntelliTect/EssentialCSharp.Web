@@ -33,5 +33,8 @@ public sealed class ReferralMiddleware
         {
             referralService.TrackReferralAsync(referralId, null);
         }
+        
+        // Continue processing the request pipeline
+        await _Next(context);
     }
 }
