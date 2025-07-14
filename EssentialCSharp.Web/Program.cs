@@ -148,6 +148,8 @@ public partial class Program
         builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
         builder.Services.AddHostedService<DatabaseMigrationService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
+        builder.Services.AddScoped<IIndexNowService, IndexNowService>();
+        builder.Services.AddHttpClient<IndexNowService>();
 
         if (!builder.Environment.IsDevelopment())
         {

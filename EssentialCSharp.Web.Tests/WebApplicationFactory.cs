@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace EssentialCSharp.Web.Tests;
 
-internal sealed class WebApplicationFactory : WebApplicationFactory<Program>
+public sealed class WebApplicationFactory : WebApplicationFactory<Program>
 {
     private static string SqlConnectionString => $"DataSource=file:{Guid.NewGuid()}?mode=memory&cache=shared";
     private SqliteConnection? _Connection;
