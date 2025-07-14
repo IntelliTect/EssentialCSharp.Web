@@ -45,9 +45,9 @@ internal sealed class WebApplicationFactory : WebApplicationFactory<Program>
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        if (disposing && _Connection != null)
+        if (disposing)
         {
-            _Connection.Dispose();
+            _Connection?.Dispose();
             _Connection = null;
         }
     }

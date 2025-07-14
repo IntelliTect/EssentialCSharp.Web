@@ -24,7 +24,11 @@ public class FunctionalTests
     [InlineData("/guidelines?rid=test-referral-id")]
     [InlineData("/about?rid=abc123")]
     [InlineData("/hello-world?rid=user-referral")]
-    public async Task WhenPagesAreAccessedWithRidParameter_TheyReturnContentSuccessfully(string relativeUrl)
+    [InlineData("/guidelines?rid=")]
+    [InlineData("/about?rid=   ")]
+    [InlineData("/guidelines?foo=bar")]
+    [InlineData("/about?someOtherParam=value")]
+    public async Task WhenPagesAreAccessed_TheyReturnHtml(string relativeUrl)
     {
         using WebApplicationFactory factory = new();
 
@@ -41,23 +45,6 @@ public class FunctionalTests
         Assert.Contains("<html", content, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Theory]
-    [InlineData("/guidelines?rid=")]
-    [InlineData("/about?rid=   ")]
-    public async Task WhenPagesAreAccessedWithEmptyRidParameter_TheyStillWork(string relativeUrl)
-    {
-        using WebApplicationFactory factory = new();
-
-        HttpClient client = factory.CreateClient();
-        using HttpResponseMessage response = await client.GetAsync(relativeUrl);
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        
-        string content = await response.Content.ReadAsStringAsync();
-        Assert.NotEmpty(content);
-        Assert.Contains("<html", content, StringComparison.OrdinalIgnoreCase);
-    }
-
     [Fact]
     public async Task WhenTheApplicationStarts_NonExistingPage_GivesCorrectStatusCode()
     {
@@ -67,22 +54,5 @@ public class FunctionalTests
         using HttpResponseMessage response = await client.GetAsync("/non-existing-page1234");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
-    [Theory]
-    [InlineData("/guidelines?foo=bar")]
-    [InlineData("/about?someOtherParam=value")]
-    public async Task WhenPagesAreAccessedWithNonRidParameters_TheyStillWork(string relativeUrl)
-    {
-        using WebApplicationFactory factory = new();
-
-        HttpClient client = factory.CreateClient();
-        using HttpResponseMessage response = await client.GetAsync(relativeUrl);
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        
-        string content = await response.Content.ReadAsStringAsync();
-        Assert.NotEmpty(content);
-        Assert.Contains("<html", content, StringComparison.OrdinalIgnoreCase);
     }
 }

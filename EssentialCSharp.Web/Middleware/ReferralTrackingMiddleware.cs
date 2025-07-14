@@ -27,13 +27,20 @@ public sealed class ReferralMiddleware
             return;
         }
 
-        if (context.User is { Identity.IsAuthenticated: true } claimsUser)
+        try
         {
-            referralService.TrackReferralAsync(referralId, claimsUser);
+            if (context.User is { Identity.IsAuthenticated: true } claimsUser)
+            {
+                referralService.TrackReferralAsync(referralId, claimsUser);
+            }
+            else
+            {
+                referralService.TrackReferralAsync(referralId, null);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            referralService.TrackReferralAsync(referralId, null);
+            _Logger.LogError(ex, "Failed to track referral ID {ReferralId}", referralId);
         }
 
         await _Next(context);
