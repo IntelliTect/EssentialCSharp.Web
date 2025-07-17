@@ -51,7 +51,6 @@ public class Program
 
         buildVectorDbCommand.SetAction(async (ParseResult parseResult, CancellationToken cancellationToken) =>
         {
-            // Replace with your values.
             IConfigurationRoot config = new ConfigurationBuilder()
                 .SetBasePath(IntelliTect.Multitool.RepositoryPaths.GetDefaultRepoRoot())
                 .AddJsonFile("EssentialCSharp.Web/appsettings.json")
@@ -59,22 +58,25 @@ public class Program
                 .AddEnvironmentVariables()
                 .Build();
 
-            AIOptions aiOptions = config.GetRequiredSection("AIOptions").Get<AIOptions>() ?? throw new InvalidOperationException(
-                "AIOptions section is missing or not configured correctly in appsettings.json or environment variables.");
+            var builder = Kernel.CreateBuilder();
 
-            // Register Azure OpenAI text embedding generation service and Redis vector store.
+            AIOptions aiOptions = config.GetRequiredSection("AIOptions").Get<AIOptions>() ?? throw new InvalidOperationException(
+            "AIOptions section is missing or not configured correctly in appsettings.json or environment variables.");
+            builder.Services.Configure<AIOptions>(config.GetRequiredSection("AIOptions"));
+
+            // Register Azure OpenAI text embedding generation service
 #pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-            var builder = Kernel.CreateBuilder()
-                .AddAzureOpenAITextEmbeddingGeneration(aiOptions.VectorGenerationDeploymentName, aiOptions.Endpoint, aiOptions.ApiKey);
+            builder.AddAzureOpenAITextEmbeddingGeneration(aiOptions.VectorGenerationDeploymentName, aiOptions.Endpoint, aiOptions.ApiKey);
 #pragma warning restore SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
             builder.Services.AddLogging(loggingBuilder =>
-            {
-                loggingBuilder.AddSimpleConsole(options =>
                 {
-                    options.TimestampFormat = "HH:mm:ss ";
-                    options.SingleLine = true;
+                    loggingBuilder.AddSimpleConsole(options =>
+                    {
+                        options.TimestampFormat = "HH:mm:ss ";
+                        options.SingleLine = true;
+                    });
                 });
-            });
 
             builder.Services.AddPostgresVectorStore(
                 aiOptions.PostgresConnectionString);
@@ -99,7 +101,7 @@ public class Program
                 var bookContentChunks = results.SelectMany(result => result.ToBookContentChunks()).ToList();
                 // Generate embeddings and upload to vector store
                 var embeddingService = kernel.GetRequiredService<EmbeddingService>();
-                await embeddingService.GenerateEmbeddingsAndUpload(bookContentChunks, cancellationToken, "markdown_chunks");
+                await embeddingService.GenerateBookContentEmbeddingsAndUploadToVectorStore(bookContentChunks, cancellationToken, "markdown_chunks");
                 Console.WriteLine($"Successfully processed {bookContentChunks.Count} chunks.");
             }
             catch (Exception ex)
