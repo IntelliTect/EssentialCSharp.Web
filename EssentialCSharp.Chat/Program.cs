@@ -1,252 +1,125 @@
 ﻿using System.CommandLine;
-using Microsoft.SemanticKernel.Text;
+using System.Text.Json;
+using EssentialCSharp.Chat.Common.Services;
+using Microsoft.Extensions.Logging;
 
 namespace EssentialCSharp.Chat;
 
 public class Program
 {
-    private static readonly char[] _LineSeparators = ['\r', '\n'];
+    private static readonly JsonSerializerOptions _JsonOptions = new() { WriteIndented = true };
 
     static int Main(string[] args)
     {
-        // Configure command-line options following System.CommandLine patterns
-        var directoryOption = new Option<DirectoryInfo?>("--directory")
+        Option<DirectoryInfo> directoryOption = new("--directory")
         {
-            Description = "Directory containing markdown files to chunk",
-            DefaultValueFactory = _ => new DirectoryInfo(@"D:\EssentialCSharp.Web\EssentialCSharp.Web\Markdown\")
+            Description = "Directory containing markdown files.",
+            Required = true
         };
-
-        var maxTokensOption = new Option<int>("--max-tokens")
+        Option<string> filePatternOption = new("--file-pattern")
         {
-            Description = "Maximum tokens per chunk",
-            DefaultValueFactory = _ => 500
-        };
-
-        var overlapTokensOption = new Option<int>("--overlap")
-        {
-            Description = "Number of tokens to overlap between chunks",
-            DefaultValueFactory = _ => 50
-        };
-
-        var chunkHeaderOption = new Option<string?>("--header")
-        {
-            Description = "Optional header to prepend to each chunk"
-        };
-
-        var filePatternOption = new Option<string>("--pattern")
-        {
-            Description = "File pattern to match",
+            Description = "File pattern to match (e.g. *.md)",
+            Required = false,
             DefaultValueFactory = _ => "*.md"
         };
-
-        var outputFormatOption = new Option<string>("--format")
+        Option<DirectoryInfo?> outputDirectoryOption = new("--output-directory")
         {
-            Description = "Output format: summary, detailed, or json",
-            DefaultValueFactory = _ => "summary"
+            Description = "Directory to write chunked output files. If not provided, output is written to console.",
+            Required = false
         };
 
-        // Create root command
-        var rootCommand = new RootCommand("Semantic Kernel TextChunker - Extract and Chunk Markdown Files")
+        RootCommand rootCommand = new("EssentialCSharp.Chat Utilities");
+
+        var chunkMarkdownCommand = new Command("chunk-markdown", "Chunk markdown files in a directory.")
         {
             directoryOption,
-            maxTokensOption,
-            overlapTokensOption,
-            chunkHeaderOption,
             filePatternOption,
-            outputFormatOption
+            outputDirectoryOption
         };
-
-        // Set the action for the root command
-        rootCommand.SetAction(parseResult =>
+        chunkMarkdownCommand.SetAction(async parseResult =>
         {
             var directory = parseResult.GetValue(directoryOption);
-            var maxTokens = parseResult.GetValue(maxTokensOption);
-            var overlapTokens = parseResult.GetValue(overlapTokensOption);
-            var chunkHeader = parseResult.GetValue(chunkHeaderOption);
-            var filePattern = parseResult.GetValue(filePatternOption);
-            var outputFormat = parseResult.GetValue(outputFormatOption);
+            var filePattern = parseResult.GetValue(filePatternOption) ?? "*.md";
+            var outputDirectory = parseResult.GetValue(outputDirectoryOption);
 
-            return ProcessMarkdownFiles(directory!, maxTokens, overlapTokens, chunkHeader, filePattern!, outputFormat!);
+            using var loggerFactory = LoggerFactory.Create(builder => builder.AddSimpleConsole());
+            var logger = loggerFactory.CreateLogger<MarkdownChunkingService>();
+            var service = new MarkdownChunkingService(logger);
+            try
+            {
+                if (directory is null)
+                {
+                    Console.Error.WriteLine("Error: Directory is required.");
+                    return;
+                }
+                var results = await service.ProcessMarkdownFilesAsync(directory, filePattern);
+
+                int maxChunkLength = 0;
+                int minChunkLength = 0;
+
+                void WriteChunkingResult(FileChunkingResult result, TextWriter writer)
+                {
+                    // lets build up some stats over the chunking
+                    var chunkAverage = result.Chunks.Average(chunk => chunk.Length);
+                    var chunkMedian = result.Chunks.OrderBy(chunk => chunk.Length).ElementAt(result.Chunks.Count / 2).Length;
+                    var chunkMax = result.Chunks.Max(chunk => chunk.Length);
+                    var chunkMin = result.Chunks.Min(chunk => chunk.Length);
+                    var chunkTotal = result.Chunks.Sum(chunk => chunk.Length);
+                    var chunkStandardDeviation = Math.Sqrt(result.Chunks.Average(chunk => Math.Pow(chunk.Length - chunkAverage, 2)));
+                    var numberOfOutliers = result.Chunks.Count(chunk => chunk.Length > chunkAverage + chunkStandardDeviation);
+
+                    if (chunkMax > maxChunkLength) maxChunkLength = chunkMax;
+                    if (chunkMin < minChunkLength || minChunkLength == 0) minChunkLength = chunkMin;
+
+                    writer.WriteLine($"File: {result.FileName}");
+                    writer.WriteLine($"Number of Chunks: {result.ChunkCount}");
+                    writer.WriteLine($"Average Chunk Length: {chunkAverage}");
+                    writer.WriteLine($"Median Chunk Length: {chunkMedian}");
+                    writer.WriteLine($"Max Chunk Length: {chunkMax}");
+                    writer.WriteLine($"Min Chunk Length: {chunkMin}");
+                    writer.WriteLine($"Total Chunk Characters: {chunkTotal}");
+                    writer.WriteLine($"Standard Deviation: {chunkStandardDeviation}");
+                    writer.WriteLine($"Number of Outliers: {numberOfOutliers}");
+                    writer.WriteLine($"Original Character Count: {result.OriginalCharCount}");
+                    writer.WriteLine($"New Character Count: {result.TotalChunkCharacters}");
+                    foreach (var chunk in result.Chunks)
+                    {
+                        writer.WriteLine();
+                        writer.WriteLine(chunk);
+                    }
+                }
+
+                if (outputDirectory != null)
+                {
+                    if (!outputDirectory.Exists)
+                        outputDirectory.Create();
+                    foreach (var result in results)
+                    {
+                        var outputFile = Path.Combine(outputDirectory.FullName, Path.GetFileNameWithoutExtension(result.FileName) + ".chunks.txt");
+                        using var writer = new StreamWriter(outputFile, false);
+                        WriteChunkingResult(result, writer);
+                        Console.WriteLine($"Wrote: {outputFile}");
+                    }
+                }
+                else
+                {
+                    foreach (var result in results)
+                    {
+                        WriteChunkingResult(result, Console.Out);
+                    }
+                }
+                Console.WriteLine($"Max Chunk Length: {maxChunkLength}");
+                Console.WriteLine($"Min Chunk Length: {minChunkLength}");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error: {ex.Message}");
+                return;
+            }
         });
+        rootCommand.Subcommands.Add(chunkMarkdownCommand);
 
         return rootCommand.Parse(args).Invoke();
     }
 
-    /// <summary>
-    /// Process markdown files in the specified directory using Semantic Kernel's TextChunker
-    /// Following Microsoft Learn documentation for proper implementation
-    /// </summary>
-    internal static int ProcessMarkdownFiles(
-        DirectoryInfo directory, 
-        int maxTokensPerParagraph, 
-        int overlapTokens, 
-        string? chunkHeader, 
-        string filePattern, 
-        string outputFormat)
-    {
-        try
-        {
-            // Validate input parameters
-            if (!directory.Exists)
-            {
-                Console.Error.WriteLine($"Error: Directory '{directory.FullName}' does not exist.");
-                return 1;
-            }
-
-            if (maxTokensPerParagraph <= 0)
-            {
-                Console.Error.WriteLine("Error: max-tokens must be a positive number.");
-                return 1;
-            }
-
-            if (overlapTokens < 0 || overlapTokens >= maxTokensPerParagraph)
-            {
-                Console.Error.WriteLine("Error: overlap-tokens must be between 0 and max-tokens.");
-                return 1;
-            }
-
-            // Find markdown files
-            var markdownFiles = directory.GetFiles(filePattern, SearchOption.TopDirectoryOnly);
-            
-            if (markdownFiles.Length == 0)
-            {
-                Console.WriteLine($"No files matching pattern '{filePattern}' found in '{directory.FullName}'");
-                return 0;
-            }
-
-            Console.WriteLine($"Processing {markdownFiles.Length} markdown files...");
-            Console.WriteLine($"Max tokens per chunk: {maxTokensPerParagraph}");
-            Console.WriteLine($"Overlap tokens: {overlapTokens} ({(double)overlapTokens / maxTokensPerParagraph * 100:F1}%)");
-            Console.WriteLine($"Chunk header: {(string.IsNullOrEmpty(chunkHeader) ? "None" : $"'{chunkHeader}'")}");
-            Console.WriteLine();
-
-            int totalChunks = 0;
-            var results = new List<FileChunkingResult>();
-
-            foreach (var file in markdownFiles)
-            {
-                var result = ProcessSingleMarkdownFile(file, maxTokensPerParagraph, overlapTokens, chunkHeader);
-                results.Add(result);
-                totalChunks += result.ChunkCount;
-
-                // Output per-file summary
-                Console.WriteLine($"File: {file.Name}");
-                Console.WriteLine($"  Original size: {result.OriginalCharCount:N0} characters");
-                Console.WriteLine($"  Chunks created: {result.ChunkCount}");
-                Console.WriteLine($"  Average chunk size: {(result.ChunkCount > 0 ? result.TotalChunkCharacters / result.ChunkCount : 0):N0} characters");
-                Console.WriteLine();
-
-                // Output detailed chunks if requested
-                if (outputFormat.Equals("detailed", StringComparison.OrdinalIgnoreCase))
-                {
-                    OutputDetailedChunks(result);
-                }
-            }
-
-            // Output summary
-            Console.WriteLine("=== SUMMARY ===");
-            Console.WriteLine($"Total files processed: {markdownFiles.Length}");
-            Console.WriteLine($"Total chunks created: {totalChunks}");
-            Console.WriteLine($"Average chunks per file: {(markdownFiles.Length > 0 ? (double)totalChunks / markdownFiles.Length : 0):F1}");
-
-            // Output JSON if requested
-            if (outputFormat.Equals("json", StringComparison.OrdinalIgnoreCase))
-            {
-                OutputJsonResults(results);
-            }
-
-            return 0;
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error: {ex.Message}");
-            return 1;
-        }
-    }
-
-    /// <summary>
-    /// Process a single markdown file using Semantic Kernel's SplitMarkdownParagraphs method
-    /// Implementation follows Microsoft Learn documentation exactly
-    /// </summary>
-    internal static FileChunkingResult ProcessSingleMarkdownFile(
-        FileInfo file, 
-        int maxTokensPerParagraph, 
-        int overlapTokens, 
-        string? chunkHeader)
-    {
-        // Read the markdown content
-        var content = File.ReadAllText(file.FullName);
-        
-        // Prepare lines for chunking - following Microsoft examples
-        var lines = content.Split(_LineSeparators, StringSplitOptions.RemoveEmptyEntries).ToList();
-        
-        // Apply Semantic Kernel TextChunker.SplitMarkdownParagraphs 
-        // Following the exact API signature from Microsoft Learn documentation
-        // Suppress the experimental warning as this is the intended usage per documentation
-#pragma warning disable SKEXP0050
-        var chunks = TextChunker.SplitMarkdownParagraphs(
-            lines, 
-            maxTokensPerParagraph, 
-            overlapTokens, 
-            chunkHeader);
-#pragma warning restore SKEXP0050
-
-        // Calculate statistics
-        var result = new FileChunkingResult
-        {
-            FileName = file.Name,
-            FilePath = file.FullName,
-            OriginalCharCount = content.Length,
-            ChunkCount = chunks.Count,
-            Chunks = chunks,
-            TotalChunkCharacters = chunks.Sum(c => c.Length)
-        };
-
-        return result;
-    }
-
-    /// <summary>
-    /// Output detailed chunk information for inspection
-    /// </summary>
-    internal static void OutputDetailedChunks(FileChunkingResult result)
-    {
-        Console.WriteLine($"=== DETAILED CHUNKS for {result.FileName} ===");
-        
-        for (int i = 0; i < result.Chunks.Count; i++)
-        {
-            var chunk = result.Chunks[i];
-            Console.WriteLine($"Chunk {i + 1}/{result.Chunks.Count}:");
-            Console.WriteLine($"  Length: {chunk.Length} characters");
-            Console.WriteLine($"  Preview: {chunk.Substring(0, Math.Min(100, chunk.Length)).Replace('\n', ' ').Replace('\r', ' ')}...");
-            Console.WriteLine("  ---");
-        }
-        Console.WriteLine();
-    }
-
-    /// <summary>
-    /// Output results in JSON format for programmatic consumption
-    /// </summary>
-    internal static void OutputJsonResults(List<FileChunkingResult> results)
-    {
-        Console.WriteLine();
-        Console.WriteLine("=== JSON OUTPUT ===");
-        Console.WriteLine("{");
-        Console.WriteLine("  \"results\": [");
-        
-        for (int i = 0; i < results.Count; i++)
-        {
-            var result = results[i];
-            Console.WriteLine("    {");
-            Console.WriteLine($"      \"fileName\": \"{result.FileName}\",");
-            Console.WriteLine($"      \"filePath\": \"{result.FilePath.Replace("\\", "\\\\")}\",");
-            Console.WriteLine($"      \"originalCharCount\": {result.OriginalCharCount},");
-            Console.WriteLine($"      \"chunkCount\": {result.ChunkCount},");
-            Console.WriteLine($"      \"totalChunkCharacters\": {result.TotalChunkCharacters},");
-            Console.WriteLine($"      \"averageChunkSize\": {(result.ChunkCount > 0 ? result.TotalChunkCharacters / result.ChunkCount : 0)}");
-            Console.WriteLine(i < results.Count - 1 ? "    }," : "    }");
-        }
-        
-        Console.WriteLine("  ]");
-        Console.WriteLine("}");
-    }
 }

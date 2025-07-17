@@ -14,7 +14,9 @@
   </PropertyGroup>
   <ItemGroup Condition="$(AccessToNugetFeed)">
     <PackageVersion Include="ContentFeedNuget" Version="$(ToolingPackagesVersion)" />
+    <PackageVersion Include="Markdig" Version="0.41.3" />
     <PackageVersion Include="Microsoft.SemanticKernel" Version="1.45.0" />
+    <PackageVersion Include="Moq" Version="4.20.72" />
   </ItemGroup>
   <ItemGroup>
     <PackageVersion Include="AspNet.Security.OAuth.GitHub" Version="8.3.0" />
@@ -41,19 +43,20 @@
     <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.VectorData.Abstractions" Version="9.7.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.CommandLine" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="9.0.1-preview.1.24570.5" />
-    <PackageVersion Include="Microsoft.Extensions.VectorData.Abstractions" Version="9.0.1-preview.1.24570.5" />
+    <PackageVersion Include="Microsoft.Extensions.VectorData" Version="9.0.1-preview.1.24570.5" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.PgVector" Version="1.60.0-preview" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.0" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" Version="1.45.0" />
-    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Postgres" Version="1.45.0-alpha" />
-    <PackageVersion Include="Npgsql" Version="8.0.8" />
-    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.8" />
+    <PackageVersion Include="Npgsql" Version="9.0.0" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.0" />
     <PackageVersion Include="System.CommandLine" Version="2.0.0-beta6.25358.103" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageVersion Include="Octokit" Version="14.0.0" />

@@ -1,4 +1,4 @@
-namespace EssentialCSharp.Chat;
+namespace EssentialCSharp.Chat.Common.Services;
 
 /// <summary>
 /// Data structure to hold chunking results for a single file
