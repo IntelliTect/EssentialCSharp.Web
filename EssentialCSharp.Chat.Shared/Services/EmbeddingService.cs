@@ -2,7 +2,6 @@ using EssentialCSharp.Chat.Common.Models;
 using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel.Embeddings;
 
-
 namespace EssentialCSharp.Chat.Common.Services;
 
 /// <summary>
@@ -11,24 +10,34 @@ namespace EssentialCSharp.Chat.Common.Services;
 #pragma warning disable SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 public class EmbeddingService(VectorStore vectorStore, ITextEmbeddingGenerationService textEmbeddingGenerationService)
 {
+    public string CollectionName { get; } = "markdown_chunks";
     /// <summary>
     /// Generate an embedding for each text paragraph and upload it to the specified collection.
     /// </summary>
     /// <param name="collectionName">The name of the collection to upload the text paragraphs to.</param>
     /// <param name="textParagraphs">The text paragraphs to upload.</param>
     /// <returns>An async task.</returns>
-    public async Task GenerateEmbeddingsAndUpload(string collectionName, IEnumerable<BookContentChunk> bookContents)
+    public async Task GenerateEmbeddingsAndUpload(IEnumerable<BookContentChunk> bookContents, CancellationToken cancellationToken, string? collectionName = null)
     {
-        var collection = vectorStore.GetCollection<string, BookContentChunk>(collectionName);
-        await collection.EnsureCollectionExistsAsync();
+        collectionName ??= CollectionName;
 
-        foreach (var chunk in bookContents)
+        var collection = vectorStore.GetCollection<string, BookContentChunk>(collectionName);
+        await collection.EnsureCollectionExistsAsync(cancellationToken);
+
+        ParallelOptions parallelOptions = new()
+        {
+            MaxDegreeOfParallelism = 5,
+            CancellationToken = cancellationToken
+        };
+
+        await Parallel.ForEachAsync(bookContents, parallelOptions, async (chunk, cancellationToken) =>
         {
             // Generate the text embedding.
-            chunk.TextEmbedding = await textEmbeddingGenerationService.GenerateEmbeddingAsync(chunk.ChunkText);
+            chunk.TextEmbedding = await textEmbeddingGenerationService.GenerateEmbeddingAsync(chunk.ChunkText, cancellationToken: cancellationToken);
 
-            await collection.UpsertAsync(chunk);
-        }
+            await collection.UpsertAsync(chunk, cancellationToken);
+            Console.WriteLine($"Uploaded chunk '{chunk.Id}' to collection '{collectionName}' for file '{chunk.FileName}' with heading '{chunk.Heading}'.");
+        });
         Console.WriteLine($"Successfully generated embeddings and uploaded {bookContents.Count()} chunks to collection '{collectionName}'.");
     }
 }

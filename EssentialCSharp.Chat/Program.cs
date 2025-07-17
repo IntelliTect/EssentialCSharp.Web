@@ -49,7 +49,7 @@ public class Program
             filePatternOption,
         };
 
-        buildVectorDbCommand.SetAction(async parseResult =>
+        buildVectorDbCommand.SetAction(async (ParseResult parseResult, CancellationToken cancellationToken) =>
         {
             // Replace with your values.
             IConfigurationRoot config = new ConfigurationBuilder()
@@ -99,7 +99,7 @@ public class Program
                 var bookContentChunks = results.SelectMany(result => result.ToBookContentChunks()).ToList();
                 // Generate embeddings and upload to vector store
                 var embeddingService = kernel.GetRequiredService<EmbeddingService>();
-                await embeddingService.GenerateEmbeddingsAndUpload("markdown_chunks", bookContentChunks);
+                await embeddingService.GenerateEmbeddingsAndUpload(bookContentChunks, cancellationToken, "markdown_chunks");
                 Console.WriteLine($"Successfully processed {bookContentChunks.Count} chunks.");
             }
             catch (Exception ex)
