@@ -147,15 +147,8 @@ export function useChatWidget() {
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let assistantMessage = '';
-
-            // Add empty assistant message that we'll update
-            chatMessages.value.push({
-                role: 'assistant',
-                content: '',
-                timestamp: new Date().toISOString()
-            });
-
-            const assistantMessageIndex = chatMessages.value.length - 1;
+            let assistantMessageIndex = -1;
+            let hasStartedStreaming = false;
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -177,6 +170,18 @@ export function useChatWidget() {
                         try {
                             const parsed = JSON.parse(data);
                             if (parsed.type === 'text' && parsed.data) {
+                                // If this is the first chunk, hide typing indicator and add assistant message
+                                if (!hasStartedStreaming) {
+                                    isTyping.value = false;
+                                    chatMessages.value.push({
+                                        role: 'assistant',
+                                        content: '',
+                                        timestamp: new Date().toISOString()
+                                    });
+                                    assistantMessageIndex = chatMessages.value.length - 1;
+                                    hasStartedStreaming = true;
+                                }
+                                
                                 assistantMessage += parsed.data;
                                 chatMessages.value[assistantMessageIndex].content = assistantMessage;
 
@@ -200,6 +205,10 @@ export function useChatWidget() {
 
         } catch (error) {
             console.error('Chat error:', error);
+            
+            // Hide typing indicator if still showing
+            isTyping.value = false;
+            
             chatMessages.value.push({
                 role: 'assistant',
                 content: 'Sorry, I encountered an error while processing your request. Please try again.',
@@ -207,6 +216,7 @@ export function useChatWidget() {
             });
             saveChatHistory();
         } finally {
+            // Ensure typing indicator is hidden
             isTyping.value = false;
             
             // Focus back on input
