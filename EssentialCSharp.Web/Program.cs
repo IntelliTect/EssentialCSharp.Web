@@ -51,11 +51,11 @@ public partial class Program
 
             if (!string.IsNullOrEmpty(appInsightsConnectionString))
             {
-            builder.Services.AddOpenTelemetry().UseAzureMonitor(
-                options =>
-                {
-                    options.ConnectionString = appInsightsConnectionString;
-                });
+                builder.Services.AddOpenTelemetry().UseAzureMonitor(
+                    options =>
+                    {
+                        options.ConnectionString = appInsightsConnectionString;
+                    });
                 builder.Services.AddApplicationInsightsTelemetry();
                 builder.Services.AddServiceProfiler();
             }
@@ -208,7 +208,6 @@ public partial class Program
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseMiddleware<ReferralMiddleware>();
-
 
         app.MapRazorPages();
         app.MapDefaultControllerRoute();

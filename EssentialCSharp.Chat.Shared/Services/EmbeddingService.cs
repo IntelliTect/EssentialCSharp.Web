@@ -1,6 +1,6 @@
 using EssentialCSharp.Chat.Common.Models;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.VectorData;
-using Microsoft.SemanticKernel.Embeddings;
 
 namespace EssentialCSharp.Chat.Common.Services;
 
@@ -8,7 +8,7 @@ namespace EssentialCSharp.Chat.Common.Services;
 /// Service for generating embeddings for markdown chunks using Azure OpenAI
 /// </summary>
 #pragma warning disable SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-public class EmbeddingService(VectorStore vectorStore, ITextEmbeddingGenerationService textEmbeddingGenerationService)
+public class EmbeddingService(VectorStore vectorStore, IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator)
 {
     public static string CollectionName { get; } = "markdown_chunks";
 
@@ -20,7 +20,8 @@ public class EmbeddingService(VectorStore vectorStore, ITextEmbeddingGenerationS
     /// <returns>A search vector as ReadOnlyMemory&lt;float&gt;.</returns>
     public async Task<ReadOnlyMemory<float>> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default)
     {
-        return await textEmbeddingGenerationService.GenerateEmbeddingAsync(text, cancellationToken: cancellationToken);
+        var embedding = await embeddingGenerator.GenerateAsync(text, cancellationToken: cancellationToken);
+        return embedding.Vector;
     }
 
     /// <summary>
@@ -33,6 +34,7 @@ public class EmbeddingService(VectorStore vectorStore, ITextEmbeddingGenerationS
         collectionName ??= CollectionName;
 
         var collection = vectorStore.GetCollection<string, BookContentChunk>(collectionName);
+        await collection.EnsureCollectionDeletedAsync(cancellationToken);
         await collection.EnsureCollectionExistsAsync(cancellationToken);
 
         ParallelOptions parallelOptions = new()

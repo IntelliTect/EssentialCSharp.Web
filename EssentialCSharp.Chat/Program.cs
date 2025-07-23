@@ -1,10 +1,11 @@
-﻿using System.CommandLine;
+using System.CommandLine;
 using System.Text.Json;
 using EssentialCSharp.Chat.Common.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
+using OpenAI.Responses;
 
 namespace EssentialCSharp.Chat;
 
@@ -49,6 +50,14 @@ public class Program
             filePatternOption,
         };
 
+        var chatCommand = new Command("chat", "Start an interactive AI chat session.")
+        {
+            new Option<bool>("--stream"),
+            new Option<bool>("--web-search"),
+            new Option<bool>("--contextual-search"),
+            new Option<string>("--system-prompt")
+        };
+
         buildVectorDbCommand.SetAction(async (ParseResult parseResult, CancellationToken cancellationToken) =>
         {
             IConfigurationRoot config = new ConfigurationBuilder()
@@ -66,7 +75,13 @@ public class Program
 
             // Register Azure OpenAI text embedding generation service
 #pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-            builder.AddAzureOpenAITextEmbeddingGeneration(aiOptions.VectorGenerationDeploymentName, aiOptions.Endpoint, aiOptions.ApiKey);
+            // Replace the obsolete method call with the new method
+            builder.AddAzureOpenAIEmbeddingGenerator(aiOptions.VectorGenerationDeploymentName, aiOptions.Endpoint, aiOptions.ApiKey);
+
+            builder.AddAzureOpenAIChatClient(
+                aiOptions.ChatDeploymentName,
+                aiOptions.Endpoint,
+                aiOptions.ApiKey);
 #pragma warning restore SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
             builder.Services.AddLogging(loggingBuilder =>
@@ -108,6 +123,210 @@ public class Program
             {
                 Console.Error.WriteLine($"Error: {ex.Message}");
                 throw;
+            }
+        });
+
+        chatCommand.SetAction(async (ParseResult parseResult, CancellationToken cancellationToken) =>
+        {
+            IConfigurationRoot config = new ConfigurationBuilder()
+                .SetBasePath(IntelliTect.Multitool.RepositoryPaths.GetDefaultRepoRoot())
+                .AddJsonFile("EssentialCSharp.Web/appsettings.json")
+                .AddUserSecrets<Program>()
+                .AddEnvironmentVariables()
+                .Build();
+
+            // https://learn.microsoft.com/api/mcp
+
+            //SseClientTransport microsoftLearnMcp = new SseClientTransport(
+            //    new SseClientTransportOptions
+            //    {
+            //        Name = "Microsoft Learn MCP",
+            //        Endpoint = new Uri("https://learn.microsoft.com/api/mcp"),
+            //    });
+
+            //IMcpClient mcpClient = await McpClientFactory.CreateAsync(clientTransport: microsoftLearnMcp, cancellationToken: cancellationToken);
+
+            var enableStreaming = parseResult.GetValue<bool>("--stream");
+            var enableWebSearch = parseResult.GetValue<bool>("--web-search");
+            enableWebSearch = false;
+            var customSystemPrompt = parseResult.GetValue<string>("--system-prompt");
+            var enableContextualSearch = parseResult.GetValue<bool>("--contextual-search");
+            enableContextualSearch = true;
+
+
+            AIOptions aiOptions = config.GetRequiredSection("AIOptions").Get<AIOptions>() ?? throw new InvalidOperationException(
+                "AIOptions section is missing or not configured correctly in appsettings.json or environment variables.");
+
+            // Create service collection and register dependencies
+            var services = new ServiceCollection();
+            services.Configure<AIOptions>(config.GetRequiredSection("AIOptions"));
+            services.AddLogging(builder => builder.AddSimpleConsole(options =>
+            {
+                options.TimestampFormat = "HH:mm:ss ";
+                options.SingleLine = true;
+            }));
+
+            // Add services for contextual search if enabled
+            if (enableContextualSearch)
+            {
+#pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+                services.AddAzureOpenAIEmbeddingGenerator(aiOptions.VectorGenerationDeploymentName, aiOptions.Endpoint, aiOptions.ApiKey);
+#pragma warning restore SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+                services.AddPostgresVectorStore(aiOptions.PostgresConnectionString);
+                services.AddSingleton<EmbeddingService>();
+                services.AddSingleton<AISearchService>();
+            }
+
+            services.AddSingleton<AIChatService>();
+
+            var serviceProvider = services.BuildServiceProvider();
+            var aiChatService = serviceProvider.GetRequiredService<AIChatService>();
+
+            Console.WriteLine("🤖 AI Chat Session Started!");
+            Console.WriteLine("Features enabled:");
+            Console.WriteLine($"  • Streaming: {(enableStreaming ? "✅" : "❌")}");
+            Console.WriteLine($"  • Web Search: {(enableWebSearch ? "✅" : "❌")}");
+            Console.WriteLine($"  • Contextual Search: {(enableContextualSearch ? "✅" : "❌")}");
+            if (!string.IsNullOrEmpty(customSystemPrompt))
+                Console.WriteLine($"  • Custom System Prompt: {customSystemPrompt}");
+            Console.WriteLine();
+            Console.WriteLine("Commands:");
+            Console.WriteLine("  • 'exit' or 'quit' - End the chat session");
+            Console.WriteLine("  • 'clear' - Start a new conversation context");
+            Console.WriteLine("  • 'help' - Show this help message");
+            Console.WriteLine("  • 'history' - Show conversation history");
+            Console.WriteLine("  • Any other text - Chat with the AI");
+            Console.WriteLine("=====================================");
+
+            // Track conversation context with response IDs
+            string? previousResponseId = null;
+            var conversationHistory = new List<(string Role, string Content)>();
+
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                Console.WriteLine();
+                Console.Write("👤 You: ");
+                var userInput = Console.ReadLine();
+
+                if (string.IsNullOrWhiteSpace(userInput))
+                    continue;
+
+                userInput = userInput.Trim();
+
+                if (userInput.Equals("exit", StringComparison.OrdinalIgnoreCase) ||
+                    userInput.Equals("quit", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine("Goodbye! 👋");
+                    break;
+                }
+
+                if (userInput.Equals("clear", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Reset conversation context when PreviousResponseId is implemented
+                    previousResponseId = null;
+                    conversationHistory.Clear();
+                    Console.WriteLine("🧹 Conversation context cleared. Starting fresh!");
+                    continue;
+                }
+
+                if (userInput.Equals("help", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("Commands:");
+                    Console.WriteLine("  • 'exit' or 'quit' - End the chat session");
+                    Console.WriteLine("  • 'clear' - Start a new conversation context");
+                    Console.WriteLine("  • 'help' - Show this help message");
+                    Console.WriteLine("  • 'history' - Show conversation history");
+                    Console.WriteLine("  • Any other text - Chat with the AI");
+                    continue;
+                }
+
+                if (userInput.Equals("history", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("📜 Conversation History:");
+                    if (conversationHistory.Count == 0)
+                    {
+                        Console.WriteLine("  No conversation history yet.");
+                    }
+                    else
+                    {
+                        for (int i = 0; i < conversationHistory.Count; i++)
+                        {
+                            var (role, content) = conversationHistory[i];
+                            var emoji = role == "User" ? "👤" : "🤖";
+                            Console.WriteLine($"  {i + 1}. {emoji} {role}: {content}");
+                        }
+                    }
+                    continue;
+                }
+
+                conversationHistory.Add(("User", userInput));
+
+                try
+                {
+                    Console.Write("🤖 AI: ");
+
+                    if (enableStreaming)
+                    {
+                        // Use streaming with optional tools and conversation context
+                        var fullResponse = new System.Text.StringBuilder();
+
+                        var tools = enableWebSearch ? new[] { ResponseTool.CreateWebSearchTool() } : null;
+
+                        await foreach (var (text, responseId) in aiChatService.GetChatCompletionStream(
+                            prompt: userInput/*, mcpClient: mcpClient*/, previousResponseId: previousResponseId, enableContextualSearch: enableContextualSearch, systemPrompt: customSystemPrompt, cancellationToken: cancellationToken))
+                        {
+                            if (!string.IsNullOrEmpty(text))
+                            {
+                                Console.Write(text);
+                                fullResponse.Append(text);
+                            }
+                            if (!string.IsNullOrEmpty(responseId))
+                            {
+                                previousResponseId = responseId; // Update for next turn
+                            }
+                        }
+                        Console.WriteLine();
+
+                        conversationHistory.Add(("Assistant", fullResponse.ToString()));
+                    }
+                    else
+                    {
+                        // Non-streaming response with optional tools and conversation context
+                        var tools = enableWebSearch ? new[] { ResponseTool.CreateWebSearchTool() } : null;
+
+                        var (response, responseId) = await aiChatService.GetChatCompletion(
+                           prompt: userInput, previousResponseId: previousResponseId, enableContextualSearch: enableContextualSearch, systemPrompt: customSystemPrompt, cancellationToken: cancellationToken);
+
+                        Console.WriteLine(response);
+                        conversationHistory.Add(("Assistant", response));
+
+                        if (!string.IsNullOrEmpty(responseId))
+                        {
+                            previousResponseId = responseId;
+                        }
+
+
+                    }
+
+                    Console.WriteLine();
+                }
+                catch (OperationCanceledException)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("Operation cancelled. Goodbye! 👋");
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine($"❌ Error: {ex.Message}");
+                    if (ex.InnerException != null)
+                    {
+                        Console.WriteLine($"   Details: {ex.InnerException.Message}");
+                    }
+                }
             }
         });
         chunkMarkdownCommand.SetAction(async parseResult =>
@@ -193,6 +412,7 @@ public class Program
         });
         rootCommand.Subcommands.Add(chunkMarkdownCommand);
         rootCommand.Subcommands.Add(buildVectorDbCommand);
+        rootCommand.Subcommands.Add(chatCommand);
 
         return rootCommand.Parse(args).Invoke();
     }
