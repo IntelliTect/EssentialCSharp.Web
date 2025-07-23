@@ -1,5 +1,10 @@
 /* Global Styles */
 
+/* Vue.js directive for hiding uncompiled templates */
+[v-cloak] {
+    display: none;
+}
+
 :root {
   --primary-color: rgb(30, 83, 160);
   --primary-color-rgb: 30, 83, 160;

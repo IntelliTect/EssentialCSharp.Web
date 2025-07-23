@@ -8,15 +8,16 @@ class ChatWidget {
         this.isOpen = false;
         this.isMinimized = false;
         this.previousResponseId = null;
+        this.conversationHistory = [];
         this.initializeElements();
         this.bindEvents();
+        this.loadChatHistory(); // Load existing chat history
         this.enableInput();
     }
 
     initializeElements() {
         this.chatToggle = document.getElementById('chatToggle');
         this.chatPanel = document.getElementById('chatPanel');
-        this.chatClose = document.getElementById('chatClose');
         this.chatMinimize = document.getElementById('chatMinimize');
         this.chatInput = document.getElementById('chatWidgetInput');
         this.chatSend = document.getElementById('chatWidgetSend');
@@ -26,7 +27,6 @@ class ChatWidget {
 
     bindEvents() {
         this.chatToggle.addEventListener('click', () => this.toggleChat());
-        this.chatClose.addEventListener('click', () => this.closeChat());
         this.chatMinimize.addEventListener('click', () => this.minimizeChat());
         this.chatSend.addEventListener('click', () => this.sendMessage());
         this.chatClear.addEventListener('click', () => this.clearChat());
@@ -38,17 +38,115 @@ class ChatWidget {
             }
         });
 
-        // Close chat when clicking outside
+        // Minimize chat when clicking outside
         document.addEventListener('click', (e) => {
             if (this.isOpen && !this.chatPanel.contains(e.target) && !this.chatToggle.contains(e.target)) {
-                this.closeChat();
+                this.minimizeChat();
             }
         });
     }
 
+    // Save chat history to session storage
+    saveChatHistory() {
+        try {
+            // Trim history to prevent storage overflow
+            this.trimConversationHistory();
+            
+            const chatData = {
+                conversationHistory: this.conversationHistory,
+                previousResponseId: this.previousResponseId,
+                timestamp: new Date().toISOString(),
+                chatState: {
+                    isOpen: this.isOpen,
+                    isMinimized: this.isMinimized
+                }
+            };
+            sessionStorage.setItem('chat-widget-history', JSON.stringify(chatData));
+        } catch (error) {
+            console.warn('Failed to save chat history:', error);
+        }
+    }
+
+    // Load chat history from session storage
+    loadChatHistory() {
+        try {
+            const saved = sessionStorage.getItem('chat-widget-history');
+            if (saved) {
+                const chatData = JSON.parse(saved);
+                this.conversationHistory = chatData.conversationHistory || [];
+                this.previousResponseId = chatData.previousResponseId || null;
+                
+                console.log('Loaded chat history:', {
+                    messageCount: this.conversationHistory.length,
+                    previousResponseId: this.previousResponseId,
+                    messages: this.conversationHistory.map(m => ({ role: m.role, contentLength: m.content?.length || 0 }))
+                });
+                
+                // Restore chat state if it was open
+                if (chatData.chatState?.isOpen && !chatData.chatState?.isMinimized) {
+                    // Delay opening to ensure DOM is ready
+                    setTimeout(() => this.openChat(), 100);
+                }
+                
+                // Restore messages in the UI
+                this.restoreMessagesFromHistory();
+            } else {
+                console.log('No chat history found in session storage');
+            }
+        } catch (error) {
+            console.warn('Failed to load chat history:', error);
+            this.conversationHistory = [];
+            this.previousResponseId = null;
+        }
+    }
+
+    // Restore messages in the UI from conversation history
+    restoreMessagesFromHistory() {
+        // Clear existing messages
+        this.chatMessages.innerHTML = '';
+        
+        // Add welcome message if no history exists
+        if (this.conversationHistory.length === 0) {
+            this.chatMessages.innerHTML = `
+                <div class="chat-message assistant">
+                    <div class="message-content">
+                        <strong>👋 Hello!</strong> I'm your AI assistant with access to Essential C# book content. How can I help you today?
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        // Debug logging
+        console.log('Restoring chat history:', this.conversationHistory.length, 'messages');
+        
+        // Show history restoration indicator
+        const restoredIndicator = document.createElement('div');
+        restoredIndicator.className = 'chat-history-restored';
+        restoredIndicator.innerHTML = `
+            <i class="fas fa-history"></i> Chat history restored (${this.conversationHistory.length} messages)
+        `;
+        this.chatMessages.appendChild(restoredIndicator);
+
+        // Restore conversation history
+        this.conversationHistory.forEach((message, index) => {
+            console.log(`Restoring message ${index + 1}:`, { role: message.role, contentLength: message.content?.length || 0, content: message.content?.substring(0, 100) + '...' });
+            this.addMessageToUI(message.role, message.content, false); // false = don't save to history again
+        });
+
+        this.scrollToBottom();
+        
+        // Remove the indicator after 3 seconds
+        setTimeout(() => {
+            if (restoredIndicator.parentNode) {
+                restoredIndicator.remove();
+            }
+        }, 3000);
+    }
+
     toggleChat() {
         if (this.isOpen) {
-            this.closeChat();
+            this.minimizeChat();
         } else {
             this.openChat();
         }
@@ -60,17 +158,20 @@ class ChatWidget {
         this.chatPanel.style.display = 'flex';
         this.chatInput.focus();
         this.scrollToBottom();
+        this.saveChatHistory(); // Save the chat state
     }
 
     closeChat() {
         this.isOpen = false;
         this.isMinimized = false;
         this.chatPanel.style.display = 'none';
+        this.saveChatHistory(); // Save the chat state
     }
 
     minimizeChat() {
         this.isMinimized = true;
         this.chatPanel.style.display = 'none';
+        this.saveChatHistory(); // Save the chat state
     }
 
     enableInput() {
@@ -148,10 +249,22 @@ class ChatWidget {
                         const data = line.slice(6); // Remove 'data: ' prefix
                         
                         if (data === '[DONE]') {
-                            // Stream is complete
+                            // Stream is complete - update the conversation history with final content
+                            if (accumulatedText && this.conversationHistory.length > 0) {
+                                // Find the last assistant message in history and update its content
+                                for (let i = this.conversationHistory.length - 1; i >= 0; i--) {
+                                    if (this.conversationHistory[i].role === 'assistant' && 
+                                        (!this.conversationHistory[i].content || this.conversationHistory[i].content === '')) {
+                                        this.conversationHistory[i].content = accumulatedText;
+                                        break;
+                                    }
+                                }
+                            }
+                            
                             if (currentResponseId) {
                                 this.previousResponseId = currentResponseId;
                             }
+                            this.saveChatHistory(); // Save the updated response ID and final content
                             break;
                         }
 
@@ -185,10 +298,32 @@ class ChatWidget {
     }
 
     addMessage(role, content) {
+        const messageDiv = this.addMessageToUI(role, content, true);
+        
+        // Save to conversation history
+        this.conversationHistory.push({
+            role: role,
+            content: content,
+            timestamp: new Date().toISOString()
+        });
+        this.saveChatHistory();
+        
+        return messageDiv;
+    }
+
+    addMessageToUI(role, content, saveToHistory = false) {
+        console.log(`Adding message to UI: role=${role}, contentLength=${content?.length || 0}, saveToHistory=${saveToHistory}`);
+        
         const messageDiv = document.createElement('div');
         messageDiv.className = `chat-message ${role}`;
         
         const formattedContent = role === 'assistant' ? this.formatMessage(content) : this.escapeHtml(content);
+        
+        if (role === 'assistant') {
+            console.log('Assistant message - original content:', content?.substring(0, 100) + '...');
+            console.log('Assistant message - formatted content:', formattedContent?.substring(0, 100) + '...');
+        }
+        
         messageDiv.innerHTML = `
             <div class="message-content">${formattedContent}</div>
         `;
@@ -234,7 +369,23 @@ class ChatWidget {
                 </div>
             </div>
         `;
+        
+        // Clear history and storage
+        this.conversationHistory = [];
         this.previousResponseId = null;
+        try {
+            sessionStorage.removeItem('chat-widget-history');
+        } catch (error) {
+            console.warn('Failed to clear chat history from storage:', error);
+        }
+    }
+
+    // Limit conversation history to prevent storage overflow
+    trimConversationHistory() {
+        const maxMessages = 50; // Keep last 50 messages
+        if (this.conversationHistory.length > maxMessages) {
+            this.conversationHistory = this.conversationHistory.slice(-maxMessages);
+        }
     }
 
     scrollToBottom() {
