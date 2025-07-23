@@ -8,6 +8,7 @@ import {
     computed,
 } from "vue";
 import { useWindowSize } from "vue-window-size";
+import { useChatWidget } from "./chat-module.js";
 
 /**
  * @typedef {Object} TocItem
@@ -332,6 +333,9 @@ const app = createApp({
             return str.replace(/[^\w\s]|_/g, "").replace(/\s+/g, " ").toLowerCase();
         }
 
+        // Initialize chat functionality
+        const chatWidget = useChatWidget();
+
         return {
             previousPageUrl,
             nextPageUrl,
@@ -363,7 +367,10 @@ const app = createApp({
             searchQuery,
             filteredTocData,
             enableTocFilter,
-            isContentPage
+            isContentPage,
+
+            // Chat functionality - spread the chat widget
+            ...chatWidget
         };
     },
 });

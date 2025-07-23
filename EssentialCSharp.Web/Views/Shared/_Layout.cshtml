@@ -47,6 +47,10 @@
     <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/chat-widget.css" asp-append-version="true" />
     <link rel="stylesheet" href="/lib/docsearch/style.css" />
+    <!-- Vuetify CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/vuetify@3.4.0/dist/vuetify.min.css" rel="stylesheet">
+    <!-- Material Design Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/@@mdi/font@7.2.96/css/materialdesignicons.min.css" rel="stylesheet">
     @*Font Family*@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -248,45 +252,140 @@
             </div>
 
             <!-- AI Chat Widget -->
-            <div id="chatWidget" class="chat-widget">
-                <div id="chatToggle" class="chat-toggle" title="Chat with AI Assistant">
-                    <i class="fas fa-robot"></i>
-                </div>
+            <div class="chat-widget">
+                <!-- Chat Trigger Button -->
+                <button 
+                    class="chat-button elevation-6" 
+                    v-on:click="openChatDialog"
+                    :class="{ 'chat-button--active': showChatDialog }"
+                    :aria-expanded="showChatDialog"
+                    aria-label="Open AI Chat Assistant"
+                    title="Chat with AI Assistant about C# programming"
+                    type="button"
+                >
+                    <i class="mdi mdi-robot" aria-hidden="true"></i>
+                    <span class="chat-button-text" v-if="!smallScreen">AI Chat</span>
+                </button>
                 
-                <div id="chatPanel" class="chat-panel" style="display: none;">
-                    <div class="chat-panel-header">
-                        <div class="chat-panel-title">
-                            <i class="fas fa-robot me-2"></i>
-                            AI Chat Assistant
-                        </div>
-                        <div class="chat-panel-controls">
-                            <button id="chatMinimize" class="chat-btn" title="Minimize">
-                                <i class="fas fa-minus"></i>
+                <!-- Chat Dialog Modal -->
+                <div 
+                    v-if="showChatDialog" 
+                    class="chat-overlay"
+                    v-on:click.self="closeChatDialog"
+                    role="dialog"
+                    aria-labelledby="chat-dialog-title"
+                    aria-modal="true"
+                    tabindex="-1"
+                >
+                    <div class="chat-card elevation-12">
+                        <!-- Header -->
+                        <div class="chat-header">
+                            <h2 id="chat-dialog-title" class="chat-title">
+                                <i class="mdi mdi-robot me-2" aria-hidden="true"></i>
+                                AI Assistant
+                            </h2>
+                            <button 
+                                class="chat-close-button"
+                                v-on:click="closeChatDialog"
+                                aria-label="Close chat dialog"
+                                title="Close chat"
+                                type="button"
+                            >
+                                <i class="mdi mdi-close" aria-hidden="true"></i>
                             </button>
                         </div>
-                    </div>
-                    
-                    <div class="chat-panel-body">
-                        <div id="chatWidgetMessages" class="chat-widget-messages">
-                            <div class="chat-message assistant">
-                                <div class="message-content">
-                                    <strong>👋 Hello!</strong> I'm your AI assistant with access to Essential C# book content. How can I help you today?
+                        
+                        <!-- Messages Area -->
+                        <div 
+                            class="chat-messages"
+                            ref="chatMessagesEl"
+                            role="log"
+                            aria-live="polite"
+                            aria-label="Chat conversation"
+                        >
+                            <!-- Welcome message -->
+                            <div v-if="chatMessages.length === 0" class="welcome-message">
+                                <i class="mdi mdi-chat-outline" aria-hidden="true"></i>
+                                <p>Hi! I'm your AI assistant. Ask me anything about C# programming!</p>
+                            </div>
+                            
+                            <!-- Chat messages -->
+                            <div 
+                                v-for="(message, index) in chatMessages" 
+                                :key="index" 
+                                class="message-wrapper"
+                                :class="message.role"
+                            >
+                                <div class="message-bubble" :class="message.role">
+                                    <div class="message-content" v-html="formatMessage(message.content)"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Typing indicator -->
+                            <div v-if="isTyping" class="message-wrapper assistant">
+                                <div class="message-bubble assistant">
+                                    <div class="typing-indicator">
+                                        <span class="typing-text">AI is thinking</span>
+                                        <div class="typing-dots" aria-hidden="true">
+                                            <span></span>
+                                            <span></span>
+                                            <span></span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="chat-widget-input">
-                            <div class="input-group input-group-sm">
-                                <input type="text" id="chatWidgetInput" class="form-control" placeholder="Ask me about C#..." disabled>
-                                <button id="chatWidgetSend" class="btn btn-primary btn-sm" disabled>
-                                    <i class="fas fa-paper-plane"></i>
-                                </button>
-                            </div>
+                        <!-- Input Area -->
+                        <div class="chat-footer">
+                            <form v-on:submit.prevent="sendChatMessage" class="chat-form">
+                                <div class="input-wrapper">
+                                    <label for="chat-input" class="visually-hidden">
+                                        Enter your message about C# programming
+                                    </label>
+                                    <input 
+                                        id="chat-input"
+                                        v-model="chatInput"
+                                        ref="chatInputField"
+                                        class="chat-input"
+                                        placeholder="Ask me about C#..."
+                                        :disabled="isTyping"
+                                        autocomplete="off"
+                                        aria-describedby="chat-input-help"
+                                        maxlength="500"
+                                    >
+                                    <button 
+                                        type="submit"
+                                        class="send-button"
+                                        :disabled="isTyping || !chatInput.trim()"
+                                        aria-label="Send message"
+                                        title="Send message"
+                                    >
+                                        <i class="mdi mdi-send" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                                <div id="chat-input-help" class="visually-hidden">
+                                    Type your question and press Enter or click send. Maximum 500 characters.
+                                </div>
+                            </form>
                             
-                            <div class="chat-widget-options mt-1">
-                                <button id="chatWidgetClear" class="btn btn-link btn-sm p-0 ms-2" title="Clear chat">
-                                    <i class="fas fa-trash"></i>
+                            <!-- Actions -->
+                            <div class="chat-actions">
+                                <button 
+                                    v-on:click="clearChat"
+                                    class="action-button"
+                                    :disabled="chatMessages.length === 0"
+                                    aria-label="Clear conversation history"
+                                    title="Clear chat history"
+                                    type="button"
+                                >
+                                    <i class="mdi mdi-delete-outline" aria-hidden="true"></i>
+                                    <span>Clear</span>
                                 </button>
+                                
+                                <div class="message-count" v-if="chatMessages.length > 0">
+                                    <span v-text="chatMessages.length"></span> message<span v-if="chatMessages.length !== 1">s</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -311,7 +410,6 @@
 
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/algoliaDocSearch.js" asp-append-version="true"></script>
-    <script src="~/js/chat-widget.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
     <script>
