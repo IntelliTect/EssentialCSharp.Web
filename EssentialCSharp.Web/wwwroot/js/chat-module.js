@@ -25,17 +25,33 @@ export function useChatWidget() {
         }
     }
 
-    // Save chat history to localStorage
+    // Save chat history to localStorage with message limits
     function saveChatHistory() {
         try {
+            // Limit messages to prevent memory issues (keep last 100 messages)
+            const maxMessages = 100;
+            const messagesToSave = chatMessages.value.slice(-maxMessages);
+            
             const data = {
-                messages: chatMessages.value,
+                messages: messagesToSave,
                 lastResponseId: lastResponseId.value,
                 timestamp: Date.now()
             };
             localStorage.setItem('aiChatHistory', JSON.stringify(data));
         } catch (error) {
             console.warn('Failed to save chat history:', error);
+            // If localStorage is full, try clearing and saving only recent messages
+            try {
+                const recentMessages = chatMessages.value.slice(-20);
+                const fallbackData = {
+                    messages: recentMessages,
+                    lastResponseId: lastResponseId.value,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('aiChatHistory', JSON.stringify(fallbackData));
+            } catch (fallbackError) {
+                console.error('Failed to save even minimal chat history:', fallbackError);
+            }
         }
     }
 
