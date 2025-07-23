@@ -133,19 +133,3 @@ public class ChatController : ControllerBase
         }
     }
 }
-
-public class ChatMessageRequest
-{
-    public string Message { get; set; } = string.Empty;
-    public string? SystemPrompt { get; set; }
-    public string? PreviousResponseId { get; set; }
-    public bool EnableContextualSearch { get; set; } = true;
-    public string? CaptchaResponse { get; set; } // For future captcha implementation
-}
-
-public class ChatMessageResponse
-{
-    public string Response { get; set; } = string.Empty;
-    public string ResponseId { get; set; } = string.Empty;
-    public DateTime Timestamp { get; set; }
-}

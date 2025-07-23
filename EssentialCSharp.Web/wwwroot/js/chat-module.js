@@ -2,13 +2,45 @@
 import { ref, nextTick } from 'vue';
 
 export function useChatWidget() {
-    // Chat state
+    // Chat state with persistence
     const showChatDialog = ref(false);
     const chatMessages = ref([]);
     const chatInput = ref('');
     const isTyping = ref(false);
     const chatMessagesEl = ref(null);
     const chatInputField = ref(null);
+    const lastResponseId = ref(null);
+
+    // Load chat history from localStorage on initialization
+    function loadChatHistory() {
+        try {
+            const saved = localStorage.getItem('aiChatHistory');
+            if (saved) {
+                const data = JSON.parse(saved);
+                chatMessages.value = data.messages || [];
+                lastResponseId.value = data.lastResponseId || null;
+            }
+        } catch (error) {
+            console.warn('Failed to load chat history:', error);
+        }
+    }
+
+    // Save chat history to localStorage
+    function saveChatHistory() {
+        try {
+            const data = {
+                messages: chatMessages.value,
+                lastResponseId: lastResponseId.value,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('aiChatHistory', JSON.stringify(data));
+        } catch (error) {
+            console.warn('Failed to save chat history:', error);
+        }
+    }
+
+    // Initialize chat history on load
+    loadChatHistory();
 
     // Chat functions  
     function openChatDialog() {
@@ -27,6 +59,8 @@ export function useChatWidget() {
 
     function clearChat() {
         chatMessages.value = [];
+        lastResponseId.value = null;
+        saveChatHistory();
     }
 
     function scrollToBottom() {
@@ -59,8 +93,12 @@ export function useChatWidget() {
         // Add user message
         chatMessages.value.push({
             role: 'user',
-            content: userMessage
+            content: userMessage,
+            timestamp: new Date().toISOString()
         });
+
+        // Save immediately after adding user message
+        saveChatHistory();
 
         // Show typing indicator
         isTyping.value = true;
@@ -80,7 +118,8 @@ export function useChatWidget() {
                 },
                 body: JSON.stringify({
                     message: userMessage,
-                    enableContextualSearch: true
+                    enableContextualSearch: true,
+                    previousResponseId: lastResponseId.value
                 })
             });
 
@@ -96,7 +135,8 @@ export function useChatWidget() {
             // Add empty assistant message that we'll update
             chatMessages.value.push({
                 role: 'assistant',
-                content: ''
+                content: '',
+                timestamp: new Date().toISOString()
             });
 
             const assistantMessageIndex = chatMessages.value.length - 1;
@@ -113,6 +153,8 @@ export function useChatWidget() {
                         const data = line.slice(6);
                         if (data === '[DONE]') {
                             isTyping.value = false;
+                            // Save final state
+                            saveChatHistory();
                             continue;
                         }
 
@@ -129,10 +171,9 @@ export function useChatWidget() {
                                     }
                                 });
                             }
-                            // We can handle responseId if needed for conversation history
+                            // Store responseId for conversation continuity
                             else if (parsed.type === 'responseId' && parsed.data) {
-                                // Store responseId for future use if needed
-                                console.log('Response ID:', parsed.data);
+                                lastResponseId.value = parsed.data;
                             }
                         } catch (e) {
                             console.warn('Failed to parse SSE data:', data);
@@ -145,8 +186,10 @@ export function useChatWidget() {
             console.error('Chat error:', error);
             chatMessages.value.push({
                 role: 'assistant',
-                content: 'Sorry, I encountered an error while processing your request. Please try again.'
+                content: 'Sorry, I encountered an error while processing your request. Please try again.',
+                timestamp: new Date().toISOString()
             });
+            saveChatHistory();
         } finally {
             isTyping.value = false;
             
@@ -158,6 +201,28 @@ export function useChatWidget() {
             });
         }
     }
+
+    // Clean up old chat sessions (keep only last 7 days)
+    function cleanupOldSessions() {
+        try {
+            const saved = localStorage.getItem('aiChatHistory');
+            if (saved) {
+                const data = JSON.parse(saved);
+                const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+                
+                if (data.timestamp && data.timestamp < sevenDaysAgo) {
+                    localStorage.removeItem('aiChatHistory');
+                    chatMessages.value = [];
+                    lastResponseId.value = null;
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to cleanup old sessions:', error);
+        }
+    }
+
+    // Run cleanup on initialization
+    cleanupOldSessions();
 
     return {
         // State
