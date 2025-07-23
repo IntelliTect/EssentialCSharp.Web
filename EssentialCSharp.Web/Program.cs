@@ -92,6 +92,8 @@ public partial class Program
 
         builder.Configuration
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddUserSecrets<Program>()
+            .AddEnvironmentVariables()
             .AddEnvironmentVariables();
 
         builder.Services.ConfigureApplicationCookie(options =>
@@ -148,6 +150,17 @@ public partial class Program
         builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
         builder.Services.AddHostedService<DatabaseMigrationService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
+
+        // Add AI Chat services
+        try
+        {
+            builder.Services.AddAIChatServices(builder.Configuration);
+            logger.LogInformation("AI Chat services registered successfully.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "AI Chat services could not be registered. Chat functionality will be unavailable.");
+        }
 
         if (!builder.Environment.IsDevelopment())
         {

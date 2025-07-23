@@ -58,6 +58,10 @@ const contentComingSoonList = [
 
 const completedFeaturesList = [
     {
+        title: "AI Chat Assistant",
+        text: "Chat with an AI assistant that has access to Essential C# book content. Available as a floating widget on every page for contextual help while reading. Features streaming responses and markdown rendering.",
+    },
+    {
         title: "Copying Header Hyperlinks",
         text: "Easily copy a header URL to link to a book section.",
     },

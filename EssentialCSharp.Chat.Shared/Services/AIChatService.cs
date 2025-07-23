@@ -86,11 +86,14 @@ public class AIChatService
         var systemContext = systemPrompt ?? _Options.SystemPrompt;
 
         // Create the streaming response using the Responses API
+        List<ResponseItem> responseItems = [ResponseItem.CreateUserMessageItem(enrichedPrompt)];
+        if (systemContext is not null)
+        {
+            responseItems.Add(
+                ResponseItem.CreateSystemMessageItem(systemContext));
+        }
         var streamingUpdates = _ResponseClient.CreateResponseStreamingAsync(
-            [
-                ResponseItem.CreateUserMessageItem(enrichedPrompt),
-                ResponseItem.CreateSystemMessageItem(systemContext),
-            ],
+            responseItems,
             options: responseOptions,
             cancellationToken: cancellationToken);
 
@@ -308,11 +311,17 @@ public class AIChatService
         // Construct the user input with system context if provided
         var systemContext = systemPrompt ?? _Options.SystemPrompt;
 
+        // Create the streaming response using the Responses API
+        List<ResponseItem> responseItems = [ResponseItem.CreateUserMessageItem(prompt)];
+        if (systemContext is not null)
+        {
+            responseItems.Add(
+                ResponseItem.CreateSystemMessageItem(systemContext));
+        }
+
         // Create the response using the Responses API
-        var response = await _ResponseClient.CreateResponseAsync([
-            ResponseItem.CreateUserMessageItem(prompt),
-            ResponseItem.CreateSystemMessageItem(systemPrompt),
-            ],
+        var response = await _ResponseClient.CreateResponseAsync(
+            responseItems,
             options: responseOptions,
             cancellationToken: cancellationToken);
 
