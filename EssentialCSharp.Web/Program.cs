@@ -11,7 +11,6 @@ using Mailjet.Client;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
 namespace EssentialCSharp.Web;
@@ -148,7 +147,7 @@ public partial class Program
         builder.Services.AddRazorPages();
         builder.Services.AddCaptchaService(builder.Configuration.GetSection(CaptchaOptions.CaptchaSender));
         builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
-        builder.Services.AddScoped<IRouteConfigurationService, RouteConfigurationService>();
+        builder.Services.AddSingleton<IRouteConfigurationService, RouteConfigurationService>();
         builder.Services.AddHostedService<DatabaseMigrationService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
 
@@ -228,9 +227,8 @@ public partial class Program
         try
         {
             // Create a scope to resolve scoped services
-            using var scope = app.Services.CreateScope();
-            var routeConfigurationService = scope.ServiceProvider.GetRequiredService<IRouteConfigurationService>();
-            
+            var routeConfigurationService = app.Services.GetRequiredService<IRouteConfigurationService>();
+
             SitemapXmlHelpers.EnsureSitemapHealthy(siteMappingService.SiteMappings.ToList());
             SitemapXmlHelpers.GenerateAndSerializeSitemapXml(wwwrootDirectory, siteMappingService.SiteMappings.ToList(), logger, routeConfigurationService, baseUrl);
             logger.LogInformation("Sitemap.xml generation completed successfully during application startup");

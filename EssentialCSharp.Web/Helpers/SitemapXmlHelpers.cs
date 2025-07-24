@@ -98,13 +98,3 @@ public static class SitemapXmlHelpers
         };
     }
 }
-
-public class InvalidItemException : Exception
-{
-    public InvalidItemException(string? message) : base(message)
-    {
-    }
-    public InvalidItemException(string? message, Exception exception) : base(message, exception)
-    {
-    }
-}

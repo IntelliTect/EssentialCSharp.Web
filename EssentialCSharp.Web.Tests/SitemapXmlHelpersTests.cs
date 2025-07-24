@@ -76,17 +76,13 @@ public class SitemapXmlHelpersTests : IClassFixture<WebApplicationFactory>
         var baseUrl = "https://test.example.com/";
 
         // Act & Assert
-        var nodes = _Factory.InServiceScope(serviceProvider =>
-        {
-            var routeConfigurationService = serviceProvider.GetRequiredService<IRouteConfigurationService>();
-            SitemapXmlHelpers.GenerateSitemapXml(
-                tempDir,
-                siteMappings,
-                routeConfigurationService,
-                baseUrl,
-                out var nodes);
-            return nodes;
-        });
+        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        SitemapXmlHelpers.GenerateSitemapXml(
+            tempDir,
+            siteMappings,
+            routeConfigurationService,
+            baseUrl,
+            out var nodes);
 
         var allUrls = nodes.Select(n => n.Url).ToList();
 
@@ -108,17 +104,13 @@ public class SitemapXmlHelpersTests : IClassFixture<WebApplicationFactory>
         var baseUrl = "https://test.example.com/";
 
         // Act & Assert
-        var nodes = _Factory.InServiceScope(serviceProvider =>
-        {
-            var routeConfigurationService = serviceProvider.GetRequiredService<IRouteConfigurationService>();
-            SitemapXmlHelpers.GenerateSitemapXml(
-                tempDir,
-                siteMappings,
-                routeConfigurationService,
-                baseUrl,
-                out var nodes);
-            return nodes;
-        });
+        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        SitemapXmlHelpers.GenerateSitemapXml(
+            tempDir,
+            siteMappings,
+            routeConfigurationService,
+            baseUrl,
+            out var nodes);
 
         Assert.Contains(nodes, node => node.Url == baseUrl);
 
@@ -143,22 +135,19 @@ public class SitemapXmlHelpersTests : IClassFixture<WebApplicationFactory>
         };
 
         // Act & Assert
-        _Factory.InServiceScope(serviceProvider =>
-        {
-            var routeConfigurationService = serviceProvider.GetRequiredService<IRouteConfigurationService>();
-            SitemapXmlHelpers.GenerateSitemapXml(
-                tempDir,
-                siteMappings,
-                routeConfigurationService,
-                baseUrl,
-                out var nodes);
+        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        SitemapXmlHelpers.GenerateSitemapXml(
+            tempDir,
+            siteMappings,
+            routeConfigurationService,
+            baseUrl,
+            out var nodes);
 
-            var allUrls = nodes.Select(n => n.Url).ToList();
+        var allUrls = nodes.Select(n => n.Url).ToList();
 
-            Assert.Contains(allUrls, url => url.Contains("test-page-1"));
-            Assert.DoesNotContain(allUrls, url => url.Contains("test-page-2")); // Not marked for XML
-            Assert.Contains(allUrls, url => url.Contains("test-page-3"));
-        });
+        Assert.Contains(allUrls, url => url.Contains("test-page-1"));
+        Assert.DoesNotContain(allUrls, url => url.Contains("test-page-2")); // Not marked for XML
+        Assert.Contains(allUrls, url => url.Contains("test-page-3"));
     }
 
     [Fact]
@@ -170,21 +159,18 @@ public class SitemapXmlHelpersTests : IClassFixture<WebApplicationFactory>
         var baseUrl = "https://test.example.com/";
 
         // Act & Assert
-        _Factory.InServiceScope(serviceProvider =>
-        {
-            var routeConfigurationService = serviceProvider.GetRequiredService<IRouteConfigurationService>();
-            SitemapXmlHelpers.GenerateSitemapXml(
-                tempDir,
-                siteMappings,
-                routeConfigurationService,
-                baseUrl,
-                out var nodes);
+        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        SitemapXmlHelpers.GenerateSitemapXml(
+            tempDir,
+            siteMappings,
+            routeConfigurationService,
+            baseUrl,
+            out var nodes);
 
-            var allUrls = nodes.Select(n => n.Url).ToList();
+        var allUrls = nodes.Select(n => n.Url).ToList();
 
-            // Should not include Index action routes (they're the default)
-            Assert.DoesNotContain(allUrls, url => url.Contains("/Index", StringComparison.OrdinalIgnoreCase));
-        });
+        // Should not include Index action routes (they're the default)
+        Assert.DoesNotContain(allUrls, url => url.Contains("/Index", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -196,21 +182,18 @@ public class SitemapXmlHelpersTests : IClassFixture<WebApplicationFactory>
         var baseUrl = "https://test.example.com/";
 
         // Act & Assert
-        _Factory.InServiceScope(serviceProvider =>
-        {
-            var routeConfigurationService = serviceProvider.GetRequiredService<IRouteConfigurationService>();
-            SitemapXmlHelpers.GenerateSitemapXml(
-                tempDir,
-                siteMappings,
-                routeConfigurationService,
-                baseUrl,
-                out var nodes);
+        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        SitemapXmlHelpers.GenerateSitemapXml(
+            tempDir,
+            siteMappings,
+            routeConfigurationService,
+            baseUrl,
+            out var nodes);
 
-            var allUrls = nodes.Select(n => n.Url).ToList();
+        var allUrls = nodes.Select(n => n.Url).ToList();
 
-            // Should not include Error action routes
-            Assert.DoesNotContain(allUrls, url => url.Contains("/Error", StringComparison.OrdinalIgnoreCase));
-        });
+        // Should not include Error action routes
+        Assert.DoesNotContain(allUrls, url => url.Contains("/Error", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -224,24 +207,18 @@ public class SitemapXmlHelpersTests : IClassFixture<WebApplicationFactory>
 
         // Clean up any existing file
         var expectedXmlPath = Path.Combine(tempDir.FullName, "sitemap.xml");
-        if (File.Exists(expectedXmlPath))
-        {
-            File.Delete(expectedXmlPath);
-        }
+        File.Delete(expectedXmlPath);
 
         try
         {
             // Act
-            _Factory.InServiceScope(serviceProvider =>
-            {
-                var routeConfigurationService = serviceProvider.GetRequiredService<IRouteConfigurationService>();
-                SitemapXmlHelpers.GenerateAndSerializeSitemapXml(
-                    tempDir,
-                    siteMappings,
-                    logger,
-                    routeConfigurationService,
-                    baseUrl);
-            });
+            var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+            SitemapXmlHelpers.GenerateAndSerializeSitemapXml(
+                tempDir,
+                siteMappings,
+                logger,
+                routeConfigurationService,
+                baseUrl);
 
             // Assert
             Assert.True(File.Exists(expectedXmlPath));
@@ -254,10 +231,7 @@ public class SitemapXmlHelpersTests : IClassFixture<WebApplicationFactory>
         finally
         {
             // Clean up
-            if (File.Exists(expectedXmlPath))
-            {
-                File.Delete(expectedXmlPath);
-            }
+            File.Delete(expectedXmlPath);
         }
     }
 
