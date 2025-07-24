@@ -76,9 +76,6 @@ public class AIChatService
         bool enableContextualSearch = false,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        // Add logging to help debug the conversation state issue
-        Debug.WriteLine($"GetChatCompletionStream called with previousResponseId: {previousResponseId}");
-
         var responseOptions = await CreateResponseOptionsAsync(previousResponseId, tools, reasoningEffortLevel, mcpClient: mcpClient, cancellationToken: cancellationToken);
         var enrichedPrompt = await EnrichPromptWithContext(prompt, enableContextualSearch, cancellationToken);
 
@@ -113,33 +110,24 @@ public class AIChatService
             return prompt;
         }
 
-        try
-        {
-            var searchResults = await _SearchService.ExecuteVectorSearch(prompt);
-            var contextualInfo = new System.Text.StringBuilder();
+        var searchResults = await _SearchService.ExecuteVectorSearch(prompt);
+        var contextualInfo = new System.Text.StringBuilder();
 
-            contextualInfo.AppendLine("## Contextual Information");
-            contextualInfo.AppendLine("The following information might be relevant to your question:");
+        contextualInfo.AppendLine("## Contextual Information");
+        contextualInfo.AppendLine("The following information might be relevant to your question:");
+        contextualInfo.AppendLine();
+
+        await foreach (var result in searchResults)
+        {
+            contextualInfo.AppendLine(System.Globalization.CultureInfo.InvariantCulture, $"**From: {result.Record.Heading}**");
+            contextualInfo.AppendLine(result.Record.ChunkText);
             contextualInfo.AppendLine();
-
-            await foreach (var result in searchResults)
-            {
-                contextualInfo.AppendLine(System.Globalization.CultureInfo.InvariantCulture, $"**From: {result.Record.Heading}**");
-                contextualInfo.AppendLine(result.Record.ChunkText);
-                contextualInfo.AppendLine();
-            }
-
-            contextualInfo.AppendLine("## User Question");
-            contextualInfo.AppendLine(prompt);
-
-            return contextualInfo.ToString();
         }
-        catch (Exception ex)
-        {
-            // Log the error but don't fail the request
-            Debug.WriteLine($"Error enriching prompt with context: {ex.Message}");
-            return prompt;
-        }
+
+        contextualInfo.AppendLine("## User Question");
+        contextualInfo.AppendLine(prompt);
+
+        return contextualInfo.ToString();
     }
 
     /// <summary>

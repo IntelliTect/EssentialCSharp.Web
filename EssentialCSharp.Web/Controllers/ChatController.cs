@@ -8,7 +8,7 @@ namespace EssentialCSharp.Web.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize] // Require authentication for all chat endpoints
+[Authorize]
 [EnableRateLimiting("ChatEndpoint")]
 public class ChatController : ControllerBase
 {
@@ -62,7 +62,8 @@ public class ChatController : ControllerBase
         }
         catch (Exception ex)
         {
-            _Logger.LogError(ex, "Error processing chat message: {Message}", request.Message);
+            var sanitizedMessage = request.Message?.Replace("\r", "").Replace("\n", "");
+            _Logger.LogError(ex, "Error processing chat message: {Message}", sanitizedMessage);
             return StatusCode(500, new { error = "An error occurred while processing your message. Please try again." });
         }
     }
@@ -130,7 +131,8 @@ public class ChatController : ControllerBase
         }
         catch (Exception ex)
         {
-            _Logger.LogError(ex, "Error processing streaming chat message: {Message}", request.Message);
+            var sanitizedMessage = request.Message?.Replace("\n", "").Replace("\r", "");
+            _Logger.LogError(ex, "Error processing streaming chat message: {Message}", sanitizedMessage);
             Response.StatusCode = 500;
             await Response.WriteAsync(JsonSerializer.Serialize(new { error = "An error occurred while processing your message. Please try again." }), cancellationToken);
         }

@@ -302,7 +302,7 @@ public partial class Program
         app.UseMiddleware<ReferralMiddleware>();
 
         app.MapRazorPages();
-        app.MapDefaultControllerRoute().RequireRateLimiting("ChatEndpoint"); // Apply rate limiting to controllers
+        app.MapDefaultControllerRoute();
 
         app.MapFallbackToController("Index", "Home");
 

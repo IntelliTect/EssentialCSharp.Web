@@ -13,10 +13,6 @@ export function useChatWidget() {
     const chatMessagesEl = ref(null);
     const chatInputField = ref(null);
     const lastResponseId = ref(null);
-    
-    // Captcha state (currently not used but referenced in template)
-    const showCaptcha = ref(false);
-    const captchaSiteKey = ref(window.HCAPTCHA_SITE_KEY || '');
 
     // Load chat history from localStorage on initialization
     function loadChatHistory() {
