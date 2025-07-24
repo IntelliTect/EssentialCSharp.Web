@@ -21,6 +21,7 @@ public class AIOptions
     /// The Azure OpenAI endpoint URL.
     /// </summary>
     public string Endpoint { get; set; } = string.Empty;
+
     /// <summary>
     /// The API key for accessing Azure OpenAI services.
     /// </summary>

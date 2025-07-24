@@ -1,11 +1,11 @@
 using System.CommandLine;
 using System.Text.Json;
+using EssentialCSharp.Chat.Common.Extensions;
 using EssentialCSharp.Chat.Common.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
-using OpenAI.Responses;
 
 namespace EssentialCSharp.Chat;
 
@@ -73,16 +73,8 @@ public class Program
             "AIOptions section is missing or not configured correctly in appsettings.json or environment variables.");
             builder.Services.Configure<AIOptions>(config.GetRequiredSection("AIOptions"));
 
-            // Register Azure OpenAI text embedding generation service
-#pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-            // Replace the obsolete method call with the new method
-            builder.AddAzureOpenAIEmbeddingGenerator(aiOptions.VectorGenerationDeploymentName, aiOptions.Endpoint, aiOptions.ApiKey);
-
-            builder.AddAzureOpenAIChatClient(
-                aiOptions.ChatDeploymentName,
-                aiOptions.Endpoint,
-                aiOptions.ApiKey);
-#pragma warning restore SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+            // Use shared extension to register Azure OpenAI services
+            builder.Services.AddAzureOpenAIServices(aiOptions);
 
             builder.Services.AddLogging(loggingBuilder =>
                 {
@@ -92,12 +84,6 @@ public class Program
                         options.SingleLine = true;
                     });
                 });
-
-            builder.Services.AddPostgresVectorStore(
-                aiOptions.PostgresConnectionString);
-
-            builder.Services.AddSingleton<EmbeddingService>();
-            builder.Services.AddSingleton<MarkdownChunkingService>();
 
             // Build the kernel and get the data uploader.
             var kernel = builder.Build();
@@ -147,11 +133,7 @@ public class Program
             //IMcpClient mcpClient = await McpClientFactory.CreateAsync(clientTransport: microsoftLearnMcp, cancellationToken: cancellationToken);
 
             var enableStreaming = parseResult.GetValue<bool>("--stream");
-            var enableWebSearch = parseResult.GetValue<bool>("--web-search");
-            enableWebSearch = false;
             var customSystemPrompt = parseResult.GetValue<string>("--system-prompt");
-            var enableContextualSearch = parseResult.GetValue<bool>("--contextual-search");
-            enableContextualSearch = true;
 
 
             AIOptions aiOptions = config.GetRequiredSection("AIOptions").Get<AIOptions>() ?? throw new InvalidOperationException(
@@ -166,18 +148,8 @@ public class Program
                 options.SingleLine = true;
             }));
 
-            // Add services for contextual search if enabled
-            if (enableContextualSearch)
-            {
-#pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-                services.AddAzureOpenAIEmbeddingGenerator(aiOptions.VectorGenerationDeploymentName, aiOptions.Endpoint, aiOptions.ApiKey);
-#pragma warning restore SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-                services.AddPostgresVectorStore(aiOptions.PostgresConnectionString);
-                services.AddSingleton<EmbeddingService>();
-                services.AddSingleton<AISearchService>();
-            }
-
-            services.AddSingleton<AIChatService>();
+            // Use shared extension to register Azure OpenAI services
+            services.AddAzureOpenAIServices(aiOptions);
 
             var serviceProvider = services.BuildServiceProvider();
             var aiChatService = serviceProvider.GetRequiredService<AIChatService>();
@@ -185,8 +157,6 @@ public class Program
             Console.WriteLine("🤖 AI Chat Session Started!");
             Console.WriteLine("Features enabled:");
             Console.WriteLine($"  • Streaming: {(enableStreaming ? "✅" : "❌")}");
-            Console.WriteLine($"  • Web Search: {(enableWebSearch ? "✅" : "❌")}");
-            Console.WriteLine($"  • Contextual Search: {(enableContextualSearch ? "✅" : "❌")}");
             if (!string.IsNullOrEmpty(customSystemPrompt))
                 Console.WriteLine($"  • Custom System Prompt: {customSystemPrompt}");
             Console.WriteLine();
@@ -272,10 +242,8 @@ public class Program
                         // Use streaming with optional tools and conversation context
                         var fullResponse = new System.Text.StringBuilder();
 
-                        var tools = enableWebSearch ? new[] { ResponseTool.CreateWebSearchTool() } : null;
-
                         await foreach (var (text, responseId) in aiChatService.GetChatCompletionStream(
-                            prompt: userInput/*, mcpClient: mcpClient*/, previousResponseId: previousResponseId, enableContextualSearch: enableContextualSearch, systemPrompt: customSystemPrompt, cancellationToken: cancellationToken))
+                            prompt: userInput/*, mcpClient: mcpClient*/, previousResponseId: previousResponseId, systemPrompt: customSystemPrompt, cancellationToken: cancellationToken))
                         {
                             if (!string.IsNullOrEmpty(text))
                             {
@@ -294,10 +262,8 @@ public class Program
                     else
                     {
                         // Non-streaming response with optional tools and conversation context
-                        var tools = enableWebSearch ? new[] { ResponseTool.CreateWebSearchTool() } : null;
-
                         var (response, responseId) = await aiChatService.GetChatCompletion(
-                           prompt: userInput, previousResponseId: previousResponseId, enableContextualSearch: enableContextualSearch, systemPrompt: customSystemPrompt, cancellationToken: cancellationToken);
+                           prompt: userInput, previousResponseId: previousResponseId, systemPrompt: customSystemPrompt, cancellationToken: cancellationToken);
 
                         Console.WriteLine(response);
                         conversationHistory.Add(("Assistant", response));

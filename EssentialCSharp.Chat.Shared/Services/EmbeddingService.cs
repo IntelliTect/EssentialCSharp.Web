@@ -7,7 +7,6 @@ namespace EssentialCSharp.Chat.Common.Services;
 /// <summary>
 /// Service for generating embeddings for markdown chunks using Azure OpenAI
 /// </summary>
-#pragma warning disable SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 public class EmbeddingService(VectorStore vectorStore, IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator)
 {
     public static string CollectionName { get; } = "markdown_chunks";
@@ -54,4 +53,3 @@ public class EmbeddingService(VectorStore vectorStore, IEmbeddingGenerator<strin
         Console.WriteLine($"Successfully generated embeddings and uploaded {bookContents.Count()} chunks to collection '{collectionName}'.");
     }
 }
-#pragma warning restore SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.

@@ -12,7 +12,7 @@ public partial class MarkdownChunkingService(
     int maxTokensPerChunk = 256,
     int overlapTokens = 25)
 {
-    private static readonly string[] _NewLineSeparators = new[] { "\r\n", "\n", "\r" };
+    private static readonly string[] _NewLineSeparators = ["\r\n", "\n", "\r"];
     private readonly int _MaxTokensPerChunk = maxTokensPerChunk;
     private readonly int _OverlapTokens = overlapTokens;
 
@@ -73,14 +73,14 @@ public partial class MarkdownChunkingService(
         int totalChunkCharacters = 0;
         int chunkCount = 0;
 
-        foreach (var section in sections)
+        foreach (var (Header, Content) in sections)
         {
 #pragma warning disable SKEXP0050
             var chunks = TextChunker.SplitMarkdownParagraphs(
-                lines: section.Content,
+                lines: Content,
                 maxTokensPerParagraph: _MaxTokensPerChunk,
                 overlapTokens: _OverlapTokens,
-                chunkHeader: section.Header + " - "
+                chunkHeader: Header + " - "
                 );
 #pragma warning restore SKEXP0050
             allChunks.AddRange(chunks);

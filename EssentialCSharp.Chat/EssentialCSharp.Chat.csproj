@@ -18,14 +18,9 @@
   </PropertyGroup>
   
     <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
     <PackageReference Include="Microsoft.SemanticKernel" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.PgVector" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
     <PackageReference Include="ModelContextProtocol" />
-    <PackageReference Include="Npgsql" />
     <PackageReference Include="IntelliTect.Multitool" />
     <PackageReference Include="System.CommandLine" />
     <PackageReference Include="Microsoft.SourceLink.GitHub">

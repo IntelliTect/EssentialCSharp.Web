@@ -2,10 +2,21 @@
 
 /* Screen reader only content */
 .visually-hidden {
- /* Optimized pulse animation */
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* Optimized pulse animation */
 @keyframes pulse {
     0% { 
-        transform: scale(1);
+    position: absolute !important;
         opacity: 1;
     }
     50% { 
@@ -16,15 +27,6 @@
         transform: scale(1);
         opacity: 1;
     }
-}olute !important;
-    width: 1px !important;
-    height: 1px !important;
-    padding: 0 !important;
-    margin: -1px !important;
-    overflow: hidden !important;
-    clip: rect(0, 0, 0, 0) !important;
-    white-space: nowrap !important;
-    border: 0 !important;
 }
 
 /* Main widget container */

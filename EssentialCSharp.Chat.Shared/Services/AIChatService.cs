@@ -77,7 +77,7 @@ public class AIChatService
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         // Add logging to help debug the conversation state issue
-        System.Diagnostics.Debug.WriteLine($"GetChatCompletionStream called with previousResponseId: {previousResponseId}");
+        Debug.WriteLine($"GetChatCompletionStream called with previousResponseId: {previousResponseId}");
 
         var responseOptions = await CreateResponseOptionsAsync(previousResponseId, tools, reasoningEffortLevel, mcpClient: mcpClient, cancellationToken: cancellationToken);
         var enrichedPrompt = await EnrichPromptWithContext(prompt, enableContextualSearch, cancellationToken);
@@ -137,7 +137,7 @@ public class AIChatService
         catch (Exception ex)
         {
             // Log the error but don't fail the request
-            System.Diagnostics.Debug.WriteLine($"Error enriching prompt with context: {ex.Message}");
+            Debug.WriteLine($"Error enriching prompt with context: {ex.Message}");
             return prompt;
         }
     }
@@ -151,10 +151,9 @@ public class AIChatService
         IMcpClient? mcpClient,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        string? responseId = null;
-
         await foreach (var update in streamingUpdates.WithCancellation(cancellationToken))
         {
+            string? responseId;
             if (update is StreamingResponseCreatedUpdate created)
             {
                 // Remember the response ID for later function calls
@@ -182,8 +181,7 @@ public class AIChatService
             }
             else if (update is StreamingResponseCompletedUpdate completedUpdate)
             {
-                responseId = completedUpdate.Response.Id;
-                yield return (string.Empty, responseId); // Signal completion with response ID
+                yield return (string.Empty, responseId: completedUpdate.Response.Id); // Signal completion with response ID
             }
         }
     }
@@ -198,7 +196,7 @@ public class AIChatService
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         // A dictionary of arguments to pass to the tool. Each key represents a parameter name, and its associated value represents the argument value.
-        Dictionary<string, object?> arguments = new Dictionary<string, object?>();
+        Dictionary<string, object?> arguments = [];
         // example JsonResponse:
         // "{\"question\":\"Azure OpenAI Responses API (Preview)\"}"
         var jsonResponse = functionCallItem.FunctionArguments.ToString();

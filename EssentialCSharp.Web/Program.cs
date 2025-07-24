@@ -1,5 +1,6 @@
 using System.Threading.RateLimiting;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
+using EssentialCSharp.Chat.Common.Extensions;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
 using EssentialCSharp.Web.Data;
@@ -95,7 +96,6 @@ public partial class Program
         builder.Configuration
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .AddUserSecrets<Program>()
-            .AddEnvironmentVariables()
             .AddEnvironmentVariables();
 
         builder.Services.ConfigureApplicationCookie(options =>
@@ -154,14 +154,9 @@ public partial class Program
         builder.Services.AddScoped<IReferralService, ReferralService>();
 
         // Add AI Chat services
-        try
+        if (!builder.Environment.IsDevelopment())
         {
-            builder.Services.AddAIChatServices(builder.Configuration);
-            logger.LogInformation("AI Chat services registered successfully.");
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "AI Chat services could not be registered. Chat functionality will be unavailable.");
+            builder.Services.AddAzureOpenAIServices(configuration);
         }
 
         // Add Rate Limiting for API endpoints
@@ -179,7 +174,7 @@ public partial class Program
                     factory: _ => new FixedWindowRateLimiterOptions
                     {
                         PermitLimit = 30, // requests per window
-                        Window = TimeSpan.FromMinutes(1), // 1 minute window
+                        Window = TimeSpan.FromMinutes(1), // minute window
                         QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                         QueueLimit = 0 // No queuing - immediate rejection for better UX
                     });
@@ -302,7 +297,6 @@ public partial class Program
         app.UseAuthentication();
         app.UseAuthorization();
 
-        // Enable rate limiting middleware (must be after UseAuthentication)
         app.UseRateLimiter();
 
         app.UseMiddleware<ReferralMiddleware>();

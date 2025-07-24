@@ -26,6 +26,10 @@ const tocData = markRaw(TOC_DATA);
 
 const featuresComingSoonList = [
     {
+        title: "AI Chat Assistant",
+        text: "Chat with an AI assistant that has access to Essential C# book content. Available as a floating widget on every page for contextual help while reading. Features streaming responses and markdown rendering.",
+    },
+    {
         title: "Client-side Compiler",
         text: "Write, compile, and run code snippets right from your browser. Enjoy hands-on experience with the code as you go through the site.",
     },
@@ -36,10 +40,6 @@ const featuresComingSoonList = [
     {
         title: "Hyperlinking",
         text: "Easily navigate to interesting and relevant sites as well as related sections in Essential C#.",
-    },
-    {
-        title: "Table of Contents Filtering",
-        text: "The Table of Contents filter will let you narrow down the list of topics to help you quickly and easily find your destination.",
     },
 ];
 
@@ -59,10 +59,6 @@ const contentComingSoonList = [
 ];
 
 const completedFeaturesList = [
-    {
-        title: "AI Chat Assistant",
-        text: "Chat with an AI assistant that has access to Essential C# book content. Available as a floating widget on every page for contextual help while reading. Features streaming responses and markdown rendering.",
-    },
     {
         title: "Copying Header Hyperlinks",
         text: "Easily copy a header URL to link to a book section.",
@@ -131,19 +127,7 @@ const app = createApp({
         const snackbarColor = ref();
 
         function copyToClipboard(copyText) {
-            let url;
-            
-            // If copyText contains a #, it's a full path with anchor (e.g., 'page#anchor')
-            // If copyText doesn't contain a #, it's just an anchor for the current page
-            if (copyText.includes('#')) {
-                // Full path case: construct URL with origin + path
-                url = window.location.origin + "/" + copyText;
-            } else {
-                // Anchor only case: use current page URL + anchor
-                const currentUrl = window.location.href.split('#')[0]; // Remove any existing anchor
-                url = currentUrl + "#" + copyText;
-            }
-            
+            let url = window.location.origin + "/" + copyText;
             let referralId = REFERRAL_ID;
             if (referralId && referralId.trim()) {
                 url = addQueryParam(url, 'rid', referralId);
@@ -370,7 +354,6 @@ const app = createApp({
             enableTocFilter,
             isContentPage,
 
-            // Chat functionality - spread the chat widget
             ...chatWidget
         };
     },
