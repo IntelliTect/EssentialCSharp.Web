@@ -24,8 +24,12 @@ public class CaptchaService(IHttpClientFactory clientFactory, IOptions<CaptchaOp
         return await PostVerification(postData);
     }
 
-    public async Task<HCaptchaResult?> VerifyAsync(string response)
+    public async Task<HCaptchaResult?> VerifyAsync(string? response)
     {
+        if (string.IsNullOrWhiteSpace(response))
+        {
+            return null;
+        }
         string secret = Options.SecretKey ?? throw new InvalidOperationException($"{CaptchaOptions.CaptchaSender} {nameof(Options.SecretKey)} is unexpectedly null");
         string sitekey = Options.SiteKey ?? throw new InvalidOperationException($"{CaptchaOptions.CaptchaSender} {nameof(Options.SiteKey)} is unexpectedly null");
 

@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Version>0.0.1</Version>
+  </PropertyGroup>
+
+  <!-- 
+    For packaging as a dotnet global tool 
+    https://learn.microsoft.com/dotnet/core/tools/global-tools-how-to-create
+  -->
+  
+  <PropertyGroup>
+    <PackageId>EssentialCSharp.Chat</PackageId>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>essentialcsharpchat</ToolCommandName>
+  </PropertyGroup>
+  
+    <ItemGroup>
+    <PackageReference Include="Microsoft.SemanticKernel" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.PgVector" />
+    <PackageReference Include="ModelContextProtocol" />
+    <PackageReference Include="IntelliTect.Multitool" />
+    <PackageReference Include="System.CommandLine" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EssentialCSharp.Chat.Shared\EssentialCSharp.Chat.Common.csproj" />
+  </ItemGroup>
+
+</Project>

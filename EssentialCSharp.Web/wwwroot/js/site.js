@@ -7,7 +7,9 @@ import {
     watch,
     computed,
 } from "vue";
+import { createVuetify } from "vuetify";
 import { useWindowSize } from "vue-window-size";
+import { useChatWidget } from "./chat-module.js";
 
 /**
  * @typedef {Object} TocItem
@@ -24,6 +26,10 @@ const tocData = markRaw(TOC_DATA);
 
 const featuresComingSoonList = [
     {
+        title: "AI Chat Assistant",
+        text: "Chat with an AI assistant that has access to Essential C# book content. Available as a floating widget on every page for contextual help while reading. Features streaming responses and markdown rendering.",
+    },
+    {
         title: "Client-side Compiler",
         text: "Write, compile, and run code snippets right from your browser. Enjoy hands-on experience with the code as you go through the site.",
     },
@@ -34,10 +40,6 @@ const featuresComingSoonList = [
     {
         title: "Hyperlinking",
         text: "Easily navigate to interesting and relevant sites as well as related sections in Essential C#.",
-    },
-    {
-        title: "Table of Contents Filtering",
-        text: "The Table of Contents filter will let you narrow down the list of topics to help you quickly and easily find your destination.",
     },
 ];
 
@@ -328,6 +330,9 @@ const app = createApp({
             return str.replace(/[^\w\s]|_/g, "").replace(/\s+/g, " ").toLowerCase();
         }
 
+        // Initialize chat functionality
+        const chatWidget = useChatWidget();
+
         return {
             previousPageUrl,
             nextPageUrl,
@@ -359,7 +364,9 @@ const app = createApp({
             searchQuery,
             filteredTocData,
             enableTocFilter,
-            isContentPage
+            isContentPage,
+
+            ...chatWidget
         };
     },
 });
@@ -368,5 +375,15 @@ app.component("toc-tree", {
     props: ["item", "expandedTocs", "currentPage"],
     template: "#toc-tree",
 });
+
+// Create and configure Vuetify
+const vuetify = createVuetify({
+    theme: {
+        defaultTheme: 'light'
+    }
+});
+
+// Use Vuetify with the Vue app
+app.use(vuetify);
 
 app.mount("#app");
