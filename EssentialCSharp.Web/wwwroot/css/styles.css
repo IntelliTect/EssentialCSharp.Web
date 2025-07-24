@@ -1,10 +1,5 @@
 /* Global Styles */
 
-/* Vue.js directive for hiding uncompiled templates */
-[v-cloak] {
-    display: none;
-}
-
 :root {
   --primary-color: rgb(30, 83, 160);
   --primary-color-rgb: 30, 83, 160;
@@ -792,28 +787,6 @@ details > summary::-webkit-details-marker {
   border-style: solid;
   border-color: var(--grey-lighten-2) transparent transparent transparent;
 }
-
-/* Anchor Styling */
-.heading-wrapper:not(:hover) .anchor-link:not(:focus-visible) {
-    opacity: 0;
-}
-
-.anchor-link {
-    border: none;
-    color: var(--link-color);
-    text-decoration: none;
-    position: absolute;
-    font-size: 14px;
-    margin: 4px 2px;
-    transition-duration: 0.4s;
-    cursor: pointer;
-    background-color: transparent;
-}
-
-    .anchor-link:hover {
-        color: var(--link-color-hover);
-    }
-
 
 /* The snackbar - position it at the bottom and in the middle of the screen */
 #snackbar {

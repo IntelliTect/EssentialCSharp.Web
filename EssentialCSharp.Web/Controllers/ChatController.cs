@@ -1,20 +1,27 @@
 using System.Text.Json;
 using EssentialCSharp.Chat.Common.Services;
+using EssentialCSharp.Web.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace EssentialCSharp.Web.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize] // Require authentication for all chat endpoints
+[EnableRateLimiting("ChatEndpoint")]
 public class ChatController : ControllerBase
 {
     private readonly AIChatService _AiChatService;
     private readonly ILogger<ChatController> _Logger;
+    private readonly ICaptchaService _CaptchaService;
 
-    public ChatController(ILogger<ChatController> logger, AIChatService aiChatService)
+    public ChatController(ILogger<ChatController> logger, AIChatService aiChatService, ICaptchaService captchaService)
     {
         _AiChatService = aiChatService;
         _Logger = logger;
+        _CaptchaService = captchaService;
     }
 
     [HttpPost("message")]
@@ -32,17 +39,22 @@ public class ChatController : ControllerBase
                 return BadRequest(new { error = "Message cannot be empty." });
             }
 
-            // TODO: Add user authentication check here when implementing auth
-            // if (!User.Identity.IsAuthenticated)
-            // {
-            //     return Unauthorized(new { error = "User must be logged in to use chat." });
-            // }
-
-            // TODO: Add captcha verification here when implementing captcha
-            // if (!await _captchaService.VerifyAsync(request.CaptchaResponse))
-            // {
-            //     return BadRequest(new { error = "Captcha verification failed." });
-            // }
+            // Require user authentication for chat
+            if (!User.Identity?.IsAuthenticated ?? true)
+            {
+                return Unauthorized(new { error = "User must be logged in to use chat." });
+            }
+            // For now, we rely on ASP.NET Core Rate Limiting for protection
+            // Future enhancement: Add captcha verification after X number of requests
+            var captchaResult = await _CaptchaService.VerifyAsync(request.CaptchaResponse);
+            if (captchaResult == null || !captchaResult.Success)
+            {
+                return BadRequest(new
+                {
+                    error = "Captcha verification failed. Please try again.",
+                    requiresCaptcha = true
+                });
+            }
 
             var (response, responseId) = await _AiChatService.GetChatCompletion(
                 prompt: request.Message,
@@ -88,8 +100,26 @@ public class ChatController : ControllerBase
                 return;
             }
 
-            // TODO: Add user authentication check here when implementing auth
-            // TODO: Add captcha verification here when implementing captcha
+            // Require user authentication for chat
+            if (!User.Identity?.IsAuthenticated ?? true)
+            {
+                Response.StatusCode = 401;
+                await Response.WriteAsync(JsonSerializer.Serialize(new { error = "User must be logged in to use chat." }), cancellationToken);
+                return;
+            }
+            // For now, we rely on ASP.NET Core Rate Limiting for protection
+            // Future enhancement: Add captcha verification after X number of requests
+            var captchaResult = await _CaptchaService.VerifyAsync(request.CaptchaResponse);
+            if (captchaResult == null || !captchaResult.Success)
+            {
+                Response.StatusCode = 400;
+                await Response.WriteAsync(JsonSerializer.Serialize(new
+                {
+                    error = "Captcha verification failed. Please try again.",
+                    requiresCaptcha = true
+                }), cancellationToken);
+                return;
+            }
 
             Response.ContentType = "text/event-stream";
             Response.Headers["Cache-Control"] = "no-cache";

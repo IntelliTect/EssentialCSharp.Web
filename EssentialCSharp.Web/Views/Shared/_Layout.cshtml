@@ -3,7 +3,12 @@
 @using EssentialCSharp.Web.Services
 @using IntelliTect.Multitool
 @using EssentialCSharp.Common
+@using Microsoft.AspNetCore.Identity
+@using EssentialCSharp.Web.Areas.Identity.Data
+@using Microsoft.Extensions.Options
 @inject ISiteMappingService _SiteMappings
+@inject SignInManager<EssentialCSharpWebUser> SignInManager
+@inject IOptions<CaptchaOptions> CaptchaOptions
 @using Microsoft.AspNetCore.Components
 @{
     var prodMap = new ImportMapDefinition(
@@ -43,14 +48,14 @@
     <meta property="og:image:width" content="500" />
     <meta property="og:image:height" content="500" />
     <meta name="twitter:title" property="og:title" content="@title" />
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/chat-widget.css" asp-append-version="true" />
-    <link rel="stylesheet" href="/lib/docsearch/style.css" />
     <!-- Vuetify CSS -->
     <link href="https://cdn.jsdelivr.net/npm/vuetify@3.4.0/dist/vuetify.min.css" rel="stylesheet">
     <!-- Material Design Icons -->
     <link href="https://cdn.jsdelivr.net/npm/@@mdi/font@7.2.96/css/materialdesignicons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/chat-widget.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/docsearch/style.css" />
     @*Font Family*@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,6 +95,13 @@
         gtag('js', new Date());
         gtag('config', 'G-761B4BMK2R');
     </script>
+    <style>
+        [v-cloak] {
+            display: none;
+        }
+    </style>
+    <!-- hCaptcha Script -->
+    <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
     @await RenderSectionAsync("HeadAppend", required: false)
 </head>
 <body>
@@ -251,7 +263,9 @@
                 {{ snackbarMessage }}
             </div>
 
-            <!-- AI Chat Widget -->
+            <!-- AI Chat Widget - Hide on Identity pages to avoid confusing states during login/logout -->
+            @if (!Context.Request.Path.StartsWithSegments("/Identity"))
+            {
             <div class="chat-widget">
                 <!-- Chat Trigger Button -->
                 <button 
@@ -259,8 +273,8 @@
                     v-on:click="openChatDialog"
                     :class="{ 'chat-button--active': showChatDialog }"
                     :aria-expanded="showChatDialog"
-                    aria-label="Open AI Chat Assistant"
-                    title="Chat with AI Assistant about C# programming"
+                    :aria-label="isAuthenticated ? 'Open AI Chat Assistant' : 'Login required for AI Chat'"
+                    :title="isAuthenticated ? 'Chat with AI Assistant about C# programming' : 'Login required to use chat'"
                     type="button"
                 >
                     <i class="mdi mdi-robot" aria-hidden="true"></i>
@@ -303,26 +317,62 @@
                             aria-live="polite"
                             aria-label="Chat conversation"
                         >
-                            <!-- Welcome message -->
-                            <div v-if="chatMessages.length === 0" class="welcome-message">
+                            <!-- Welcome message for authenticated users -->
+                            <div v-if="chatMessages.length === 0 && isAuthenticated" class="welcome-message">
                                 <i class="mdi mdi-chat-outline" aria-hidden="true"></i>
                                 <p>Hi! I'm your AI assistant. Ask me anything about C# programming!</p>
+                            </div>
+                            
+                            <!-- Login required message for unauthenticated users -->
+                            <div v-if="!isAuthenticated" class="login-required-message">
+                                <i class="mdi mdi-lock-outline" aria-hidden="true"></i>
+                                <h3>Login Required</h3>
+                                <p>Please log in to chat with the AI assistant about C# programming.</p>
+                                <a 
+                                    href="/Identity/Account/Login" 
+                                    class="btn btn-primary mt-3"
+                                    aria-label="Go to login page"
+                                >
+                                    <i class="mdi mdi-login me-2" aria-hidden="true"></i>
+                                    Login
+                                </a>
                             </div>
                             
                             <!-- Chat messages -->
                             <div 
                                 v-for="(message, index) in chatMessages" 
-                                :key="index" 
-                                class="message-wrapper"
-                                :class="message.role"
+                                :key="index"
+                                v-show="isAuthenticated || message.role === 'error'"
                             >
-                                <div class="message-bubble" :class="message.role">
-                                    <div class="message-content" v-html="formatMessage(message.content)"></div>
+                                <!-- Error messages with special styling -->
+                                <div v-if="message.role === 'error'" 
+                                     :class="getErrorMessageClass(message.errorType)">
+                                    <i :class="getErrorIconClass(message.errorType)"></i>
+                                    <div class="message-text">
+                                        <h4 v-if="message.errorType === 'rate-limit'">Rate Limit Reached</h4>
+                                        <h4 v-else-if="message.errorType === 'auth-error'">Authentication Required</h4>
+                                        <h4 v-else-if="message.errorType === 'captcha-error'">Verification Required</h4>
+                                        <h4 v-else-if="message.errorType === 'validation-error'">Invalid Input</h4>
+                                        <h4 v-else>Error</h4>
+                                        <p v-html="formatMessage(message.content)"></p>
+                                        <div v-if="message.errorType === 'rate-limit'" class="retry-info">
+                                            Please wait before sending another message
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Regular messages (only show when authenticated) -->
+                                <div v-else-if="isAuthenticated"
+                                     class="message-wrapper"
+                                     :class="message.role">
+                                    <div class="message-bubble" :class="message.role">
+                                        <div class="message-content" v-html="formatMessage(message.content)"></div>
+                                    </div>
                                 </div>
                             </div>
                             
-                            <!-- Typing indicator -->
-                            <div v-if="isTyping" class="message-wrapper assistant">
+                            <!-- Typing indicator (only show when authenticated) -->
+                            <div v-if="isTyping && isAuthenticated" class="message-wrapper assistant">
                                 <div class="message-bubble assistant">
                                     <div class="typing-indicator">
                                         <span class="typing-text">AI is thinking</span>
@@ -336,8 +386,8 @@
                             </div>
                         </div>
                         
-                        <!-- Input Area -->
-                        <div class="chat-footer">
+                        <!-- Input Area - Only show if authenticated -->
+                        <div v-if="isAuthenticated" class="chat-footer">
                             <form v-on:submit.prevent="sendChatMessage" class="chat-form">
                                 <div class="input-wrapper">
                                     <label for="chat-input" class="visually-hidden">
@@ -349,7 +399,7 @@
                                         ref="chatInputField"
                                         class="chat-input"
                                         placeholder="Ask me about C#..."
-                                        :disabled="isTyping"
+                                        :disabled="isTyping || !isAuthenticated"
                                         autocomplete="off"
                                         aria-describedby="chat-input-help"
                                         maxlength="500"
@@ -357,7 +407,7 @@
                                     <button 
                                         type="submit"
                                         class="send-button"
-                                        :disabled="isTyping || !chatInput.trim()"
+                                        :disabled="isTyping || !chatInput.trim() || !isAuthenticated"
                                         aria-label="Send message"
                                         title="Send message"
                                     >
@@ -387,6 +437,54 @@
                     </div>
                 </div>
             </div>
+            }
+
+            <!-- Captcha Modal - Blocking Dialog -->
+            @if (!Context.Request.Path.StartsWithSegments("/Identity"))
+            {
+            <div 
+                v-if="showCaptcha" 
+                class="captcha-modal-overlay"
+                role="dialog"
+                aria-labelledby="captcha-dialog-title"
+                aria-modal="true"
+                tabindex="-1"
+            >
+                <div class="captcha-modal-card elevation-16">
+                    <!-- Header -->
+                    <div class="captcha-modal-header">
+                        <h3 id="captcha-dialog-title" class="captcha-modal-title">
+                            <i class="mdi mdi-shield-check me-2" aria-hidden="true"></i>
+                            Security Verification Required
+                        </h3>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div class="captcha-modal-content">
+                        <p class="captcha-explanation">
+                            To continue chatting, please complete the security verification below. 
+                            This helps us prevent abuse and ensures a better experience for everyone.
+                        </p>
+                        
+                        <!-- hCaptcha Widget -->
+                        <div class="captcha-widget-container">
+                            <div 
+                                id="hcaptcha-modal"
+                                class="h-captcha"
+                                :data-sitekey="captchaSiteKey"
+                                data-callback="onCaptchaSuccess"
+                                data-expired-callback="onCaptchaExpired"
+                                data-error-callback="onCaptchaError"
+                            ></div>
+                        </div>
+                        
+                        <p class="captcha-help-text">
+                            Having trouble? Make sure JavaScript is enabled and try refreshing the page.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            }
 
         </div>
         <footer class="border-top footer">
@@ -418,6 +516,8 @@
             NEXT_PAGE = @Json.Serialize(ViewBag.NextPage)
             TOC_DATA = @Json.Serialize(tocData)
             REFERRAL_ID = @Json.Serialize(ViewBag.ReferralId)
+            IS_AUTHENTICATED = @Json.Serialize(SignInManager.IsSignedIn(User));
+            HCAPTCHA_SITE_KEY = @Json.Serialize(CaptchaOptions.Value.SiteKey);
     </script>
 
     @* Recursive vue component template for rendering the table of contents. *@

@@ -1,3 +1,4 @@
+using System.Threading.RateLimiting;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
@@ -10,6 +11,7 @@ using Mailjet.Client;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace EssentialCSharp.Web;
@@ -162,6 +164,81 @@ public partial class Program
             logger.LogWarning(ex, "AI Chat services could not be registered. Chat functionality will be unavailable.");
         }
 
+        // Add Rate Limiting for API endpoints
+        builder.Services.AddRateLimiter(options =>
+        {
+            // Global rate limiter for authenticated users by username, anonymous by IP
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+            {
+                var partitionKey = httpContext.User.Identity?.IsAuthenticated == true
+                    ? httpContext.User.Identity.Name ?? "unknown-user"
+                    : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip";
+
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: partitionKey,
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 30, // requests per window
+                        Window = TimeSpan.FromMinutes(1), // 1 minute window
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit = 0 // No queuing - immediate rejection for better UX
+                    });
+            });
+
+            options.AddFixedWindowLimiter("ChatEndpoint", rateLimiterOptions =>
+            {
+                rateLimiterOptions.PermitLimit = 15; // chat messages per window (reasonable limit)
+                rateLimiterOptions.Window = TimeSpan.FromMinutes(1); // minute window
+                rateLimiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                rateLimiterOptions.QueueLimit = 0; // No queuing to make rate limiting immediate
+            });
+
+            options.AddFixedWindowLimiter("Anonymous", rateLimiterOptions =>
+            {
+                rateLimiterOptions.PermitLimit = 5; // requests per window for anonymous users
+                rateLimiterOptions.Window = TimeSpan.FromMinutes(1);
+                rateLimiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                rateLimiterOptions.QueueLimit = 0; // No queuing for anonymous users
+            });
+
+            // Custom response when rate limit is exceeded
+            options.OnRejected = async (context, cancellationToken) =>
+            {
+                context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                context.HttpContext.Response.Headers.RetryAfter = "60";
+                if (context.HttpContext.Request.Path.StartsWithSegments("/api/chat"))
+                {
+                    // Custom rejection handling logic
+                    context.HttpContext.Response.ContentType = "application/json";
+
+                    var errorResponse = new
+                    {
+                        error = "Rate limit exceeded. Please wait before sending another message.",
+                        retryAfter = 60,
+                        requiresCaptcha = true,
+                        statusCode = 429
+                    };
+
+                    await context.HttpContext.Response.WriteAsync(
+                        System.Text.Json.JsonSerializer.Serialize(errorResponse),
+                        cancellationToken);
+
+                    // Optional logging
+                    logger.LogWarning("Rate limit exceeded for user: {User}, IP: {IpAddress}",
+                            context.HttpContext.User.Identity?.Name ?? "anonymous",
+                            context.HttpContext.Connection.RemoteIpAddress);
+                    return;
+                }
+
+                await context.HttpContext.Response.WriteAsync("Rate limit exceeded. Please try again later.", cancellationToken);
+
+                // Optional logging
+                logger.LogWarning("Rate limit exceeded for user: {User}, IP: {IpAddress}",
+                        context.HttpContext.User.Identity?.Name ?? "anonymous",
+                        context.HttpContext.Connection.RemoteIpAddress);
+            };
+        });
+
         if (!builder.Environment.IsDevelopment())
         {
             builder.Services.AddHttpClient<IMailjetClient, MailjetClient>(client =>
@@ -220,10 +297,14 @@ public partial class Program
 
         app.UseAuthentication();
         app.UseAuthorization();
+
+        // Enable rate limiting middleware (must be after UseAuthentication)
+        app.UseRateLimiter();
+
         app.UseMiddleware<ReferralMiddleware>();
 
         app.MapRazorPages();
-        app.MapDefaultControllerRoute();
+        app.MapDefaultControllerRoute().RequireRateLimiting("ChatEndpoint"); // Apply rate limiting to controllers
 
         app.MapFallbackToController("Index", "Home");
 
