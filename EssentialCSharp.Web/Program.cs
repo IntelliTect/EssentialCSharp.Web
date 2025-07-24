@@ -3,6 +3,7 @@ using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
 using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Extensions;
+using EssentialCSharp.Web.Helpers;
 using EssentialCSharp.Web.Middleware;
 using EssentialCSharp.Web.Services;
 using EssentialCSharp.Web.Services.Referrals;
@@ -41,7 +42,7 @@ public partial class Program
         // Create a temporary logger for startup logging
         using var loggerFactory = LoggerFactory.Create(loggingBuilder =>
             loggingBuilder.AddConsole().SetMinimumLevel(LogLevel.Information));
-        var logger = loggerFactory.CreateLogger<Program>();
+        var initialLogger = loggerFactory.CreateLogger<Program>();
 
         if (!builder.Environment.IsDevelopment())
         {
@@ -51,17 +52,17 @@ public partial class Program
 
             if (!string.IsNullOrEmpty(appInsightsConnectionString))
             {
-            builder.Services.AddOpenTelemetry().UseAzureMonitor(
-                options =>
-                {
-                    options.ConnectionString = appInsightsConnectionString;
-                });
+                builder.Services.AddOpenTelemetry().UseAzureMonitor(
+                    options =>
+                    {
+                        options.ConnectionString = appInsightsConnectionString;
+                    });
                 builder.Services.AddApplicationInsightsTelemetry();
                 builder.Services.AddServiceProfiler();
             }
             else
             {
-                logger.LogWarning("Application Insights connection string not found. Telemetry collection will be disabled.");
+                initialLogger.LogWarning("Application Insights connection string not found. Telemetry collection will be disabled.");
             }
         }
 
@@ -146,6 +147,7 @@ public partial class Program
         builder.Services.AddRazorPages();
         builder.Services.AddCaptchaService(builder.Configuration.GetSection(CaptchaOptions.CaptchaSender));
         builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
+        builder.Services.AddSingleton<IRouteConfigurationService, RouteConfigurationService>();
         builder.Services.AddHostedService<DatabaseMigrationService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
 
@@ -182,7 +184,6 @@ public partial class Program
 
 
         WebApplication app = builder.Build();
-
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
         {
@@ -214,6 +215,29 @@ public partial class Program
         app.MapDefaultControllerRoute();
 
         app.MapFallbackToController("Index", "Home");
+
+        // Generate sitemap.xml at startup
+        var wwwrootDirectory = new DirectoryInfo(app.Environment.WebRootPath);
+        var siteMappingService = app.Services.GetRequiredService<ISiteMappingService>();
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
+        // Extract base URL from configuration
+        var baseUrl = configuration.GetSection("SiteSettings")["BaseUrl"] ?? "https://essentialcsharp.com";
+
+        try
+        {
+            // Create a scope to resolve scoped services
+            var routeConfigurationService = app.Services.GetRequiredService<IRouteConfigurationService>();
+
+            SitemapXmlHelpers.EnsureSitemapHealthy(siteMappingService.SiteMappings.ToList());
+            SitemapXmlHelpers.GenerateAndSerializeSitemapXml(wwwrootDirectory, siteMappingService.SiteMappings.ToList(), logger, routeConfigurationService, baseUrl);
+            logger.LogInformation("Sitemap.xml generation completed successfully during application startup");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to generate sitemap.xml during application startup");
+            // Continue startup even if sitemap generation fails
+        }
 
         app.Run();
     }
