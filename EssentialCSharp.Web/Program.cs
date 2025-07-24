@@ -42,8 +42,8 @@ public partial class Program
         builder.Logging.AddConsole();
         builder.Services.AddHealthChecks();
 
-        // Create a temporary logger for startup logging
-        using var loggerFactory = LoggerFactory.Create(loggingBuilder =>
+        // Create a logger that's accessible throughout the entire method
+        var loggerFactory = LoggerFactory.Create(loggingBuilder =>
             loggingBuilder.AddConsole().SetMinimumLevel(LogLevel.Information));
         var initialLogger = loggerFactory.CreateLogger<Program>();
 
@@ -225,7 +225,7 @@ public partial class Program
                         cancellationToken);
 
                     // Optional logging
-                    logger.LogWarning("Rate limit exceeded for user: {User}, IP: {IpAddress}",
+                    initialLogger.LogWarning("Rate limit exceeded for user: {User}, IP: {IpAddress}",
                             context.HttpContext.User.Identity?.Name ?? "anonymous",
                             context.HttpContext.Connection.RemoteIpAddress);
                     return;
@@ -234,7 +234,7 @@ public partial class Program
                 await context.HttpContext.Response.WriteAsync("Rate limit exceeded. Please try again later.", cancellationToken);
 
                 // Optional logging
-                logger.LogWarning("Rate limit exceeded for user: {User}, IP: {IpAddress}",
+                initialLogger.LogWarning("Rate limit exceeded for user: {User}, IP: {IpAddress}",
                         context.HttpContext.User.Identity?.Name ?? "anonymous",
                         context.HttpContext.Connection.RemoteIpAddress);
             };
@@ -270,7 +270,7 @@ public partial class Program
              });
         }
 
-
+        loggerFactory.Dispose();
 
         WebApplication app = builder.Build();
         // Configure the HTTP request pipeline.
@@ -321,7 +321,7 @@ public partial class Program
             var routeConfigurationService = app.Services.GetRequiredService<IRouteConfigurationService>();
 
             SitemapXmlHelpers.EnsureSitemapHealthy(siteMappingService.SiteMappings.ToList());
-            SitemapXmlHelpers.GenerateAndSerializeSitemapXml(wwwrootDirectory, siteMappingService.SiteMappings.ToList(), logger, routeConfigurationService, baseUrl);
+            SitemapXmlHelpers.GenerateAndSerializeSitemapXml(wwwrootDirectory, siteMappingService.SiteMappings.ToList(), initialLogger, routeConfigurationService, baseUrl);
             logger.LogInformation("Sitemap.xml generation completed successfully during application startup");
         }
         catch (Exception ex)
