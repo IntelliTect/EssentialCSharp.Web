@@ -8,10 +8,48 @@
     <h1>@ViewData["Title"]</h1>
     <hr class="divider-light-blue" />
 
+    <div class="mb-4">
+        <h2 class="fs-4 heading-wrapper" id="naming-conventions-table">
+            C# Naming Conventions - Quick Reference Table
+            <a class="anchor-link" href="#naming-conventions-table" v-on:click="copyToClipboard('naming-conventions-table')" title="Copy direct link to naming conventions table">
+                <i class="fa-solid fa-link"></i>
+            </a>
+        </h2>
+        <div class="table-responsive mb-3">
+            <table class="table table-bordered table-striped align-middle w-auto">
+                <thead>
+                    <tr>
+                        <th>Kind</th>
+                        <th>Naming Convention</th>
+                        <th>Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Classes</td><td>PascalCase</td><td><code>class Car</code></td></tr>
+                    <tr><td>Types and Namespaces</td><td>PascalCase</td><td><code>namespace VehicleManufacturer;</code></td></tr>
+                    <tr><td>Parameters</td><td>camelCase</td><td><code>public Car(int odometerMileage, string manufacturer)</code></td></tr>
+                    <tr><td>Methods</td><td>PascalCase</td><td><code>public void StartEngine()</code></td></tr>
+                    <tr><td>Properties</td><td>PascalCase</td><td><code>public double FuelLevel { get; set; }</code></td></tr>
+                    <tr><td>Local Variables</td><td>camelCase</td><td><code>int yearManufactured;</code></td></tr>
+                    <tr><td>Local Functions</td><td>PascalCase</td><td><code>string CalculateMilesUntilEmpty(double fuelLevel)</code></td></tr>
+                    <tr><td>Fields</td><td>_PascalCase</td><td><code>private string _Day;</code></td></tr>
+                    <tr><td>Enum Members</td><td>PascalCase</td><td><code>enum Status { Unknown, Operational, Broken, InShop }</code></td></tr>
+                    <tr><td>Type Parameters</td><td>TPascalCase</td><td><code>public TOutput Convert&lt;TInput, TOutput&gt;(TInput from)</code></td></tr>
+                    <tr><td>Interfaces</td><td>IPascalCase</td><td><code>interface ISampleInterface</code></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <div>
         @foreach (var group in guidelines.GroupBy(g => g.SanitizedSubsection).OrderBy(g => g.Key))
         {
-            <h2 class="fs-4" id="@group.Key?.ToLower()">@group.Key</h2>
+            <h2 class="fs-4 heading-wrapper" id="@group.Key?.ToLower()">
+                @group.Key
+                <a class="anchor-link" href="#@group.Key?.ToLower()" v-on:click="copyToClipboard('@group.Key?.ToLower()')" title="Copy direct link to @group.Key subsection">
+                    <i class="fa-solid fa-link"></i>
+                </a>
+            </h2>
             foreach (var guideline in group)
             {
                 <div>
