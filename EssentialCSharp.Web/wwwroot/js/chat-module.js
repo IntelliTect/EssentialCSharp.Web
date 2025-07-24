@@ -400,11 +400,7 @@ export function useChatWidget() {
         isTyping,
         chatMessagesEl,
         chatInputField,
-        
-        // Captcha state
-        showCaptcha,
-        captchaSiteKey,
-        
+
         // Methods
         openChatDialog,
         closeChatDialog,
