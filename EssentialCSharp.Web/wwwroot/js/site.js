@@ -127,7 +127,19 @@ const app = createApp({
         const snackbarColor = ref();
 
         function copyToClipboard(copyText) {
-            let url = window.location.origin + "/" + copyText;
+            let url;
+            
+            // If copyText contains a #, it's a full path with anchor (e.g., 'page#anchor')
+            // If copyText doesn't contain a #, it's just an anchor for the current page
+            if (copyText.includes('#')) {
+                // Full path case: construct URL with origin + path
+                url = window.location.origin + "/" + copyText;
+            } else {
+                // Anchor only case: use current page URL + anchor
+                const currentUrl = window.location.href.split('#')[0]; // Remove any existing anchor
+                url = currentUrl + "#" + copyText;
+            }
+            
             let referralId = REFERRAL_ID;
             if (referralId && referralId.trim()) {
                 url = addQueryParam(url, 'rid', referralId);
