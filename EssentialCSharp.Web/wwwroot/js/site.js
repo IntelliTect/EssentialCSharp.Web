@@ -7,6 +7,7 @@ import {
     watch,
     computed,
 } from "vue";
+import { createVuetify } from "vuetify";
 import { useWindowSize } from "vue-window-size";
 import { useChatWidget } from "./chat-module.js";
 
@@ -379,5 +380,15 @@ app.component("toc-tree", {
     props: ["item", "expandedTocs", "currentPage"],
     template: "#toc-tree",
 });
+
+// Create and configure Vuetify
+const vuetify = createVuetify({
+    theme: {
+        defaultTheme: 'light'
+    }
+});
+
+// Use Vuetify with the Vue app
+app.use(vuetify);
 
 app.mount("#app");

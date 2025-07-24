@@ -1,5 +1,5 @@
 // Chat Module - Vue.js composable for AI chat functionality
-import { ref, nextTick, watch } from 'vue';
+import { ref, nextTick, watch, onMounted, onUnmounted } from 'vue';
 
 export function useChatWidget() {
     // Authentication state
@@ -13,11 +13,10 @@ export function useChatWidget() {
     const chatMessagesEl = ref(null);
     const chatInputField = ref(null);
     const lastResponseId = ref(null);
-    // Captcha and throttling state
+    
+    // Captcha state (currently not used but referenced in template)
     const showCaptcha = ref(false);
     const captchaSiteKey = ref(window.HCAPTCHA_SITE_KEY || '');
-    const captchaResponse = ref('');
-    const throttlingStatus = ref({ RequiresCaptcha: false, CurrentUsageCount: 0, ThresholdForCaptcha: 10 });
 
     // Load chat history from localStorage on initialization
     function loadChatHistory() {
@@ -76,7 +75,7 @@ export function useChatWidget() {
     watch(isAuthenticated, (newAuth, oldAuth) => {
         if (oldAuth === true && newAuth === false) {
             // User logged out, clear chat
-            clearChat();
+            clearChatHistory();
         }
     });
 
@@ -96,81 +95,23 @@ export function useChatWidget() {
 
     function closeChatDialog() {
         showChatDialog.value = false;
-        // Reset captcha when closing
-        showCaptcha.value = false;
-        captchaResponse.value = '';
-        if (window.hcaptcha && document.getElementById('hcaptcha-modal')) {
-            window.hcaptcha.reset('hcaptcha-modal');
-        }
     }
 
-    function clearChat() {
+    function clearChatHistory() {
         chatMessages.value = [];
         lastResponseId.value = null;
         saveChatHistory();
-        // Reset captcha state
-        showCaptcha.value = false;
-        captchaResponse.value = '';
-        if (window.hcaptcha && document.getElementById('hcaptcha-modal')) {
-            window.hcaptcha.reset('hcaptcha-modal');
-        }
-        // Refresh throttling status
-        if (isAuthenticated.value) {
-            checkThrottlingStatus();
-        }
-    }
-
-    // Check throttling status from server
-    async function checkThrottlingStatus() {
-        if (!isAuthenticated.value) return;
         
-        try {
-            const response = await fetch('/api/chat/throttling-status', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-
-            if (response.ok) {
-                throttlingStatus.value = await response.json();
-                showCaptcha.value = throttlingStatus.value.RequiresCaptcha;
-                
-                if (showCaptcha.value) {
-                    // Initialize hCaptcha when needed
-                    nextTick(() => {
-                        if (window.hcaptcha && document.getElementById('hcaptcha-modal')) {
-                            window.hcaptcha.render('hcaptcha-modal', {
-                                sitekey: captchaSiteKey.value,
-                                callback: 'onCaptchaSuccess',
-                                'expired-callback': 'onCaptchaExpired',
-                                'error-callback': 'onCaptchaError'
-                            });
-                        }
-                    });
-                }
+        // Force a scroll to top to make it obvious the messages are gone
+        nextTick(() => {
+            if (chatMessagesEl.value) {
+                chatMessagesEl.value.scrollTop = 0;
             }
-        } catch (error) {
-            console.warn('Failed to check throttling status:', error);
-        }
+        });
     }
 
-    // Captcha callback functions (need to be global)
-    window.onCaptchaSuccess = function(token) {
-        captchaResponse.value = token;
-        showCaptcha.value = false;
-    };
-
-    window.onCaptchaExpired = function() {
-        captchaResponse.value = '';
-        showCaptcha.value = true;
-    };
-
-    window.onCaptchaError = function(error) {
-        console.error('hCaptcha error:', error);
-        captchaResponse.value = '';
-        showCaptcha.value = true;
-    };
+    // Remove captcha callback functions as they're no longer needed for chat
+    // The captcha service can still be used elsewhere in the application
 
     function scrollToBottom() {
         if (chatMessagesEl.value) {
@@ -198,8 +139,6 @@ export function useChatWidget() {
             return 'rate-limit-error';
         } else if (errorType === 'auth-error') {
             return 'error-message';
-        } else if (errorType === 'captcha-error') {
-            return 'error-message';
         } else if (errorType === 'validation-error') {
             return 'error-message';
         } else {
@@ -212,8 +151,6 @@ export function useChatWidget() {
             return 'fas fa-clock';
         } else if (errorType === 'auth-error') {
             return 'fas fa-lock';
-        } else if (errorType === 'captcha-error') {
-            return 'fas fa-shield-alt';
         } else if (errorType === 'validation-error') {
             return 'fas fa-exclamation-circle';
         } else if (errorType === 'network-error') {
@@ -284,11 +221,6 @@ export function useChatWidget() {
                 previousResponseId: lastResponseId.value
             };
 
-            // Include captcha response if available
-            if (captchaResponse.value) {
-                requestBody.captchaResponse = captchaResponse.value;
-            }
-
             const response = await fetch('/api/chat/stream', {
                 method: 'POST',
                 headers: {
@@ -301,71 +233,28 @@ export function useChatWidget() {
                 if (response.status === 401) {
                     throw new Error('Authentication required');
                 } else if (response.status === 429) {
-                    // Handle rate limiting
+                    // Handle rate limiting - simple error message without captcha
                     let errorData;
                     try {
                         errorData = await response.json();
                     } catch (e) {
                         errorData = { 
                             error: 'Rate limit exceeded. Please wait before sending another message.',
-                            retryAfter: 60,
-                            requiresCaptcha: true
+                            retryAfter: 60
                         };
                     }
                     
-                    // Show captcha if required (rate limiting triggers captcha requirement)
-                    if (errorData.requiresCaptcha) {
-                        showCaptcha.value = true;
-                        captchaResponse.value = '';
-                        
-                        // Initialize hCaptcha
-                        nextTick(() => {
-                            if (window.hcaptcha && document.getElementById('hcaptcha-modal')) {
-                                window.hcaptcha.render('hcaptcha-modal', {
-                                    sitekey: captchaSiteKey.value,
-                                    callback: 'onCaptchaSuccess',
-                                    'expired-callback': 'onCaptchaExpired',
-                                    'error-callback': 'onCaptchaError'
-                                });
-                            }
-                        });
-                    }
-                    
                     const retryAfter = errorData.retryAfter || 60;
-                    const errorMessage = errorData.requiresCaptcha 
-                        ? `Rate limit exceeded. Please complete the captcha below and wait ${Math.ceil(retryAfter)} seconds before sending another message.`
-                        : `Rate limit exceeded. Please wait ${Math.ceil(retryAfter)} seconds before sending another message.`;
+                    const errorMessage = `Rate limit exceeded. Please wait ${Math.ceil(retryAfter)} seconds before sending another message.`;
                     
                     throw new Error(errorMessage);
                 } else if (response.status === 400) {
-                    // Handle captcha requirement
+                    // Handle validation errors
                     const errorData = await response.json();
-                    if (errorData.requiresCaptcha) {
-                        showCaptcha.value = true;
-                        captchaResponse.value = '';
-                        
-                        // Initialize hCaptcha
-                        nextTick(() => {
-                            if (window.hcaptcha && document.getElementById('hcaptcha-modal')) {
-                                window.hcaptcha.render('hcaptcha-modal', {
-                                    sitekey: captchaSiteKey.value,
-                                    callback: 'onCaptchaSuccess',
-                                    'expired-callback': 'onCaptchaExpired',
-                                    'error-callback': 'onCaptchaError'
-                                });
-                            }
-                        });
-                        
-                        throw new Error(errorData.error || 'Captcha verification required');
-                    }
                     throw new Error(errorData.error || 'Bad request');
                 }
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-
-            // Reset captcha after successful request
-            captchaResponse.value = '';
-            showCaptcha.value = false;
 
             // Handle streaming response
             reader = response.body.getReader();
@@ -447,9 +336,6 @@ export function useChatWidget() {
             } else if (error.message?.includes('Rate limit exceeded')) {
                 errorMessage = error.message; // Use the specific rate limit message with timing
                 errorType = 'rate-limit';
-            } else if (error.message?.includes('Captcha verification')) {
-                errorMessage = error.message; // Use the captcha-specific message
-                errorType = 'captcha-error';
             } else if (error.message?.includes('HTTP error')) {
                 errorMessage = 'Unable to connect to the chat service. Please check your connection and try again.';
                 errorType = 'connection-error';
@@ -518,18 +404,18 @@ export function useChatWidget() {
         isTyping,
         chatMessagesEl,
         chatInputField,
+        
+        // Captcha state
         showCaptcha,
         captchaSiteKey,
-        throttlingStatus,
         
         // Methods
         openChatDialog,
         closeChatDialog,
-        clearChat,
+        clearChatHistory,
         formatMessage,
         getErrorMessageClass,
         getErrorIconClass,
-        sendChatMessage,
-        checkThrottlingStatus
+        sendChatMessage
     };
 }

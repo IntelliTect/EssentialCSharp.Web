@@ -204,6 +204,10 @@ public partial class Program
             // Custom response when rate limit is exceeded
             options.OnRejected = async (context, cancellationToken) =>
             {
+                if (context.HttpContext.Request.Path.StartsWithSegments("/.well-known"))
+                {
+                    return;
+                }
                 context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
                 context.HttpContext.Response.Headers.RetryAfter = "60";
                 if (context.HttpContext.Request.Path.StartsWithSegments("/api/chat"))

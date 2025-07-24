@@ -188,9 +188,9 @@
     background: white;
     border-radius: 16px;
     width: 90vw;
-    max-width: 500px;
+    max-width: 800px;
     height: 80vh;
-    max-height: 600px;
+    max-height: 700px;
     display: flex;
     flex-direction: column;
     box-shadow: 
@@ -201,6 +201,16 @@
     -webkit-backdrop-filter: blur(1px);
     backdrop-filter: blur(1px);
     border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Desktop-specific sizing for better space utilization */
+@media (min-width: 769px) {
+    .chat-card {
+        width: 80vw;
+        max-width: 900px;
+        height: 85vh;
+        max-height: 800px;
+    }
 }
 
 @keyframes slideUpEnhanced {
@@ -276,6 +286,13 @@
 .chat-close-button:focus {
     outline: 3px solid rgba(25, 118, 210, 0.3);
     outline-offset: 2px;
+}
+
+/* Header actions container */
+.chat-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 /* Messages area */
@@ -672,52 +689,6 @@
     transform: none;
 }
 
-/* Chat actions */
-.chat-actions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.action-button {
-    background: rgba(25, 118, 210, 0.04);
-    border: 1px solid rgba(25, 118, 210, 0.12);
-    color: #1976d2;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 10px 16px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.action-button:hover:not(:disabled) {
-    background: rgba(25, 118, 210, 0.08);
-    border-color: rgba(25, 118, 210, 0.2);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2);
-}
-
-.action-button:focus {
-    outline: 3px solid rgba(25, 118, 210, 0.3);
-    outline-offset: 1px;
-}
-
-.action-button:disabled {
-    color: rgba(0, 0, 0, 0.26);
-    cursor: not-allowed;
-}
-
-.message-count {
-    font-size: 12px;
-    color: rgba(0, 0, 0, 0.6);
-}
-
 /* Elevation classes for consistency with Vuetify */
 .elevation-6 {
     box-shadow: 0 3px 5px -1px rgba(0,0,0,.2), 0 6px 10px 0 rgba(0,0,0,.14), 0 1px 18px 0 rgba(0,0,0,.12) !important;
@@ -747,8 +718,7 @@
     .chat-button,
     .chat-overlay,
     .chat-card,
-    .send-button,
-    .action-button {
+    .send-button {
         animation: none;
         transition: none;
     }

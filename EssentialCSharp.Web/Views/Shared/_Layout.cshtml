@@ -14,14 +14,16 @@
     var prodMap = new ImportMapDefinition(
         new Dictionary<string, string>
                         {
-            { "vue", "./lib/vue/dist/vue.esm-browser.prod.js" },
+            { "vue", "https://cdn.jsdelivr.net/npm/vue@3.5.12/dist/vue.esm-browser.prod.js" },
             { "vue-window-size", "./lib/vue-window-size/composition-api/dist/index.js" },
+            { "vuetify", "https://cdn.jsdelivr.net/npm/vuetify@3.9.2/dist/vuetify.esm.js" },
                         }, null, null);
     var devMap = new ImportMapDefinition(
     new Dictionary<string, string>
                     {
-            { "vue", "./lib/vue/dist/vue.esm-browser.js" },
+            { "vue", "https://cdn.jsdelivr.net/npm/vue@3.5.12/dist/vue.esm-browser.js" },
             { "vue-window-size", "./lib/vue-window-size/composition-api/dist/index.js" },
+            { "vuetify", "https://cdn.jsdelivr.net/npm/vuetify@3.9.2/dist/vuetify.esm.js" },
                     }, null, null);
 }
 <!DOCTYPE html>
@@ -49,7 +51,7 @@
     <meta property="og:image:height" content="500" />
     <meta name="twitter:title" property="og:title" content="@title" />
     <!-- Vuetify CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/vuetify@3.4.0/dist/vuetify.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/vuetify@3.9.2/dist/vuetify.min.css" rel="stylesheet">
     <!-- Material Design Icons -->
     <link href="https://cdn.jsdelivr.net/npm/@@mdi/font@7.2.96/css/materialdesignicons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
@@ -290,6 +292,7 @@
                     aria-labelledby="chat-dialog-title"
                     aria-modal="true"
                     tabindex="-1"
+                    v-cloak
                 >
                     <div class="chat-card elevation-12">
                         <!-- Header -->
@@ -298,15 +301,41 @@
                                 <i class="mdi mdi-robot me-2" aria-hidden="true"></i>
                                 AI Assistant
                             </h2>
-                            <button 
-                                class="chat-close-button"
-                                v-on:click="closeChatDialog"
-                                aria-label="Close chat dialog"
-                                title="Close chat"
-                                type="button"
-                            >
-                                <i class="mdi mdi-close" aria-hidden="true"></i>
-                            </button>
+                            <div class="chat-header-actions">
+                                <!-- Vuetify Menu -->
+                                <v-menu>
+                                    <template v-slot:activator="{ props }">
+                                        <v-btn 
+                                            icon="mdi-dots-vertical" 
+                                            variant="text" 
+                                            size="small"
+                                            v-bind="props"
+                                            aria-label="Chat options menu"
+                                            title="Chat options">
+                                        </v-btn>
+                                    </template>
+                                    
+                                    <v-list>
+                                        <v-list-item 
+                                            @@click="clearChatHistory"
+                                            :disabled="chatMessages.length === 0"
+                                            prepend-icon="mdi-delete-outline">
+                                            <v-list-item-title>Clear History</v-list-item-title>
+                                        </v-list-item>
+                                    </v-list>
+                                </v-menu>
+                                
+                                <!-- Close Button -->
+                                <button 
+                                    class="chat-close-button"
+                                    v-on:click="closeChatDialog"
+                                    aria-label="Close chat dialog"
+                                    title="Close chat"
+                                    type="button"
+                                >
+                                    <i class="mdi mdi-close" aria-hidden="true"></i>
+                                </button>
+                            </div>
                         </div>
                         
                         <!-- Messages Area -->
@@ -418,21 +447,6 @@
                                     Type your question and press Enter or click send. Maximum 500 characters.
                                 </div>
                             </form>
-                            
-                            <!-- Actions -->
-                            <div class="chat-actions">
-                                <button 
-                                    v-on:click="clearChat"
-                                    class="action-button"
-                                    :disabled="chatMessages.length === 0"
-                                    aria-label="Clear conversation history"
-                                    title="Clear chat history"
-                                    type="button"
-                                >
-                                    <i class="mdi mdi-delete-outline" aria-hidden="true"></i>
-                                    <span>Clear</span>
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -440,8 +454,6 @@
             }
 
             <!-- Captcha Modal - Blocking Dialog -->
-            @if (!Context.Request.Path.StartsWithSegments("/Identity"))
-            {
             <div 
                 v-if="showCaptcha" 
                 class="captcha-modal-overlay"
@@ -449,6 +461,7 @@
                 aria-labelledby="captcha-dialog-title"
                 aria-modal="true"
                 tabindex="-1"
+                v-cloak
             >
                 <div class="captcha-modal-card elevation-16">
                     <!-- Header -->
@@ -484,8 +497,6 @@
                     </div>
                 </div>
             </div>
-            }
-
         </div>
         <footer class="border-top footer">
             <div class="row">
