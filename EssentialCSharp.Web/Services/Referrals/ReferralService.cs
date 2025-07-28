@@ -62,7 +62,7 @@ public class ReferralService(EssentialCSharpWebContext dbContext, UserManager<Es
     public void TrackReferralAsync(string referralId, ClaimsPrincipal? user)
     {
         // Check if the referrer ID exists in the claims principal
-        string? claimsReferrerId = user?.Claims.FirstOrDefault(c => c.Type == ClaimsExtensions.ReferrerIdClaimType)?.Value;
+        string? claimsReferrerId = user?.GetReferrerId();
 
         if (claimsReferrerId == referralId)
         {
