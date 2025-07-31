@@ -21,11 +21,6 @@ public static class ServiceCollectionExtensions
             string.IsNullOrEmpty(aiOptions.ApiKey))
             // Register Azure OpenAI services
 #pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-            services.AddAzureOpenAIEmbeddingGenerator(
-                aiOptions.VectorGenerationDeploymentName,
-                aiOptions.Endpoint,
-                aiOptions.ApiKey);
-
         services.AddAzureOpenAIChatClient(
             aiOptions.ChatDeploymentName,
             aiOptions.Endpoint,
@@ -42,6 +37,10 @@ public static class ServiceCollectionExtensions
         // Add PostgreSQL vector store
         services.AddPostgresVectorStore(postgresConnectionString);
 
+        services.AddAzureOpenAIEmbeddingGenerator(
+            aiOptions.VectorGenerationDeploymentName,
+            aiOptions.Endpoint,
+            aiOptions.ApiKey);
 #pragma warning restore SKEXP0010
 
         // Register shared AI services
