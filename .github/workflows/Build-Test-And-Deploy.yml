@@ -248,7 +248,9 @@ jobs:
               Authentication__microsoft__clientId=secretref:msft-clientid Authentication__microsoft__clientSecret=secretref:msft-clientsecret AuthMessageSender__ApiKey=secretref:emailsender-apikey AuthMessageSender__SecretKey=secretref:emailsender-secret \
               AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Production \
               AZURE_CLIENT_ID=$AZURECLIENTID HCaptcha__SiteKey=secretref:captcha-sitekey HCaptcha__SecretKey=secretref:captcha-secretkey ApplicationInsights__ConnectionString=secretref:appinsights-connectionstring \
-              AIOptions__Endpoint=secretref:ai-endpoint AIOptions__ApiKey=secretref:ai-apikey ConnectionStrings__PostgresVectorStore=secretref:postgres-vectorstore-connectionstring
+              AIOptions__Endpoint=secretref:ai-endpoint AIOptions__ApiKey=secretref:ai-apikey AIOptions__VectorGenerationDeploymentName=secretref:ai-vectordeployment AIOptions__ChatDeploymentName=secretref:ai-chatdeployment \
+              AIOptions__SystemPrompt=secretref:ai-systemprompt ConnectionStrings__PostgresVectorStore=secretref:postgres-vectorstore-connectionstring
+
 
       - name: Logout of Azure CLI
         if: always()
