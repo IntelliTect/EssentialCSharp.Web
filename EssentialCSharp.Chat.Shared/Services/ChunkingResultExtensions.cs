@@ -4,7 +4,7 @@ using EssentialCSharp.Chat.Common.Models;
 
 namespace EssentialCSharp.Chat.Common.Services;
 
-public static class ChunkingResultExtensions
+public static partial class ChunkingResultExtensions
 {
     public static List<BookContentChunk> ToBookContentChunks(this FileChunkingResult result)
     {
@@ -41,8 +41,9 @@ public static class ChunkingResultExtensions
     {
         // Example: "Chapter01.md" -> 1
         // Regex: Chapter(?<ChapterNumber>[0-9]{2})
-        var match = System.Text.RegularExpressions.Regex.Match(fileName, @"Chapter(?<ChapterNumber>\d{2})");
+        var match = ChapterNumberRegex().Match(fileName);
         if (match.Success && int.TryParse(match.Groups["ChapterNumber"].Value, out int chapterNumber))
+
         {
             return chapterNumber;
         }
@@ -54,4 +55,7 @@ public static class ChunkingResultExtensions
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(text));
         return Convert.ToHexStringLower(bytes);
     }
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"Chapter(?<ChapterNumber>\d{2})")]
+    private static partial System.Text.RegularExpressions.Regex ChapterNumberRegex();
 }

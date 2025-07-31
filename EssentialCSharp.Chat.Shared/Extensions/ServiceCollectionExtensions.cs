@@ -1,3 +1,4 @@
+using Azure.AI.OpenAI;
 using EssentialCSharp.Chat.Common.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,28 +13,26 @@ public static class ServiceCollectionExtensions
     /// </summary>
     /// <param name="services">The service collection to add services to</param>
     /// <param name="aiOptions">The AI configuration options</param>
+    /// <param name="postgresConnectionString">The PostgreSQL connection string for the vector store</param>
     /// <returns>The service collection for chaining</returns>
-    public static IServiceCollection AddAzureOpenAIServices(this IServiceCollection services, AIOptions aiOptions)
+    public static IServiceCollection AddAzureOpenAIServices(this IServiceCollection services, AIOptions aiOptions, string postgresConnectionString)
     {
-        // Validate required configuration
-        if (aiOptions == null)
-        {
-            throw new InvalidOperationException("AIOptions cannot be null.");
-        }
-
         if (string.IsNullOrEmpty(aiOptions.Endpoint) ||
             string.IsNullOrEmpty(aiOptions.ApiKey))
-        {
-            throw new InvalidOperationException("Azure OpenAI Endpoint and ApiKey must be properly configured in AIOptions. Please update your configuration with valid values.");
-        }
+            // Register Azure OpenAI services
+#pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+            services.AddAzureOpenAIEmbeddingGenerator(
+                aiOptions.VectorGenerationDeploymentName,
+                aiOptions.Endpoint,
+                aiOptions.ApiKey);
 
-        if (string.IsNullOrEmpty(aiOptions.PostgresConnectionString) ||
-            aiOptions.PostgresConnectionString.Contains("your-postgres-connection-string"))
-        {
-            throw new InvalidOperationException("PostgreSQL connection string must be properly configured in AIOptions for vector store. Please update your configuration with a valid connection string.");
-        }
+        services.AddAzureOpenAIChatClient(
+            aiOptions.ChatDeploymentName,
+            aiOptions.Endpoint,
+            aiOptions.ApiKey);
 
-#pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates.
+        services.AddSingleton(provider =>
+            new AzureOpenAIClient(new Uri(aiOptions.Endpoint), new Azure.AzureKeyCredential(aiOptions.ApiKey)));
 
         // Register Azure OpenAI services
         services.AddAzureOpenAIEmbeddingGenerator(
@@ -41,13 +40,13 @@ public static class ServiceCollectionExtensions
             aiOptions.Endpoint,
             aiOptions.ApiKey);
 
-        services.AddAzureOpenAIChatClient(
+        services.AddAzureOpenAIChatCompletion(
             aiOptions.ChatDeploymentName,
             aiOptions.Endpoint,
             aiOptions.ApiKey);
 
         // Add PostgreSQL vector store
-        services.AddPostgresVectorStore(aiOptions.PostgresConnectionString);
+        services.AddPostgresVectorStore(postgresConnectionString);
 
 #pragma warning restore SKEXP0010
 
@@ -72,9 +71,15 @@ public static class ServiceCollectionExtensions
         services.Configure<AIOptions>(configuration.GetSection("AIOptions"));
 
         var aiOptions = configuration.GetSection("AIOptions").Get<AIOptions>();
+        if (aiOptions == null)
+        {
+            throw new InvalidOperationException("AIOptions section is missing from configuration.");
+        }
 
-        return aiOptions == null
-            ? throw new InvalidOperationException("AIOptions section is missing from configuration.")
-            : services.AddAzureOpenAIServices(aiOptions);
+        // Get PostgreSQL connection string using the standard method
+        var postgresConnectionString = configuration.GetConnectionString("PostgresVectorStore") ??
+            throw new InvalidOperationException("Connection string 'PostgresVectorStore' not found.");
+
+        return services.AddAzureOpenAIServices(aiOptions, postgresConnectionString);
     }
 }

@@ -15,9 +15,6 @@ public class Program
 
     static int Main(string[] args)
     {
-
-
-#pragma warning restore SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         Option<DirectoryInfo> directoryOption = new("--directory")
         {
             Description = "Directory containing markdown files.",
@@ -26,13 +23,11 @@ public class Program
         Option<string> filePatternOption = new("--file-pattern")
         {
             Description = "File pattern to match (e.g. *.md)",
-            Required = false,
             DefaultValueFactory = _ => "*.md"
         };
         Option<DirectoryInfo?> outputDirectoryOption = new("--output-directory")
         {
             Description = "Directory to write chunked output files. If not provided, output is written to console.",
-            Required = false
         };
 
         RootCommand rootCommand = new("EssentialCSharp.Chat Utilities");
@@ -60,21 +55,13 @@ public class Program
 
         buildVectorDbCommand.SetAction(async (ParseResult parseResult, CancellationToken cancellationToken) =>
         {
-            IConfigurationRoot config = new ConfigurationBuilder()
-                .SetBasePath(IntelliTect.Multitool.RepositoryPaths.GetDefaultRepoRoot())
-                .AddJsonFile("EssentialCSharp.Web/appsettings.json")
-                .AddUserSecrets<Program>()
-                .AddEnvironmentVariables()
-                .Build();
+            var config = CreateConfiguration();
 
             var builder = Kernel.CreateBuilder();
-
-            AIOptions aiOptions = config.GetRequiredSection("AIOptions").Get<AIOptions>() ?? throw new InvalidOperationException(
-            "AIOptions section is missing or not configured correctly in appsettings.json or environment variables.");
             builder.Services.Configure<AIOptions>(config.GetRequiredSection("AIOptions"));
 
-            // Use shared extension to register Azure OpenAI services
-            builder.Services.AddAzureOpenAIServices(aiOptions);
+            // Use shared extension to register Azure OpenAI services with configuration
+            builder.Services.AddAzureOpenAIServices(config);
 
             builder.Services.AddLogging(loggingBuilder =>
                 {
@@ -90,36 +77,23 @@ public class Program
             var directory = parseResult.GetValue(directoryOption);
             var filePattern = parseResult.GetValue(filePatternOption) ?? "*.md";
             var markdownService = kernel.GetRequiredService<MarkdownChunkingService>();
-            try
+            if (directory is null)
             {
-                if (directory is null)
-                {
-                    Console.Error.WriteLine("Error: Directory is required.");
-                    return;
-                }
-                var results = await markdownService.ProcessMarkdownFilesAsync(directory, filePattern);
-                // Convert results to BookContentChunks
-                var bookContentChunks = results.SelectMany(result => result.ToBookContentChunks()).ToList();
-                // Generate embeddings and upload to vector store
-                var embeddingService = kernel.GetRequiredService<EmbeddingService>();
-                await embeddingService.GenerateBookContentEmbeddingsAndUploadToVectorStore(bookContentChunks, cancellationToken, "markdown_chunks");
-                Console.WriteLine($"Successfully processed {bookContentChunks.Count} chunks.");
+                Console.Error.WriteLine("Error: Directory is required.");
+                return;
             }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Error: {ex.Message}");
-                throw;
-            }
+            var results = await markdownService.ProcessMarkdownFilesAsync(directory, filePattern);
+            // Convert results to BookContentChunks
+            var bookContentChunks = results.SelectMany(result => result.ToBookContentChunks()).ToList();
+            // Generate embeddings and upload to vector store
+            var embeddingService = kernel.GetRequiredService<EmbeddingService>();
+            await embeddingService.GenerateBookContentEmbeddingsAndUploadToVectorStore(bookContentChunks, cancellationToken, "markdown_chunks");
+            Console.WriteLine($"Successfully processed {bookContentChunks.Count} chunks.");
         });
 
         chatCommand.SetAction(async (ParseResult parseResult, CancellationToken cancellationToken) =>
         {
-            IConfigurationRoot config = new ConfigurationBuilder()
-                .SetBasePath(IntelliTect.Multitool.RepositoryPaths.GetDefaultRepoRoot())
-                .AddJsonFile("EssentialCSharp.Web/appsettings.json")
-                .AddUserSecrets<Program>()
-                .AddEnvironmentVariables()
-                .Build();
+            var config = CreateConfiguration();
 
             // https://learn.microsoft.com/api/mcp
 
@@ -148,8 +122,8 @@ public class Program
                 options.SingleLine = true;
             }));
 
-            // Use shared extension to register Azure OpenAI services
-            services.AddAzureOpenAIServices(aiOptions);
+            // Use shared extension to register Azure OpenAI services with configuration
+            services.AddAzureOpenAIServices(config);
 
             var serviceProvider = services.BuildServiceProvider();
             var aiChatService = serviceProvider.GetRequiredService<AIChatService>();
@@ -272,8 +246,6 @@ public class Program
                         {
                             previousResponseId = responseId;
                         }
-
-
                     }
 
                     Console.WriteLine();
@@ -295,6 +267,7 @@ public class Program
                 }
             }
         });
+
         chunkMarkdownCommand.SetAction(async parseResult =>
         {
             var directory = parseResult.GetValue(directoryOption);
@@ -383,5 +356,18 @@ public class Program
         return rootCommand.Parse(args).Invoke();
     }
 
-
+    /// <summary>
+    /// Creates and configures the IConfiguration used by multiple commands.
+    /// This method centralizes the common configuration setup to reduce code duplication.
+    /// </summary>
+    /// <returns>The configured IConfigurationRoot</returns>
+    private static IConfigurationRoot CreateConfiguration()
+    {
+        return new ConfigurationBuilder()
+            .SetBasePath(IntelliTect.Multitool.RepositoryPaths.GetDefaultRepoRoot())
+            .AddJsonFile("EssentialCSharp.Web/appsettings.json")
+            .AddUserSecrets<Program>()
+            .AddEnvironmentVariables()
+            .Build();
+    }
 }

@@ -9,6 +9,6 @@ public class FileChunkingResult
     public string FilePath { get; set; } = string.Empty;
     public int OriginalCharCount { get; set; }
     public int ChunkCount { get; set; }
-    public List<string> Chunks { get; set; } = new();
+    public List<string> Chunks { get; set; } = [];
     public int TotalChunkCharacters { get; set; }
 }

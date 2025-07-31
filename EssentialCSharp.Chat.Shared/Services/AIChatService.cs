@@ -16,15 +16,13 @@ public class AIChatService
     private readonly OpenAIResponseClient _ResponseClient;
     private readonly AISearchService _SearchService;
 
-    public AIChatService(IOptions<AIOptions> options, AISearchService searchService)
+    public AIChatService(IOptions<AIOptions> options, AISearchService searchService, AzureOpenAIClient azureClient)
     {
         _Options = options.Value;
         _SearchService = searchService;
 
         // Initialize Azure OpenAI client and get the Response Client from it
-        _AzureClient = new AzureOpenAIClient(
-            new Uri(_Options.Endpoint),
-            new System.ClientModel.ApiKeyCredential(_Options.ApiKey));
+        _AzureClient = azureClient;
 
         _ResponseClient = _AzureClient.GetOpenAIResponseClient(_Options.ChatDeploymentName);
     }
@@ -105,7 +103,7 @@ public class AIChatService
     /// </summary>
     private async Task<string> EnrichPromptWithContext(string prompt, bool enableContextualSearch, CancellationToken cancellationToken)
     {
-        if (!enableContextualSearch || _SearchService == null)
+        if (!enableContextualSearch)
         {
             return prompt;
         }

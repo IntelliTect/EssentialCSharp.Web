@@ -26,9 +26,4 @@ public class AIOptions
     /// The API key for accessing Azure OpenAI services.
     /// </summary>
     public string ApiKey { get; set; } = string.Empty;
-
-    /// <summary>
-    /// The PostgreSQL connection string for the vector store.
-    /// </summary>
-    public string PostgresConnectionString { get; set; } = string.Empty;
 }
