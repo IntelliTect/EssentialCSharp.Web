@@ -1,4 +1,6 @@
+using System.Threading.RateLimiting;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
+using EssentialCSharp.Chat.Common.Extensions;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
 using EssentialCSharp.Web.Data;
@@ -11,6 +13,7 @@ using Mailjet.Client;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace EssentialCSharp.Web;
@@ -39,8 +42,8 @@ public partial class Program
         builder.Logging.AddConsole();
         builder.Services.AddHealthChecks();
 
-        // Create a temporary logger for startup logging
-        using var loggerFactory = LoggerFactory.Create(loggingBuilder =>
+        // Create a logger that's accessible throughout the entire method
+        var loggerFactory = LoggerFactory.Create(loggingBuilder =>
             loggingBuilder.AddConsole().SetMinimumLevel(LogLevel.Information));
         var initialLogger = loggerFactory.CreateLogger<Program>();
 
@@ -93,6 +96,7 @@ public partial class Program
 
         builder.Configuration
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddUserSecrets<Program>()
             .AddEnvironmentVariables();
 
         builder.Services.ConfigureApplicationCookie(options =>
@@ -151,6 +155,91 @@ public partial class Program
         builder.Services.AddHostedService<DatabaseMigrationService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
 
+        // Add AI Chat services
+        if (!builder.Environment.IsDevelopment())
+        {
+            builder.Services.AddAzureOpenAIServices(configuration);
+        }
+
+        // Add Rate Limiting for API endpoints
+        builder.Services.AddRateLimiter(options =>
+        {
+            // Global rate limiter for authenticated users by username, anonymous by IP
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+            {
+                var partitionKey = httpContext.User.Identity?.IsAuthenticated == true
+                    ? httpContext.User.Identity.Name ?? "unknown-user"
+                    : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip";
+
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: partitionKey,
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 30, // requests per window
+                        Window = TimeSpan.FromMinutes(1), // minute window
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit = 0 // No queuing - immediate rejection for better UX
+                    });
+            });
+
+            options.AddFixedWindowLimiter("ChatEndpoint", rateLimiterOptions =>
+            {
+                rateLimiterOptions.PermitLimit = 15; // chat messages per window (reasonable limit)
+                rateLimiterOptions.Window = TimeSpan.FromMinutes(1); // minute window
+                rateLimiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                rateLimiterOptions.QueueLimit = 0; // No queuing to make rate limiting immediate
+            });
+
+            options.AddFixedWindowLimiter("Anonymous", rateLimiterOptions =>
+            {
+                rateLimiterOptions.PermitLimit = 5; // requests per window for anonymous users
+                rateLimiterOptions.Window = TimeSpan.FromMinutes(1);
+                rateLimiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                rateLimiterOptions.QueueLimit = 0; // No queuing for anonymous users
+            });
+
+            // Custom response when rate limit is exceeded
+            options.OnRejected = async (context, cancellationToken) =>
+            {
+                if (context.HttpContext.Request.Path.StartsWithSegments("/.well-known"))
+                {
+                    return;
+                }
+                context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                context.HttpContext.Response.Headers.RetryAfter = "60";
+                if (context.HttpContext.Request.Path.StartsWithSegments("/api/chat"))
+                {
+                    // Custom rejection handling logic
+                    context.HttpContext.Response.ContentType = "application/json";
+
+                    var errorResponse = new
+                    {
+                        error = "Rate limit exceeded. Please wait before sending another message.",
+                        retryAfter = 60,
+                        requiresCaptcha = true,
+                        statusCode = 429
+                    };
+
+                    await context.HttpContext.Response.WriteAsync(
+                        System.Text.Json.JsonSerializer.Serialize(errorResponse),
+                        cancellationToken);
+
+                    // Optional logging
+                    initialLogger.LogWarning("Rate limit exceeded for user: {User}, IP: {IpAddress}",
+                            context.HttpContext.User.Identity?.Name ?? "anonymous",
+                            context.HttpContext.Connection.RemoteIpAddress);
+                    return;
+                }
+
+                await context.HttpContext.Response.WriteAsync("Rate limit exceeded. Please try again later.", cancellationToken);
+
+                // Optional logging
+                initialLogger.LogWarning("Rate limit exceeded for user: {User}, IP: {IpAddress}",
+                        context.HttpContext.User.Identity?.Name ?? "anonymous",
+                        context.HttpContext.Connection.RemoteIpAddress);
+            };
+        });
+
         if (!builder.Environment.IsDevelopment())
         {
             builder.Services.AddHttpClient<IMailjetClient, MailjetClient>(client =>
@@ -181,7 +270,7 @@ public partial class Program
              });
         }
 
-
+        loggerFactory.Dispose();
 
         WebApplication app = builder.Build();
         // Configure the HTTP request pipeline.
@@ -208,8 +297,10 @@ public partial class Program
 
         app.UseAuthentication();
         app.UseAuthorization();
-        app.UseMiddleware<ReferralMiddleware>();
 
+        app.UseRateLimiter();
+
+        app.UseMiddleware<ReferralMiddleware>();
 
         app.MapRazorPages();
         app.MapDefaultControllerRoute();
@@ -230,7 +321,7 @@ public partial class Program
             var routeConfigurationService = app.Services.GetRequiredService<IRouteConfigurationService>();
 
             SitemapXmlHelpers.EnsureSitemapHealthy(siteMappingService.SiteMappings.ToList());
-            SitemapXmlHelpers.GenerateAndSerializeSitemapXml(wwwrootDirectory, siteMappingService.SiteMappings.ToList(), logger, routeConfigurationService, baseUrl);
+            SitemapXmlHelpers.GenerateAndSerializeSitemapXml(wwwrootDirectory, siteMappingService.SiteMappings.ToList(), initialLogger, routeConfigurationService, baseUrl);
             logger.LogInformation("Sitemap.xml generation completed successfully during application startup");
         }
         catch (Exception ex)

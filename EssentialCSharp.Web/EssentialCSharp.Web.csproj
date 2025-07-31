@@ -58,6 +58,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\EssentialCSharp.Chat.Shared\EssentialCSharp.Chat.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="EssentialCSharp.Common" />
   </ItemGroup>
 

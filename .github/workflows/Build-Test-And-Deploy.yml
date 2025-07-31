@@ -147,14 +147,20 @@ jobs:
               emailsender-secret=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-secretkey,identityref:$MANAGEDIDENTITYID emailsender-name=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromname,identityref:$MANAGEDIDENTITYID \
               emailsender-email=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromemail,identityref:$MANAGEDIDENTITYID connectionstring=keyvaultref:$KEYVAULTURI/secrets/connectionstrings-essentialcsharpwebcontextconnection,identityref:$MANAGEDIDENTITYID \
               captcha-sitekey=keyvaultref:$KEYVAULTURI/secrets/captcha-sitekey,identityref:$MANAGEDIDENTITYID captcha-secretkey=keyvaultref:$KEYVAULTURI/secrets/captcha-secretkey,identityref:$MANAGEDIDENTITYID \
-              appinsights-connectionstring=keyvaultref:$KEYVAULTURI/secrets/applicationinsights-connectionstring,identityref:$MANAGEDIDENTITYID
+              appinsights-connectionstring=keyvaultref:$KEYVAULTURI/secrets/applicationinsights-connectionstring,identityref:$MANAGEDIDENTITYID \
+              ai-endpoint=keyvaultref:$KEYVAULTURI/secrets/AIOptions--Endpoint,identityref:$MANAGEDIDENTITYID ai-apikey=keyvaultref:$KEYVAULTURI/secrets/AIOptions--ApiKey,identityref:$MANAGEDIDENTITYID \
+              ai-vectordeployment=keyvaultref:$KEYVAULTURI/secrets/AIOptions--VectorGenerationDeploymentName,identityref:$MANAGEDIDENTITYID ai-chatdeployment=keyvaultref:$KEYVAULTURI/secrets/AIOptions--ChatDeploymentName,identityref:$MANAGEDIDENTITYID \
+              ai-systemprompt=keyvaultref:$KEYVAULTURI/secrets/AIOptions--SystemPrompt,identityref:$MANAGEDIDENTITYID \
+              postgres-vectorstore-connectionstring=keyvaultref:$KEYVAULTURI/secrets/connectionstrings--PostgresVectorDb,identityref:$MANAGEDIDENTITYID
             az containerapp update --name $CONTAINER_APP_NAME --resource-group $RESOURCEGROUP --replace-env-vars Authentication__github__clientId=secretref:github-clientid Authentication__github__clientSecret=secretref:github-clientsecret \
               Authentication__microsoft__clientId=secretref:msft-clientid Authentication__microsoft__clientSecret=secretref:msft-clientsecret AuthMessageSender__ApiKey=secretref:emailsender-apikey AuthMessageSender__SecretKey=secretref:emailsender-secret \
               AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Staging \
-              AZURE_CLIENT_ID=$AZURECLIENTID HCaptcha__SiteKey=secretref:captcha-sitekey HCaptcha__SecretKey=secretref:captcha-secretkey ApplicationInsights__ConnectionString=secretref:appinsights-connectionstring
+              AZURE_CLIENT_ID=$AZURECLIENTID HCaptcha__SiteKey=secretref:captcha-sitekey HCaptcha__SecretKey=secretref:captcha-secretkey ApplicationInsights__ConnectionString=secretref:appinsights-connectionstring \
+              AIOptions__Endpoint=secretref:ai-endpoint AIOptions__ApiKey=secretref:ai-apikey AIOptions__VectorGenerationDeploymentName=secretref:ai-vectordeployment AIOptions__ChatDeploymentName=secretref:ai-chatdeployment \
+              AIOptions__SystemPrompt=secretref:ai-systemprompt ConnectionStrings__PostgresVectorStore=secretref:postgres-vectorstore-connectionstring
 
       - name: Logout of Azure CLI
-        if: "always()"
+        if: always()
         uses: azure/CLI@v2
         with:
           inlineScript: |
@@ -233,14 +239,19 @@ jobs:
               emailsender-secret=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-secretkey,identityref:$MANAGEDIDENTITYID emailsender-name=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromname,identityref:$MANAGEDIDENTITYID \
               emailsender-email=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromemail,identityref:$MANAGEDIDENTITYID connectionstring=keyvaultref:$KEYVAULTURI/secrets/connectionstrings-essentialcsharpwebcontextconnection,identityref:$MANAGEDIDENTITYID \
               captcha-sitekey=keyvaultref:$KEYVAULTURI/secrets/captcha-sitekey,identityref:$MANAGEDIDENTITYID captcha-secretkey=keyvaultref:$KEYVAULTURI/secrets/captcha-secretkey,identityref:$MANAGEDIDENTITYID \
-              appinsights-connectionstring=keyvaultref:$KEYVAULTURI/secrets/applicationinsights-connectionstring,identityref:$MANAGEDIDENTITYID
+              appinsights-connectionstring=keyvaultref:$KEYVAULTURI/secrets/applicationinsights-connectionstring,identityref:$MANAGEDIDENTITYID \
+              ai-endpoint=keyvaultref:$KEYVAULTURI/secrets/AIOptions--Endpoint,identityref:$MANAGEDIDENTITYID ai-apikey=keyvaultref:$KEYVAULTURI/secrets/AIOptions--ApiKey,identityref:$MANAGEDIDENTITYID \
+              ai-vectordeployment=keyvaultref:$KEYVAULTURI/secrets/AIOptions--VectorGenerationDeploymentName,identityref:$MANAGEDIDENTITYID ai-chatdeployment=keyvaultref:$KEYVAULTURI/secrets/AIOptions--ChatDeploymentName,identityref:$MANAGEDIDENTITYID \
+              ai-systemprompt=keyvaultref:$KEYVAULTURI/secrets/AIOptions--SystemPrompt,identityref:$MANAGEDIDENTITYID \
+              postgres-vectorstore-connectionstring=keyvaultref:$KEYVAULTURI/secrets/connectionstrings--PostgresVectorDb,identityref:$MANAGEDIDENTITYID
             az containerapp update --name $CONTAINER_APP_NAME --resource-group $RESOURCEGROUP --replace-env-vars Authentication__github__clientId=secretref:github-clientid Authentication__github__clientSecret=secretref:github-clientsecret \
               Authentication__microsoft__clientId=secretref:msft-clientid Authentication__microsoft__clientSecret=secretref:msft-clientsecret AuthMessageSender__ApiKey=secretref:emailsender-apikey AuthMessageSender__SecretKey=secretref:emailsender-secret \
               AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Production \
-              AZURE_CLIENT_ID=$AZURECLIENTID HCaptcha__SiteKey=secretref:captcha-sitekey HCaptcha__SecretKey=secretref:captcha-secretkey ApplicationInsights__ConnectionString=secretref:appinsights-connectionstring
+              AZURE_CLIENT_ID=$AZURECLIENTID HCaptcha__SiteKey=secretref:captcha-sitekey HCaptcha__SecretKey=secretref:captcha-secretkey ApplicationInsights__ConnectionString=secretref:appinsights-connectionstring \
+              AIOptions__Endpoint=secretref:ai-endpoint AIOptions__ApiKey=secretref:ai-apikey ConnectionStrings__PostgresVectorStore=secretref:postgres-vectorstore-connectionstring
 
       - name: Logout of Azure CLI
-        if: "always()"
+        if: always()
         uses: azure/CLI@v2
         with:
           inlineScript: |
