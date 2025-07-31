@@ -34,12 +34,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(provider =>
             new AzureOpenAIClient(new Uri(aiOptions.Endpoint), new Azure.AzureKeyCredential(aiOptions.ApiKey)));
 
-        // Register Azure OpenAI services
-        services.AddAzureOpenAIEmbeddingGenerator(
-            aiOptions.VectorGenerationDeploymentName,
-            aiOptions.Endpoint,
-            aiOptions.ApiKey);
-
         services.AddAzureOpenAIChatCompletion(
             aiOptions.ChatDeploymentName,
             aiOptions.Endpoint,
