@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "EssentialCSharp.Chat": {
+      "commandName": "Project",
+      "commandLineArgs": "chat --stream --web-search"
+    }
+  }
+}
