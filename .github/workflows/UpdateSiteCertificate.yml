@@ -22,7 +22,7 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           repository: "EssentialCSharp/EssentialCSharp.Web.CertbotDnsGoDaddy"
           token: ${{ secrets.CERTBOTDNSGODADDY_PAT }}
