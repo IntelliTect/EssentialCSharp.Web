@@ -206,6 +206,19 @@ public partial class Program
                     ValidateIssuerSigningKey = true
                 };
             })
+            .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, jwtOptions =>
+            {
+                var mcpAuthOptions = configuration.GetSection(McpAuthOptions.SectionName).Get<McpAuthOptions>();
+                jwtOptions.Authority = mcpAuthOptions?.Authority ?? configuration["McpAuth:Authority"];
+                jwtOptions.Audience = mcpAuthOptions?.Audience ?? configuration["McpAuth:Audience"];
+                jwtOptions.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true
+                };
+            })
             .AddMcp(options =>
             {
                 // Serve /.well-known/oauth-protected-resource and emit WWW-Authenticate challenges.
