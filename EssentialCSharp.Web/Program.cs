@@ -3,6 +3,8 @@ using Azure.Monitor.OpenTelemetry.AspNetCore;
 using EssentialCSharp.Chat.Common.Extensions;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
+using EssentialCSharp.Web.Options;
+using Microsoft.Extensions.Options;
 using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Extensions;
 using EssentialCSharp.Web.Helpers;
@@ -156,6 +158,19 @@ public partial class Program
         builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration.GetSection(AuthMessageSenderOptions.AuthMessageSender));
 
         // Add services to the container.
+        // Add CORS for MCP Inspector and other cross-origin MCP clients
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("McpCors", policy =>
+            {
+                policy.WithOrigins("http://localhost:6277", "https://localhost:6277", 
+                                   "http://localhost:6274", "https://localhost:6274") // MCP Inspector
+                      .AllowAnyMethod()
+                      .AllowAnyHeader()
+                      .AllowCredentials();
+            });
+        });
+
         builder.Services.AddRazorPages();
         builder.Services.AddCaptchaService(builder.Configuration.GetSection(CaptchaOptions.CaptchaSender));
         builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
@@ -166,16 +181,23 @@ public partial class Program
     // Add AI services (required for MCP context). In dev, you can set env vars or local config.
     builder.Services.AddAzureOpenAIServices(configuration);
 
+    // Configure MCP options
+    builder.Services.Configure<McpAuthOptions>(
+        builder.Configuration.GetSection(McpAuthOptions.SectionName));
+    builder.Services.Configure<McpOptions>(
+        builder.Configuration.GetSection(McpOptions.SectionName));
+
     // MCP JWT bearer auth (separate from site cookie auth) and MCP auth handler for RFC 9728
         builder.Services.AddAuthentication(options =>
         {
             // Challenge with MCP (adds resource_metadata) globally; keep default authenticate (cookie) for the site
             options.DefaultChallengeScheme = McpAuthenticationDefaults.AuthenticationScheme;
         })
-            .AddJwtBearer("McpJwtBearer", jwtOptions =>
+            .AddJwtBearer(McpConstants.JwtBearerScheme, jwtOptions =>
             {
-                jwtOptions.Authority = configuration["McpAuth:Authority"];
-                jwtOptions.Audience = configuration["McpAuth:Audience"];
+                var mcpAuthOptions = configuration.GetSection(McpAuthOptions.SectionName).Get<McpAuthOptions>();
+                jwtOptions.Authority = mcpAuthOptions?.Authority ?? configuration["McpAuth:Authority"];
+                jwtOptions.Audience = mcpAuthOptions?.Audience ?? configuration["McpAuth:Audience"];
                 jwtOptions.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -210,7 +232,8 @@ public partial class Program
                     }
 
                     // Optional: advertise scopes clients may request
-                    metadata.ScopesSupported = new List<string> { "mcp:tools", "read:ecsharp_context" };
+                    var mcpOptions = configuration.GetSection(McpOptions.SectionName).Get<McpOptions>();
+                    metadata.ScopesSupported = new List<string>(mcpOptions?.SupportedScopes ?? ["mcp:tools", "read:ecsharp_context"]);
 
                     context.ResourceMetadata = metadata;
 
@@ -220,18 +243,20 @@ public partial class Program
 
         builder.Services.AddAuthorization(options =>
         {
-            options.AddPolicy("McpScopePolicy", policy =>
+            options.AddPolicy(McpConstants.AuthorizationPolicy, policy =>
             {
                 policy.RequireAuthenticatedUser();
                 policy.RequireAssertion(ctx =>
                 {
-                    // Accept either 'scp' or 'roles' containing read:ecsharp_context
-                    var scope = ctx.User.FindFirst("scp")?.Value?.Split(' ');
+                    var mcpOptions = configuration.GetSection(McpOptions.SectionName).Get<McpOptions>();
+                    var supportedScopes = mcpOptions?.SupportedScopes ?? ["mcp:tools", "read:ecsharp_context"];
+                    
+                    // Accept either 'scp' or 'roles' containing any of our supported scopes
+                    var scope = ctx.User.FindFirst("scp")?.Value?.Split(' ') ?? [];
                     var roles = ctx.User.FindAll("roles").Select(c => c.Value);
-                    return (scope?.Contains("read:ecsharp_context") ?? false)
-                        || (scope?.Contains("mcp:tools") ?? false)
-                        || roles.Contains("read:ecsharp_context")
-                        || roles.Contains("mcp:tools");
+                    
+                    return supportedScopes.Any(supportedScope => 
+                        scope.Contains(supportedScope) || roles.Contains(supportedScope));
                 });
             });
         });
@@ -273,10 +298,11 @@ public partial class Program
                 rateLimiterOptions.QueueLimit = 0; // No queuing for anonymous users
             });
 
-            options.AddFixedWindowLimiter("McpEndpoint", rateLimiterOptions =>
+            options.AddFixedWindowLimiter(McpConstants.RateLimitingPolicy, rateLimiterOptions =>
             {
-                rateLimiterOptions.PermitLimit = 30; // context retrievals per minute
-                rateLimiterOptions.Window = TimeSpan.FromMinutes(1);
+                var mcpOptions = configuration.GetSection(McpOptions.SectionName).Get<McpOptions>();
+                rateLimiterOptions.PermitLimit = mcpOptions?.RateLimitPermits ?? 30; // context retrievals per minute
+                rateLimiterOptions.Window = TimeSpan.FromMinutes(mcpOptions?.RateLimitWindowMinutes ?? 1); // minute window
                 rateLimiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                 rateLimiterOptions.QueueLimit = 0;
             });
@@ -361,8 +387,6 @@ public partial class Program
                 .AddMcpServer()
                 .WithHttpTransport(options =>
                 {
-                    // Use default path "/" under a dedicated MapMcp() segment below
-                    // We’ll rely on ASP.NET Core hosting and our existing rate limiting/auth
                 })
                 .WithToolsFromAssembly(); // discover [McpServerTool] tools in this assembly
         }
@@ -387,10 +411,32 @@ public partial class Program
 
         app.MapHealthChecks("/healthz");
 
-        app.UseHttpsRedirection();
+        // Use conditional HTTPS redirection middleware for MCP endpoints
+        app.Use(async (context, next) =>
+        {
+            // Skip HTTPS redirection for MCP endpoints in development to avoid SSL certificate issues
+            if (app.Environment.IsDevelopment() && context.Request.Path.StartsWithSegments("/mcp"))
+            {
+                await next(context);
+            }
+            else if (!context.Request.IsHttps && !app.Environment.IsDevelopment())
+            {
+                // Redirect to HTTPS in production for non-MCP endpoints
+                var httpsUrl = "https://" + context.Request.Host + context.Request.Path + context.Request.QueryString;
+                context.Response.Redirect(httpsUrl, permanent: true);
+            }
+            else
+            {
+                await next(context);
+            }
+        });
+
         app.UseStaticFiles();
 
         app.UseRouting();
+
+        // Enable CORS for MCP endpoints
+        app.UseCors();
 
         app.UseAuthentication();
         app.UseAuthorization();
@@ -408,15 +454,16 @@ public partial class Program
         if (enableMcpSdk)
         {
             var mcpGroup = app.MapGroup("/mcp");
-            mcpGroup.RequireRateLimiting("McpEndpoint");
+            mcpGroup.RequireRateLimiting(McpConstants.RateLimitingPolicy);
+            mcpGroup.RequireCors("McpCors"); // Apply CORS policy
             bool requireMcpAuth = !bool.TryParse(configuration["Mcp:AllowAnonymousForTests"], out var bypass) || !bypass;
             if (requireMcpAuth)
             {
                 // Authenticate with JWT, challenge with MCP to include resource_metadata
                 mcpGroup.RequireAuthorization(new AuthorizeAttribute
                 {
-                    AuthenticationSchemes = $"McpJwtBearer,{McpAuthenticationDefaults.AuthenticationScheme}",
-                    Policy = "McpScopePolicy"
+                    AuthenticationSchemes = $"{McpConstants.JwtBearerScheme},{McpAuthenticationDefaults.AuthenticationScheme}",
+                    Policy = McpConstants.AuthorizationPolicy
                 });
             }
             else

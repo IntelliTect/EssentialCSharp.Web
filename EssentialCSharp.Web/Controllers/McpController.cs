@@ -1,32 +1,36 @@
 using System.Security.Claims;
 using EssentialCSharp.Chat.Common.Models;
 using EssentialCSharp.Chat.Common.Services;
+using EssentialCSharp.Web.Options;
 using EssentialCSharp.Web.Models.Mcp;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Controllers;
 
 [ApiController]
 [Route("api/mcp")]
-[EnableRateLimiting("McpEndpoint")]
-public sealed class McpController(AISearchService search) : ControllerBase
+[EnableRateLimiting(McpConstants.RateLimitingPolicy)]
+public sealed class McpController(AISearchService search, IOptions<McpAuthOptions> authOptions, IOptions<McpOptions> mcpOptions) : ControllerBase
 {
     private static readonly string[] _RequiredQueryOnly = ["query"];
+    private readonly McpAuthOptions _authOptions = authOptions.Value;
+    private readonly McpOptions _mcpOptions = mcpOptions.Value;
     // Public metadata endpoint for discovery
     [HttpGet(".well-known")] // Convenience metadata surface (non-standard)
     [AllowAnonymous]
     public IActionResult GetWellKnown()
     {
         // Minimal MCP-style metadata; clients can use this to discover auth and tools
-    var authority = HttpContext.Request.Scheme + "://login.microsoftonline.com/{tenant}";
-    var audience = "api://essentialcsharp-mcp";
-    var baseUrl = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
-    var metadata = new
+        var authority = HttpContext.Request.Scheme + "://login.microsoftonline.com/{tenant}";
+        var audience = _authOptions.Audience;
+        var baseUrl = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+        var metadata = new
         {
             resource_id = "essentialcsharp-context",
-            scopes = new[] { "read:ecsharp_context" },
+            scopes = _mcpOptions.SupportedScopes,
             authorization = new
             {
                 type = "oauth2",
@@ -84,8 +88,25 @@ public sealed class McpController(AISearchService search) : ControllerBase
 
     // Authorized tool invocation
     [HttpPost("tools/get_ecsharp_context")]
-    [Authorize(AuthenticationSchemes = "McpJwtBearer", Policy = "McpScopePolicy")]
+    [Authorize(AuthenticationSchemes = McpConstants.JwtBearerScheme, Policy = McpConstants.AuthorizationPolicy)]
     public async Task<ActionResult<McpContextResponse>> GetContext([FromBody] McpContextRequest request, CancellationToken cancellationToken)
+    {
+        return await ExecuteContextSearch(request, cancellationToken);
+    }
+
+    // Temporary anonymous version for testing
+    [HttpPost("tools/get_ecsharp_context/test")]
+    [AllowAnonymous]
+    public async Task<ActionResult<McpContextResponse>> GetContextTest([FromBody] McpContextRequest request, CancellationToken cancellationToken)
+    {
+        if (!_mcpOptions.AllowAnonymousForTests)
+        {
+            return Unauthorized(new { error = "Anonymous access not enabled" });
+        }
+        return await ExecuteContextSearch(request, cancellationToken);
+    }
+
+    private async Task<ActionResult<McpContextResponse>> ExecuteContextSearch(McpContextRequest request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Query))
         {
