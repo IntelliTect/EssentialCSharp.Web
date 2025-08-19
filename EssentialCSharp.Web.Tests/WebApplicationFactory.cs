@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 
 namespace EssentialCSharp.Web.Tests;
 
@@ -39,6 +40,16 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>
             EssentialCSharpWebContext db = scopedServices.GetRequiredService<EssentialCSharpWebContext>();
 
             db.Database.EnsureCreated();
+        });
+
+        builder.ConfigureAppConfiguration((ctx, config) =>
+        {
+            var mem = new Dictionary<string, string?>
+            {
+                ["Mcp:EnableSdk"] = "true",
+                ["Mcp:AllowAnonymousForTests"] = "true"
+            };
+            config.AddInMemoryCollection(mem!);
         });
     }
 

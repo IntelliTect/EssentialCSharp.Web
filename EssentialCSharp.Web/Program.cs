@@ -15,6 +15,14 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authorization;
+using ModelContextProtocol.AspNetCore;
+using ModelContextProtocol.AspNetCore.Authentication;
+using ModelContextProtocol.Authentication;
+using ModelContextProtocol.Server;
+using Microsoft.AspNetCore.Authentication;
 
 namespace EssentialCSharp.Web;
 
@@ -155,13 +163,80 @@ public partial class Program
         builder.Services.AddHostedService<DatabaseMigrationService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
 
-        // Add AI Chat services
-        if (!builder.Environment.IsDevelopment())
-        {
-            builder.Services.AddAzureOpenAIServices(configuration);
-        }
+    // Add AI services (required for MCP context). In dev, you can set env vars or local config.
+    builder.Services.AddAzureOpenAIServices(configuration);
 
-        // Add Rate Limiting for API endpoints
+    // MCP JWT bearer auth (separate from site cookie auth) and MCP auth handler for RFC 9728
+        builder.Services.AddAuthentication(options =>
+        {
+            // Challenge with MCP (adds resource_metadata) globally; keep default authenticate (cookie) for the site
+            options.DefaultChallengeScheme = McpAuthenticationDefaults.AuthenticationScheme;
+        })
+            .AddJwtBearer("McpJwtBearer", jwtOptions =>
+            {
+                jwtOptions.Authority = configuration["McpAuth:Authority"];
+                jwtOptions.Audience = configuration["McpAuth:Audience"];
+                jwtOptions.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true
+                };
+            })
+            .AddMcp(options =>
+            {
+                // Serve /.well-known/oauth-protected-resource and emit WWW-Authenticate challenges.
+                // Compute Resource dynamically so it exactly matches the MCP endpoint clients use.
+                options.Events.OnResourceMetadataRequest = async context =>
+                {
+                    var request = context.HttpContext.Request;
+                    var baseUrl = $"{request.Scheme}://{request.Host}";
+
+                    var configuration = context.HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+                    var authority = configuration["McpAuth:Authority"];
+
+                    // Create or update metadata (Resource is required)
+                    var metadata = context.ResourceMetadata ?? new ProtectedResourceMetadata
+                    {
+                        Resource = new Uri($"{baseUrl}/mcp")
+                    };
+
+                    // Reset and populate auth servers
+                    metadata.AuthorizationServers = new List<Uri>();
+                    if (!string.IsNullOrWhiteSpace(authority))
+                    {
+                        metadata.AuthorizationServers.Add(new Uri(authority));
+                    }
+
+                    // Optional: advertise scopes clients may request
+                    metadata.ScopesSupported = new List<string> { "mcp:tools", "read:ecsharp_context" };
+
+                    context.ResourceMetadata = metadata;
+
+                    await Task.CompletedTask;
+                };
+            });
+
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy("McpScopePolicy", policy =>
+            {
+                policy.RequireAuthenticatedUser();
+                policy.RequireAssertion(ctx =>
+                {
+                    // Accept either 'scp' or 'roles' containing read:ecsharp_context
+                    var scope = ctx.User.FindFirst("scp")?.Value?.Split(' ');
+                    var roles = ctx.User.FindAll("roles").Select(c => c.Value);
+                    return (scope?.Contains("read:ecsharp_context") ?? false)
+                        || (scope?.Contains("mcp:tools") ?? false)
+                        || roles.Contains("read:ecsharp_context")
+                        || roles.Contains("mcp:tools");
+                });
+            });
+        });
+
+    // Add Rate Limiting for API endpoints
         builder.Services.AddRateLimiter(options =>
         {
             // Global rate limiter for authenticated users by username, anonymous by IP
@@ -196,6 +271,14 @@ public partial class Program
                 rateLimiterOptions.Window = TimeSpan.FromMinutes(1);
                 rateLimiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                 rateLimiterOptions.QueueLimit = 0; // No queuing for anonymous users
+            });
+
+            options.AddFixedWindowLimiter("McpEndpoint", rateLimiterOptions =>
+            {
+                rateLimiterOptions.PermitLimit = 30; // context retrievals per minute
+                rateLimiterOptions.Window = TimeSpan.FromMinutes(1);
+                rateLimiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                rateLimiterOptions.QueueLimit = 0;
             });
 
             // Custom response when rate limit is exceeded
@@ -270,6 +353,20 @@ public partial class Program
              });
         }
 
+        // Register MCP server (SDK) — feature-flagged, uses HTTP transport and attribute-based tools
+        bool enableMcpSdk = bool.TryParse(configuration["Mcp:EnableSdk"], out var flag) && flag;
+        if (enableMcpSdk)
+        {
+            builder.Services
+                .AddMcpServer()
+                .WithHttpTransport(options =>
+                {
+                    // Use default path "/" under a dedicated MapMcp() segment below
+                    // We’ll rely on ASP.NET Core hosting and our existing rate limiting/auth
+                })
+                .WithToolsFromAssembly(); // discover [McpServerTool] tools in this assembly
+        }
+
         loggerFactory.Dispose();
 
         WebApplication app = builder.Build();
@@ -298,12 +395,36 @@ public partial class Program
         app.UseAuthentication();
         app.UseAuthorization();
 
-        app.UseRateLimiter();
+    // MCP auth handler will add the WWW-Authenticate header on challenges and serve the well-known endpoint
+
+    app.UseRateLimiter();
 
         app.UseMiddleware<ReferralMiddleware>();
 
         app.MapRazorPages();
         app.MapDefaultControllerRoute();
+
+        // Map MCP SDK endpoint (if enabled) and protect with JWT+policy and rate limit
+        if (enableMcpSdk)
+        {
+            var mcpGroup = app.MapGroup("/mcp");
+            mcpGroup.RequireRateLimiting("McpEndpoint");
+            bool requireMcpAuth = !bool.TryParse(configuration["Mcp:AllowAnonymousForTests"], out var bypass) || !bypass;
+            if (requireMcpAuth)
+            {
+                // Authenticate with JWT, challenge with MCP to include resource_metadata
+                mcpGroup.RequireAuthorization(new AuthorizeAttribute
+                {
+                    AuthenticationSchemes = $"McpJwtBearer,{McpAuthenticationDefaults.AuthenticationScheme}",
+                    Policy = "McpScopePolicy"
+                });
+            }
+            else
+            {
+                mcpGroup.AllowAnonymous();
+            }
+            mcpGroup.MapMcp();
+        }
 
         app.MapFallbackToController("Index", "Home");
 
