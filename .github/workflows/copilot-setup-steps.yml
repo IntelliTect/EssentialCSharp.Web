@@ -1,208 +1,302 @@
-name: Setup GitHub Copilot Agent Environment
+name: Generate GitHub Copilot Instructions
 
-# This workflow configures the environment for GitHub Copilot agents
-# It reuses configuration from the main Build-Test-And-Deploy workflow
-# to ensure consistency and reduce duplication
+# This workflow generates copilot-instructions.md file for GitHub Copilot agents
+# Follow best practices documented at https://gh.io/copilot-coding-agent-tips
 
 on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 jobs:
-  setup-environment:
+  generate-copilot-instructions:
     runs-on: ubuntu-latest
-    environment: "BuildAndUploadImage"
 
     steps:
       - uses: actions/checkout@v5
 
-      - name: Set up .NET Core
-        uses: actions/setup-dotnet@v4
-        with:
-          global-json-file: global.json
-          source-url: https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json
-        env:
-          NUGET_AUTH_TOKEN: ${{ secrets.AZURE_DEVOPS_PAT }}
-
-      - name: Set up dependency caching for faster builds
-        uses: actions/cache@v4
-        id: nuget-cache
-        with:
-          path: |
-            ~/.nuget/packages
-            ${{ github.workspace }}/**/obj/project.assets.json
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-            ${{ runner.os }}-nuget-
-
-      - name: Restore with dotnet
-        run: dotnet restore
-
-      - name: Build with dotnet
-        run: dotnet build -p:ContinuousIntegrationBuild=True -p:ReleaseDateAttribute=True --configuration Release --no-restore
-
-      - name: Run .NET Tests
-        run: dotnet test --no-build --configuration Release
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Validate Docker build
-        uses: docker/build-push-action@v6
-        with:
-          push: false
-          tags: copilot-env-validation
-          file: ./EssentialCSharp.Web/Dockerfile
-          context: .
-          secrets: |
-            "nuget_auth_token=${{ secrets.AZURE_DEVOPS_PAT }}"
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Set up Node.js for frontend development
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install additional development tools
-        run: |
-          # Install common development tools that Copilot agents might need
-          echo "Installing additional tools for Copilot agent environment..."
-          
-          # Install Azure CLI for cloud operations
-          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-          
-          # Install GitHub CLI for repository operations
-          type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
-          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-          sudo apt update && sudo apt install gh -y
-          
-          # Install EF Core tools globally
-          dotnet tool install --global dotnet-ef
-
-      - name: Validate development tools
-        run: |
-          echo "🔍 Validating installed tools..."
-          echo "Azure CLI: $(az --version | head -1 || echo 'Not available')"
-          echo "GitHub CLI: $(gh --version | head -1 || echo 'Not available')"
-          echo "EF Core CLI: $(dotnet ef --version || echo 'Not available')"
-          echo "Node.js: $(node --version || echo 'Not available')"
-          echo "npm: $(npm --version || echo 'Not available')"
-
-      - name: Create Copilot instructions file
+      - name: Generate Copilot instructions file
         run: |
           mkdir -p .github
           cat << 'EOF' > .github/copilot-instructions.md
           # GitHub Copilot Instructions for EssentialCSharp.Web
 
-          This is an ASP.NET Core 9.0 web application with the following characteristics:
+          ## Project Overview & Core Purpose
+          This is a comprehensive ASP.NET Core 9.0 web application ecosystem for the **Essential C#** programming education platform. The project serves as the technical foundation for [essentialcsharp.com](https://essentialcsharp.com/), providing educational content, AI-powered chat assistance, and user management for C# learning resources.
 
-          ## Project Structure
-          - **EssentialCSharp.Web**: Main web application using ASP.NET Core, Razor Pages, Identity
-          - **EssentialCSharp.Chat**: Console application for AI chat functionality using Semantic Kernel
-          - **EssentialCSharp.Chat.Shared**: Shared libraries between projects
-          - **EssentialCSharp.Web.Tests**: xUnit integration tests
-          - **EssentialCSharp.Chat.Tests**: xUnit unit tests
+          **Key Value**: Provides an interactive learning platform where developers can access Essential C# content, engage with AI-powered assistance for C# questions, and track their learning progress through a modern web interface.
 
-          ## Key Technologies
-          - .NET 9.0 with C# 13
-          - ASP.NET Core with Razor Pages
-          - Entity Framework Core with SQL Server
-          - ASP.NET Core Identity for authentication
-          - Microsoft Semantic Kernel for AI integration
-          - Azure OpenAI for chat functionality
-          - Docker containerization
-          - Azure Application Insights for telemetry
-          - GitHub and Microsoft OAuth authentication
+          **Target Audience**: C# developers at all levels, students learning C#, and educators teaching C# programming concepts.
 
-          ## Development Patterns
-          - Use centralized package management (Directory.Packages.props)
-          - Follow Repository pattern for data access
-          - Use dependency injection throughout
-          - Implement proper error handling and logging
-          - Include comprehensive integration tests
-          - Use async/await patterns consistently
+          ## Project Structure & Architecture
+          This solution follows a modular architecture with clear separation of concerns:
 
-          ## Build and Test Commands
-          ```bash
-          # Restore packages
-          dotnet restore
-          
-          # Build solution
-          dotnet build --configuration Release --no-restore
-          
-          # Run tests
-          dotnet test --no-build --configuration Release
-          
-          # Run specific project
-          dotnet run --project EssentialCSharp.Web
+          ```
+          EssentialCSharp.Web.sln
+          ├── EssentialCSharp.Web/              # Main ASP.NET Core web application
+          │   ├── Areas/                        # Identity and feature-specific areas
+          │   ├── Controllers/                  # MVC controllers
+          │   ├── Views/                        # Razor views and layouts
+          │   ├── Models/                       # View models and data models
+          │   ├── Services/                     # Business logic services
+          │   ├── Migrations/                   # Entity Framework migrations
+          │   └── wwwroot/                      # Static assets (CSS, JS, images)
+          ├── EssentialCSharp.Chat/             # Console application for AI chat
+          ├── EssentialCSharp.Chat.Shared/      # Shared models and services
+          ├── EssentialCSharp.Web.Tests/        # Integration tests for web app
+          └── EssentialCSharp.Chat.Tests/       # Unit tests for chat functionality
           ```
 
-          ## Docker
-          - Dockerfile in EssentialCSharp.Web/ directory
-          - Multi-stage build with .NET 9 runtime
-          - Requires ACCESS_TO_NUGET_FEED build arg for private packages
+          ## Tech Stack & Core Technologies
 
-          ## Configuration
-          - Uses appsettings.json + user secrets + environment variables
-          - Key secrets: GitHub/Microsoft OAuth, database connection, AI endpoints
-          - See README.md for required configuration values
+          ### Framework & Runtime
+          - **.NET 9.0** with **C# 13** language features
+          - **ASP.NET Core 9.0** for web application framework
+          - **Entity Framework Core 8.0.10** for data access with SQL Server
+          - **ASP.NET Core Identity** for user authentication and authorization
 
-          ## AI Integration
-          - Uses Azure OpenAI through Semantic Kernel
-          - Vector database with PostgreSQL + pgvector
-          - Chat functionality in EssentialCSharp.Chat project
-          - Embedding generation and retrieval
+          ### AI & Chat Integration
+          - **Microsoft Semantic Kernel 1.60.0** for AI orchestration
+          - **Azure OpenAI** integration for chat functionality
+          - **pgvector with PostgreSQL** for vector database operations
+          - **Model Context Protocol (MCP)** for AI agent integration
+
+          ### Authentication & Security
+          - **GitHub OAuth** integration for developer authentication
+          - **Microsoft Account** authentication support
+          - **HCaptcha** for bot protection
+          - **JWT tokens** for API authentication
+
+          ### Development & Deployment
+          - **Docker** containerization with multi-stage builds
+          - **Azure Application Insights** for telemetry and monitoring
+          - **Azure Monitor OpenTelemetry** for observability
+          - **Mailjet API** for email services
+
+          ### Package Management & Build
+          - **Central Package Management** via `Directory.Packages.props`
+          - **Private NuGet feed** from Azure DevOps for internal packages
+          - **Source Link** for debugging support
+          - **Build versioning** with continuous integration support
+
+          ## Coding Conventions & Development Patterns
+
+          ### Project Structure Conventions
+          - **Areas**: Use for Identity and distinct feature modules
+          - **Controllers**: Follow MVC pattern with async actions
+          - **Services**: Implement business logic with dependency injection
+          - **Models**: Separate view models from domain models
+          - **Extensions**: Place extension methods in dedicated Extension classes
+
+          ### Code Style & Patterns
+          - **Async/Await**: Use consistently for all I/O operations
+          - **Dependency Injection**: Register services in `Program.cs`
+          - **Repository Pattern**: Implement for data access abstraction
+          - **Error Handling**: Use structured logging and custom exceptions
+          - **Configuration**: Use strongly-typed configuration classes
+
+          ### File Naming & Organization
+          - **Controllers**: `{Feature}Controller.cs` (e.g., `HomeController.cs`)
+          - **Services**: `{Feature}Service.cs` and `I{Feature}Service.cs`
+          - **Models**: `{Entity}Model.cs` for view models, `{Entity}.cs` for domain
+          - **Extensions**: `{Type}Extensions.cs`
+          - **Tests**: `{ClassUnderTest}Tests.cs`
+
+          ## Testing Strategy & Frameworks
+
+          ### Test Organization
+          - **Integration Tests**: `EssentialCSharp.Web.Tests` using `Microsoft.AspNetCore.Mvc.Testing`
+          - **Unit Tests**: `EssentialCSharp.Chat.Tests` using `xUnit` and `Moq`
+          - **Test Structure**: Follow AAA pattern (Arrange, Act, Assert)
+
+          ### Testing Tools
+          - **xUnit 2.9.3** as the primary testing framework
+          - **Moq 4.20.72** for mocking dependencies
+          - **Coverlet** for code coverage collection
+          - **Microsoft.AspNetCore.Mvc.Testing** for integration testing
+
+          ### Test Conventions
+          ```csharp
+          [Fact]
+          public async Task MethodName_Scenario_ExpectedBehavior()
+          {
+              // Arrange
+              var service = new TestService();
+              
+              // Act
+              var result = await service.MethodAsync();
+              
+              // Assert
+              Assert.NotNull(result);
+          }
+          ```
+
+          ## Build & Development Commands
+
+          ### Essential Commands
+          ```bash
+          # Restore all packages
+          dotnet restore
+          
+          # Build entire solution
+          dotnet build --configuration Release --no-restore
+          
+          # Run all tests
+          dotnet test --no-build --configuration Release
+          
+          # Run web application
+          dotnet run --project EssentialCSharp.Web
+          
+          # Run chat application
+          dotnet run --project EssentialCSharp.Chat
+          
+          # Entity Framework operations
+          dotnet ef migrations add MigrationName --project EssentialCSharp.Web
+          dotnet ef database update --project EssentialCSharp.Web
+          ```
+
+          ### Docker Operations
+          ```bash
+          # Build Docker image
+          docker build -t essentialcsharp-web -f EssentialCSharp.Web/Dockerfile .
+          
+          # Run with Docker Compose (if available)
+          docker-compose up --build
+          ```
+
+          ## Configuration & Environment Setup
+
+          ### Required Secrets (Use dotnet user-secrets)
+          ```bash
+          # Email configuration
+          dotnet user-secrets set "AuthMessageSender:SendFromName" "Essential C# Team"
+          dotnet user-secrets set "AuthMessageSender:SendFromEmail" "no-reply@essentialcsharp.com"
+          dotnet user-secrets set "AuthMessageSender:SecretKey" "your-mailjet-secret"
+          dotnet user-secrets set "AuthMessageSender:APIKey" "your-mailjet-api-key"
+          
+          # OAuth providers
+          dotnet user-secrets set "Authentication:Microsoft:ClientSecret" "microsoft-oauth-secret"
+          dotnet user-secrets set "Authentication:Microsoft:ClientId" "microsoft-oauth-client-id"
+          dotnet user-secrets set "Authentication:github:clientSecret" "github-oauth-secret"
+          dotnet user-secrets set "Authentication:github:clientId" "github-oauth-client-id"
+          
+          # Security
+          dotnet user-secrets set "HCaptcha:SiteKey" "hcaptcha-site-key"
+          dotnet user-secrets set "HCaptcha:SecretKey" "hcaptcha-secret-key"
+          
+          # Application Insights
+          dotnet user-secrets set "APPLICATIONINSIGHTS_CONNECTION_STRING" "your-app-insights-connection"
+          ```
+
+          ### Package Feed Configuration
+          - Set `<AccessToNugetFeed>false</AccessToNugetFeed>` in `Directory.Packages.props` if you don't have access to private Azure DevOps feed
+          - Private feed contains `EssentialCSharp.Shared.Models` and content packages
+
+          ## AI Integration Patterns
+
+          ### Semantic Kernel Usage
+          - **Chat Services**: Implement AI chat functionality using Semantic Kernel
+          - **Vector Operations**: Use pgvector for semantic search and retrieval
+          - **Model Context Protocol**: Integrate with MCP for agent communication
+          - **Prompt Engineering**: Store prompts as structured templates
+
+          ### AI Service Patterns
+          ```csharp
+          public interface IChatService
+          {
+              Task<ChatResponse> ProcessMessageAsync(string message, CancellationToken cancellationToken);
+              Task<IEnumerable<SearchResult>> SearchContentAsync(string query, CancellationToken cancellationToken);
+          }
+          ```
+
+          ## Development Workflow & Best Practices
+
+          ### Code Review Guidelines
+          - Ensure all new code includes appropriate tests
+          - Follow established naming conventions and patterns
+          - Use async/await for all I/O operations
+          - Implement proper error handling and logging
+          - Add XML documentation for public APIs
+
+          ### Performance Considerations
+          - Use Entity Framework efficiently (avoid N+1 queries)
+          - Implement caching where appropriate
+          - Use async patterns for database and API calls
+          - Optimize Docker image size with multi-stage builds
+
+          ### Security Best Practices
+          - Never commit secrets to source control
+          - Use HTTPS for all external communications
+          - Implement proper input validation
+          - Follow OWASP security guidelines
+          - Use parameterized queries for database operations
+
+          ## Common Patterns & Utilities
+
+          ### Service Registration Pattern
+          ```csharp
+          // In Program.cs
+          builder.Services.AddScoped<IFeatureService, FeatureService>();
+          builder.Services.AddSingleton<ICacheService, CacheService>();
+          ```
+
+          ### Configuration Pattern
+          ```csharp
+          public class FeatureOptions
+          {
+              public const string SectionName = "Feature";
+              public string ApiKey { get; set; } = string.Empty;
+              public int TimeoutSeconds { get; set; } = 30;
+          }
+          
+          // Registration
+          builder.Services.Configure<FeatureOptions>(
+              builder.Configuration.GetSection(FeatureOptions.SectionName));
+          ```
+
+          ### Error Handling Pattern
+          ```csharp
+          public async Task<Result<T>> MethodAsync<T>()
+          {
+              try
+              {
+                  var result = await SomeOperationAsync();
+                  return Result<T>.Success(result);
+              }
+              catch (SpecificException ex)
+              {
+                  logger.LogError(ex, "Operation failed");
+                  return Result<T>.Failure(ex.Message);
+              }
+          }
+          ```
+
+          ## Future Roadmap Considerations
+          - **Microservices Evolution**: Consider splitting into microservices as features grow
+          - **Performance Optimization**: Implement advanced caching and CDN strategies
+          - **AI Enhancement**: Expand AI capabilities with more sophisticated models
+          - **Mobile Support**: Potential mobile app integration
+          - **API Expansion**: RESTful API for third-party integrations
+
+          ## Anti-Patterns & Gotchas
+          - **Avoid**: Synchronous calls in async methods (use ConfigureAwait(false))
+          - **Avoid**: Large Entity Framework queries without pagination
+          - **Avoid**: Hardcoded configuration values (use appsettings.json)
+          - **Avoid**: Missing error handling in async operations
+          - **Security**: Never expose sensitive configuration in client-side code
           EOF
 
-      - name: Test Copilot agent environment
+      - name: Commit and push copilot instructions
         run: |
-          echo "🧪 Testing Copilot agent environment capabilities..."
-          
-          # Test basic .NET commands
-          dotnet --list-sdks
-          dotnet --list-runtimes
-          
-          # Test EF Core tools
-          dotnet ef --help > /dev/null && echo "✅ EF Core tools working"
-          
-          # Test that we can create a simple project (cleanup afterwards)
-          cd /tmp
-          dotnet new console -n TestCopilotEnv
-          cd TestCopilotEnv
-          dotnet build
-          cd ..
-          rm -rf TestCopilotEnv
-          echo "✅ Project creation and build test passed"
-          
-          # Test Docker functionality
-          docker --version
-          echo "✅ Docker available"
-          
-          # Test that our solution is properly restored and built
-          cd ${{ github.workspace }}
-          echo "✅ Solution build completed successfully"
-
-      - name: Display environment information
-        run: |
-          echo "✅ Environment setup complete for GitHub Copilot agents"
-          echo "📦 .NET Version: $(dotnet --version)"
-          echo "🏗️ Build Status: Success"
-          echo "🐳 Docker Status: Ready"
-          echo "📂 Repository: ${{ github.repository }}"
-          echo "🔧 This environment is configured for:"
-          echo "   - .NET 9.0 development with C# 13"
-          echo "   - ASP.NET Core web applications"
-          echo "   - Entity Framework with SQL Server"
-          echo "   - Semantic Kernel AI integration"
-          echo "   - Azure OpenAI and vector databases"
-          echo "   - Docker containerization"
-          echo "   - Azure CLI and GitHub CLI tools"
-          echo "   - NuGet package management (public and private feeds)"
-          echo "   - Node.js for frontend tooling"
-          echo "📖 Copilot instructions created at .github/copilot-instructions.md"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .github/copilot-instructions.md
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Generate comprehensive copilot-instructions.md for GitHub Copilot agents"
+            git push
+            echo "✅ Copilot instructions file generated and committed"
+          fi
