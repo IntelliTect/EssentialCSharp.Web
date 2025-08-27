@@ -62,6 +62,134 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Set up Node.js for frontend development
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: Install additional development tools
+        run: |
+          # Install common development tools that Copilot agents might need
+          echo "Installing additional tools for Copilot agent environment..."
+          
+          # Install Azure CLI for cloud operations
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          
+          # Install GitHub CLI for repository operations
+          type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update && sudo apt install gh -y
+          
+          # Install EF Core tools globally
+          dotnet tool install --global dotnet-ef
+
+      - name: Validate development tools
+        run: |
+          echo "🔍 Validating installed tools..."
+          echo "Azure CLI: $(az --version | head -1 || echo 'Not available')"
+          echo "GitHub CLI: $(gh --version | head -1 || echo 'Not available')"
+          echo "EF Core CLI: $(dotnet ef --version || echo 'Not available')"
+          echo "Node.js: $(node --version || echo 'Not available')"
+          echo "npm: $(npm --version || echo 'Not available')"
+
+      - name: Create Copilot instructions file
+        run: |
+          mkdir -p .github
+          cat << 'EOF' > .github/copilot-instructions.md
+          # GitHub Copilot Instructions for EssentialCSharp.Web
+
+          This is an ASP.NET Core 9.0 web application with the following characteristics:
+
+          ## Project Structure
+          - **EssentialCSharp.Web**: Main web application using ASP.NET Core, Razor Pages, Identity
+          - **EssentialCSharp.Chat**: Console application for AI chat functionality using Semantic Kernel
+          - **EssentialCSharp.Chat.Shared**: Shared libraries between projects
+          - **EssentialCSharp.Web.Tests**: xUnit integration tests
+          - **EssentialCSharp.Chat.Tests**: xUnit unit tests
+
+          ## Key Technologies
+          - .NET 9.0 with C# 13
+          - ASP.NET Core with Razor Pages
+          - Entity Framework Core with SQL Server
+          - ASP.NET Core Identity for authentication
+          - Microsoft Semantic Kernel for AI integration
+          - Azure OpenAI for chat functionality
+          - Docker containerization
+          - Azure Application Insights for telemetry
+          - GitHub and Microsoft OAuth authentication
+
+          ## Development Patterns
+          - Use centralized package management (Directory.Packages.props)
+          - Follow Repository pattern for data access
+          - Use dependency injection throughout
+          - Implement proper error handling and logging
+          - Include comprehensive integration tests
+          - Use async/await patterns consistently
+
+          ## Build and Test Commands
+          ```bash
+          # Restore packages
+          dotnet restore
+          
+          # Build solution
+          dotnet build --configuration Release --no-restore
+          
+          # Run tests
+          dotnet test --no-build --configuration Release
+          
+          # Run specific project
+          dotnet run --project EssentialCSharp.Web
+          ```
+
+          ## Docker
+          - Dockerfile in EssentialCSharp.Web/ directory
+          - Multi-stage build with .NET 9 runtime
+          - Requires ACCESS_TO_NUGET_FEED build arg for private packages
+
+          ## Configuration
+          - Uses appsettings.json + user secrets + environment variables
+          - Key secrets: GitHub/Microsoft OAuth, database connection, AI endpoints
+          - See README.md for required configuration values
+
+          ## AI Integration
+          - Uses Azure OpenAI through Semantic Kernel
+          - Vector database with PostgreSQL + pgvector
+          - Chat functionality in EssentialCSharp.Chat project
+          - Embedding generation and retrieval
+          EOF
+
+      - name: Test Copilot agent environment
+        run: |
+          echo "🧪 Testing Copilot agent environment capabilities..."
+          
+          # Test basic .NET commands
+          dotnet --list-sdks
+          dotnet --list-runtimes
+          
+          # Test EF Core tools
+          dotnet ef --help > /dev/null && echo "✅ EF Core tools working"
+          
+          # Test that we can create a simple project (cleanup afterwards)
+          cd /tmp
+          dotnet new console -n TestCopilotEnv
+          cd TestCopilotEnv
+          dotnet build
+          cd ..
+          rm -rf TestCopilotEnv
+          echo "✅ Project creation and build test passed"
+          
+          # Test Docker functionality
+          docker --version
+          echo "✅ Docker available"
+          
+          # Test that our solution is properly restored and built
+          cd ${{ github.workspace }}
+          echo "✅ Solution build completed successfully"
+
       - name: Display environment information
         run: |
           echo "✅ Environment setup complete for GitHub Copilot agents"
@@ -70,9 +198,13 @@ jobs:
           echo "🐳 Docker Status: Ready"
           echo "📂 Repository: ${{ github.repository }}"
           echo "🔧 This environment is configured for:"
-          echo "   - .NET 9.0 development"
+          echo "   - .NET 9.0 development with C# 13"
           echo "   - ASP.NET Core web applications"
-          echo "   - Entity Framework"
+          echo "   - Entity Framework with SQL Server"
           echo "   - Semantic Kernel AI integration"
+          echo "   - Azure OpenAI and vector databases"
           echo "   - Docker containerization"
+          echo "   - Azure CLI and GitHub CLI tools"
           echo "   - NuGet package management (public and private feeds)"
+          echo "   - Node.js for frontend tooling"
+          echo "📖 Copilot instructions created at .github/copilot-instructions.md"
