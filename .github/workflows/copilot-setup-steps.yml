@@ -74,31 +74,3 @@ jobs:
           
           # Install EF Core tools globally
           dotnet tool install --global dotnet-ef
-
-      - name: Validate development tools
-        run: |
-          echo "🔍 Validating installed tools..."
-          echo "EF Core CLI: $(dotnet ef --version || echo 'Not available')"
-          echo "Node.js: $(node --version || echo 'Not available')"
-          echo "npm: $(npm --version || echo 'Not available')"
-
-
-
-
-      - name: Display environment information
-        run: |
-          echo "✅ Environment setup complete for GitHub Copilot agents"
-          echo "📦 .NET Version: $(dotnet --version)"
-          echo "🏗️ Build Status: Success"
-          echo "🐳 Docker Status: Ready"
-          echo "📂 Repository: ${{ github.repository }}"
-          echo "🔧 This environment is configured for:"
-          echo "   - .NET 9.0 development with C# 13"
-          echo "   - ASP.NET Core web applications"
-          echo "   - Entity Framework with SQL Server"
-          echo "   - Semantic Kernel AI integration"
-          echo "   - Azure OpenAI and vector databases"
-          echo "   - Docker containerization"
-          echo "   - Azure CLI and GitHub CLI tools"
-          echo "   - NuGet package management (public and private feeds)"
-          echo "   - Node.js for frontend tooling"
