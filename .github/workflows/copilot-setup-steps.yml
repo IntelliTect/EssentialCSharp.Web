@@ -84,33 +84,6 @@ jobs:
 
 
 
-      - name: Test Copilot agent environment
-        run: |
-          echo "🧪 Testing Copilot agent environment capabilities..."
-          
-          # Test basic .NET commands
-          dotnet --list-sdks
-          dotnet --list-runtimes
-          
-          # Test EF Core tools
-          dotnet ef --help > /dev/null && echo "✅ EF Core tools working"
-          
-          # Test that we can create a simple project (cleanup afterwards)
-          cd /tmp
-          dotnet new console -n TestCopilotEnv
-          cd TestCopilotEnv
-          dotnet build
-          cd ..
-          rm -rf TestCopilotEnv
-          echo "✅ Project creation and build test passed"
-          
-          # Test Docker functionality
-          docker --version
-          echo "✅ Docker available"
-          
-          # Test that our solution is properly restored and built
-          cd ${{ github.workspace }}
-          echo "✅ Solution build completed successfully"
 
       - name: Display environment information
         run: |
