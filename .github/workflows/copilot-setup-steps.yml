@@ -78,8 +78,6 @@ jobs:
       - name: Validate development tools
         run: |
           echo "🔍 Validating installed tools..."
-          echo "Azure CLI: $(az --version | head -1 || echo 'Not available')"
-          echo "GitHub CLI: $(gh --version | head -1 || echo 'Not available')"
           echo "EF Core CLI: $(dotnet ef --version || echo 'Not available')"
           echo "Node.js: $(node --version || echo 'Not available')"
           echo "npm: $(npm --version || echo 'Not available')"
