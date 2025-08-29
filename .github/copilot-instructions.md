@@ -1,0 +1,265 @@
+# GitHub Copilot Instructions for EssentialCSharp.Web
+
+## Project Overview & Core Purpose
+This is a comprehensive ASP.NET Core 9.0 web application ecosystem for the **Essential C#** programming education platform. The project serves as the technical foundation for [essentialcsharp.com](https://essentialcsharp.com/), providing educational content, AI-powered chat assistance, and user management for C# learning resources.
+
+**Key Value**: Provides an interactive learning platform where developers can access Essential C# content, engage with AI-powered assistance for C# questions, and track their learning progress through a modern web interface.
+
+**Target Audience**: C# developers at all levels, students learning C#, and educators teaching C# programming concepts.
+
+## Project Structure & Architecture
+This solution follows a modular architecture with clear separation of concerns:
+
+```
+EssentialCSharp.Web.sln
+├── EssentialCSharp.Web/              # Main ASP.NET Core web application
+│   ├── Areas/                        # Identity and feature-specific areas
+│   ├── Controllers/                  # MVC controllers
+│   ├── Views/                        # Razor views and layouts
+│   ├── Models/                       # View models and data models
+│   ├── Services/                     # Business logic services
+│   ├── Migrations/                   # Entity Framework migrations
+│   └── wwwroot/                      # Static assets (CSS, JS, images)
+├── EssentialCSharp.Chat/             # Console application for AI chat
+├── EssentialCSharp.Chat.Shared/      # Shared models and services
+├── EssentialCSharp.Web.Tests/        # Integration tests for web app
+└── EssentialCSharp.Chat.Tests/       # Unit tests for chat functionality
+```
+
+## Tech Stack & Core Technologies
+
+### Framework & Runtime
+- **.NET 9.0** with **C# 13** language features
+- **ASP.NET Core 9.0** for web application framework
+- **Entity Framework Core 8.0.10** for data access with SQL Server
+- **ASP.NET Core Identity** for user authentication and authorization
+
+### AI & Chat Integration
+- **Microsoft Semantic Kernel 1.60.0** for AI orchestration
+- **Azure OpenAI** integration for chat functionality
+- **pgvector with PostgreSQL** for vector database operations
+- **Model Context Protocol (MCP)** for AI agent integration
+
+### Authentication & Security
+- **GitHub OAuth** integration for developer authentication
+- **Microsoft Account** authentication support
+- **HCaptcha** for bot protection
+- **JWT tokens** for API authentication
+
+### Development & Deployment
+- **Docker** containerization with multi-stage builds
+- **Azure Application Insights** for telemetry and monitoring
+- **Azure Monitor OpenTelemetry** for observability
+- **Mailjet API** for email services
+
+### Package Management & Build
+- **Central Package Management** via `Directory.Packages.props`
+- **Private NuGet feed** from Azure DevOps for internal packages
+- **Source Link** for debugging support
+- **Build versioning** with continuous integration support
+
+## Coding Conventions & Development Patterns
+
+### Project Structure Conventions
+- **Areas**: Use for Identity and distinct feature modules
+- **Controllers**: Follow MVC pattern with async actions
+- **Services**: Implement business logic with dependency injection
+- **Models**: Separate view models from domain models
+- **Extensions**: Place extension methods in dedicated Extension classes
+
+### Code Style & Patterns
+- **Async/Await**: Use consistently for all I/O operations
+- **Dependency Injection**: Register services in `Program.cs`
+- **Repository Pattern**: Implement for data access abstraction
+- **Error Handling**: Use structured logging and custom exceptions
+- **Configuration**: Use strongly-typed configuration classes
+
+### File Naming & Organization
+- **Controllers**: `{Feature}Controller.cs` (e.g., `HomeController.cs`)
+- **Services**: `{Feature}Service.cs` and `I{Feature}Service.cs`
+- **Models**: `{Entity}Model.cs` for view models, `{Entity}.cs` for domain
+- **Extensions**: `{Type}Extensions.cs`
+- **Tests**: `{ClassUnderTest}Tests.cs`
+
+## Testing Strategy & Frameworks
+
+### Test Organization
+- **Integration Tests**: `EssentialCSharp.Web.Tests` using `Microsoft.AspNetCore.Mvc.Testing`
+- **Unit Tests**: `EssentialCSharp.Chat.Tests` using `xUnit` and `Moq`
+- **Test Structure**: Follow AAA pattern (Arrange, Act, Assert)
+
+### Testing Tools
+- **xUnit 2.9.3** as the primary testing framework
+- **Moq 4.20.72** for mocking dependencies
+- **Coverlet** for code coverage collection
+- **Microsoft.AspNetCore.Mvc.Testing** for integration testing
+
+### Test Conventions
+```csharp
+[Fact]
+public async Task MethodName_Scenario_ExpectedBehavior()
+{
+    // Arrange
+    var service = new TestService();
+    
+    // Act
+    var result = await service.MethodAsync();
+    
+    // Assert
+    Assert.NotNull(result);
+}
+```
+
+## Build & Development Commands
+
+### Essential Commands
+```bash
+# Restore all packages
+dotnet restore
+
+# Build entire solution
+dotnet build --configuration Release --no-restore
+
+# Run all tests
+dotnet test --no-build --configuration Release
+
+# Run web application
+dotnet run --project EssentialCSharp.Web
+
+# Run chat application
+dotnet run --project EssentialCSharp.Chat
+
+# Entity Framework operations
+dotnet ef migrations add MigrationName --project EssentialCSharp.Web
+dotnet ef database update --project EssentialCSharp.Web
+```
+
+### Docker Operations
+```bash
+# Build Docker image
+docker build -t essentialcsharp-web -f EssentialCSharp.Web/Dockerfile .
+
+# Run with Docker Compose (if available)
+docker-compose up --build
+```
+
+## Configuration & Environment Setup
+
+### Required Secrets (Use dotnet user-secrets)
+```bash
+# Email configuration
+dotnet user-secrets set "AuthMessageSender:SendFromName" "Essential C# Team"
+dotnet user-secrets set "AuthMessageSender:SendFromEmail" "no-reply@essentialcsharp.com"
+dotnet user-secrets set "AuthMessageSender:SecretKey" "your-mailjet-secret"
+dotnet user-secrets set "AuthMessageSender:APIKey" "your-mailjet-api-key"
+
+# OAuth providers
+dotnet user-secrets set "Authentication:Microsoft:ClientSecret" "microsoft-oauth-secret"
+dotnet user-secrets set "Authentication:Microsoft:ClientId" "microsoft-oauth-client-id"
+dotnet user-secrets set "Authentication:github:clientSecret" "github-oauth-secret"
+dotnet user-secrets set "Authentication:github:clientId" "github-oauth-client-id"
+
+# Security
+dotnet user-secrets set "HCaptcha:SiteKey" "hcaptcha-site-key"
+dotnet user-secrets set "HCaptcha:SecretKey" "hcaptcha-secret-key"
+
+# Application Insights
+dotnet user-secrets set "APPLICATIONINSIGHTS_CONNECTION_STRING" "your-app-insights-connection"
+```
+
+### Package Feed Configuration
+- Set `<AccessToNugetFeed>false</AccessToNugetFeed>` in `Directory.Packages.props` if you don't have access to private Azure DevOps feed
+- Private feed contains `EssentialCSharp.Shared.Models` and content packages
+
+## AI Integration Patterns
+
+### Semantic Kernel Usage
+- **Chat Services**: Implement AI chat functionality using Semantic Kernel
+- **Vector Operations**: Use pgvector for semantic search and retrieval
+- **Model Context Protocol**: Integrate with MCP for agent communication
+- **Prompt Engineering**: Store prompts as structured templates
+
+### AI Service Patterns
+```csharp
+public interface IChatService
+{
+    Task<ChatResponse> ProcessMessageAsync(string message, CancellationToken cancellationToken);
+    Task<IEnumerable<SearchResult>> SearchContentAsync(string query, CancellationToken cancellationToken);
+}
+```
+
+## Development Workflow & Best Practices
+
+### Code Review Guidelines
+- Ensure all new code includes appropriate tests
+- Follow established naming conventions and patterns
+- Use async/await for all I/O operations
+- Implement proper error handling and logging
+- Add XML documentation for public APIs
+
+### Performance Considerations
+- Use Entity Framework efficiently (avoid N+1 queries)
+- Implement caching where appropriate
+- Use async patterns for database and API calls
+- Optimize Docker image size with multi-stage builds
+
+### Security Best Practices
+- Never commit secrets to source control
+- Use HTTPS for all external communications
+- Implement proper input validation
+- Follow OWASP security guidelines
+- Use parameterized queries for database operations
+
+## Common Patterns & Utilities
+
+### Service Registration Pattern
+```csharp
+// In Program.cs
+builder.Services.AddScoped<IFeatureService, FeatureService>();
+builder.Services.AddSingleton<ICacheService, CacheService>();
+```
+
+### Configuration Pattern
+```csharp
+public class FeatureOptions
+{
+    public const string SectionName = "Feature";
+    public string ApiKey { get; set; } = string.Empty;
+    public int TimeoutSeconds { get; set; } = 30;
+}
+
+// Registration
+builder.Services.Configure<FeatureOptions>(
+    builder.Configuration.GetSection(FeatureOptions.SectionName));
+```
+
+### Error Handling Pattern
+```csharp
+public async Task<Result<T>> MethodAsync<T>()
+{
+    try
+    {
+        var result = await SomeOperationAsync();
+        return Result<T>.Success(result);
+    }
+    catch (SpecificException ex)
+    {
+        logger.LogError(ex, "Operation failed");
+        return Result<T>.Failure(ex.Message);
+    }
+}
+```
+
+## Future Roadmap Considerations
+- **Microservices Evolution**: Consider splitting into microservices as features grow
+- **Performance Optimization**: Implement advanced caching and CDN strategies
+- **AI Enhancement**: Expand AI capabilities with more sophisticated models
+- **Mobile Support**: Potential mobile app integration
+- **API Expansion**: RESTful API for third-party integrations
+
+## Anti-Patterns & Gotchas
+- **Avoid**: Synchronous calls in async methods (use ConfigureAwait(false))
+- **Avoid**: Large Entity Framework queries without pagination
+- **Avoid**: Hardcoded configuration values (use appsettings.json)
+- **Avoid**: Missing error handling in async operations
+- **Security**: Never expose sensitive configuration in client-side code
