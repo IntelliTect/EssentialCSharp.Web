@@ -5,9 +5,10 @@
  */
 
 class ConsentManager {
-    constructor() {
+    constructor(options = {}) {
         this.COOKIE_NAME = 'essential-csharp-consent';
         this.COOKIE_DURATION = 365; // days
+        this.GOOGLE_ANALYTICS_ID = options.googleAnalyticsId || 'G-761B4BMK2R';
         this.consentState = {
             analytics_storage: 'denied',
             ad_storage: 'denied',
@@ -35,6 +36,21 @@ class ConsentManager {
         if (this.shouldShowConsentBanner()) {
             this.showConsentBanner();
         }
+        
+        // Dispatch initialization event for other scripts to listen to
+        this.dispatchInitializationEvent();
+    }
+
+    dispatchInitializationEvent() {
+        // Create and dispatch custom event to signal consent manager is ready
+        const event = new CustomEvent('consentManagerReady', {
+            detail: {
+                hasAnalyticsConsent: this.hasAnalyticsConsent(),
+                hasAdvertisingConsent: this.hasAdvertisingConsent(),
+                requiresConsent: this.requiresConsent
+            }
+        });
+        document.dispatchEvent(event);
     }
 
     initGoogleConsentMode() {
@@ -54,7 +70,8 @@ class ConsentManager {
             return true;
         }
         
-        // Simple region detection - in production, you might want to use a more reliable service
+        // Timezone-based region detection for GDPR compliance
+        // Users can change timezones, but this provides reasonable detection for most cases
         const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         
         // EEA countries, UK, and Switzerland timezones
@@ -90,7 +107,23 @@ class ConsentManager {
         if (saved) {
             try {
                 const preferences = JSON.parse(saved);
-                this.consentState = { ...this.consentState, ...preferences };
+                
+                // Validate and only apply known consent properties for security
+                const validConsentKeys = [
+                    'analytics_storage', 'ad_storage', 'ad_user_data', 
+                    'ad_personalization', 'functionality_storage', 
+                    'security_storage', 'personalization_storage'
+                ];
+                
+                const validatedPreferences = {};
+                validConsentKeys.forEach(key => {
+                    if (preferences.hasOwnProperty(key) && 
+                        (preferences[key] === 'granted' || preferences[key] === 'denied')) {
+                        validatedPreferences[key] = preferences[key];
+                    }
+                });
+                
+                this.consentState = { ...this.consentState, ...validatedPreferences };
                 this.updateConsentMode();
             } catch (e) {
                 console.warn('Failed to parse consent preferences', e);
@@ -261,20 +294,30 @@ class ConsentManager {
 
     updateConsentMode() {
         if (window.gtag) {
-            gtag('consent', 'update', this.consentState);
-            
-            // Configure Google Analytics if analytics consent is granted
-            if (this.consentState.analytics_storage === 'granted') {
-                gtag('config', 'G-761B4BMK2R');
+            try {
+                gtag('consent', 'update', this.consentState);
+                
+                // Configure Google Analytics if analytics consent is granted
+                if (this.consentState.analytics_storage === 'granted') {
+                    gtag('config', 'G-761B4BMK2R');
+                }
+            } catch (error) {
+                console.warn('Failed to update Google Consent Mode:', error);
             }
         }
     }
 
     updateClarityConsent() {
-        // Send consent signal to Microsoft Clarity
+        // Send consent signal to Microsoft Clarity using Consent API v2
         if (window.clarity) {
-            const analyticsConsent = this.consentState.analytics_storage === 'granted';
-            clarity('consent', analyticsConsent);
+            try {
+                clarity('consentv2', {
+                    ad_Storage: this.consentState.ad_storage,
+                    analytics_Storage: this.consentState.analytics_storage
+                });
+            } catch (error) {
+                console.warn('Failed to update Clarity consent:', error);
+            }
         }
     }
 
@@ -435,11 +478,15 @@ class ConsentManager {
         this.rejectAllConsent();
         // Also clear any existing tracking cookies
         this.clearTrackingCookies();
+        // Erase Clarity cookies according to documentation
+        if (window.clarity) {
+            clarity('consent', false);
+        }
     }
 
     clearTrackingCookies() {
-        // Clear common tracking cookies
-        const trackingCookies = ['_ga', '_gid', '_gat', '_clck', '_clsk'];
+        // Clear common tracking cookies (Google Analytics and Microsoft Clarity)
+        const trackingCookies = ['_ga', '_gid', '_gat', '_clck', '_clsk', 'CLID', 'ANONCHK', 'MR', 'MUID', 'SM'];
         trackingCookies.forEach(cookieName => {
             document.cookie = `${cookieName}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
         });
@@ -448,7 +495,11 @@ class ConsentManager {
 
 // Initialize consent manager when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    window.consentManager = new ConsentManager();
+    // Check for configuration from script tag data attributes
+    const configScript = document.querySelector('script[data-consent-config]');
+    const config = configScript ? JSON.parse(configScript.dataset.consentConfig) : {};
+    
+    window.consentManager = new ConsentManager(config);
 });
 
 // Global function for opening consent preferences

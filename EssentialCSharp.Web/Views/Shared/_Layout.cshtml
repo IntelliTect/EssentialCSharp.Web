@@ -105,15 +105,11 @@
         gtag('js', new Date());
         
         // Configuration will be handled by consent manager
-        // Only configure if consent is already granted or region doesn't require consent
-        document.addEventListener('DOMContentLoaded', function() {
-            // Small delay to ensure consent manager is initialized
-            setTimeout(function() {
-                if (window.consentManager && 
-                    (window.consentManager.hasAnalyticsConsent() || !window.consentManager.requiresConsent)) {
-                    gtag('config', 'G-761B4BMK2R');
-                }
-            }, 100);
+        // Listen for consent manager initialization event
+        document.addEventListener('consentManagerReady', function(event) {
+            if (event.detail.hasAnalyticsConsent || !event.detail.requiresConsent) {
+                gtag('config', 'G-761B4BMK2R');
+            }
         });
     </script>
     <style>
