@@ -78,6 +78,10 @@
     <environment exclude="Development">
         <script type="importmap" asp-importmap="@prodMap"></script>
     </environment>
+    <!-- Cookie Consent Manager - Load before analytics -->
+    <script src="~/js/consent-manager.js" asp-append-version="true"></script>
+    
+    <!-- Microsoft Clarity - Will be activated based on consent -->
     <script type="text/javascript">
         (function (c, l, a, r, i, t, y) {
             c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments) };
@@ -85,17 +89,28 @@
             y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
         })(window, document, "clarity", "script", "g4keetzd2o");
     </script>
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <!-- Markdown and sanitization libraries -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
-    <!-- Google tag (gtag.js) -->
+    
+    <!-- Google tag (gtag.js) - Will be activated based on consent -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-761B4BMK2R"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag() { dataLayer.push(arguments); }
+        
+        // Initialize gtag but don't configure until consent is given
         gtag('js', new Date());
-        gtag('config', 'G-761B4BMK2R');
+        
+        // Configuration will be handled by consent manager
+        // Listen for consent manager initialization event
+        document.addEventListener('consentManagerReady', function(event) {
+            if (event.detail.hasAnalyticsConsent || !event.detail.requiresConsent) {
+                gtag('config', 'G-761B4BMK2R');
+            }
+        });
     </script>
     <style>
         [v-cloak] {
@@ -505,6 +520,9 @@
                 </div>
                 <div class="col-12 col-md-auto align-self-end p-2">
                     <a target="_blank" rel="noreferrer noopener" href="https://intellitect.com/about/privacy-policy/">Privacy</a>
+                </div>
+                <div class="col-12 col-md-auto align-self-end p-2">
+                    <a href="javascript:void(0)" onclick="openConsentPreferences()">Cookie Preferences</a>
                 </div>
                 <div class="col-12 col-md-auto align-self-end p-2"><a asp-route="TermsOfService">Terms Of Service</a></div>
             </div>
