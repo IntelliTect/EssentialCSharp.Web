@@ -2,8 +2,20 @@
   "image": "mcr.microsoft.com/devcontainers/dotnet",
   "features": {
     "ghcr.io/devcontainers/features/dotnet:2": {
-      "version": "latest"
+      "version": "9.0"
     }
   },
-  "postCreateCommand": "dotnet --list-sdks"
+  "containerEnv": {
+    "ACCESS_TO_NUGET_FEED": "true"
+  },
+  "postCreateCommand": ".devcontainer/setup-nuget-auth.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.csdevkit"
+      ]
+    }
+  },
+  "remoteUser": "vscode"
 }
