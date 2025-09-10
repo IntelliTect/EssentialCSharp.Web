@@ -22,6 +22,9 @@ if [ -z "$NUGET_AUTH_TOKEN" ]; then
 else
     echo "✅ Azure DevOps PAT token found - configuring private NuGet feed..."
     
+    # Remove existing source if it exists, then add with authentication
+    dotnet nuget remove source "EssentialCSharp" --configfile nuget.config 2>/dev/null || true
+    
     # Configure Azure DevOps NuGet source with authentication
     dotnet nuget add source "https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json" \
         --name "EssentialCSharp" \
@@ -31,7 +34,14 @@ else
         --configfile nuget.config
     
     echo "🔧 Restoring packages with private feed access..."
-    dotnet restore -p:AccessToNugetFeed=true
+    if dotnet restore -p:AccessToNugetFeed=true; then
+        echo "✅ Package restore successful with private feed access!"
+    else
+        echo "⚠️  Package restore failed with private feed access."
+        echo "   This might indicate an authentication issue with the Azure DevOps PAT token."
+        echo "   Falling back to public packages only..."
+        dotnet restore -p:AccessToNugetFeed=false
+    fi
 fi
 
 echo "✅ Setup complete!"
