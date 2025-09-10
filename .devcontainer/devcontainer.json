@@ -2,8 +2,11 @@
   "image": "mcr.microsoft.com/devcontainers/dotnet",
   "features": {
     "ghcr.io/devcontainers/features/dotnet:2": {
-      "version": "latest"
+      "version": "9.0"
     }
   },
-  "postCreateCommand": "dotnet --list-sdks"
+  "containerEnv": {
+    "NUGET_AUTH_TOKEN": "${localEnv:AZURE_DEVOPS_PAT}"
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh"
 }
