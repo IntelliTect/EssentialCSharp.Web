@@ -280,3 +280,6 @@ FodyWeavers.xsd
 EssentialCSharp.Web/Markdown/
 
 EssentialCSharp.Web/Guidelines/
+
+# DevContainer environment files with sensitive data
+.devcontainer/.env
