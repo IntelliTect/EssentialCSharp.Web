@@ -5,7 +5,7 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-FROM mcr.microsoft.com/dotnet/sdk:9.0.304 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0.305 AS build
 ARG ACCESS_TO_NUGET_FEED=true
 ENV ACCESS_TO_NUGET_FEED=$ACCESS_TO_NUGET_FEED
 RUN sh -c "$(curl -fsSL https://aka.ms/install-artifacts-credprovider.sh)"
