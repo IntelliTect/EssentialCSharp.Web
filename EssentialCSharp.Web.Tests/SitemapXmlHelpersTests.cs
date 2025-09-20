@@ -197,49 +197,38 @@ public class SitemapXmlHelpersTests : IClassFixture<WebApplicationFactory>
     }
 
     [Fact]
-    public void GenerateAndSerializeSitemapXml_CreatesFileSuccessfully()
+    public void GenerateSitemapXml_UsesLastModifiedDateFromSiteMapping()
     {
         // Arrange
-        var logger = _Factory.Services.GetRequiredService<ILogger<SitemapXmlHelpersTests>>();
         var tempDir = new DirectoryInfo(Path.GetTempPath());
-        var siteMappings = new List<SiteMapping> { CreateSiteMapping(1, 1, true) };
         var baseUrl = "https://test.example.com/";
+        var specificLastModified = new DateTime(2023, 5, 15, 10, 30, 0, DateTimeKind.Utc);
 
-        // Clean up any existing file
-        var expectedXmlPath = Path.Combine(tempDir.FullName, "sitemap.xml");
-        File.Delete(expectedXmlPath);
-
-        try
+        var siteMappings = new List<SiteMapping>
         {
-            // Act
-            var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
-            SitemapXmlHelpers.GenerateAndSerializeSitemapXml(
-                tempDir,
-                siteMappings,
-                logger,
-                routeConfigurationService,
-                baseUrl);
+            CreateSiteMapping(1, 1, true, "test-page-1", specificLastModified)
+        };
 
-            // Assert
-            Assert.True(File.Exists(expectedXmlPath));
+        // Act
+        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        SitemapXmlHelpers.GenerateSitemapXml(
+            tempDir,
+            siteMappings,
+            routeConfigurationService,
+            baseUrl,
+            out var nodes);
 
-            var xmlContent = File.ReadAllText(expectedXmlPath);
-            Assert.Contains("<?xml", xmlContent);
-            Assert.Contains("<urlset", xmlContent);
-            Assert.Contains(baseUrl, xmlContent);
-        }
-        finally
-        {
-            // Clean up
-            File.Delete(expectedXmlPath);
-        }
+        // Assert
+        var siteMappingNode = nodes.First(node => node.Url.Contains("test-page-1"));
+        Assert.Equal(specificLastModified, siteMappingNode.LastModificationDate);
     }
 
     private static SiteMapping CreateSiteMapping(
         int chapterNumber,
         int pageNumber,
         bool includeInSitemapXml,
-        string key = "test-key")
+        string key = "test-key",
+        DateTime? lastModified = null)
     {
         return new SiteMapping(
             keys: [key],
@@ -253,7 +242,8 @@ public class SitemapXmlHelpersTests : IClassFixture<WebApplicationFactory>
             anchorId: key,
             indentLevel: 1,
             contentHash: "TestHash123",
-            includeInSitemapXml: includeInSitemapXml
+            includeInSitemapXml: includeInSitemapXml,
+            lastModified: lastModified
         );
     }
 }
