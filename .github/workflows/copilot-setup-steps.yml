@@ -1,11 +1,13 @@
 name: Setup GitHub Copilot Agent Environment
 
-# This workflow configures the environment for GitHub Copilot agents
-# It reuses configuration from the main Build-Test-And-Deploy workflow
-# to ensure consistency and reduce duplication
-
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/copilot-setup-steps.yml'
+  pull_request:
+    paths:
+      - '.github/workflows/copilot-setup-steps.yml'
 
 permissions:
   contents: read
@@ -13,8 +15,8 @@ permissions:
 jobs:
   copilot-setup-steps:
     runs-on: ubuntu-latest
-    environment: "BuildAndUploadImage"
-
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v5
 
