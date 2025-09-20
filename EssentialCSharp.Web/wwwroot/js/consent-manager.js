@@ -312,8 +312,8 @@ class ConsentManager {
         if (window.clarity) {
             try {
                 clarity('consentv2', {
-                    ad_Storage: this.consentState.ad_storage,
-                    analytics_Storage: this.consentState.analytics_storage
+                    ad_storage: this.consentState.ad_storage,
+                    analytics_storage: this.consentState.analytics_storage
                 });
             } catch (error) {
                 console.warn('Failed to update Clarity consent:', error);
@@ -506,5 +506,51 @@ document.addEventListener('DOMContentLoaded', function() {
 window.openConsentPreferences = function() {
     if (window.consentManager) {
         window.consentManager.openConsentPreferences();
+    }
+};
+
+// Global function for verifying consent implementation (testing/debugging)
+window.verifyClarityConsent = function() {
+    console.log('=== Microsoft Clarity Consent Verification ===');
+    
+    if (typeof clarity === 'undefined') {
+        console.log('❌ Clarity not loaded yet. Please wait and try again.');
+        return;
+    }
+    
+    try {
+        clarity('metadata', (d, upgrade, consent) => {
+            console.log('✅ Clarity metadata callback executed');
+            console.log('📊 Consent Status:', consent);
+            
+            if (consent) {
+                const analyticsStatus = consent.analytics_storage || 'UNKNOWN';
+                const adStatus = consent.ad_storage || 'UNKNOWN';
+                
+                console.log(`🔍 Analytics Storage: ${analyticsStatus}`);
+                console.log(`🔍 Ad Storage: ${adStatus}`);
+                
+                if (analyticsStatus === 'DENIED' && adStatus === 'DENIED') {
+                    console.log('✅ Consent properly denied - Clarity should not set cookies');
+                } else if (analyticsStatus === 'GRANTED' || adStatus === 'GRANTED') {
+                    console.log('✅ Consent granted - Clarity can set cookies based on granted permissions');
+                } else {
+                    console.log('⚠️ Unexpected consent status detected');
+                }
+            } else {
+                console.log('❌ No consent object returned');
+            }
+            
+            // Also show current consent manager state for comparison
+            if (window.consentManager) {
+                console.log('📋 Current Consent Manager State:');
+                console.log('   - Analytics Consent:', window.consentManager.hasAnalyticsConsent());
+                console.log('   - Advertising Consent:', window.consentManager.hasAdvertisingConsent());
+                console.log('   - Requires Consent:', window.consentManager.requiresConsent);
+                console.log('   - Full State:', window.consentManager.consentState);
+            }
+        }, false, true, true);
+    } catch (error) {
+        console.log('❌ Error running verification:', error);
     }
 };

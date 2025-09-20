@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Essential C# - Consent Verification Test</title>
+    
+    <!-- Cookie Consent Manager - Load before analytics -->
+    <script src="/js/consent-manager.js"></script>
+    
+    <!-- Microsoft Clarity - Will be activated based on consent -->
+    <script type="text/javascript">
+        (function (c, l, a, r, i, t, y) {
+            c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments) };
+            t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i;
+            y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+        })(window, document, "clarity", "script", "g4keetzd2o");
+    </script>
+    
+    <!-- Google tag (gtag.js) - Will be activated based on consent -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-761B4BMK2R"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        
+        // Initialize gtag but don't configure until consent is given
+        gtag('js', new Date());
+        
+        // Listen for consent manager initialization event
+        document.addEventListener('consentManagerReady', function(event) {
+            console.log('Consent manager ready event received:', event.detail);
+            if (event.detail.hasAnalyticsConsent || !event.detail.requiresConsent) {
+                gtag('config', 'G-761B4BMK2R');
+            }
+        });
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #0066cc;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 10px;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #fafafa;
+        }
+        
+        button {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #0052a3;
+        }
+        
+        .status-output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .alert {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        
+        .alert-info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .alert-warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ Essential C# - Microsoft Clarity Consent Verification</h1>
+        
+        <div class="alert alert-info">
+            <strong>Purpose:</strong> This page tests the Microsoft Clarity consent implementation to ensure compliance with GDPR and similar regulations.
+            <br><strong>Testing:</strong> The verification function from Microsoft's documentation is implemented below.
+        </div>
+        
+        <div class="test-section">
+            <h2>🧪 Test Actions</h2>
+            <button onclick="openConsentPreferences()">Open Consent Preferences</button>
+            <button onclick="verifyClarityConsent()">Run Microsoft's Verification Function</button>
+            <button onclick="showCurrentConsentState()">Show Current Consent State</button>
+            <button onclick="simulateConsentDenied()">Simulate Consent Denied</button>
+            <button onclick="simulateConsentGranted()">Simulate Consent Granted</button>
+            <button onclick="clearConsoleOutput()">Clear Output</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>📊 Real-time Status</h2>
+            <div id="status-display">
+                <p><strong>Consent Manager Status:</strong> <span id="consent-manager-status">Loading...</span></p>
+                <p><strong>Clarity Status:</strong> <span id="clarity-status">Loading...</span></p>
+                <p><strong>Region Requires Consent:</strong> <span id="region-status">Loading...</span></p>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>📝 Console Output</h2>
+            <div id="console-output" class="status-output">Initializing consent verification test...</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>📚 Expected Results</h2>
+            <div class="alert alert-success">
+                <strong>✅ When consent is DENIED:</strong>
+                <br>• analytics_storage: "DENIED"
+                <br>• ad_storage: "DENIED"
+                <br>• Clarity should not set cookies
+            </div>
+            
+            <div class="alert alert-success">
+                <strong>✅ When consent is GRANTED:</strong>
+                <br>• analytics_storage: "GRANTED" 
+                <br>• ad_storage: "GRANTED"
+                <br>• Clarity can set cookies and track normally
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Capture console logs and display them
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+        
+        function addToConsoleOutput(message, type = 'log') {
+            const output = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'warn' ? '⚠️' : type === 'error' ? '❌' : '📝';
+            output.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsoleOutput(args.join(' '), 'log');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToConsoleOutput(args.join(' '), 'warn');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsoleOutput(args.join(' '), 'error');
+        };
+        
+        // Test functions
+        function showCurrentConsentState() {
+            console.log('=== Current Consent State ===');
+            if (window.consentManager) {
+                const state = {
+                    hasAnalyticsConsent: window.consentManager.hasAnalyticsConsent(),
+                    hasAdvertisingConsent: window.consentManager.hasAdvertisingConsent(),
+                    requiresConsent: window.consentManager.requiresConsent,
+                    consentState: window.consentManager.consentState
+                };
+                console.log(JSON.stringify(state, null, 2));
+            } else {
+                console.log('❌ Consent manager not available');
+            }
+        }
+        
+        function simulateConsentDenied() {
+            console.log('=== Simulating Consent Denied ===');
+            if (window.consentManager) {
+                window.consentManager.rejectAllConsent();
+                setTimeout(() => verifyClarityConsent(), 1000);
+            }
+        }
+        
+        function simulateConsentGranted() {
+            console.log('=== Simulating Consent Granted ===');
+            if (window.consentManager) {
+                window.consentManager.acceptAllConsent();
+                setTimeout(() => verifyClarityConsent(), 1000);
+            }
+        }
+        
+        function clearConsoleOutput() {
+            document.getElementById('console-output').textContent = 'Console cleared...\n';
+        }
+        
+        function updateStatusDisplay() {
+            if (window.consentManager) {
+                document.getElementById('consent-manager-status').textContent = '✅ Ready';
+                document.getElementById('region-status').textContent = window.consentManager.requiresConsent ? '🚨 Yes (EEA/UK/CH)' : '✅ No';
+            } else {
+                document.getElementById('consent-manager-status').textContent = '⏳ Loading...';
+            }
+            
+            if (typeof clarity !== 'undefined') {
+                document.getElementById('clarity-status').textContent = '✅ Loaded';
+            } else {
+                document.getElementById('clarity-status').textContent = '⏳ Loading...';
+            }
+        }
+        
+        // Auto-update status
+        setInterval(updateStatusDisplay, 1000);
+        
+        // Initial status
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Consent verification test page loaded');
+            console.log('📍 Testing Microsoft Clarity compliance for EssentialCSharp.com');
+            updateStatusDisplay();
+        });
+        
+        // Listen for consent manager events
+        document.addEventListener('consentManagerReady', function(event) {
+            console.log('✅ Consent Manager initialized with details:', JSON.stringify(event.detail, null, 2));
+            updateStatusDisplay();
+            
+            // Auto-run verification after initialization
+            setTimeout(() => {
+                console.log('🔄 Running automatic verification...');
+                verifyClarityConsent();
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
