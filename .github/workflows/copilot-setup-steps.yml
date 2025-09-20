@@ -15,7 +15,6 @@ permissions:
 jobs:
   copilot-setup-steps:
     runs-on: ubuntu-latest
-    environment: "BuildAndUploadImage"
     permissions:
       contents: read
     steps:
