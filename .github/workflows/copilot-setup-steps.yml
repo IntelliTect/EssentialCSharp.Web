@@ -5,6 +5,12 @@ name: Setup GitHub Copilot Agent Environment
 # to ensure consistency and reduce duplication
 
 on:
+  push:
+    paths:
+      - '.github/workflows/copilot-setup-steps.yml'
+  pull_request:
+    paths:
+      - '.github/workflows/copilot-setup-steps.yml'
   workflow_dispatch:
 
 permissions:
@@ -13,7 +19,6 @@ permissions:
 jobs:
   copilot-setup-steps:
     runs-on: ubuntu-latest
-    environment: "BuildAndUploadImage"
 
     steps:
       - uses: actions/checkout@v5
@@ -22,9 +27,6 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
-          source-url: https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json
-        env:
-          NUGET_AUTH_TOKEN: ${{ secrets.AZURE_DEVOPS_PAT }}
 
       - name: Set up dependency caching for faster builds
         uses: actions/cache@v4
@@ -39,10 +41,10 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore with dotnet
-        run: dotnet restore
+        run: dotnet restore /p:AccessToNugetFeed=false
 
       - name: Build with dotnet
-        run: dotnet build -p:ContinuousIntegrationBuild=True -p:ReleaseDateAttribute=True --configuration Release --no-restore
+        run: dotnet build -p:ContinuousIntegrationBuild=True -p:ReleaseDateAttribute=True --configuration Release --no-restore /p:AccessToNugetFeed=false
 
       - name: Run .NET Tests
         run: dotnet test --no-build --configuration Release
@@ -54,11 +56,57 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
 
       - name: Install additional development tools
         run: |
           # Install common development tools that Copilot agents might need
           echo "Installing additional tools for Copilot agent environment..."
           
-          # Install EF Core tools globally
+          # Install EF Core tools globally for database migrations
           dotnet tool install --global dotnet-ef
+          
+          # Install ASP.NET Core code generation tools
+          dotnet tool install --global dotnet-aspnet-codegenerator
+          
+          # Install NuGet CLI
+          dotnet tool install --global nuget
+          
+          # Verify installations
+          echo "Installed tools:"
+          dotnet tool list --global
+          
+          # Verify .NET SDK info
+          dotnet --info
+          
+          # Verify Docker is available
+          docker --version
+          
+          # Verify Node.js and npm
+          node --version
+          npm --version
+          
+          echo "Copilot agent environment setup complete!"
+
+      - name: Create development environment summary
+        run: |
+          echo "# Copilot Agent Environment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Environment Details" >> $GITHUB_STEP_SUMMARY
+          echo "- **OS**: $(uname -a)" >> $GITHUB_STEP_SUMMARY
+          echo "- **.NET SDK**: $(dotnet --version)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Node.js**: $(node --version)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Docker**: $(docker --version)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Global Tools Installed" >> $GITHUB_STEP_SUMMARY
+          dotnet tool list --global | while read line; do
+            echo "- $line" >> $GITHUB_STEP_SUMMARY
+          done
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Project Information" >> $GITHUB_STEP_SUMMARY
+          echo "- **Solution**: EssentialCSharp.Web.sln" >> $GITHUB_STEP_SUMMARY
+          echo "- **Target Framework**: .NET 9.0" >> $GITHUB_STEP_SUMMARY
+          echo "- **Technologies**: ASP.NET Core, Entity Framework Core, Semantic Kernel" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Environment is ready for GitHub Copilot agents!" >> $GITHUB_STEP_SUMMARY
