@@ -68,7 +68,7 @@ public static class SitemapXmlHelpers
         // Add site mappings from content
         nodes.AddRange(siteMappings.Where(item => item.IncludeInSitemapXml).Select<SiteMapping, SitemapNode>(siteMapping => new($"{baseUrl.TrimEnd('/')}/{siteMapping.Keys.First()}")
         {
-            LastModificationDate = newDateTime,
+            LastModificationDate = siteMapping.LastModified ?? newDateTime,
             ChangeFrequency = ChangeFrequency.Daily,
             Priority = 0.8M
         }));
