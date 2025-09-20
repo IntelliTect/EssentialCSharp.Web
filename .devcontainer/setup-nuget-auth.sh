@@ -6,7 +6,7 @@ echo "Setting up NuGet authentication for Azure DevOps..."
 # Load environment variables from .env file if it exists
 if [ -f ".devcontainer/.env" ]; then
     echo "Loading environment variables from .devcontainer/.env..."
-    export $(grep -v '^#' .devcontainer/.env | xargs)
+    set -o allexport; source .devcontainer/.env; set +o allexport
 fi
 
 # Install Azure Artifacts Credential Provider
