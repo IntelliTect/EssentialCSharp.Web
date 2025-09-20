@@ -3,50 +3,52 @@ set -e
 
 echo "Setting up NuGet authentication for Azure DevOps..."
 
-# Load environment variables from .env file if it exists
-if [ -f ".devcontainer/.env" ]; then
-    echo "Loading environment variables from .devcontainer/.env..."
-    set -o allexport; source .devcontainer/.env; set +o allexport
-fi
-
 # Install Azure Artifacts Credential Provider
 echo "Installing Azure Artifacts Credential Provider..."
-if ! sh -c "$(curl -fsSL https://aka.ms/install-artifacts-credprovider.sh)" 2>/dev/null; then
-    echo "⚠️  Could not download Azure Artifacts Credential Provider installer."
-    echo "This may be due to network restrictions. The provider will be installed later if needed."
-fi
-
-# Check if AZURE_DEVOPS_PAT is set
-if [ -z "$AZURE_DEVOPS_PAT" ]; then
-    echo ""
-    echo "⚠️  AZURE_DEVOPS_PAT environment variable is not set."
-    echo "To enable private NuGet feed access, you need to:"
-    echo "1. Create a Personal Access Token (PAT) in Azure DevOps with 'Packaging (read)' permissions"
-    echo "2. Add it to your devcontainer environment by creating a .devcontainer/.env file:"
-    echo "   AZURE_DEVOPS_PAT=your_pat_token_here"
-    echo "3. Or set it as a codespace secret named 'AZURE_DEVOPS_PAT'"
-    echo ""
-    echo "For now, setting AccessToNugetFeed=false to allow restore without private packages..."
-    export ACCESS_TO_NUGET_FEED=false
+if sh -c "$(curl -fsSL https://aka.ms/install-artifacts-credprovider.sh)" 2>/dev/null; then
+    echo "✅ Azure Artifacts Credential Provider installed successfully"
 else
-    echo "AZURE_DEVOPS_PAT found, setting up authentication..."
-    # Set up the credential provider environment
-    export VSS_NUGET_EXTERNAL_FEED_ENDPOINTS="{\"endpointCredentials\": [{\"endpoint\":\"https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json\", \"password\":\"$AZURE_DEVOPS_PAT\"}]}"
-    export ACCESS_TO_NUGET_FEED=true
-    echo "✅ NuGet authentication configured for Azure DevOps private feed"
+    echo "⚠️  Could not download Azure Artifacts Credential Provider installer."
+    echo "This may be due to network restrictions. Falling back to public packages only."
+    export ACCESS_TO_NUGET_FEED=false
 fi
 
 # Display .NET version
 echo "Checking .NET SDK version..."
 dotnet --version
 
-# Try to restore packages
+# Try to restore packages with interactive authentication if credential provider is available
 echo "Attempting to restore NuGet packages..."
-if dotnet restore -p:AccessToNugetFeed=$ACCESS_TO_NUGET_FEED; then
-    echo "✅ Package restoration successful!"
+if command -v dotnet-credential-provider-installer >/dev/null 2>&1 || [ -n "$(find ~/.nuget -name "*CredentialProvider*" 2>/dev/null | head -1)" ]; then
+    echo ""
+    echo "🔐 The credential provider is available for Azure DevOps authentication."
+    echo "If prompted for credentials during package restoration, you can:"
+    echo "  1. Use your Azure DevOps account credentials, or"
+    echo "  2. Create a Personal Access Token (PAT) with 'Packaging (read)' permissions"
+    echo "     from: https://dev.azure.com/intelliTect/_usersSettings/tokens"
+    echo ""
+    
+    # First try to restore with interactive authentication for private packages
+    if dotnet restore --interactive -p:AccessToNugetFeed=true; then
+        echo "✅ Package restoration successful with private feed access!"
+    else
+        echo "⚠️  Private package restoration failed or was cancelled."
+        echo "Falling back to public packages only..."
+        if dotnet restore -p:AccessToNugetFeed=false; then
+            echo "✅ Package restoration successful with public packages only!"
+        else
+            echo "❌ Package restoration failed completely."
+            exit 1
+        fi
+    fi
 else
-    echo "❌ Package restoration failed. Check your Azure DevOps PAT if you need private packages."
-    exit 1
+    echo "Credential provider not available, using public packages only..."
+    if dotnet restore -p:AccessToNugetFeed=false; then
+        echo "✅ Package restoration successful with public packages only!"
+    else
+        echo "❌ Package restoration failed."
+        exit 1
+    fi
 fi
 
 echo "🎉 Devcontainer setup complete!"

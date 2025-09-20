@@ -5,9 +5,6 @@
       "version": "9.0"
     }
   },
-  "containerEnv": {
-    "ACCESS_TO_NUGET_FEED": "true"
-  },
   "postCreateCommand": ".devcontainer/setup-nuget-auth.sh",
   "customizations": {
     "vscode": {
