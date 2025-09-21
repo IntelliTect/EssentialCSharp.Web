@@ -312,8 +312,8 @@ class ConsentManager {
         if (window.clarity) {
             try {
                 clarity('consentv2', {
-                    ad_Storage: this.consentState.ad_storage,
-                    analytics_Storage: this.consentState.analytics_storage
+                    ad_storage: this.consentState.ad_storage,
+                    analytics_storage: this.consentState.analytics_storage
                 });
             } catch (error) {
                 console.warn('Failed to update Clarity consent:', error);
