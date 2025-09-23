@@ -1,6 +1,6 @@
-# Typesense Search Integration
+# Typesense Search Integration for Azure Container Apps
 
-This document describes the integration of Typesense search engine as a replacement for Algolia DocSearch in the EssentialCSharp.Web application.
+This document describes the integration of Typesense search engine as a replacement for Algolia DocSearch in the EssentialCSharp.Web application, designed for deployment in Azure Container Apps.
 
 ## Overview
 
@@ -11,9 +11,9 @@ Typesense is an open-source, fast search engine that provides:
 - **Self-hosted solution** - no external dependencies
 - **Fast search responses** with sub-50ms latency
 
-## Architecture
+## Architecture for Azure Container Apps
 
-The integration consists of several components:
+The integration consists of several components designed to work in Azure Container Apps:
 
 ### Backend Services
 
@@ -49,13 +49,6 @@ The integration consists of several components:
    - Dark mode support
    - Loading states and error handling
 
-### Docker Configuration
-
-The `docker-compose.yml` includes:
-- **Typesense service** running on port 8108
-- **PostgreSQL** for existing vector database functionality
-- **Main web application** with environment variables for Typesense connection
-
 ## Configuration
 
 ### Application Settings
@@ -65,18 +58,30 @@ Add to `appsettings.json`:
 ```json
 {
   "TypesenseOptions": {
-    "Host": "localhost",
-    "Port": 8108,
-    "Protocol": "http",
+    "Host": "your-typesense-container-app.azurecontainerapps.io",
+    "Port": 443,
+    "Protocol": "https",
     "ApiKey": "your-api-key-here",
     "TimeoutSeconds": 30
   }
 }
 ```
 
-### Environment Variables (Docker)
+### Environment Variables (Azure Container Apps)
 
-- `TYPESENSE_API_KEY`: API key for Typesense authentication
+The Typesense configuration should be added to the deployment pipeline:
+
+```bash
+# Add to the az containerapp secret set command:
+typesense-apikey=keyvaultref:$KEYVAULTURI/secrets/typesense-apikey,identityref:$MANAGEDIDENTITYID \
+typesense-host=keyvaultref:$KEYVAULTURI/secrets/typesense-host,identityref:$MANAGEDIDENTITYID
+
+# Add to the az containerapp update --replace-env-vars command:
+TypesenseOptions__Host=secretref:typesense-host \
+TypesenseOptions__ApiKey=secretref:typesense-apikey \
+TypesenseOptions__Port=443 \
+TypesenseOptions__Protocol=https
+```
 
 ### Rate Limiting
 
@@ -123,50 +128,62 @@ GET /api/search/health
 - **tags**: string array (faceted)
 - **created_at**: int64 (sorting field)
 
-## Deployment with Docker Compose
+## Deployment in Azure Container Apps
 
-1. **Start the services**:
+### Step 1: Deploy Typesense Container App
+
+Create a separate Container App for Typesense:
+
+```bash
+# Create Typesense Container App
+az containerapp create \
+  --name typesense-search \
+  --resource-group $RESOURCEGROUP \
+  --environment $CONTAINER_APP_ENVIRONMENT \
+  --image typesense/typesense:0.25.2 \
+  --target-port 8108 \
+  --ingress external \
+  --env-vars TYPESENSE_API_KEY=secretref:typesense-apikey \
+  --secrets typesense-apikey="your-secure-api-key" \
+  --command '--data-dir /data --api-key=$TYPESENSE_API_KEY --enable-cors' \
+  --cpu 1.0 \
+  --memory 2Gi
+```
+
+### Step 2: Update Main Application Deployment
+
+Update the existing deployment pipeline (`Build-Test-And-Deploy.yml`) to include Typesense configuration:
+
+1. **Add Typesense secrets to Key Vault**:
+   - `typesense-apikey`: Your secure API key
+   - `typesense-host`: The Typesense Container App URL
+
+2. **Update the pipeline secrets configuration**:
    ```bash
-   docker-compose up -d
+   # Add to the existing secret set command around line 154:
+   typesense-apikey=keyvaultref:$KEYVAULTURI/secrets/typesense-apikey,identityref:$MANAGEDIDENTITYID \
+   typesense-host=keyvaultref:$KEYVAULTURI/secrets/typesense-host,identityref:$MANAGEDIDENTITYID
    ```
 
-2. **Set environment variables**:
+3. **Update the environment variables around line 160**:
    ```bash
-   export TYPESENSE_API_KEY="your-secure-api-key"
+   # Add to the existing environment variables:
+   TypesenseOptions__Host=secretref:typesense-host \
+   TypesenseOptions__ApiKey=secretref:typesense-apikey \
+   TypesenseOptions__Port=443 \
+   TypesenseOptions__Protocol=https
    ```
 
-3. **Verify Typesense health**:
+### Step 3: Verify Deployment
+
+1. **Check Typesense health**:
    ```bash
-   curl http://localhost:8108/health
+   curl https://your-typesense-container-app.azurecontainerapps.io/health
    ```
 
-4. **Check search functionality**:
+2. **Test search functionality**:
    ```bash
-   curl "http://localhost:8080/api/search?q=variables"
-   ```
-
-## Container App Deployment (Azure)
-
-For Azure Container Apps deployment:
-
-1. **Create Typesense container**:
-   ```bash
-   az containerapp create \
-     --name typesense-search \
-     --resource-group myResourceGroup \
-     --environment myEnvironment \
-     --image typesense/typesense:0.25.2 \
-     --target-port 8108 \
-     --env-vars API_KEY=secretref:typesense-api-key \
-     --secrets typesense-api-key=your-secure-key
-   ```
-
-2. **Update main app configuration**:
-   ```bash
-   az containerapp update \
-     --name essentialcsharp-web \
-     --set-env-vars TypesenseOptions__Host=typesense-search \
-                    TypesenseOptions__ApiKey=secretref:typesense-api-key
+   curl "https://your-main-app.azurecontainerapps.io/api/search?q=variables"
    ```
 
 ## Features
@@ -195,13 +212,13 @@ For Azure Container Apps deployment:
 
 - **Search latency**: Typically under 50ms for most queries
 - **Index size**: Automatically managed by Typesense
-- **Memory usage**: Typesense uses in-memory indexing for fast searches
+- **Memory usage**: Recommend 2GB+ for Typesense Container App
 - **Rate limiting**: Prevents search abuse and ensures fair usage
 
 ## Monitoring and Health Checks
 
 - Built-in health check endpoint: `/api/search/health`
-- Typesense health endpoint: `http://typesense:8108/health`
+- Typesense health endpoint: `https://your-typesense-app.azurecontainerapps.io/health`
 - Structured logging for search operations and errors
 - Application Insights integration for telemetry
 
@@ -219,19 +236,19 @@ The integration replaces Algolia DocSearch:
 ### Common Issues
 
 1. **Typesense connection failed**:
-   - Check if Typesense container is running
-   - Verify network connectivity between containers
-   - Ensure API key is correct
+   - Check if Typesense Container App is running
+   - Verify network connectivity between Container Apps
+   - Ensure API key is correct in Key Vault
 
 2. **Search returns no results**:
    - Check if content indexing completed successfully
-   - Verify collection exists: `curl http://typesense:8108/collections`
-   - Check application logs for indexing errors
+   - Verify collection exists: `curl https://your-typesense-app.azurecontainerapps.io/collections`
+   - Check Application Insights for indexing errors
 
 3. **Slow search performance**:
-   - Monitor Typesense memory usage
-   - Consider increasing container resources
-   - Check network latency between services
+   - Monitor Typesense Container App resource usage
+   - Consider increasing CPU/memory allocation
+   - Check network latency between Container Apps
 
 ### Logging
 
@@ -239,6 +256,12 @@ Search operations are logged with structured data:
 - Search queries and response times
 - Indexing operations and document counts
 - Error conditions and health check results
+
+## Cost Considerations
+
+- **Typesense Container App**: Runs continuously, estimated cost based on CPU/memory allocation
+- **Storage**: Persistent volumes for Typesense data (if needed)
+- **Network**: Minimal egress costs for inter-container communication within the same region
 
 ## Future Enhancements
 
