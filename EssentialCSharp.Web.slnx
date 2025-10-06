@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="../.gitattributes" />
+    <File Path="../azure-pipelines.yml" />
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
+    <File Path="Directory.Packages.props" />
+    <File Path="EssentialCSharp.Web/Dockerfile" />
+    <File Path="global.json" />
+    <File Path="nuget.config" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="EssentialCSharp.Chat.Shared/EssentialCSharp.Chat.Common.csproj" />
+  <Project Path="EssentialCSharp.Chat.Tests/EssentialCSharp.Chat.Tests.csproj" />
+  <Project Path="EssentialCSharp.Chat/EssentialCSharp.Chat.csproj" />
+  <Project Path="EssentialCSharp.Web.Tests/EssentialCSharp.Web.Tests.csproj" />
+  <Project Path="EssentialCSharp.Web/EssentialCSharp.Web.csproj" />
+</Solution>
