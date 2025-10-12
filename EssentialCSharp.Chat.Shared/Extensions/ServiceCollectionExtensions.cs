@@ -5,11 +5,14 @@ using EssentialCSharp.Chat.Common.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
+using Npgsql;
 
 namespace EssentialCSharp.Chat.Common.Extensions;
 
 public static class ServiceCollectionExtensions
 {
+    private static readonly string[] PostgresScopes = ["https://ossrdbms-aad.database.windows.net/.default"];
+
     /// <summary>
     /// Adds Azure OpenAI and related AI services to the service collection using Managed Identity
     /// </summary>
@@ -50,8 +53,8 @@ public static class ServiceCollectionExtensions
             aiOptions.Endpoint,
             credential);
 
-        // Add PostgreSQL vector store
-        services.AddPostgresVectorStore(postgresConnectionString);
+        // Add PostgreSQL vector store with managed identity support
+        services.AddPostgresVectorStoreWithManagedIdentity(postgresConnectionString, credential);
 
         services.AddAzureOpenAIEmbeddingGenerator(
             aiOptions.VectorGenerationDeploymentName,
@@ -97,6 +100,55 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
+    /// Adds PostgreSQL vector store with managed identity authentication support.
+    /// NOTE: Token is obtained once at startup and will expire after ~1 hour. 
+    /// For long-running applications, consider restarting the application periodically
+    /// or implementing a background service to refresh the connection.
+    /// </summary>
+    /// <param name="services">The service collection to add services to</param>
+    /// <param name="connectionString">The PostgreSQL connection string (without password)</param>
+    /// <param name="credential">The token credential to use for authentication. If null, DefaultAzureCredential will be used.</param>
+    /// <returns>The service collection for chaining</returns>
+    private static IServiceCollection AddPostgresVectorStoreWithManagedIdentity(
+        this IServiceCollection services,
+        string connectionString,
+        TokenCredential? credential = null)
+    {
+        credential ??= new DefaultAzureCredential();
+
+        // Parse the connection string to extract host, database, and username
+        var builder = new NpgsqlConnectionStringBuilder(connectionString);
+
+        // Check if this is an Azure PostgreSQL connection (contains .postgres.database.azure.com)
+        bool isAzurePostgres = builder.Host?.Contains(".postgres.database.azure.com", StringComparison.OrdinalIgnoreCase) ?? false;
+
+        if (isAzurePostgres && string.IsNullOrEmpty(builder.Password))
+        {
+            // Get access token for Azure PostgreSQL using managed identity
+            var tokenRequestContext = new TokenRequestContext(PostgresScopes);
+            var accessToken = credential.GetToken(tokenRequestContext, default);
+
+            // Set the password to the access token
+            builder.Password = accessToken.Token;
+
+            // Ensure SSL is enabled for Azure
+            if (builder.SslMode == SslMode.Disable)
+            {
+                builder.SslMode = SslMode.Require;
+            }
+            
+            connectionString = builder.ToString();
+        }
+
+        // Register the vector store using the connection string
+#pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        services.AddPostgresVectorStore(connectionString);
+#pragma warning restore SKEXP0010
+
+        return services;
+    }
+
+    /// <summary>
     /// Adds Azure OpenAI and related AI services to the service collection using API key authentication (legacy)
     /// </summary>
     /// <param name="services">The service collection to add services to</param>
@@ -138,7 +190,7 @@ public static class ServiceCollectionExtensions
             aiOptions.Endpoint,
             apiKey);
 
-        // Add PostgreSQL vector store
+        // Add PostgreSQL vector store (standard connection string with password)
         services.AddPostgresVectorStore(postgresConnectionString);
 
         services.AddAzureOpenAIEmbeddingGenerator(
