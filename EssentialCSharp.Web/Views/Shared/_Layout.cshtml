@@ -57,7 +57,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/chat-widget.css" asp-append-version="true" />
-    <link rel="stylesheet" href="/lib/docsearch/style.css" />
+    <link rel="stylesheet" href="~/css/typesense-search.css" asp-append-version="true" />
     @*Font Family*@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -529,10 +529,8 @@
         </footer>
     </div>
 
-    <div id="docsearch" style="display: none;"></div>
-
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/algoliaDocSearch.js" asp-append-version="true"></script>
+    <script src="~/js/typesenseSearch.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
     <script>
