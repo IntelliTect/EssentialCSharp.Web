@@ -18,6 +18,7 @@
   </PropertyGroup>
   
     <ItemGroup>
+    <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" />
     <PackageReference Include="Microsoft.SemanticKernel" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.PgVector" />
     <PackageReference Include="ModelContextProtocol" />

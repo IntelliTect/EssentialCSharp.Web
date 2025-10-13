@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.Text.Json;
+using Azure.Identity;
 using EssentialCSharp.Chat.Common.Extensions;
 using EssentialCSharp.Chat.Common.Services;
 using Microsoft.Extensions.Configuration;
@@ -358,16 +359,61 @@ public class Program
 
     /// <summary>
     /// Creates and configures the IConfiguration used by multiple commands.
-    /// This method centralizes the common configuration setup to reduce code duplication.
+    /// Supports Azure Key Vault integration for secure secret management.
     /// </summary>
     /// <returns>The configured IConfigurationRoot</returns>
+    /// <remarks>
+    /// Configuration precedence (highest to lowest):
+    /// 1. Environment Variables
+    /// 2. Azure Key Vault (if configured)
+    /// 3. User Secrets (development only)
+    /// 4. appsettings.json
+    /// 
+    /// To enable Key Vault, set the "KeyVaultName" configuration value in appsettings.json or user secrets:
+    /// {
+    ///   "KeyVaultName": "your-keyvault-name"
+    /// }
+    /// 
+    /// The application will use DefaultAzureCredential for authentication, which supports:
+    /// - Managed Identity (in Azure)
+    /// - Azure CLI (local development)
+    /// - Visual Studio (local development)
+    /// - Environment variables (AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_TENANT_ID)
+    /// </remarks>
     private static IConfigurationRoot CreateConfiguration()
     {
-        return new ConfigurationBuilder()
+        var configBuilder = new ConfigurationBuilder()
             .SetBasePath(IntelliTect.Multitool.RepositoryPaths.GetDefaultRepoRoot())
-            .AddJsonFile("EssentialCSharp.Web/appsettings.json")
-            .AddUserSecrets<Program>()
-            .AddEnvironmentVariables()
-            .Build();
+            .AddJsonFile("EssentialCSharp.Web/appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"EssentialCSharp.Web/appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true, reloadOnChange: true)
+            .AddUserSecrets<Program>(optional: true)
+            .AddEnvironmentVariables();
+
+        // Build a temporary configuration to check for Key Vault settings
+        var tempConfig = configBuilder.Build();
+        var keyVaultName = tempConfig["KeyVaultName"];
+
+        // If Key Vault is configured, add it to the configuration pipeline
+        if (!string.IsNullOrEmpty(keyVaultName))
+        {
+            try
+            {
+                var keyVaultUri = new Uri($"https://{keyVaultName}.vault.azure.net/");
+
+                // Use DefaultAzureCredential which works both locally and in Azure
+                var credential = new DefaultAzureCredential();
+
+                configBuilder.AddAzureKeyVault(keyVaultUri, credential);
+
+                Console.WriteLine($"✅ Connected to Azure Key Vault: {keyVaultName}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️  Warning: Could not connect to Azure Key Vault '{keyVaultName}': {ex.Message}");
+                Console.WriteLine("   Continuing with other configuration sources...");
+            }
+        }
+
+        return configBuilder.Build();
     }
 }
