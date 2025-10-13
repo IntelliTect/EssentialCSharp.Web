@@ -102,8 +102,7 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Adds PostgreSQL vector store with managed identity authentication support.
     /// NOTE: Token is obtained once at startup and will expire after ~1 hour. 
-    /// For long-running applications, consider restarting the application periodically
-    /// or implementing a background service to refresh the connection.
+    /// For long-running applications, consider implementing token refresh logic.
     /// </summary>
     /// <param name="services">The service collection to add services to</param>
     /// <param name="connectionString">The PostgreSQL connection string (without password)</param>
@@ -136,13 +135,22 @@ public static class ServiceCollectionExtensions
             {
                 builder.SslMode = SslMode.Require;
             }
-            
+
             connectionString = builder.ToString();
         }
 
-        // Register the vector store using the connection string
+        // Register NpgsqlDataSource with UseVector() enabled - this is critical for pgvector support
+        services.AddSingleton<NpgsqlDataSource>(sp =>
+        {
+            var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
+            // IMPORTANT: UseVector() must be called to enable pgvector support
+            dataSourceBuilder.UseVector();
+            return dataSourceBuilder.Build();
+        });
+
+        // Register the vector store using the NpgsqlDataSource from DI
 #pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        services.AddPostgresVectorStore(connectionString);
+        services.AddPostgresVectorStore();
 #pragma warning restore SKEXP0010
 
         return services;
@@ -190,8 +198,17 @@ public static class ServiceCollectionExtensions
             aiOptions.Endpoint,
             apiKey);
 
-        // Add PostgreSQL vector store (standard connection string with password)
-        services.AddPostgresVectorStore(postgresConnectionString);
+        // Register NpgsqlDataSource with UseVector() enabled for API key scenario as well
+        services.AddSingleton<NpgsqlDataSource>(sp =>
+        {
+            var dataSourceBuilder = new NpgsqlDataSourceBuilder(postgresConnectionString);
+            // IMPORTANT: UseVector() must be called to enable pgvector support
+            dataSourceBuilder.UseVector();
+            return dataSourceBuilder.Build();
+        });
+
+        // Add PostgreSQL vector store using the NpgsqlDataSource from DI
+        services.AddPostgresVectorStore();
 
         services.AddAzureOpenAIEmbeddingGenerator(
             aiOptions.VectorGenerationDeploymentName,
