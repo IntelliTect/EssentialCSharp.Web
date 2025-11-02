@@ -10,6 +10,7 @@ using EssentialCSharp.Web.Middleware;
 using EssentialCSharp.Web.Services;
 using EssentialCSharp.Web.Services.Referrals;
 using Mailjet.Client;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -104,6 +105,22 @@ public partial class Program
             options.Cookie.HttpOnly = true;
             options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
             options.SlidingExpiration = true;
+            // Configure cookie settings for OAuth flows
+            options.Cookie.SameSite = SameSiteMode.Lax;
+            options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() 
+                ? CookieSecurePolicy.SameAsRequest 
+                : CookieSecurePolicy.Always;
+        });
+
+        // Configure external authentication cookies for OAuth state management
+        builder.Services.Configure<CookieAuthenticationOptions>(IdentityConstants.ExternalScheme, options =>
+        {
+            options.Cookie.SameSite = SameSiteMode.Lax;
+            options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() 
+                ? CookieSecurePolicy.SameAsRequest 
+                : CookieSecurePolicy.Always;
+            // Increase correlation cookie expiration to handle slow OAuth flows
+            options.ExpireTimeSpan = TimeSpan.FromMinutes(15);
         });
 
         if (builder.Environment.IsDevelopment())
