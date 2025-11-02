@@ -20,7 +20,7 @@ import { useChatWidget } from "./chat-module.js";
  * @prop {TocItem[]} [items]
  */
 /** @type {TocItem} */
-const tocData = markRaw(TOC_DATA);
+const tocData = markRaw(TOC_DATA || []);
 
 //Add new content or features here:
 
@@ -80,6 +80,9 @@ const completedFeaturesList = [
  * @returns {TocItem[] | undefined} path of items to the current page
  * */
 function findCurrentPage(path, items) {
+    if (!items || !Array.isArray(items)) {
+        return null;
+    }
     for (const item of items) {
         const itemPath = [item, ...path];
         if (
@@ -286,8 +289,8 @@ const app = createApp({
         const searchQuery = ref('');
 
         const filteredTocData = computed(() => {
-            if (!searchQuery.value) {
-                return tocData;
+            if (!searchQuery.value || !tocData) {
+                return tocData || [];
             }
             const query = normalizeString(searchQuery.value);
             return tocData.filter(item => filterItem(item, query));
@@ -318,11 +321,13 @@ const app = createApp({
             else {
                 expandedTocs.clear();
                 const query = normalizeString(newQuery);
-                tocData.forEach(item => {
-                    if (filterItem(item, query)) {
-                        expandedTocs.add(item.key);
-                    }
-                });
+                if (tocData) {
+                    tocData.forEach(item => {
+                        if (filterItem(item, query)) {
+                            expandedTocs.add(item.key);
+                        }
+                    });
+                }
             }
         });
 
