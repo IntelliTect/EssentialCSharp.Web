@@ -153,7 +153,14 @@ public partial class Program
         builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
         builder.Services.AddSingleton<IRouteConfigurationService, RouteConfigurationService>();
         builder.Services.AddHostedService<DatabaseMigrationService>();
+        builder.Services.AddHostedService<SearchIndexingHostedService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
+
+        // Add Typesense search services
+        builder.Services.Configure<TypesenseOptions>(
+            builder.Configuration.GetSection(TypesenseOptions.SectionName));
+        builder.Services.AddHttpClient<ITypesenseSearchService, TypesenseSearchService>();
+        builder.Services.AddScoped<IContentIndexingService, ContentIndexingService>();
 
         // Add AI Chat services
         if (!builder.Environment.IsDevelopment())
@@ -196,6 +203,14 @@ public partial class Program
                 rateLimiterOptions.Window = TimeSpan.FromMinutes(1);
                 rateLimiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                 rateLimiterOptions.QueueLimit = 0; // No queuing for anonymous users
+            });
+
+            options.AddFixedWindowLimiter("SearchEndpoint", rateLimiterOptions =>
+            {
+                rateLimiterOptions.PermitLimit = 50; // search requests per window (higher limit for search)
+                rateLimiterOptions.Window = TimeSpan.FromMinutes(1); // minute window
+                rateLimiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                rateLimiterOptions.QueueLimit = 0; // No queuing for immediate response
             });
 
             // Custom response when rate limit is exceeded
