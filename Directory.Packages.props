@@ -37,7 +37,7 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.10" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.10" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
-    <PackageVersion Include="Microsoft.SemanticKernel" Version="1.60.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel" Version="1.67.0" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.PgVector" Version="1.60.0-preview" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
