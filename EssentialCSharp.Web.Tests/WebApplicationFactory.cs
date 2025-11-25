@@ -16,22 +16,33 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>
     {
         builder.ConfigureServices(services =>
         {
-            ServiceDescriptor? descriptor = services.SingleOrDefault(
-                d => d.ServiceType ==
-                    typeof(DbContextOptions<EssentialCSharpWebContext>));
-
+            // Remove the existing DbContext and related services
+            var descriptorType = typeof(DbContextOptions<EssentialCSharpWebContext>);
+            var descriptor = services.SingleOrDefault(d => d.ServiceType == descriptorType);
             if (descriptor != null)
             {
                 services.Remove(descriptor);
             }
 
+            // Remove all DbContextOptions related services to avoid EF Core 10 multiple provider error
+            var allDbContextOptions = services.Where(d => 
+                d.ServiceType.IsGenericType && 
+                d.ServiceType.Name.Contains("DbContextOptions")).ToList();
+            foreach (var desc in allDbContextOptions)
+            {
+                services.Remove(desc);
+            }
+
             _Connection = new SqliteConnection(SqlConnectionString);
             _Connection.Open();
 
+            // Add SQLite DbContext without using the global service provider
             services.AddDbContext<EssentialCSharpWebContext>(options =>
             {
                 options.UseSqlite(_Connection);
-            });
+                // Disable service provider caching to avoid shared state in EF Core 10
+                options.EnableServiceProviderCaching(false);
+            }, ServiceLifetime.Scoped, ServiceLifetime.Scoped);
 
             using ServiceProvider serviceProvider = services.BuildServiceProvider();
             using IServiceScope scope = serviceProvider.CreateScope();

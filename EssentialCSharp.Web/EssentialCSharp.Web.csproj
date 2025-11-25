@@ -1,6 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- NU1902/NU1903, Suppress vulnerability warnings for transitive dependencies from design-time tools -->
+    <NoWarn>$(NoWarn);NU1902;NU1903</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PlaceholderChapterOneHtmlFile Include="$(ProjectDir)/Placeholders/Chapters/01/Pages/*.html" />
