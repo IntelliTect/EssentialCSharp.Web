@@ -29,7 +29,7 @@ jobs:
           NUGET_AUTH_TOKEN: ${{ secrets.AZURE_DEVOPS_PAT }}
 
       - name: Set up dependency caching for faster builds
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: nuget-cache
         with:
           path: |
