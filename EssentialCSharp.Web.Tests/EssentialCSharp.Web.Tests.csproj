@@ -7,9 +7,8 @@
     <IsPublishable>false</IsPublishable>
     <!--
     CA1707, Identifiers should not contain underscores - we allow these in test names
-    NU1902/NU1903, Suppress vulnerability warnings for transitive dependencies from design-time tools
     -->
-    <NoWarn>$(NoWarn);CA1707;NU1902;NU1903</NoWarn>
+    <NoWarn>$(NoWarn);CA1707</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,14 +1,14 @@
 <Project>
   <PropertyGroup>
     <Nullable>enable</Nullable>
-    <LangVersion>13</LangVersion>
+    <LangVersion>14</LangVersion>
     <AnalysisMode>Recommended</AnalysisMode>
     <ImplicitUsings>enable</ImplicitUsings>
     <PreserveCompilationContext>true</PreserveCompilationContext>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <!-- CA1873: Suppress logging performance analyzer in .NET 10 for minor perf gains -->
-    <NoWarn>$(NoWarn);CA1873</NoWarn>
+    <!-- Exclude NuGet audit and analyzer warnings from being treated as errors -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1902;NU1903;CA1873</WarningsNotAsErrors>
 
     <!-- https://aka.ms/vs-build-acceleration -->
     <AccelerateBuildsInVisualStudio>True</AccelerateBuildsInVisualStudio>
