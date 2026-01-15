@@ -5,6 +5,10 @@ registries:
     url: https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json
     username: ${{secrets.AZURE_DEVOPS_PAT_USERNAME}}
     password: ${{secrets.AZURE_DEVOPS_PAT}}
+multi-ecosystem-groups:
+  dotnet-sdk-updates:
+    schedule:
+      interval: "weekly"
 updates:
   - package-ecosystem: "nuget" # See documentation for possible values
     directories:
@@ -30,6 +34,9 @@ updates:
   - package-ecosystem: "docker"
     # Look for a `Dockerfile` in the `root` directory
     directory: "/EssentialCSharp.Web/"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "dotnet-sdk-updates"
     # Check for updates once a week
     schedule:
       interval: "weekly"
@@ -37,6 +44,9 @@ updates:
   - package-ecosystem: "dotnet-sdk"
     # Look for a `global.json` in the `root` directory
     directory: "/"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "dotnet-sdk-updates"
     # Check for updates once a week
     schedule:
       interval: "weekly"
