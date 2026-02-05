@@ -2,6 +2,12 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <Compile Remove="ListingSourceCode\**\*.cs" />
+    <None Include="ListingSourceCode\**\*.cs" />
+  </ItemGroup>
+  
   <ItemGroup>
     <PlaceholderChapterOneHtmlFile Include="$(ProjectDir)/Placeholders/Chapters/01/Pages/*.html" />
     <PlaceholderChapterTwoHtmlFile Include="$(ProjectDir)/Placeholders/Chapters/02/Pages/*.html" />
