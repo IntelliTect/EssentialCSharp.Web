@@ -268,7 +268,8 @@ public class AIChatService
             var mcpTools = await mcpClient.ListToolsAsync(cancellationToken: cancellationToken);
             foreach (McpClientTool tool in mcpTools)
             {
-                // Convert McpClientTool to ResponseTool - the tool already contains the schema
+                // Convert McpClientTool to ResponseTool
+                // Note: The tool schema is managed internally by the MCP client
                 options.Tools.Add(ResponseTool.CreateFunctionTool(tool.Name, BinaryData.FromString(tool.Description), strictModeEnabled: false));
             }
         }
