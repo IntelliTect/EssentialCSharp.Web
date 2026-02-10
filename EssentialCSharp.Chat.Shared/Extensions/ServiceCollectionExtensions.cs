@@ -94,6 +94,12 @@ public static class ServiceCollectionExtensions
     /// have the same retry behavior, set configureResilience=false when calling 
     /// AddAzureOpenAIServices and configure resilience on a per-client basis instead.
     /// 
+    /// IMPORTANT: The Semantic Kernel's AddAzureOpenAI* extension methods (used in this class)
+    /// do NOT expose options to configure specific named or typed HttpClients. The internal
+    /// implementation creates HttpClient instances through IHttpClientFactory without
+    /// providing hooks for per-client configuration. Therefore, ConfigureHttpClientDefaults
+    /// is the ONLY way to apply resilience to Azure OpenAI clients when using Semantic Kernel.
+    /// 
     /// For Azure OpenAI services specifically, the resilience configuration:
     /// - Retries HTTP 429 (rate limit), 408 (timeout), and 5xx errors
     /// - Respects Retry-After headers from Azure OpenAI
@@ -106,6 +112,9 @@ public static class ServiceCollectionExtensions
         // This is appropriate for applications that ONLY use Azure OpenAI services
         // For mixed-use applications, consider setting configureResilience=false
         // and applying resilience per-client instead.
+        //
+        // Note: The Semantic Kernel's AddAzureOpenAI* methods do not support named/typed
+        // HttpClient configuration, so ConfigureHttpClientDefaults is required.
         services.ConfigureHttpClientDefaults(httpClientBuilder =>
         {
             httpClientBuilder.AddStandardResilienceHandler(options =>

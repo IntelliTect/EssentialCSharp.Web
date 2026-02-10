@@ -14,6 +14,18 @@ The application uses Microsoft.Extensions.Http.Resilience to provide automatic r
 - **Chat Completions** (via `IChatCompletionService`)
 - **Vector Store Operations**
 
+### Why ConfigureHttpClientDefaults?
+
+The Semantic Kernel's `AddAzureOpenAI*` extension methods (e.g., `AddAzureOpenAIChatClient`, `AddAzureOpenAIEmbeddingGenerator`) do not expose options to configure specific named or typed HttpClients. The internal implementation creates HttpClient instances through `IHttpClientFactory` without providing hooks for per-client configuration.
+
+Therefore, `ConfigureHttpClientDefaults` is the **only way** to apply resilience policies to Azure OpenAI clients when using Semantic Kernel and Microsoft.Extensions.AI.
+
+For applications that ONLY use Azure OpenAI services (like the Chat console application), this is the ideal approach. For mixed-use applications (like the Web application with hCaptcha and Mailjet clients), you can:
+
+1. Set `configureResilience: false` when calling `AddAzureOpenAIServices`
+2. Configure resilience on a per-client basis for other HTTP clients
+3. Or accept that all HTTP clients will have the same resilience behavior (which is often acceptable)
+
 ### Configuration Details
 
 The resilience handler is configured in `ServiceCollectionExtensions.ConfigureAzureOpenAIResilience()` with the following settings:
