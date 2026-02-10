@@ -17,6 +17,14 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>
     {
         builder.ConfigureServices(services =>
         {
+            // Remove the DatabaseMigrationService as it conflicts with test database setup
+            var migrationServiceDescriptor = services.FirstOrDefault(
+                d => d.ImplementationType == typeof(DatabaseMigrationService));
+            if (migrationServiceDescriptor != null)
+            {
+                services.Remove(migrationServiceDescriptor);
+            }
+
             // Remove all existing DbContext-related registrations to avoid provider conflicts in EF Core 10
             var descriptorsToRemove = services
                 .Where(d => d.ServiceType == typeof(EssentialCSharpWebContext) ||
