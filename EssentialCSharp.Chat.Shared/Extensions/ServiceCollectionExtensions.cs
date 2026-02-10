@@ -22,12 +22,14 @@ public static class ServiceCollectionExtensions
     /// <param name="aiOptions">The AI configuration options</param>
     /// <param name="postgresConnectionString">The PostgreSQL connection string for the vector store</param>
     /// <param name="credential">The token credential to use for authentication. If null, DefaultAzureCredential will be used.</param>
+    /// <param name="configureResilience">Whether to configure HTTP resilience for all HTTP clients. Default is true. Set to false if you want to configure resilience separately.</param>
     /// <returns>The service collection for chaining</returns>
     public static IServiceCollection AddAzureOpenAIServices(
         this IServiceCollection services,
         AIOptions aiOptions,
         string postgresConnectionString,
-        TokenCredential? credential = null)
+        TokenCredential? credential = null,
+        bool configureResilience = true)
     {
         // Use DefaultAzureCredential if no credential is provided
         // This works both locally (using Azure CLI, Visual Studio, etc.) and in Azure (using Managed Identity)
@@ -40,8 +42,11 @@ public static class ServiceCollectionExtensions
 
         var endpoint = new Uri(aiOptions.Endpoint);
 
-        // Configure HTTP resilience for Azure OpenAI requests
-        ConfigureAzureOpenAIResilience(services);
+        // Configure HTTP resilience for Azure OpenAI requests if requested
+        if (configureResilience)
+        {
+            ConfigureAzureOpenAIResilience(services);
+        }
 
         // Register Azure OpenAI services with Managed Identity authentication
 #pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
@@ -81,9 +86,26 @@ public static class ServiceCollectionExtensions
     /// This handles rate limiting (HTTP 429) and transient errors with exponential backoff.
     /// </summary>
     /// <param name="services">The service collection to configure</param>
+    /// <remarks>
+    /// This method configures resilience for ALL HTTP clients created via IHttpClientFactory. 
+    /// This is appropriate when your application ONLY uses Azure OpenAI HTTP clients.
+    /// 
+    /// If your application has other HTTP clients (e.g., third-party APIs) that shouldn't 
+    /// have the same retry behavior, set configureResilience=false when calling 
+    /// AddAzureOpenAIServices and configure resilience on a per-client basis instead.
+    /// 
+    /// For Azure OpenAI services specifically, the resilience configuration:
+    /// - Retries HTTP 429 (rate limit), 408 (timeout), and 5xx errors
+    /// - Respects Retry-After headers from Azure OpenAI
+    /// - Uses exponential backoff with jitter
+    /// - Implements circuit breaker pattern
+    /// </remarks>
     private static void ConfigureAzureOpenAIResilience(IServiceCollection services)
     {
-        // Configure resilience for all HTTP clients used by Azure OpenAI services
+        // Configure resilience for all HTTP clients created via IHttpClientFactory
+        // This is appropriate for applications that ONLY use Azure OpenAI services
+        // For mixed-use applications, consider setting configureResilience=false
+        // and applying resilience per-client instead.
         services.ConfigureHttpClientDefaults(httpClientBuilder =>
         {
             httpClientBuilder.AddStandardResilienceHandler(options =>
@@ -120,11 +142,13 @@ public static class ServiceCollectionExtensions
     /// <param name="services">The service collection to add services to</param>
     /// <param name="configuration">The configuration to read AIOptions from</param>
     /// <param name="credential">Optional token credential to use for authentication. If null, DefaultAzureCredential will be used.</param>
+    /// <param name="configureResilience">Whether to configure HTTP resilience for all HTTP clients. Default is true. Set to false if you want to configure resilience separately.</param>
     /// <returns>The service collection for chaining</returns>
     public static IServiceCollection AddAzureOpenAIServices(
         this IServiceCollection services,
         IConfiguration configuration,
-        TokenCredential? credential = null)
+        TokenCredential? credential = null,
+        bool configureResilience = true)
     {
         // Configure AI options from configuration
         services.Configure<AIOptions>(configuration.GetSection("AIOptions"));
@@ -139,7 +163,7 @@ public static class ServiceCollectionExtensions
         var postgresConnectionString = configuration.GetConnectionString("PostgresVectorStore") ??
             throw new InvalidOperationException("Connection string 'PostgresVectorStore' not found.");
 
-        return services.AddAzureOpenAIServices(aiOptions, postgresConnectionString, credential);
+        return services.AddAzureOpenAIServices(aiOptions, postgresConnectionString, credential, configureResilience);
     }
 
     /// <summary>
@@ -206,13 +230,15 @@ public static class ServiceCollectionExtensions
     /// <param name="aiOptions">The AI configuration options</param>
     /// <param name="postgresConnectionString">The PostgreSQL connection string for the vector store</param>
     /// <param name="apiKey">The API key for Azure OpenAI authentication</param>
+    /// <param name="configureResilience">Whether to configure HTTP resilience for all HTTP clients. Default is true. Set to false if you want to configure resilience separately.</param>
     /// <returns>The service collection for chaining</returns>
     [Obsolete("API key authentication is not recommended for production. Use AddAzureOpenAIServices with Managed Identity instead.")]
     public static IServiceCollection AddAzureOpenAIServicesWithApiKey(
         this IServiceCollection services,
         AIOptions aiOptions,
         string postgresConnectionString,
-        string apiKey)
+        string apiKey,
+        bool configureResilience = true)
     {
         if (string.IsNullOrEmpty(apiKey))
         {
@@ -226,8 +252,11 @@ public static class ServiceCollectionExtensions
 
         var endpoint = new Uri(aiOptions.Endpoint);
 
-        // Configure HTTP resilience for Azure OpenAI requests
-        ConfigureAzureOpenAIResilience(services);
+        // Configure HTTP resilience for Azure OpenAI requests if requested
+        if (configureResilience)
+        {
+            ConfigureAzureOpenAIResilience(services);
+        }
 
         // Register Azure OpenAI services with API key authentication
 #pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.

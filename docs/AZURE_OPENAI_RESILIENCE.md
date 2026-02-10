@@ -89,16 +89,26 @@ Request 3: Embedding Generation
 
 ## Usage
 
-The resilience configuration is applied automatically when using:
+The resilience configuration is applied automatically when using the Chat application or any application that ONLY uses Azure OpenAI services:
 
 ```csharp
+// In applications that ONLY use Azure OpenAI (like EssentialCSharp.Chat)
 services.AddAzureOpenAIServices(configuration);
 ```
 
-Or with explicit options:
+For applications with multiple HTTP clients (e.g., the Web application that also uses hCaptcha and Mailjet):
 
 ```csharp
-services.AddAzureOpenAIServices(aiOptions, postgresConnectionString, credential);
+// Option 1: Disable automatic resilience and configure per-client
+services.AddAzureOpenAIServices(configuration, configureResilience: false);
+
+// Then configure resilience for specific clients as needed
+services.AddHttpClient("MyAzureOpenAIClient")
+    .AddStandardResilienceHandler(/* custom options */);
+
+// Option 2: Let the default resilience apply to all clients
+// This is usually fine as the resilience policies are reasonable for most HTTP APIs
+services.AddAzureOpenAIServices(configuration);
 ```
 
 No additional code changes are required in application logic - all retry and error handling is transparent.
