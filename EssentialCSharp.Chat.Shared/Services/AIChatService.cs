@@ -267,7 +267,7 @@ public class AIChatService
         {
             await foreach (McpClientTool tool in mcpClient.EnumerateToolsAsync(cancellationToken: cancellationToken))
             {
-                options.Tools.Add(ResponseTool.CreateFunctionTool(tool.Name, tool.Description, BinaryData.FromString(tool.JsonSchema.GetRawText())));
+                options.Tools.Add(ResponseTool.CreateFunctionTool(tool.Name, BinaryData.FromString(tool.JsonSchema.GetRawText()), null, tool.Description));
             }
         }
 

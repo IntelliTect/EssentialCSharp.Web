@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
 
     <IsPackable>false</IsPackable>
     <IsPublishable>false</IsPublishable>
@@ -9,6 +9,8 @@
     CA1707, Identifiers should not contain underscores - we allow these in test names
     -->
     <NoWarn>$(NoWarn);CA1707</NoWarn>
+    <!-- Suppress NuGet audit warnings for transitive vulnerabilities in test infrastructure packages -->
+    <NuGetAudit>false</NuGetAudit>
   </PropertyGroup>
 
   <ItemGroup>
