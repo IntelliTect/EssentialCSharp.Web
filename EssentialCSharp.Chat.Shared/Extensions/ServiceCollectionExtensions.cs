@@ -4,8 +4,10 @@ using Azure.Identity;
 using EssentialCSharp.Chat.Common.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.SemanticKernel;
 using Npgsql;
+using Polly;
 
 namespace EssentialCSharp.Chat.Common.Extensions;
 
@@ -38,6 +40,9 @@ public static class ServiceCollectionExtensions
 
         var endpoint = new Uri(aiOptions.Endpoint);
 
+        // Configure HTTP resilience for Azure OpenAI requests
+        ConfigureAzureOpenAIResilience(services);
+
         // Register Azure OpenAI services with Managed Identity authentication
 #pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         services.AddAzureOpenAIChatClient(
@@ -69,6 +74,44 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<MarkdownChunkingService>();
 
         return services;
+    }
+
+    /// <summary>
+    /// Configures HTTP resilience (retry, circuit breaker, timeout) for Azure OpenAI HTTP clients.
+    /// This handles rate limiting (HTTP 429) and transient errors with exponential backoff.
+    /// </summary>
+    /// <param name="services">The service collection to configure</param>
+    private static void ConfigureAzureOpenAIResilience(IServiceCollection services)
+    {
+        // Configure resilience for all HTTP clients used by Azure OpenAI services
+        services.ConfigureHttpClientDefaults(httpClientBuilder =>
+        {
+            httpClientBuilder.AddStandardResilienceHandler(options =>
+            {
+                // Configure retry strategy for rate limiting and transient errors
+                options.Retry.MaxRetryAttempts = 5;
+                options.Retry.Delay = TimeSpan.FromSeconds(2);
+                options.Retry.BackoffType = DelayBackoffType.Exponential;
+                options.Retry.UseJitter = true;
+                
+                // The standard resilience handler already handles:
+                // - HTTP 429 (Too Many Requests / Rate Limit)
+                // - HTTP 408 (Request Timeout)
+                // - HTTP 5xx (Server Errors)
+                // - Respects Retry-After header automatically
+                
+                // Configure circuit breaker to prevent overwhelming the service
+                options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
+                options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(15);
+                options.CircuitBreaker.FailureRatio = 0.2; // Break if 20% of requests fail
+                
+                // Configure timeout for individual attempts
+                options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
+                
+                // Configure total timeout for all retry attempts
+                options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(3);
+            });
+        });
     }
 
     /// <summary>
@@ -182,6 +225,9 @@ public static class ServiceCollectionExtensions
         }
 
         var endpoint = new Uri(aiOptions.Endpoint);
+
+        // Configure HTTP resilience for Azure OpenAI requests
+        ConfigureAzureOpenAIResilience(services);
 
         // Register Azure OpenAI services with API key authentication
 #pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
