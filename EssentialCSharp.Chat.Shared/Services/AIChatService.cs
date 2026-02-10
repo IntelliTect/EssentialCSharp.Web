@@ -42,7 +42,7 @@ public class AIChatService
         string prompt,
         string? systemPrompt = null,
         string? previousResponseId = null,
-        IMcpClient? mcpClient = null,
+        McpClient? mcpClient = null,
         IEnumerable<ResponseTool>? tools = null,
         ResponseReasoningEffortLevel? reasoningEffortLevel = null,
         bool enableContextualSearch = false,
@@ -68,7 +68,7 @@ public class AIChatService
         string prompt,
         string? systemPrompt = null,
         string? previousResponseId = null,
-        IMcpClient? mcpClient = null,
+        McpClient? mcpClient = null,
         IEnumerable<ResponseTool>? tools = null,
         ResponseReasoningEffortLevel? reasoningEffortLevel = null,
         bool enableContextualSearch = false,
@@ -134,7 +134,7 @@ public class AIChatService
     private async IAsyncEnumerable<(string text, string? responseId)> ProcessStreamingUpdatesAsync(
         IAsyncEnumerable<StreamingResponseUpdate> streamingUpdates,
         ResponseCreationOptions responseOptions,
-        IMcpClient? mcpClient,
+        McpClient? mcpClient,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await foreach (var update in streamingUpdates.WithCancellation(cancellationToken))
@@ -178,7 +178,7 @@ public class AIChatService
     private async IAsyncEnumerable<(string text, string? responseId)> ExecuteFunctionCallAsync(
         FunctionCallResponseItem functionCallItem,
         ResponseCreationOptions responseOptions,
-        IMcpClient mcpClient,
+        McpClient mcpClient,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         // A dictionary of arguments to pass to the tool. Each key represents a parameter name, and its associated value represents the argument value.
@@ -242,7 +242,7 @@ public class AIChatService
         string? previousResponseId = null,
         IEnumerable<ResponseTool>? tools = null,
         ResponseReasoningEffortLevel? reasoningEffortLevel = null,
-        IMcpClient? mcpClient = null,
+        McpClient? mcpClient = null,
         CancellationToken cancellationToken = default
         )
     {
@@ -265,9 +265,11 @@ public class AIChatService
 
         if (mcpClient is not null)
         {
-            await foreach (McpClientTool tool in mcpClient.EnumerateToolsAsync(cancellationToken: cancellationToken))
+            var mcpTools = await mcpClient.ListToolsAsync(cancellationToken: cancellationToken);
+            foreach (McpClientTool tool in mcpTools)
             {
-                options.Tools.Add(ResponseTool.CreateFunctionTool(tool.Name, tool.Description, BinaryData.FromString(tool.JsonSchema.GetRawText())));
+                // Convert McpClientTool to ResponseTool - the tool already contains the schema
+                options.Tools.Add(ResponseTool.CreateFunctionTool(tool.Name, BinaryData.FromString(tool.Description), strictModeEnabled: false));
             }
         }
 

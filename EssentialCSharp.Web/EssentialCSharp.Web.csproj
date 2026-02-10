@@ -1,6 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
+    <!-- Suppress CA1873 for logging performance - would require significant refactoring -->
+    <NoWarn>$(NoWarn);CA1873</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PlaceholderChapterOneHtmlFile Include="$(ProjectDir)/Placeholders/Chapters/01/Pages/*.html" />
