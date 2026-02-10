@@ -11,16 +11,20 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>
 {
     private static string SqlConnectionString => $"DataSource=file:{Guid.NewGuid()}?mode=memory&cache=shared";
     private SqliteConnection? _Connection;
+    private bool _databaseInitialized;
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureServices(services =>
         {
-            ServiceDescriptor? descriptor = services.SingleOrDefault(
-                d => d.ServiceType ==
-                    typeof(DbContextOptions<EssentialCSharpWebContext>));
+            // Remove all existing DbContext-related registrations to avoid provider conflicts in EF Core 10
+            var descriptorsToRemove = services
+                .Where(d => d.ServiceType == typeof(EssentialCSharpWebContext) ||
+                            d.ServiceType == typeof(DbContextOptions<EssentialCSharpWebContext>) ||
+                            d.ServiceType == typeof(DbContextOptions))
+                .ToList();
 
-            if (descriptor != null)
+            foreach (var descriptor in descriptorsToRemove)
             {
                 services.Remove(descriptor);
             }
@@ -28,18 +32,26 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>
             _Connection = new SqliteConnection(SqlConnectionString);
             _Connection.Open();
 
+            // Add the test DbContext with SQLite
             services.AddDbContext<EssentialCSharpWebContext>(options =>
             {
                 options.UseSqlite(_Connection);
             });
-
-            using ServiceProvider serviceProvider = services.BuildServiceProvider();
-            using IServiceScope scope = serviceProvider.CreateScope();
-            IServiceProvider scopedServices = scope.ServiceProvider;
-            EssentialCSharpWebContext db = scopedServices.GetRequiredService<EssentialCSharpWebContext>();
-
-            db.Database.EnsureCreated();
         });
+    }
+
+    /// <summary>
+    /// Ensures the database is created. Called lazily on first access.
+    /// </summary>
+    private void EnsureDatabaseCreated()
+    {
+        if (_databaseInitialized) return;
+
+        var factory = Services.GetRequiredService<IServiceScopeFactory>();
+        using var scope = factory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<EssentialCSharpWebContext>();
+        db.Database.EnsureCreated();
+        _databaseInitialized = true;
     }
 
     /// <summary>
@@ -50,6 +62,7 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>
     /// <returns>The result of the action</returns>
     public T InServiceScope<T>(Func<IServiceProvider, T> action)
     {
+        EnsureDatabaseCreated();
         var factory = Services.GetRequiredService<IServiceScopeFactory>();
         using var scope = factory.CreateScope();
         return action(scope.ServiceProvider);
@@ -61,6 +74,7 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>
     /// <param name="action">The action to execute with the scoped service provider</param>
     public void InServiceScope(Action<IServiceProvider> action)
     {
+        EnsureDatabaseCreated();
         var factory = Services.GetRequiredService<IServiceScopeFactory>();
         using var scope = factory.CreateScope();
         action(scope.ServiceProvider);
