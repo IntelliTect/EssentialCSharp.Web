@@ -16,11 +16,20 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>
     {
         builder.ConfigureServices(services =>
         {
-            ServiceDescriptor? descriptor = services.SingleOrDefault(
-                d => d.ServiceType ==
-                    typeof(DbContextOptions<EssentialCSharpWebContext>));
+            // Remove all existing EF Core registrations to avoid EF Core 10's
+            // single-provider enforcement (SqlServer + Sqlite conflict).
+            // In EF Core 10, having two database providers registered throws
+            // InvalidOperationException, so we must remove all SqlServer-related
+            // services before adding Sqlite.
+            var efDescriptors = services
+                .Where(d => d.ServiceType.FullName?.Contains("EntityFrameworkCore") == true
+                    || d.ServiceType.FullName?.Contains("EntityFramework") == true
+                    || d.ImplementationType?.FullName?.Contains("SqlServer") == true
+                    || d.ServiceType == typeof(DbContextOptions<EssentialCSharpWebContext>)
+                    || d.ServiceType == typeof(DbContextOptions))
+                .ToList();
 
-            if (descriptor != null)
+            foreach (var descriptor in efDescriptors)
             {
                 services.Remove(descriptor);
             }
