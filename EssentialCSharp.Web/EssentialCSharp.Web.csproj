@@ -6,6 +6,8 @@
   <ItemGroup>
     <Compile Remove="ListingSourceCode\**\*.cs" />
     <None Include="ListingSourceCode\**\*.cs" />
+    <!-- Copy all ListingSourceCode files to output directory for testing -->
+    <None Include="ListingSourceCode\**\*.*" CopyToOutputDirectory="PreserveNewest" LinkBase="ListingSourceCode\" />
   </ItemGroup>
   
   <ItemGroup>
