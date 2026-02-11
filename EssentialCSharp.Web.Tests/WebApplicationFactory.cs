@@ -1,9 +1,12 @@
 ﻿using EssentialCSharp.Web.Data;
+using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Logging;
 
 namespace EssentialCSharp.Web.Tests;
 
@@ -39,6 +42,23 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>
             EssentialCSharpWebContext db = scopedServices.GetRequiredService<EssentialCSharpWebContext>();
 
             db.Database.EnsureCreated();
+
+            // Replace IListingSourceCodeService with one backed by TestData
+            ServiceDescriptor? listingDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(IListingSourceCodeService));
+            if (listingDescriptor != null)
+            {
+                services.Remove(listingDescriptor);
+            }
+
+            string testDataPath = Path.Combine(AppContext.BaseDirectory, "TestData");
+            var fileProvider = new PhysicalFileProvider(testDataPath);
+            services.AddSingleton<IListingSourceCodeService>(sp =>
+            {
+                var mockEnv = new TestWebHostEnvironment(testDataPath, fileProvider);
+                var logger = sp.GetRequiredService<ILogger<ListingSourceCodeService>>();
+                return new ListingSourceCodeService(mockEnv, logger);
+            });
         });
     }
 
@@ -75,4 +95,23 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>
             _Connection = null;
         }
     }
+}
+
+/// <summary>
+/// Minimal IWebHostEnvironment implementation that redirects ContentRoot to the TestData directory.
+/// </summary>
+internal sealed class TestWebHostEnvironment : IWebHostEnvironment
+{
+    public TestWebHostEnvironment(string contentRootPath, IFileProvider contentRootFileProvider)
+    {
+        ContentRootPath = contentRootPath;
+        ContentRootFileProvider = contentRootFileProvider;
+    }
+
+    public string ContentRootPath { get; set; }
+    public IFileProvider ContentRootFileProvider { get; set; }
+    public string WebRootPath { get; set; } = string.Empty;
+    public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
+    public string EnvironmentName { get; set; } = "Testing";
+    public string ApplicationName { get; set; } = "EssentialCSharp.Web";
 }
