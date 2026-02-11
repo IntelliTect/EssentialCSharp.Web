@@ -4,7 +4,7 @@ namespace EssentialCSharp.Web.Extensions;
 
 internal static partial class LoggerExtensions
 {
-    [LoggerMessage(Level = LogLevel.Debug, EventId = 1, Message = "Successful captcha with response of: '{JsonResult}'")]
+    [LoggerMessage(Level = LogLevel.Debug, EventId = 1, Message = "Successful captcha with response")]
     public static partial void HomeControllerSuccessfulCaptchaResponse(
-           this ILogger logger, JsonResult jsonResult);
+           this ILogger logger);
 }
