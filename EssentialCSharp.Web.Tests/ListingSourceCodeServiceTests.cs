@@ -120,28 +120,29 @@ public class ListingSourceCodeServiceTests
 
     private static ListingSourceCodeService CreateService()
     {
-        string testDataRoot = GetTestDataPath();
+        DirectoryInfo testDataRoot = GetTestDataPath();
         
         var mockWebHostEnvironment = new Mock<IWebHostEnvironment>();
-        mockWebHostEnvironment.Setup(m => m.ContentRootPath).Returns(testDataRoot);
-        mockWebHostEnvironment.Setup(m => m.ContentRootFileProvider).Returns(new PhysicalFileProvider(testDataRoot));
+        mockWebHostEnvironment.Setup(m => m.ContentRootPath).Returns(testDataRoot.FullName);
+        mockWebHostEnvironment.Setup(m => m.ContentRootFileProvider).Returns(new PhysicalFileProvider(testDataRoot.FullName));
         
         var mockLogger = new Mock<ILogger<ListingSourceCodeService>>();
         
         return new ListingSourceCodeService(mockWebHostEnvironment.Object, mockLogger.Object);
     }
 
-    private static string GetTestDataPath()
+    private static DirectoryInfo GetTestDataPath()
     {
-        // Get the test project directory and navigate to TestData folder
-        string currentDirectory = Directory.GetCurrentDirectory();
-        string testDataPath = Path.Combine(currentDirectory, "TestData");
+        string baseDirectory = AppContext.BaseDirectory;
+        string testDataPath = Path.Combine(baseDirectory, "TestData");
         
-        if (!Directory.Exists(testDataPath))
+        DirectoryInfo testDataDirectory = new(testDataPath);
+        
+        if (!testDataDirectory.Exists)
         {
-            throw new InvalidOperationException($"TestData directory not found at: {testDataPath}");
+            throw new InvalidOperationException($"TestData directory not found at: {testDataDirectory.FullName}");
         }
         
-        return testDataPath;
+        return testDataDirectory;
     }
 }
