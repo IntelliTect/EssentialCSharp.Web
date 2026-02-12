@@ -1,6 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
+    <!--
+    CA1873: Logging argument evaluation - suppress for now; affects 14+ scaffolded Identity pages.
+    TODO: Address by converting to LoggerMessage source generators in a follow-up.
+    -->
+    <NoWarn>$(NoWarn);CA1873</NoWarn>
   </PropertyGroup>
   
   <ItemGroup>
