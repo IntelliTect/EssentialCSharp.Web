@@ -1,8 +1,10 @@
-﻿using EssentialCSharp.Web.Data;
+﻿using System.Data.Common;
+using EssentialCSharp.Web.Data;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace EssentialCSharp.Web.Tests;
@@ -16,13 +18,23 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>
     {
         builder.ConfigureServices(services =>
         {
-            ServiceDescriptor? descriptor = services.SingleOrDefault(
+            ServiceDescriptor? dbContextDescriptor = services.SingleOrDefault(
                 d => d.ServiceType ==
-                    typeof(DbContextOptions<EssentialCSharpWebContext>));
+                    typeof(IDbContextOptionsConfiguration<EssentialCSharpWebContext>));
 
-            if (descriptor != null)
+            if (dbContextDescriptor != null)
             {
-                services.Remove(descriptor);
+                services.Remove(dbContextDescriptor);
+            }
+
+            ServiceDescriptor? dbConnectionDescriptor =
+                services.SingleOrDefault(
+                    d => d.ServiceType ==
+                    typeof(DbConnection));
+
+            if (dbConnectionDescriptor != null)
+            {
+                services.Remove(dbConnectionDescriptor);
             }
 
             _Connection = new SqliteConnection(SqlConnectionString);

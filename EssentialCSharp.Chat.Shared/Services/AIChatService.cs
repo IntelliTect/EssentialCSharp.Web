@@ -13,7 +13,9 @@ public class AIChatService
 {
     private readonly AIOptions _Options;
     private readonly AzureOpenAIClient _AzureClient;
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     private readonly OpenAIResponseClient _ResponseClient;
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     private readonly AISearchService _SearchService;
 
     public AIChatService(IOptions<AIOptions> options, AISearchService searchService, AzureOpenAIClient azureClient)
@@ -24,7 +26,9 @@ public class AIChatService
         // Initialize Azure OpenAI client and get the Response Client from it
         _AzureClient = azureClient;
 
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         _ResponseClient = _AzureClient.GetOpenAIResponseClient(_Options.ChatDeploymentName);
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     }
 
     /// <summary>
@@ -43,8 +47,10 @@ public class AIChatService
         string? systemPrompt = null,
         string? previousResponseId = null,
         IMcpClient? mcpClient = null,
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         IEnumerable<ResponseTool>? tools = null,
         ResponseReasoningEffortLevel? reasoningEffortLevel = null,
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         bool enableContextualSearch = false,
         CancellationToken cancellationToken = default)
     {
@@ -69,8 +75,10 @@ public class AIChatService
         string? systemPrompt = null,
         string? previousResponseId = null,
         IMcpClient? mcpClient = null,
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         IEnumerable<ResponseTool>? tools = null,
         ResponseReasoningEffortLevel? reasoningEffortLevel = null,
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         bool enableContextualSearch = false,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
@@ -81,11 +89,13 @@ public class AIChatService
         var systemContext = systemPrompt ?? _Options.SystemPrompt;
 
         // Create the streaming response using the Responses API
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         List<ResponseItem> responseItems = [ResponseItem.CreateUserMessageItem(enrichedPrompt)];
         if (systemContext is not null)
         {
             responseItems.Add(
                 ResponseItem.CreateSystemMessageItem(systemContext));
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         }
         var streamingUpdates = _ResponseClient.CreateResponseStreamingAsync(
             responseItems,
@@ -132,14 +142,17 @@ public class AIChatService
     /// Processes streaming updates from the OpenAI Responses API, handling both regular responses and function calls
     /// </summary>
     private async IAsyncEnumerable<(string text, string? responseId)> ProcessStreamingUpdatesAsync(
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         IAsyncEnumerable<StreamingResponseUpdate> streamingUpdates,
         ResponseCreationOptions responseOptions,
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         IMcpClient? mcpClient,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await foreach (var update in streamingUpdates.WithCancellation(cancellationToken))
         {
             string? responseId;
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
             if (update is StreamingResponseCreatedUpdate created)
             {
                 // Remember the response ID for later function calls
@@ -167,8 +180,10 @@ public class AIChatService
             }
             else if (update is StreamingResponseCompletedUpdate completedUpdate)
             {
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
                 yield return (string.Empty, responseId: completedUpdate.Response.Id); // Signal completion with response ID
             }
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         }
     }
 
@@ -176,8 +191,10 @@ public class AIChatService
     /// Executes a function call and streams the response
     /// </summary>
     private async IAsyncEnumerable<(string text, string? responseId)> ExecuteFunctionCallAsync(
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         FunctionCallResponseItem functionCallItem,
         ResponseCreationOptions responseOptions,
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         IMcpClient mcpClient,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
@@ -217,11 +234,13 @@ public class AIChatService
 
         // Create input items with both the function call and the result
         // This matches the Python pattern: append both tool_call and result
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         var inputItems = new List<ResponseItem>
         {
             functionCallItem, // The original function call
             new FunctionCallOutputResponseItem(functionCallItem.CallId, string.Join("", toolResult.Content.Where(x => x.Type == "text").OfType<TextContentBlock>().Select(x => x.Text)))
         };
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
         // Stream the function call response using the same processing logic
         var functionResponseStream = _ResponseClient.CreateResponseStreamingAsync(
@@ -238,6 +257,7 @@ public class AIChatService
     /// <summary>
     /// Creates response options with optional features
     /// </summary>
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     private static async Task<ResponseCreationOptions> CreateResponseOptionsAsync(
         string? previousResponseId = null,
         IEnumerable<ResponseTool>? tools = null,
@@ -247,6 +267,7 @@ public class AIChatService
         )
     {
         var options = new ResponseCreationOptions();
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
         // Add conversation context if available
         if (!string.IsNullOrEmpty(previousResponseId))
@@ -267,17 +288,21 @@ public class AIChatService
         {
             await foreach (McpClientTool tool in mcpClient.EnumerateToolsAsync(cancellationToken: cancellationToken))
             {
-                options.Tools.Add(ResponseTool.CreateFunctionTool(tool.Name, tool.Description, BinaryData.FromString(tool.JsonSchema.GetRawText())));
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+                options.Tools.Add(ResponseTool.CreateFunctionTool(tool.Name, functionDescription: tool.Description, strictModeEnabled: true, functionParameters: BinaryData.FromString(tool.JsonSchema.GetRawText())));
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
             }
         }
 
         // Add reasoning options if specified
         if (reasoningEffortLevel.HasValue)
         {
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
             options.ReasoningOptions = new ResponseReasoningOptions()
             {
                 ReasoningEffortLevel = reasoningEffortLevel.Value
             };
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         }
 
         return options;
@@ -288,7 +313,9 @@ public class AIChatService
     /// </summary>
     private async Task<(string response, string responseId)> GetChatCompletionCore(
         string prompt,
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         ResponseCreationOptions responseOptions,
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         string? systemPrompt = null,
         CancellationToken cancellationToken = default)
     {
@@ -296,11 +323,13 @@ public class AIChatService
         var systemContext = systemPrompt ?? _Options.SystemPrompt;
 
         // Create the streaming response using the Responses API
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         List<ResponseItem> responseItems = [ResponseItem.CreateUserMessageItem(prompt)];
         if (systemContext is not null)
         {
             responseItems.Add(
                 ResponseItem.CreateSystemMessageItem(systemContext));
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         }
 
         // Create the response using the Responses API
@@ -315,6 +344,7 @@ public class AIChatService
 
         foreach (var outputItem in response.Value.OutputItems)
         {
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
             if (outputItem is MessageResponseItem messageItem &&
                 messageItem.Role == MessageRole.Assistant)
             {
@@ -325,6 +355,7 @@ public class AIChatService
                     break;
                 }
             }
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         }
 
         return (responseText, responseId);
