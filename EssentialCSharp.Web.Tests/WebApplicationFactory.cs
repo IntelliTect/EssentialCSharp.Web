@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 
@@ -44,7 +45,7 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>
             db.Database.EnsureCreated();
 
             // Replace IListingSourceCodeService with one backed by TestData
-            builder.Services.RemoveAll<IListingSourceCodeService>();
+            services.RemoveAll<IListingSourceCodeService>();
 
             string testDataPath = Path.Combine(AppContext.BaseDirectory, "TestData");
             var fileProvider = new PhysicalFileProvider(testDataPath);
