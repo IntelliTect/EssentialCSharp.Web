@@ -11,7 +11,7 @@ namespace EssentialCSharp.Chat.Common.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    private static readonly string[] PostgresScopes = ["https://ossrdbms-aad.database.windows.net/.default"];
+    private static readonly string[] _PostgresScopes = ["https://ossrdbms-aad.database.windows.net/.default"];
 
     /// <summary>
     /// Adds Azure OpenAI and related AI services to the service collection using Managed Identity
@@ -124,7 +124,7 @@ public static class ServiceCollectionExtensions
         if (isAzurePostgres && string.IsNullOrEmpty(builder.Password))
         {
             // Get access token for Azure PostgreSQL using managed identity
-            var tokenRequestContext = new TokenRequestContext(PostgresScopes);
+            var tokenRequestContext = new TokenRequestContext(_PostgresScopes);
             var accessToken = credential.GetToken(tokenRequestContext, default);
 
             // Set the password to the access token
