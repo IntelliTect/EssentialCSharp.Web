@@ -397,7 +397,7 @@ export function useTryDotNet() {
      * @returns {Promise<string>} The listing source code (extracted snippet)
      */
     async function fetchListingCode(chapter, listing) {
-        const response = await fetch(`/api/ListingSourceCode/${chapter}/${listing}`);
+        const response = await fetch(`/api/ListingSourceCode/chapter/${chapter}/listing/${listing}`);
         if (!response.ok) {
             throw new Error(ERROR_MESSAGES.fetchFailed);
         }

@@ -14,7 +14,7 @@ public class ListingSourceCodeControllerTests
         HttpClient client = factory.CreateClient();
 
         // Act
-        using HttpResponseMessage response = await client.GetAsync("/api/ListingSourceCode/1/1");
+        using HttpResponseMessage response = await client.GetAsync("/api/ListingSourceCode/chapter/1/listing/1");
         
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -36,7 +36,7 @@ public class ListingSourceCodeControllerTests
         HttpClient client = factory.CreateClient();
 
         // Act
-        using HttpResponseMessage response = await client.GetAsync("/api/ListingSourceCode/999/1");
+        using HttpResponseMessage response = await client.GetAsync("/api/ListingSourceCode/chapter/999/listing/1");
         
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -50,7 +50,7 @@ public class ListingSourceCodeControllerTests
         HttpClient client = factory.CreateClient();
 
         // Act
-        using HttpResponseMessage response = await client.GetAsync("/api/ListingSourceCode/1/999");
+        using HttpResponseMessage response = await client.GetAsync("/api/ListingSourceCode/chapter/1/listing/999");
         
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -64,7 +64,7 @@ public class ListingSourceCodeControllerTests
         HttpClient client = factory.CreateClient();
 
         // Act
-        using HttpResponseMessage response = await client.GetAsync("/api/ListingSourceCode/1");
+        using HttpResponseMessage response = await client.GetAsync("/api/ListingSourceCode/chapter/1");
         
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -95,7 +95,7 @@ public class ListingSourceCodeControllerTests
         HttpClient client = factory.CreateClient();
 
         // Act
-        using HttpResponseMessage response = await client.GetAsync("/api/ListingSourceCode/999");
+        using HttpResponseMessage response = await client.GetAsync("/api/ListingSourceCode/chapter/999");
         
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

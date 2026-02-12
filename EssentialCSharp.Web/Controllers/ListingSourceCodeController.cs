@@ -18,25 +18,25 @@ public class ListingSourceCodeController : ControllerBase
         _Logger = logger;
     }
 
-    [HttpGet("{chapterNumber}/{listingNumber}")]
+    [HttpGet("chapter/{chapter}/listing/{listing}")]
     [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
-    public async Task<IActionResult> GetListing(int chapterNumber, int listingNumber)
+    public async Task<IActionResult> GetListing(int chapter, int listing)
     {
-        var result = await _ListingSourceCodeService.GetListingAsync(chapterNumber, listingNumber);
+        var result = await _ListingSourceCodeService.GetListingAsync(chapter, listing);
         
         if (result == null)
         {
-            return NotFound(new { error = $"Listing {chapterNumber}.{listingNumber} not found." });
+            return NotFound(new { error = $"Listing {chapter}.{listing} not found." });
         }
 
         return Ok(result);
     }
 
-    [HttpGet("{chapterNumber}")]
+    [HttpGet("chapter/{chapter}")]
     [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
-    public async Task<IActionResult> GetListingsByChapter(int chapterNumber)
+    public async Task<IActionResult> GetListingsByChapter(int chapter)
     {
-        var results = await _ListingSourceCodeService.GetListingsByChapterAsync(chapterNumber);
+        var results = await _ListingSourceCodeService.GetListingsByChapterAsync(chapter);
         return Ok(results);
     }
 }
