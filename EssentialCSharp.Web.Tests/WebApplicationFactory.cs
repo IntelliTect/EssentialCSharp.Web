@@ -1,4 +1,5 @@
-﻿using EssentialCSharp.Web.Data;
+﻿using System.Data.Common;
+using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
