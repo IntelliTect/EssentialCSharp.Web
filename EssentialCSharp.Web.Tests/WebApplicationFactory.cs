@@ -44,12 +44,7 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>
             db.Database.EnsureCreated();
 
             // Replace IListingSourceCodeService with one backed by TestData
-            ServiceDescriptor? listingDescriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(IListingSourceCodeService));
-            if (listingDescriptor != null)
-            {
-                services.Remove(listingDescriptor);
-            }
+            builder.Services.RemoveAll<IListingSourceCodeService>();
 
             string testDataPath = Path.Combine(AppContext.BaseDirectory, "TestData");
             var fileProvider = new PhysicalFileProvider(testDataPath);
