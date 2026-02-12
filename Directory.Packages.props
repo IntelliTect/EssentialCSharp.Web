@@ -22,7 +22,7 @@
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.4.0" />
     <PackageVersion Include="Microsoft.ApplicationInsights.Profiler.AspNetCore" Version="3.0.1" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
-    <PackageVersion Include="EssentialCSharp.Shared.Models" Version="1.1.1.18585" />
+    <PackageVersion Include="EssentialCSharp.Shared.Models" Version="$(ToolingPackagesVersion)" />
     <PackageVersion Include="HtmlAgilityPack" Version="1.12.4" />
     <PackageVersion Include="IntelliTect.Multitool" Version="1.5.3" />
     <PackageVersion Include="Mailjet.Api" Version="3.0.1" />
