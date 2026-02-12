@@ -42,13 +42,12 @@ public partial class ListingSourceCodeService : IListingSourceCodeService
         string content = await ReadFileContentAsync(matchingFile);
         string extension = Path.GetExtension(matchingFile.Name).TrimStart('.');
 
-        return new ListingSourceCodeResponse
-        {
-            ChapterNumber = chapterNumber,
-            ListingNumber = listingNumber,
-            FileExtension = extension,
-            Content = content
-        };
+        return new ListingSourceCodeResponse(
+            chapterNumber,
+            listingNumber,
+            extension,
+            content
+        );
     }
 
     public async Task<IReadOnlyList<ListingSourceCodeResponse>> GetListingsByChapterAsync(int chapterNumber)
@@ -85,13 +84,12 @@ public partial class ListingSourceCodeService : IListingSourceCodeService
         {
             string content = await ReadFileContentAsync(item.File);
             
-            results.Add(new ListingSourceCodeResponse
-            {
-                ChapterNumber = item.ChapterNumber,
-                ListingNumber = item.ListingNumber,
-                FileExtension = item.Extension,
-                Content = content
-            });
+            results.Add(new ListingSourceCodeResponse(
+                item.ChapterNumber,
+                item.ListingNumber,
+                item.Extension,
+                content
+            ));
         }
 
         return results.OrderBy(r => r.ListingNumber).ToList();
