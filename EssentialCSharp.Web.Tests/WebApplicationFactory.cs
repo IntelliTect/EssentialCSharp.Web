@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace EssentialCSharp.Web.Tests;
 
@@ -51,9 +52,11 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>
             var fileProvider = new PhysicalFileProvider(testDataPath);
             services.AddSingleton<IListingSourceCodeService>(sp =>
             {
-                var mockEnv = new TestWebHostEnvironment(testDataPath, fileProvider);
+                var mockEnv = new Mock<IWebHostEnvironment>();
+                mockEnv.Setup(m => m.ContentRootPath).Returns(testDataPath);
+                mockEnv.Setup(m => m.ContentRootFileProvider).Returns(fileProvider);
                 var logger = sp.GetRequiredService<ILogger<ListingSourceCodeService>>();
-                return new ListingSourceCodeService(mockEnv, logger);
+                return new ListingSourceCodeService(mockEnv.Object, logger);
             });
         });
     }
@@ -91,23 +94,4 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>
             _Connection = null;
         }
     }
-}
-
-/// <summary>
-/// Minimal IWebHostEnvironment implementation that redirects ContentRoot to the TestData directory.
-/// </summary>
-internal sealed class TestWebHostEnvironment : IWebHostEnvironment
-{
-    public TestWebHostEnvironment(string contentRootPath, IFileProvider contentRootFileProvider)
-    {
-        ContentRootPath = contentRootPath;
-        ContentRootFileProvider = contentRootFileProvider;
-    }
-
-    public string ContentRootPath { get; set; }
-    public IFileProvider ContentRootFileProvider { get; set; }
-    public string WebRootPath { get; set; } = string.Empty;
-    public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
-    public string EnvironmentName { get; set; } = "Testing";
-    public string ApplicationName { get; set; } = "EssentialCSharp.Web";
 }
