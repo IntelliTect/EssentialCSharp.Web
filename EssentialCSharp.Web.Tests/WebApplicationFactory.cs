@@ -7,8 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Logging;
-using Moq;
+using Moq.AutoMock;
 
 namespace EssentialCSharp.Web.Tests;
 
@@ -52,11 +51,10 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>
             var fileProvider = new PhysicalFileProvider(testDataPath);
             services.AddSingleton<IListingSourceCodeService>(sp =>
             {
-                var mockEnv = new Mock<IWebHostEnvironment>();
-                mockEnv.Setup(m => m.ContentRootPath).Returns(testDataPath);
-                mockEnv.Setup(m => m.ContentRootFileProvider).Returns(fileProvider);
-                var logger = sp.GetRequiredService<ILogger<ListingSourceCodeService>>();
-                return new ListingSourceCodeService(mockEnv.Object, logger);
+                var mocker = new AutoMocker();
+                mocker.Setup<IWebHostEnvironment, string>(m => m.ContentRootPath).Returns(testDataPath);
+                mocker.Setup<IWebHostEnvironment, IFileProvider>(m => m.ContentRootFileProvider).Returns(fileProvider);
+                return mocker.CreateInstance<ListingSourceCodeService>();
             });
         });
     }
