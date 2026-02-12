@@ -2,8 +2,8 @@ using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Logging;
 using Moq;
+using Moq.AutoMock;
 
 namespace EssentialCSharp.Web.Tests;
 
@@ -121,14 +121,13 @@ public class ListingSourceCodeServiceTests
     private static ListingSourceCodeService CreateService()
     {
         DirectoryInfo testDataRoot = GetTestDataPath();
-        
-        var mockWebHostEnvironment = new Mock<IWebHostEnvironment>();
+
+        AutoMocker mocker = new();
+        Mock<IWebHostEnvironment> mockWebHostEnvironment = mocker.GetMock<IWebHostEnvironment>();
         mockWebHostEnvironment.Setup(m => m.ContentRootPath).Returns(testDataRoot.FullName);
         mockWebHostEnvironment.Setup(m => m.ContentRootFileProvider).Returns(new PhysicalFileProvider(testDataRoot.FullName));
-        
-        var mockLogger = new Mock<ILogger<ListingSourceCodeService>>();
-        
-        return new ListingSourceCodeService(mockWebHostEnvironment.Object, mockLogger.Object);
+
+        return mocker.CreateInstance<ListingSourceCodeService>();
     }
 
     private static DirectoryInfo GetTestDataPath()
