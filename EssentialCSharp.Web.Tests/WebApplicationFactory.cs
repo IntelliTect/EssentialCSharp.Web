@@ -1,11 +1,15 @@
-﻿using System.Data.Common;
+using System.Data.Common;
 using EssentialCSharp.Web.Data;
+using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.FileProviders;
+using Moq.AutoMock;
 
 namespace EssentialCSharp.Web.Tests;
 
@@ -51,6 +55,19 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>
             EssentialCSharpWebContext db = scopedServices.GetRequiredService<EssentialCSharpWebContext>();
 
             db.Database.EnsureCreated();
+
+            // Replace IListingSourceCodeService with one backed by TestData
+            services.RemoveAll<IListingSourceCodeService>();
+
+            string testDataPath = Path.Combine(AppContext.BaseDirectory, "TestData");
+            var fileProvider = new PhysicalFileProvider(testDataPath);
+            services.AddSingleton<IListingSourceCodeService>(sp =>
+            {
+                var mocker = new AutoMocker();
+                mocker.Setup<IWebHostEnvironment, string>(m => m.ContentRootPath).Returns(testDataPath);
+                mocker.Setup<IWebHostEnvironment, IFileProvider>(m => m.ContentRootFileProvider).Returns(fileProvider);
+                return mocker.CreateInstance<ListingSourceCodeService>();
+            });
         });
     }
 

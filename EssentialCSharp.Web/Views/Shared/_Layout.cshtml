@@ -6,9 +6,11 @@
 @using Microsoft.AspNetCore.Identity
 @using EssentialCSharp.Web.Areas.Identity.Data
 @using Microsoft.Extensions.Options
+@using Microsoft.Extensions.Configuration
 @inject ISiteMappingService _SiteMappings
 @inject SignInManager<EssentialCSharpWebUser> SignInManager
 @inject IOptions<CaptchaOptions> CaptchaOptions
+@inject IConfiguration Configuration
 @using Microsoft.AspNetCore.Components
 @{
     var prodMap = new ImportMapDefinition(
@@ -57,6 +59,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/chat-widget.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/code-runner.css" asp-append-version="true" />
     <link rel="stylesheet" href="/lib/docsearch/style.css" />
     @*Font Family*@
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -468,6 +471,123 @@
             </div>
             }
 
+            <!-- Interactive Code Runner Panel -->
+            <div 
+                class="code-runner-overlay"
+                :class="{ active: isCodeRunnerOpen }"
+                v-on:click.self="closeCodeRunner"
+                role="dialog"
+                aria-labelledby="code-runner-dialog-title"
+                aria-modal="true"
+                tabindex="-1"
+                v-cloak
+            >
+                <div class="code-runner-panel">
+                    <!-- Header -->
+                    <div class="code-runner-header">
+                        <h3 id="code-runner-dialog-title" class="code-runner-title">
+                            <i class="mdi mdi-play-circle-outline" aria-hidden="true"></i>
+                            <span v-if="currentListingInfo">{{ currentListingInfo.title }}</span>
+                            <span v-else>Interactive Code Runner</span>
+                        </h3>
+                        <button 
+                            class="code-runner-close-btn"
+                            v-on:click="closeCodeRunner"
+                            aria-label="Close code runner"
+                            title="Close code runner"
+                            type="button"
+                        >
+                            <i class="mdi mdi-close" aria-hidden="true"></i>
+                        </button>
+                    </div>
+
+                    <!-- Editor container -->
+                    <div class="code-runner-editor-container">
+                        <!-- Editor Header and Controls -->
+                        <div class="code-runner-editor-header" v-show="!codeRunnerLoading && !codeRunnerError">
+                            <h4>Editor</h4>
+                            <div class="code-runner-buttons">
+                                <button 
+                                    class="code-runner-run-btn"
+                                    v-on:click="runCode"
+                                    :disabled="isRunning"
+                                    aria-label="Run code"
+                                    type="button"
+                                >
+                                    <i :class="isRunning ? 'mdi mdi-loading mdi-spin' : 'mdi mdi-play'" aria-hidden="true"></i>
+                                    <span v-if="isRunning">Running...</span>
+                                    <span v-else>Run</span>
+                                </button>
+                                <button 
+                                    class="code-runner-clear-btn"
+                                    v-on:click="clearEditor"
+                                    :disabled="isRunning"
+                                    aria-label="Clear editor"
+                                    type="button"
+                                >
+                                    <i class="mdi mdi-eraser" aria-hidden="true"></i>
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Monaco Editor iframe (always rendered) -->
+                        <iframe 
+                            class="code-runner-editor" 
+                            title="C# Code Editor"
+                            v-show="!codeRunnerLoading && !codeRunnerError"
+                        ></iframe>
+
+                        <!-- Loading overlay -->
+                        <div v-if="codeRunnerLoading" class="code-runner-loading">
+                            <div class="code-runner-spinner"></div>
+                            <div class="code-runner-loading-text">Loading editor...</div>
+                        </div>
+
+                        <!-- Error overlay -->
+                        <div v-if="codeRunnerError" class="code-runner-error">
+                            <i class="mdi mdi-alert-circle-outline" aria-hidden="true"></i>
+                            <p>{{ codeRunnerError }}</p>
+                            <button 
+                                class="code-runner-retry-btn"
+                                v-on:click="retryCodeRunner"
+                                aria-label="Retry loading the code runner"
+                                type="button"
+                            >
+                                <i class="mdi mdi-refresh" aria-hidden="true"></i>
+                                Retry
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Output console -->
+                    <div class="code-runner-output-container">
+                        <div class="code-runner-output-header">
+                            <h4>
+                                <i class="mdi mdi-console" aria-hidden="true"></i>
+                                Output
+                            </h4>
+                            <button 
+                                class="code-runner-clear-output-btn"
+                                v-on:click="clearOutput"
+                                aria-label="Clear output"
+                                type="button"
+                            >
+                                <i class="mdi mdi-delete-outline" aria-hidden="true"></i>
+                                Clear
+                            </button>
+                        </div>
+                        <pre 
+                            class="code-runner-output"
+                            :class="{ error: codeRunnerOutputError }"
+                            role="log"
+                            aria-live="polite"
+                            aria-label="Code execution output"
+                        >{{ codeRunnerOutput }}</pre>
+                    </div>
+                </div>
+            </div>
+
             <!-- Captcha Modal - Blocking Dialog -->
             <div 
                 v-if="showCaptcha" 
@@ -547,6 +667,7 @@
             REFERRAL_ID = @Json.Serialize(ViewBag.ReferralId)
             IS_AUTHENTICATED = @Json.Serialize(SignInManager.IsSignedIn(User));
             HCAPTCHA_SITE_KEY = @Json.Serialize(CaptchaOptions.Value.SiteKey);
+            TRYDOTNET_ORIGIN = @Json.Serialize(Configuration["TryDotNet:Origin"]);
     </script>
 
     @* Recursive vue component template for rendering the table of contents. *@

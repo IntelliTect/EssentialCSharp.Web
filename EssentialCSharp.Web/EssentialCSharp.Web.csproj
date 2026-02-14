@@ -7,6 +7,14 @@
     -->
     <NoWarn>$(NoWarn);CA1873</NoWarn>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <Compile Remove="ListingSourceCode\**\*.cs" />
+    <None Include="ListingSourceCode\**\*.cs" />
+    <!-- Copy all ListingSourceCode files to output directory for testing -->
+    <None Include="ListingSourceCode\**\*.*" CopyToOutputDirectory="PreserveNewest" LinkBase="ListingSourceCode\" />
+  </ItemGroup>
+  
   <ItemGroup>
     <PlaceholderChapterOneHtmlFile Include="$(ProjectDir)/Placeholders/Chapters/01/Pages/*.html" />
     <PlaceholderChapterTwoHtmlFile Include="$(ProjectDir)/Placeholders/Chapters/02/Pages/*.html" />

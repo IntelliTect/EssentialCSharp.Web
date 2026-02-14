@@ -138,6 +138,7 @@ jobs:
           ACR_USERNAME: ${{ secrets.ESSENTIALCSHARP_ACR_USERNAME }}
           ACR_PASSWORD: ${{ secrets.ESSENTIALCSHARP_ACR_PASSWORD }}
           AZURECLIENTID: ${{ secrets.IDENTITY_CLIENT_ID }}
+          TRYDOTNET_ORIGIN: ${{ vars.TRYDOTNET_ORIGIN }}
         with:
           inlineScript: |
             az containerapp identity assign -n ${{ vars.CONTAINER_APP_NAME }} -g ${{ vars.RESOURCEGROUP }} --user-assigned ${{ vars.CONTAINER_APP_IDENTITY }}
@@ -157,7 +158,8 @@ jobs:
               AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Staging \
               AZURE_CLIENT_ID=$AZURECLIENTID HCaptcha__SiteKey=secretref:captcha-sitekey HCaptcha__SecretKey=secretref:captcha-secretkey ApplicationInsights__ConnectionString=secretref:appinsights-connectionstring \
               AIOptions__Endpoint=secretref:ai-endpoint AIOptions__ApiKey=secretref:ai-apikey AIOptions__VectorGenerationDeploymentName=secretref:ai-vectordeployment AIOptions__ChatDeploymentName=secretref:ai-chatdeployment \
-              AIOptions__SystemPrompt=secretref:ai-systemprompt ConnectionStrings__PostgresVectorStore=secretref:postgres-vectorstore-connectionstring
+              AIOptions__SystemPrompt=secretref:ai-systemprompt ConnectionStrings__PostgresVectorStore=secretref:postgres-vectorstore-connectionstring \
+              TryDotNet__Origin=$TRYDOTNET_ORIGIN
 
       - name: Logout of Azure CLI
         if: always()
@@ -230,6 +232,7 @@ jobs:
           ACR_USERNAME: ${{ secrets.ESSENTIALCSHARP_ACR_USERNAME }}
           ACR_PASSWORD: ${{ secrets.ESSENTIALCSHARP_ACR_PASSWORD }}
           AZURECLIENTID: ${{ secrets.IDENTITY_CLIENT_ID }}
+          TRYDOTNET_ORIGIN: ${{ vars.TRYDOTNET_ORIGIN }}
         with:
           inlineScript: |
             az containerapp identity assign -n ${{ vars.CONTAINER_APP_NAME }} -g ${{ vars.RESOURCEGROUP }} --user-assigned ${{ vars.CONTAINER_APP_IDENTITY }}
@@ -249,7 +252,8 @@ jobs:
               AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Production \
               AZURE_CLIENT_ID=$AZURECLIENTID HCaptcha__SiteKey=secretref:captcha-sitekey HCaptcha__SecretKey=secretref:captcha-secretkey ApplicationInsights__ConnectionString=secretref:appinsights-connectionstring \
               AIOptions__Endpoint=secretref:ai-endpoint AIOptions__ApiKey=secretref:ai-apikey AIOptions__VectorGenerationDeploymentName=secretref:ai-vectordeployment AIOptions__ChatDeploymentName=secretref:ai-chatdeployment \
-              AIOptions__SystemPrompt=secretref:ai-systemprompt ConnectionStrings__PostgresVectorStore=secretref:postgres-vectorstore-connectionstring
+              AIOptions__SystemPrompt=secretref:ai-systemprompt ConnectionStrings__PostgresVectorStore=secretref:postgres-vectorstore-connectionstring \
+              TryDotNet__Origin=$TRYDOTNET_ORIGIN
 
 
       - name: Logout of Azure CLI

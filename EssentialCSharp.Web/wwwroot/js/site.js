@@ -10,6 +10,7 @@ import {
 import { createVuetify } from "vuetify";
 import { useWindowSize } from "vue-window-size";
 import { useChatWidget } from "./chat-module.js";
+import { useTryDotNet } from "./trydotnet-module.js";
 
 /**
  * @typedef {Object} TocItem
@@ -333,6 +334,9 @@ const app = createApp({
         // Initialize chat functionality
         const chatWidget = useChatWidget();
 
+        // Initialize TryDotNet code runner functionality
+        const tryDotNet = useTryDotNet();
+
         return {
             previousPageUrl,
             nextPageUrl,
@@ -366,7 +370,8 @@ const app = createApp({
             enableTocFilter,
             isContentPage,
 
-            ...chatWidget
+            ...chatWidget,
+            ...tryDotNet
         };
     },
 });
