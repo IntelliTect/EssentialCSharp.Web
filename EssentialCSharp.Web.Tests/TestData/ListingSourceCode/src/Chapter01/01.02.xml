@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Test XML listing 01.02 -->
+<configuration>
+    <appSettings>
+        <add key="TestKey" value="TestValue" />
+    </appSettings>
+</configuration>

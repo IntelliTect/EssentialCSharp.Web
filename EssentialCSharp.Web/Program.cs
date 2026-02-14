@@ -152,6 +152,7 @@ public partial class Program
         builder.Services.AddCaptchaService(builder.Configuration.GetSection(CaptchaOptions.CaptchaSender));
         builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
         builder.Services.AddSingleton<IRouteConfigurationService, RouteConfigurationService>();
+        builder.Services.AddSingleton<IListingSourceCodeService, ListingSourceCodeService>();
         builder.Services.AddHostedService<DatabaseMigrationService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
 

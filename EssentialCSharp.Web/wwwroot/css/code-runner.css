@@ -1,0 +1,686 @@
+/* Code Runner Panel - Interactive Code Execution Styles */
+
+/* CSS Custom Properties */
+:root {
+    /* Primary palette */
+    --code-runner-primary: #388e3c;
+    --code-runner-primary-mid: #2e7d32;
+    --code-runner-primary-dark: #1b5e20;
+    --code-runner-primary-darker: #0d3d0f;
+    --code-runner-primary-shadow: rgba(56, 142, 60, 0.3);
+    --code-runner-primary-shadow-strong: rgba(56, 142, 60, 0.4);
+
+    /* Gradients */
+    --code-runner-gradient: linear-gradient(135deg, var(--code-runner-primary) 0%, var(--code-runner-primary-mid) 50%, var(--code-runner-primary-dark) 100%);
+    --code-runner-gradient-hover: linear-gradient(135deg, var(--code-runner-primary-mid) 0%, var(--code-runner-primary-dark) 50%, var(--code-runner-primary-darker) 100%);
+
+    /* Surface & text */
+    --code-runner-surface: #ffffff;
+    --code-runner-surface-alt: #fafafa;
+    --code-runner-surface-alt2: #f5f5f5;
+    --code-runner-surface-header: #f8f9fa;
+    --code-runner-surface-header-end: #f1f3f4;
+    --code-runner-text: rgba(0, 0, 0, 0.87);
+    --code-runner-text-secondary: rgba(0, 0, 0, 0.6);
+    --code-runner-text-tertiary: rgba(0, 0, 0, 0.54);
+    --code-runner-border: rgba(0, 0, 0, 0.08);
+    --code-runner-border-light: rgba(0, 0, 0, 0.06);
+    --code-runner-hover-bg: rgba(0, 0, 0, 0.04);
+    --code-runner-hover-bg-strong: rgba(0, 0, 0, 0.08);
+
+    /* Console / output */
+    --code-runner-console-bg: #1e1e1e;
+    --code-runner-console-header-bg: #252526;
+    --code-runner-console-border: #333333;
+    --code-runner-console-text: #d4d4d4;
+    --code-runner-console-text-secondary: rgba(255, 255, 255, 0.7);
+    --code-runner-console-text-tertiary: rgba(255, 255, 255, 0.5);
+    --code-runner-console-scroll-thumb: rgba(255, 255, 255, 0.15);
+    --code-runner-console-scroll-thumb-hover: rgba(255, 255, 255, 0.25);
+
+    /* Error */
+    --code-runner-error-color: #f44336;
+    --code-runner-error-dark: #d32f2f;
+    --code-runner-error-darker: #c62828;
+    --code-runner-error-bg-start: #ffebee;
+    --code-runner-error-bg-end: #ffcdd2;
+    --code-runner-error-output: #f48771;
+    --code-runner-error-close-hover-bg: rgba(244, 67, 54, 0.08);
+
+    /* Focus */
+    --code-runner-focus-ring: rgba(56, 142, 60, 0.3);
+    --code-runner-focus-ring-light: rgba(255, 255, 255, 0.3);
+
+    /* Layout */
+    --code-runner-panel-width: 600px;
+
+    /* Z-index layers — relative to site overlay layer */
+    --code-runner-z-overlay: 1100;
+    --code-runner-z-panel: 1101;
+
+    /* Easing */
+    --code-runner-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Box-sizing scope */
+.code-runner-panel *,
+.code-runner-panel *::before,
+.code-runner-panel *::after {
+    box-sizing: border-box;
+}
+
+/* Run button (inline, placed next to listings) */
+.code-runner-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 14px;
+    margin-inline-start: 8px;
+    background: var(--code-runner-gradient);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 200ms var(--code-runner-ease);
+    flex-shrink: 0;
+    box-shadow: 0 1px 3px var(--code-runner-primary-shadow);
+    position: relative;
+    overflow: hidden;
+}
+
+.code-runner-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.code-runner-btn:hover::before {
+    left: 100%;
+}
+
+.code-runner-btn:hover {
+    background: var(--code-runner-gradient-hover);
+    box-shadow: 0 3px 8px var(--code-runner-primary-shadow-strong);
+}
+
+.code-runner-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px var(--code-runner-primary-shadow);
+}
+
+.code-runner-btn:focus-visible {
+    outline: 3px solid var(--code-runner-focus-ring);
+    outline-offset: 2px;
+}
+
+.code-runner-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.code-runner-btn i {
+    font-size: 15px;
+}
+
+/* Slide-out panel overlay */
+.code-runner-overlay {
+    position: fixed;
+    inset: 0;
+    /* Opaque fallback for browsers without backdrop-filter support */
+    background: rgba(0, 0, 0, 0.6);
+    z-index: var(--code-runner-z-overlay);
+    opacity: 0;
+    visibility: hidden;
+    /* visibility uses a step delay: hide after fade-out completes */
+    transition: opacity 250ms var(--code-runner-ease),
+                visibility 0s linear 250ms;
+}
+
+@supports (backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px)) {
+    .code-runner-overlay {
+        background: rgba(0, 0, 0, 0.4);
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+    }
+}
+
+.code-runner-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    /* visibility flips immediately on show (0s delay) */
+    transition: opacity 250ms var(--code-runner-ease),
+                visibility 0s linear 0s;
+}
+
+/* Slide-out panel */
+.code-runner-panel {
+    position: fixed;
+    top: 0;
+    inset-inline-end: 0;
+    bottom: 0;
+    width: var(--code-runner-panel-width);
+    max-width: 100vw;
+    background: var(--code-runner-surface);
+    box-shadow:
+        -8px 0 30px rgba(0, 0, 0, 0.12),
+        -2px 0 8px rgba(0, 0, 0, 0.08);
+    z-index: var(--code-runner-z-panel);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 350ms var(--code-runner-ease);
+    border-radius: 16px 0 0 16px;
+    overflow: hidden;
+    will-change: transform;
+    contain: layout style;
+}
+
+.code-runner-overlay.active .code-runner-panel {
+    transform: translateX(0);
+}
+
+/* Panel header — light gradient, matches chat */
+.code-runner-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: 20px;
+    padding-inline: 24px;
+    background: linear-gradient(135deg, var(--code-runner-surface-header) 0%, var(--code-runner-surface-header-end) 100%);
+    border-bottom: 1px solid var(--code-runner-border);
+    flex-shrink: 0;
+    position: relative;
+}
+
+.code-runner-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    inset-inline: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(56, 142, 60, 0.25) 50%, transparent 100%);
+}
+
+.code-runner-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--code-runner-text);
+    letter-spacing: 0.15px;
+}
+
+.code-runner-title i {
+    font-size: 22px;
+    color: var(--code-runner-primary);
+}
+
+.code-runner-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--code-runner-hover-bg);
+    border: none;
+    border-radius: 50%;
+    color: var(--code-runner-text-tertiary);
+    cursor: pointer;
+    transition: all 200ms var(--code-runner-ease);
+}
+
+.code-runner-close-btn:hover {
+    background: var(--code-runner-error-close-hover-bg);
+    color: var(--code-runner-error-color);
+    transform: rotate(90deg);
+}
+
+.code-runner-close-btn:focus-visible {
+    outline: 3px solid var(--code-runner-focus-ring);
+    outline-offset: 2px;
+}
+
+.code-runner-close-btn i {
+    font-size: 20px;
+}
+
+/* Editor container — top 60% of panel */
+.code-runner-editor-container {
+    /* 6 : 4 ratio with output container (60% / 40%) */
+    flex: 6;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid var(--code-runner-border);
+    position: relative;
+}
+
+.code-runner-editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: 10px;
+    padding-inline: 20px;
+    background: linear-gradient(135deg, var(--code-runner-surface-alt) 0%, var(--code-runner-surface-alt2) 100%);
+    border-bottom: 1px solid var(--code-runner-border-light);
+}
+
+.code-runner-editor-header h4 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--code-runner-text-secondary);
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+
+.code-runner-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.code-runner-run-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 20px;
+    background: var(--code-runner-gradient);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 200ms var(--code-runner-ease);
+    box-shadow: 0 2px 6px var(--code-runner-primary-shadow);
+    position: relative;
+    overflow: hidden;
+}
+
+.code-runner-run-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.code-runner-run-btn:hover::before {
+    left: 100%;
+}
+
+.code-runner-run-btn:hover {
+    background: var(--code-runner-gradient-hover);
+    box-shadow: 0 4px 12px var(--code-runner-primary-shadow-strong);
+    transform: translateY(-1px);
+}
+
+.code-runner-run-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px var(--code-runner-primary-shadow);
+}
+
+.code-runner-run-btn:focus-visible {
+    outline: 3px solid var(--code-runner-focus-ring);
+    outline-offset: 2px;
+}
+
+.code-runner-run-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.code-runner-clear-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 14px;
+    background: var(--code-runner-hover-bg);
+    color: var(--code-runner-text-secondary);
+    border: none;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 200ms var(--code-runner-ease);
+}
+
+.code-runner-clear-btn:hover {
+    background: var(--code-runner-hover-bg-strong);
+    color: var(--code-runner-text);
+}
+
+.code-runner-clear-btn:focus-visible {
+    outline: 3px solid var(--code-runner-focus-ring);
+    outline-offset: 2px;
+}
+
+/* Monaco editor iframe */
+.code-runner-editor {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    border: none;
+    display: block;
+}
+
+/* Loading state */
+.code-runner-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: var(--code-runner-text-secondary);
+    background: var(--code-runner-surface);
+    z-index: 10;
+}
+
+.code-runner-spinner {
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--code-runner-border);
+    border-radius: 50%;
+    border-top-color: var(--code-runner-primary);
+    animation: code-runner-spin 0.8s ease-in-out infinite;
+}
+
+@keyframes code-runner-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.code-runner-loading-text {
+    margin-top: 16px;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0.25px;
+}
+
+/* Error state */
+.code-runner-error {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    background: linear-gradient(135deg, var(--code-runner-error-bg-start) 0%, var(--code-runner-error-bg-end) 100%);
+    text-align: center;
+    z-index: 10;
+}
+
+.code-runner-error > i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    color: var(--code-runner-error-dark);
+    opacity: 0.8;
+}
+
+.code-runner-error p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--code-runner-error-darker);
+    max-width: 320px;
+}
+
+.code-runner-retry-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 20px;
+    padding: 8px 22px;
+    background: var(--code-runner-gradient);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 200ms var(--code-runner-ease);
+    box-shadow: 0 2px 6px var(--code-runner-primary-shadow);
+}
+
+.code-runner-retry-btn:hover {
+    background: var(--code-runner-gradient-hover);
+    box-shadow: 0 4px 12px var(--code-runner-primary-shadow-strong);
+    transform: translateY(-1px);
+}
+
+.code-runner-retry-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px var(--code-runner-primary-shadow);
+}
+
+.code-runner-retry-btn:focus-visible {
+    outline: 3px solid var(--code-runner-focus-ring);
+    outline-offset: 2px;
+}
+
+.code-runner-retry-btn i {
+    font-size: 16px;
+    color: white;
+}
+
+/* Output console — dark theme, bottom 40% of panel */
+.code-runner-output-container {
+    /* 4 : 6 ratio with editor container (40% / 60%) */
+    flex: 4;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--code-runner-console-bg);
+}
+
+.code-runner-output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: 10px;
+    padding-inline: 20px;
+    background: var(--code-runner-console-header-bg);
+    border-bottom: 1px solid var(--code-runner-console-border);
+}
+
+.code-runner-output-header h4 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* Scoped specificity: the dark console header forces white text
+   without needing !important */
+.code-runner-output-container .code-runner-output-header h4 {
+    color: var(--code-runner-console-text-secondary);
+}
+
+.code-runner-output-header h4 i {
+    font-size: 15px;
+    color: var(--code-runner-console-text-tertiary);
+}
+
+.code-runner-clear-output-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    background: transparent;
+    color: var(--code-runner-console-text-tertiary);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 200ms var(--code-runner-ease);
+}
+
+.code-runner-clear-output-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.8);
+    border-color: var(--code-runner-focus-ring-light);
+}
+
+.code-runner-clear-output-btn:focus-visible {
+    outline: 2px solid var(--code-runner-focus-ring-light);
+    outline-offset: 2px;
+}
+
+.code-runner-output {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-block: 16px;
+    padding-inline: 20px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--code-runner-console-text);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    /* Firefox scrollbar */
+    scrollbar-width: thin;
+    scrollbar-color: var(--code-runner-console-scroll-thumb) transparent;
+}
+
+.code-runner-output.error {
+    color: var(--code-runner-error-output);
+}
+
+/* Chromium / Safari scrollbar */
+.code-runner-output::-webkit-scrollbar {
+    width: 8px;
+}
+
+.code-runner-output::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.code-runner-output::-webkit-scrollbar-thumb {
+    background: var(--code-runner-console-scroll-thumb);
+    border-radius: 4px;
+}
+
+.code-runner-output::-webkit-scrollbar-thumb:hover {
+    background: var(--code-runner-console-scroll-thumb-hover);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .code-runner-panel {
+        width: 100%;
+        border-radius: 0;
+    }
+
+    .code-runner-header {
+        padding: 16px;
+    }
+
+    .code-runner-title {
+        font-size: 15px;
+    }
+
+    .code-runner-editor-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding-block: 10px;
+        padding-inline: 16px;
+    }
+
+    .code-runner-buttons {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .code-runner-output-header {
+        padding-block: 10px;
+        padding-inline: 16px;
+    }
+
+    .code-runner-output {
+        padding-block: 12px;
+        padding-inline: 16px;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .code-runner-panel {
+        border-inline-start: 2px solid #000;
+    }
+
+    .code-runner-header {
+        border-bottom: 2px solid #000;
+    }
+
+    .code-runner-run-btn {
+        border: 2px solid white;
+    }
+
+    .code-runner-btn {
+        border: 2px solid white;
+    }
+
+    .code-runner-clear-output-btn {
+        border-color: var(--code-runner-console-text-tertiary);
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .code-runner-overlay,
+    .code-runner-panel,
+    .code-runner-btn,
+    .code-runner-run-btn,
+    .code-runner-clear-btn,
+    .code-runner-close-btn,
+    .code-runner-clear-output-btn,
+    .code-runner-retry-btn {
+        transition: none;
+    }
+
+    .code-runner-btn::before,
+    .code-runner-run-btn::before {
+        display: none;
+    }
+
+    .code-runner-spinner {
+        animation: none;
+        opacity: 0.6;
+    }
+}
+
+/* Print — hide everything */
+@media print {
+    .code-runner-overlay,
+    .code-runner-btn {
+        display: none;
+    }
+}
