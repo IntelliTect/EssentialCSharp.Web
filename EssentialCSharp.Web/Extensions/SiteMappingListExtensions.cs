@@ -16,14 +16,9 @@ public static class SiteMappingListExtensions
         {
             return siteMappings.FirstOrDefault();
         }
-        foreach (string? potentialMatch in key.GetPotentialMatches())
-        {
-            if (siteMappings.FirstOrDefault(x => x.Keys.Any(x => x == potentialMatch)) is { } siteMap)
-            {
-                return siteMap;
-            }
-        }
-        return null;
+        return key.GetPotentialMatches()
+            .Select(potentialMatch => siteMappings.FirstOrDefault(x => x.Keys.Any(k => k == potentialMatch)))
+            .FirstOrDefault(siteMap => siteMap != null);
     }
     /// <summary>
     /// Finds percent complete based on a key.
