@@ -11,15 +11,8 @@ public class LogoutModel(SignInManager<EssentialCSharpWebUser> signInManager, IL
     {
         await signInManager.SignOutAsync();
         logger.LogInformation("User logged out.");
-        if (returnUrl is not null)
-        {
-            return LocalRedirect(returnUrl);
-        }
-        else
-        {
             // This needs to be a redirect so that the browser performs a new
             // request and the identity for the user gets updated.
-            return RedirectToPage();
-        }
+            return returnUrl is not null ? LocalRedirect(returnUrl) : RedirectToPage();
     }
 }

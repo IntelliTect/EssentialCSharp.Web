@@ -133,7 +133,7 @@ public class ListingSourceCodeServiceTests
     private static DirectoryInfo GetTestDataPath()
     {
         string baseDirectory = AppContext.BaseDirectory;
-        string testDataPath = Path.Combine(baseDirectory, "TestData");
+        string testDataPath = Path.Join(baseDirectory, "TestData");
         
         DirectoryInfo testDataDirectory = new(testDataPath);
         

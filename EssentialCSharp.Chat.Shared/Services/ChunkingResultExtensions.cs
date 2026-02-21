@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Linq;
 using EssentialCSharp.Chat.Common.Models;
 
 namespace EssentialCSharp.Chat.Common.Services;
@@ -8,24 +9,24 @@ public static partial class ChunkingResultExtensions
 {
     public static List<BookContentChunk> ToBookContentChunks(this FileChunkingResult result)
     {
-        var chunks = new List<BookContentChunk>();
         int? chapterNumber = ExtractChapterNumber(result.FileName);
 
-        foreach (var chunk in result.Chunks)
-        {
-            string chunkText = chunk;
-            string contentHash = ComputeSha256Hash(chunkText);
-
-            chunks.Add(new BookContentChunk
+        var chunks = result.Chunks
+            .Select(chunkText =>
             {
-                Id = Guid.NewGuid().ToString(),
-                FileName = result.FileName,
-                Heading = ExtractHeading(chunkText),
-                ChunkText = chunkText,
-                ChapterNumber = chapterNumber,
-                ContentHash = contentHash
-            });
-        }
+                var contentHash = ComputeSha256Hash(chunkText);
+                return new BookContentChunk
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    FileName = result.FileName,
+                    Heading = ExtractHeading(chunkText),
+                    ChunkText = chunkText,
+                    ChapterNumber = chapterNumber,
+                    ContentHash = contentHash
+                };
+            })
+            .ToList();
+
         return chunks;
     }
 

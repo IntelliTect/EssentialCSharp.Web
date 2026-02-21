@@ -23,7 +23,7 @@ public static class SitemapXmlHelpers
     {
         GenerateSitemapXml(wwwrootDirectory, siteMappings, routeConfigurationService, baseUrl, out List<SitemapNode> nodes);
         XmlSerializer sitemapProvider = new();
-        var xmlPath = Path.Combine(wwwrootDirectory.FullName, "sitemap.xml");
+        var xmlPath = Path.Join(wwwrootDirectory.FullName, "sitemap.xml");
         sitemapProvider.Serialize(new SitemapModel(nodes), xmlPath, true);
         logger.LogInformation("sitemap.xml successfully written to {XmlPath}", xmlPath);
     }
