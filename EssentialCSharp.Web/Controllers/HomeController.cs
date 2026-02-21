@@ -22,7 +22,7 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
         }
         else if (siteMapping is not null)
         {
-            string filePath = Path.Join(hostingEnvironment.ContentRootPath, siteMapping.PagePath);
+            string filePath = Path.Join(hostingEnvironment.ContentRootPath, Path.Join(siteMapping.PagePath));
             HtmlDocument doc = new();
             doc.Load(filePath);
             string headHtml = doc.DocumentNode.Element("html").Element("head").InnerHtml;
