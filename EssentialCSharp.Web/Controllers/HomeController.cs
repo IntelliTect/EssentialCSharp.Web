@@ -22,7 +22,7 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
         }
         else if (siteMapping is not null)
         {
-            string filePath = Path.Combine(hostingEnvironment.ContentRootPath, Path.Combine(siteMapping.PagePath));
+            string filePath = Path.Join(hostingEnvironment.ContentRootPath, siteMapping.PagePath);
             HtmlDocument doc = new();
             doc.Load(filePath);
             string headHtml = doc.DocumentNode.Element("html").Element("head").InnerHtml;
@@ -74,7 +74,7 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
     public IActionResult Guidelines()
     {
         ViewBag.PageTitle = "Coding Guidelines";
-        FileInfo fileInfo = new(Path.Combine(hostingEnvironment.ContentRootPath, "Guidelines", "guidelines.json"));
+        FileInfo fileInfo = new(Path.Join(hostingEnvironment.ContentRootPath, "Guidelines", "guidelines.json"));
         if (!fileInfo.Exists)
         {
             return RedirectToAction(nameof(Error), new { errorMessage = "Guidelines could not be found", statusCode = 404 });

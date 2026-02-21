@@ -341,21 +341,17 @@ public class AIChatService
         string responseText = string.Empty;
         string responseId = response.Value.Id;
 
-        foreach (var outputItem in response.Value.OutputItems)
-        {
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-            if (outputItem is MessageResponseItem messageItem &&
-                messageItem.Role == MessageRole.Assistant)
-            {
-                var textContent = messageItem.Content?.FirstOrDefault()?.Text;
-                if (!string.IsNullOrEmpty(textContent))
-                {
-                    responseText = textContent;
-                    break;
-                }
-            }
-#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        var assistantMessage = response.Value.OutputItems
+            .OfType<MessageResponseItem>()
+            .FirstOrDefault(m => m.Role == MessageRole.Assistant &&
+                                 !string.IsNullOrEmpty(m.Content?.FirstOrDefault()?.Text));
+
+        if (assistantMessage is not null)
+        {
+            responseText = assistantMessage.Content?.FirstOrDefault()?.Text ?? string.Empty;
         }
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
         return (responseText, responseId);
     }

@@ -59,7 +59,7 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>
             // Replace IListingSourceCodeService with one backed by TestData
             services.RemoveAll<IListingSourceCodeService>();
 
-            string testDataPath = Path.Combine(AppContext.BaseDirectory, "TestData");
+            string testDataPath = Path.Join(AppContext.BaseDirectory, "TestData");
             var fileProvider = new PhysicalFileProvider(testDataPath);
             services.AddSingleton<IListingSourceCodeService>(sp =>
             {

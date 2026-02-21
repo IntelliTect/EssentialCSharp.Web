@@ -328,7 +328,7 @@ public class Program
                         outputDirectory.Create();
                     foreach (var result in results)
                     {
-                        var outputFile = Path.Combine(outputDirectory.FullName, Path.GetFileNameWithoutExtension(result.FileName) + ".chunks.txt");
+                        var outputFile = Path.Join(outputDirectory.FullName, Path.GetFileNameWithoutExtension(result.FileName) + ".chunks.txt");
                         using var writer = new StreamWriter(outputFile, false);
                         WriteChunkingResult(result, writer);
                         Console.WriteLine($"Wrote: {outputFile}");
