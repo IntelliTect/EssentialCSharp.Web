@@ -42,19 +42,99 @@ function isTryDotNetConfigured() {
     return typeof origin === 'string' && origin.trim().length > 0;
 }
 
+// ── Runnable-listings data (loaded once from chapter-listings.json) ──────────
+
+/** @type {Promise<Set<string>>|null} */
+let _runnableListingsPromise = null;
+
+/**
+ * Loads chapter-listings.json (once) and builds a Set of normalised
+ * "chapter.listing" keys, e.g. "1.3", "12.50".
+ * Only includes listings where can_run is true.
+ * @returns {Promise<Set<string>>}
+ */
+function loadRunnableListings() {
+    if (_runnableListingsPromise) return _runnableListingsPromise;
+
+    _runnableListingsPromise = fetch('/js/chapter-listings.json')
+        .then(res => {
+            if (!res.ok) throw new Error(`Failed to load chapter-listings.json: ${res.status}`);
+            return res.json();
+        })
+        .then(data => {
+            const set = new Set();
+            const chapters = data.chapters || {};
+            for (const [, files] of Object.entries(chapters)) {
+                for (const fileObj of files) {
+                    // fileObj is now { filename: "01.03.cs", can_run: true }
+                    if (!fileObj.can_run) continue; // Skip listings that can't be run
+                    
+                    const filename = fileObj.filename;
+                    // filename looks like "01.03.cs" → chapter 1, listing 3
+                    const m = filename.match(/^(\d+)\.(\d+)\./);
+                    if (m) {
+                        set.add(`${parseInt(m[1], 10)}.${parseInt(m[2], 10)}`);
+                    }
+                }
+            }
+            return set;
+        })
+        .catch(err => {
+            console.warn('Could not load runnable listings:', err);
+            return new Set(); // graceful degradation — no Run buttons
+        });
+
+    return _runnableListingsPromise;
+}
+
+/**
+ * Checks whether a listing is present in the curated runnable set.
+ * @param {string|number} chapter
+ * @param {string|number} listing
+ * @returns {Promise<boolean>}
+ */
+async function isRunnableListing(chapter, listing) {
+    const set = await loadRunnableListings();
+    return set.has(`${parseInt(chapter, 10)}.${parseInt(listing, 10)}`);
+}
+
+/**
+ * Strips #region / #endregion directive lines (INCLUDE, EXCLUDE, etc.)
+ * from source code while keeping the code between them intact.
+ * @param {string} code - Raw source code
+ * @returns {string} Code with region directive lines removed
+ */
+function stripRegionDirectives(code) {
+    return code.replace(/^\s*#(?:region|endregion)\s+(?:INCLUDE|EXCLUDE).*$/gm, '').trim();
+}
+
+// Common using directives that mirror the SDK's implicit global usings.
+// These are needed because TryDotNet's 'console' package does not inject them.
+const COMMON_USINGS = `using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Globalization;
+using System.Text.RegularExpressions;`;
+
+/**
+ * Prepends COMMON_USINGS to code that has no using directives of its own.
+ * @param {string} code - Source code
+ * @returns {string}
+ */
+function prependUsings(code) {
+    if (/^\s*using\s+/m.test(code)) return code; // already has usings
+    return `${COMMON_USINGS}\n\n${code}`;
+}
+
 /**
  * Creates scaffolding for user code to run in the TryDotNet environment.
  * @param {string} userCode - The user's C# code to wrap
  * @returns {string} Scaffolded code with proper using statements and Main method
  */
 function createScaffolding(userCode) {
-    return `using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Globalization;
-using System.Text.RegularExpressions;
-
+    // return `${COMMON_USINGS}
+    return `
 namespace Program
 {
     class Program
@@ -222,7 +302,7 @@ export function useTryDotNet() {
         const files = [{ name: fileName, content: fileContent }];
         const project = { package: 'console', files: files };
         const document = isComplete 
-            ? { fileName: fileName } 
+            ? fileName 
             : { fileName: fileName, region: 'controller' };
 
         const configuration = {
@@ -357,8 +437,10 @@ export function useTryDotNet() {
 
     /**
      * Checks if code is a complete C# program that doesn't need scaffolding.
-     * Complete programs must have a namespace declaration with class and Main,
-     * or be a class named Program with Main.
+     * A program is "complete" when it contains a namespace declaration, OR
+     * when it defines any class with a static Main method.
+     * Top-level statement files (no class, no namespace) return false and
+     * will be wrapped by createScaffolding().
      * @param {string} code - Source code to check
      * @returns {boolean} True if code is complete, false if it needs scaffolding
      */
@@ -366,28 +448,11 @@ export function useTryDotNet() {
         // Check for explicit namespace declaration (most reliable indicator)
         const hasNamespace = /namespace\s+\w+/i.test(code);
         
-        // Check if it's a class specifically named "Program" with Main method
-        const isProgramClass = /class\s+Program\s*[\r\n{]/.test(code) && 
+        // Check if any class has a static Main method
+        const hasClassWithMain = /class\s+\w+/.test(code) && 
                               /static\s+(void|async\s+Task)\s+Main\s*\(/.test(code);
         
-        // Only consider it complete if it has namespace or is the Program class
-        return hasNamespace || isProgramClass;
-    }
-
-    /**
-     * Extracts executable code snippet from source code.
-     * If code contains #region INCLUDE, extracts only that portion.
-     * Otherwise returns the full code.
-     * @param {string} code - Source code to process
-     * @returns {string} Extracted code snippet
-     */
-    function extractCodeSnippet(code) {
-        // Extract code from #region INCLUDE if present
-        const regionMatch = code.match(/#region\s+INCLUDE\s*\n([\s\S]*?)\n\s*#endregion\s+INCLUDE/);
-        if (regionMatch) {
-            return regionMatch[1].trim();
-        }
-        return code;
+        return hasNamespace || hasClassWithMain;
     }
 
     /**
@@ -403,8 +468,17 @@ export function useTryDotNet() {
         }
         const data = await response.json();
         const code = data.content || '';
-        // Extract the snippet portion if it has INCLUDE regions
-        return extractCodeSnippet(code);
+
+        // Complete programs (namespace or class+Main) are sent as-is, but
+        // with common usings prepended when the file has none — TryDotNet's
+        // 'console' package does not provide SDK implicit global usings.
+        // Top-level statement files get region directives stripped so the
+        // scaffolding wrapper doesn't contain raw #region lines.
+        if (isCompleteProgram(code)) {
+            // return prependUsings(code);
+            return code;
+        }
+        return stripRegionDirectives(code);
     }
 
     /**
@@ -502,10 +576,17 @@ export function useTryDotNet() {
     /**
      * Injects Run buttons into code block sections.
      * Skipped entirely when TryDotNet origin is not configured.
+     * Only adds buttons for listings present in chapter-listings.json.
      */
-    function injectRunButtons() {
+    async function injectRunButtons() {
         if (!isTryDotNetConfigured()) {
             return; // Don't show Run buttons when the service is not configured
+        }
+
+        // Pre-load the runnable listings set so we can check membership below
+        const runnableSet = await loadRunnableListings();
+        if (runnableSet.size === 0) {
+            return; // JSON failed to load or is empty — no buttons
         }
 
         const codeBlocks = document.querySelectorAll('.code-block-section');
@@ -553,8 +634,8 @@ export function useTryDotNet() {
                 });
             }
 
-            // Only add button for listing 1.1
-            if (chapter === '1' && listing === '1') {
+            // Only add button for listings present in the curated JSON
+            if (chapter && listing && runnableSet.has(`${parseInt(chapter, 10)}.${parseInt(listing, 10)}`)) {
                 // Wrap existing content in a span to keep it together
                 const contentWrapper = document.createElement('span');
                 while (heading.firstChild) {
