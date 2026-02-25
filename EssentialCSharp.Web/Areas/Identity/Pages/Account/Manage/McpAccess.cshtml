@@ -1,0 +1,74 @@
+@page
+@model McpAccessModel
+@{
+    ViewData["Title"] = "MCP Access";
+    ViewData["ActivePage"] = ManageNavPages.McpAccess;
+}
+
+<h3>@ViewData["Title"]</h3>
+
+<partial name="_StatusMessage" for="StatusMessage" />
+
+<div>
+    <p>
+        The <strong>Model Context Protocol (MCP)</strong> lets AI tools like GitHub Copilot and Claude access
+        Essential C# book content directly. Generate a personal access token below and add it to your MCP client configuration.
+    </p>
+
+    @if (!Model.McpEnabled)
+    {
+        <div class="alert alert-warning">MCP is not currently enabled on this server.</div>
+    }
+    else
+    {
+        <form method="post">
+            <button type="submit" class="btn btn-primary">Generate New Token</button>
+        </form>
+
+        @if (Model.GeneratedToken is not null)
+        {
+            <div class="mt-4">
+                <h4>Your MCP Token</h4>
+                <div class="alert alert-warning">
+                    <strong>Copy this token now.</strong> It will not be shown again after you leave this page.
+                </div>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control font-monospace" id="mcpToken" value="@Model.GeneratedToken" readonly />
+                    <button class="btn btn-outline-secondary" type="button" onclick="copyToken()">Copy</button>
+                </div>
+                <p class="text-muted">Expires: @Model.TokenExpiresAt?.ToString("MMMM d, yyyy")</p>
+
+                <h4>MCP Client Configuration</h4>
+                <p>Add the following to your MCP client (e.g. <code>.vscode/mcp.json</code> or <code>claude_desktop_config.json</code>):</p>
+                <pre class="bg-light p-3 border rounded"><code>{
+  "essentialcsharp": {
+    "url": "@(HttpContext.Request.Scheme)://@(HttpContext.Request.Host)/mcp",
+    "headers": {
+      "Authorization": "Bearer @Model.GeneratedToken"
+    }
+  }
+}</code></pre>
+
+                <h4>MCP Inspector</h4>
+                <p>To test locally, run <code>npx @@modelcontextprotocol/inspector</code>, set the URL to <code>@(HttpContext.Request.Scheme)://@(HttpContext.Request.Host)/mcp</code>, and add an <code>Authorization</code> header with value <code>Bearer &lt;token&gt;</code>.</p>
+            </div>
+        }
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function copyToken() {
+            const tokenInput = document.getElementById('mcpToken');
+            tokenInput.select();
+            tokenInput.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(tokenInput.value)
+                .then(() => alert('Token copied to clipboard!'))
+                .catch(() => {
+                    document.execCommand('copy');
+                    alert('Token copied to clipboard!');
+                });
+        }
+    </script>
+    <partial name="_ValidationScriptsPartial" />
+}
