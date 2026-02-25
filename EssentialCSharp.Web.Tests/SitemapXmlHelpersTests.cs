@@ -31,8 +31,8 @@ public class SitemapXmlHelpersTests
             CreateSiteMapping(2, 1, true)
         };
 
-        // Act & Assert - if it throws, the test will fail
-        SitemapXmlHelpers.EnsureSitemapHealthy(siteMappings);
+        // Act & Assert
+        await Assert.That(() => SitemapXmlHelpers.EnsureSitemapHealthy(siteMappings)).ThrowsNothing();
     }
 
     [Test]
@@ -46,10 +46,10 @@ public class SitemapXmlHelpersTests
         };
 
         // Act & Assert
-        var exception = await Assert.That(() => SitemapXmlHelpers.EnsureSitemapHealthy(siteMappings)).Throws<InvalidOperationException>();
-
-        await Assert.That(exception!.Message).Contains("Chapter 1, Page 1");
-        await Assert.That(exception.Message).Contains("more than one canonical link");
+        await Assert.That(() => SitemapXmlHelpers.EnsureSitemapHealthy(siteMappings))
+            .Throws<InvalidOperationException>()
+            .WithMessageContaining("Chapter 1, Page 1")
+            .And.HasMessageContaining("more than one canonical link");
     }
 
     [Test]
@@ -63,9 +63,9 @@ public class SitemapXmlHelpersTests
         };
 
         // Act & Assert
-        var exception = await Assert.That(() => SitemapXmlHelpers.EnsureSitemapHealthy(siteMappings)).Throws<InvalidOperationException>();
-
-        await Assert.That(exception!.Message).Contains("Chapter 1, Page 1");
+        await Assert.That(() => SitemapXmlHelpers.EnsureSitemapHealthy(siteMappings))
+            .Throws<InvalidOperationException>()
+            .WithMessageContaining("Chapter 1, Page 1");
     }
 
     [Test]
