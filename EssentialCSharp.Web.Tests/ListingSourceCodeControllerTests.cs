@@ -73,23 +73,15 @@ public class ListingSourceCodeControllerTests(WebApplicationFactory factory)
         await Assert.That(results).IsNotNull();
         await Assert.That(results).IsNotEmpty();
 
-        // Verify all results are from chapter 1
+        // Verify results are ordered by listing number
+        await Assert.That(results).IsOrderedBy(r => r.ListingNumber);
+
+        // Verify all results are from chapter 1 and have required properties
         foreach (var r in results)
         {
             using (Assert.Multiple())
             {
                 await Assert.That(r.ChapterNumber).IsEqualTo(1);
-            }
-        }
-
-        // Verify results are ordered by listing number
-        await Assert.That(results).IsOrderedBy(r => r.ListingNumber);
-
-        // Verify each listing has required properties
-        foreach (var r in results)
-        {
-            using (Assert.Multiple())
-            {
                 await Assert.That(r.FileExtension).IsNotEmpty();
                 await Assert.That(r.Content).IsNotEmpty();
             }

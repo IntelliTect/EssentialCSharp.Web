@@ -1,4 +1,4 @@
-﻿using EssentialCSharp.Chat.Common.Services;
+using EssentialCSharp.Chat.Common.Services;
 using Moq;
 
 namespace EssentialCSharp.Chat.Tests;
@@ -42,11 +42,10 @@ C# requires that the Main method return either `void` or `int` and that it take 
 
         var sections = MarkdownChunkingService.MarkdownContentToHeadersAndSection(markdown);
 
-        await Assert.That(sections.Count).IsEqualTo(3);
+        await Assert.That(sections).Count().IsEqualTo(3);
         await Assert.That(sections).Contains(s => s.Header == "Beginner Topic: What Is a Method?" && string.Join("\n", s.Content).Contains("Syntactically, a **method** in C# is a named block of code"));
 
-        await Assert.That(sections).Contains(s => s.Header == "Main Method" && string.Join("\n", s.Content).Contains("The location where C# programs begin execution is the **Main method**, which begins with `static void Main()`"));
-        await Assert.That(sections).Contains(s => s.Header == "Main Method" && string.Join("\n", s.Content).Contains("publicclass Program"));
+        await Assert.That(sections).Contains(s => s.Header == "Main Method" && string.Join("\n", s.Content).Contains("The location where C# programs begin execution is the **Main method**, which begins with `static void Main()`") && string.Join("\n", s.Content).Contains("publicclass Program"));
 
         await Assert.That(sections).Contains(s => s.Header == "Main Method: Advanced Topic: Declaration of the Main Method" && string.Join("\n", s.Content).Contains("C# requires that the Main method return either `void` or `int`"));
     }
@@ -87,7 +86,7 @@ To declare a variable is to define it, which you do by
 
         var sections = MarkdownChunkingService.MarkdownContentToHeadersAndSection(markdown);
 
-        await Assert.That(sections.Count).IsEqualTo(2);
+        await Assert.That(sections).Count().IsEqualTo(2);
         // The code listing should be appended to the Working with Variables section, not as its own section
         await Assert.That(sections).Contains(s => s.Header == "Working with Variables" && string.Join("\n", s.Content).Contains("publicclass MiracleMax"));
         await Assert.That(sections).DoesNotContain(s => s.Header == "Listing 1.12: Declaring and Assigning a Variable");
@@ -142,7 +141,7 @@ From this listing, observe that it is possible to assign a variable as part of t
 """;
 
         var sections = MarkdownChunkingService.MarkdownContentToHeadersAndSection(markdown);
-        await Assert.That(sections.Count).IsEqualTo(5);
+        await Assert.That(sections).Count().IsEqualTo(5);
 
         await Assert.That(sections).Contains(s => s.Header == "Beginner Topic: What Is a Data Type?" && string.Join("\n", s.Content).Contains("The type of data that a variable declaration specifies is called a **data type**"));
 

@@ -1,9 +1,10 @@
+using EssentialCSharp.Web.Extensions;
 using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace EssentialCSharp.Web.Extensions.Tests.Integration;
+namespace EssentialCSharp.Web.Tests.Integration;
 
 [ClassDataSource<CaptchaServiceProvider>(Shared = SharedType.PerClass)]
 public class CaptchaTests(CaptchaServiceProvider serviceProvider)
@@ -18,6 +19,9 @@ public class CaptchaTests(CaptchaServiceProvider serviceProvider)
         string hCaptchaSecret = "0x0000000000000000000000000000000000000000";
         string hCaptchaToken = "10000000-aaaa-bbbb-cccc-000000000001";
         string hCaptchaSiteKey = "10000000-ffff-ffff-ffff-000000000001";
+        // Note: cancellationToken is not passed to VerifyAsync because ICaptchaService.VerifyAsync
+        // does not currently accept a CancellationToken. If the timeout fires, the underlying
+        // HTTP request will continue running in the background.
         HCaptchaResult? response = await captchaService.VerifyAsync(hCaptchaSecret, hCaptchaToken, hCaptchaSiteKey);
 
         await Assert.That(response).IsNotNull();
@@ -25,7 +29,7 @@ public class CaptchaTests(CaptchaServiceProvider serviceProvider)
     }
 }
 
-public class CaptchaServiceProvider : IDisposable
+public class CaptchaServiceProvider : IDisposable, IAsyncDisposable
 {
     public ServiceProvider ServiceProvider { get; } = CreateServiceProvider();
     public static ServiceProvider CreateServiceProvider()
@@ -44,6 +48,12 @@ public class CaptchaServiceProvider : IDisposable
     public void Dispose()
     {
         ServiceProvider.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await ServiceProvider.DisposeAsync();
         GC.SuppressFinalize(this);
     }
 }

@@ -47,7 +47,7 @@ public class SitemapXmlHelpersTests
         await Assert.That(() => SitemapXmlHelpers.EnsureSitemapHealthy(siteMappings))
             .Throws<InvalidOperationException>()
             .WithMessageContaining("Chapter 1, Page 1")
-            .And.HasMessageContaining("more than one canonical link");
+            .And.WithMessageContaining("more than one canonical link");
     }
 
     [Test]
@@ -70,7 +70,7 @@ public class SitemapXmlHelpersTests
     public async Task GenerateSitemapXml_DoesNotIncludeIdentityRoutes()
     {
         // Arrange
-        var tempDir = new DirectoryInfo(Path.GetTempPath());
+        var tempDir = Directory.CreateTempSubdirectory("SitemapTest_");
         var siteMappings = new List<SiteMapping> { CreateSiteMapping(1, 1, true) };
         var baseUrl = "https://test.example.com/";
 
@@ -98,7 +98,7 @@ public class SitemapXmlHelpersTests
     public async Task GenerateSitemapXml_IncludesBaseUrl()
     {
         // Arrange
-        var tempDir = new DirectoryInfo(Path.GetTempPath());
+        var tempDir = Directory.CreateTempSubdirectory("SitemapTest_");
         var siteMappings = new List<SiteMapping>();
         var baseUrl = "https://test.example.com/";
 
@@ -126,7 +126,7 @@ public class SitemapXmlHelpersTests
     public async Task GenerateSitemapXml_IncludesSiteMappingsMarkedForXml()
     {
         // Arrange
-        var tempDir = new DirectoryInfo(Path.GetTempPath());
+        var tempDir = Directory.CreateTempSubdirectory("SitemapTest_");
         var baseUrl = "https://test.example.com/";
 
         var siteMappings = new List<SiteMapping>
@@ -156,7 +156,7 @@ public class SitemapXmlHelpersTests
     public async Task GenerateSitemapXml_DoesNotIncludeIndexRoutes()
     {
         // Arrange
-        var tempDir = new DirectoryInfo(Path.GetTempPath());
+        var tempDir = Directory.CreateTempSubdirectory("SitemapTest_");
         var siteMappings = new List<SiteMapping>();
         var baseUrl = "https://test.example.com/";
 
@@ -179,7 +179,7 @@ public class SitemapXmlHelpersTests
     public async Task GenerateSitemapXml_DoesNotIncludeErrorRoutes()
     {
         // Arrange
-        var tempDir = new DirectoryInfo(Path.GetTempPath());
+        var tempDir = Directory.CreateTempSubdirectory("SitemapTest_");
         var siteMappings = new List<SiteMapping>();
         var baseUrl = "https://test.example.com/";
 
@@ -202,7 +202,7 @@ public class SitemapXmlHelpersTests
     public async Task GenerateSitemapXml_UsesLastModifiedDateFromSiteMapping()
     {
         // Arrange
-        var tempDir = new DirectoryInfo(Path.GetTempPath());
+        var tempDir = Directory.CreateTempSubdirectory("SitemapTest_");
         var baseUrl = "https://test.example.com/";
         var specificLastModified = new DateTime(2023, 5, 15, 10, 30, 0, DateTimeKind.Utc);
 
