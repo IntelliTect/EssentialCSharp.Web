@@ -105,6 +105,17 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>, IAsy
         action(scope.ServiceProvider);
     }
 
+    public override async ValueTask DisposeAsync()
+    {
+        await base.DisposeAsync().ConfigureAwait(false);
+        if (_Connection != null)
+        {
+            await _Connection.DisposeAsync().ConfigureAwait(false);
+            _Connection = null;
+        }
+        GC.SuppressFinalize(this);
+    }
+
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);

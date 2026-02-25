@@ -43,13 +43,22 @@ public class CaptchaServiceProvider : IDisposable, IAsyncDisposable
     }
     public void Dispose()
     {
-        ServiceProvider.Dispose();
+        Dispose(disposing: true);
         GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            ServiceProvider.Dispose();
+        }
     }
 
     public async ValueTask DisposeAsync()
     {
-        await ServiceProvider.DisposeAsync();
+        await ServiceProvider.DisposeAsync().ConfigureAwait(false);
+        Dispose(disposing: false);
         GC.SuppressFinalize(this);
     }
 }

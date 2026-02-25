@@ -41,10 +41,9 @@ public class CaptchaService(IHttpClientFactory clientFactory, IOptions<CaptchaOp
         HttpClient client = ClientFactory.CreateClient("hCaptcha");
 
         // request api
-        HttpResponseMessage res = await client.PostAsync(
-            // base url is given in IHttpClientFactory service registration
-            // hCaptcha wants URL-encoded POST
-            "/siteverify", new FormUrlEncodedContent(postData), cancellationToken);
+        // hCaptcha wants URL-encoded POST; base url is given in IHttpClientFactory service registration
+        using FormUrlEncodedContent content = new(postData);
+        HttpResponseMessage res = await client.PostAsync("/siteverify", content, cancellationToken);
 
         res.EnsureSuccessStatusCode();
         // convert JSON string into Class
