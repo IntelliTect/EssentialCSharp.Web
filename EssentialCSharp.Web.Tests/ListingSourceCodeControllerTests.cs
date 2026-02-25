@@ -1,17 +1,16 @@
 using System.Net;
 using System.Net.Http.Json;
 using EssentialCSharp.Web.Models;
-using System.Threading.Tasks;
 
 namespace EssentialCSharp.Web.Tests;
 
-public class ListingSourceCodeControllerTests
+[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
+public class ListingSourceCodeControllerTests(WebApplicationFactory factory)
 {
     [Test]
     public async Task GetListing_WithValidChapterAndListing_Returns200WithContent()
     {
         // Arrange
-        using WebApplicationFactory factory = new();
         HttpClient client = factory.CreateClient();
 
         // Act
@@ -22,10 +21,13 @@ public class ListingSourceCodeControllerTests
 
         ListingSourceCodeResponse? result = await response.Content.ReadFromJsonAsync<ListingSourceCodeResponse>();
         await Assert.That(result).IsNotNull();
-        await Assert.That(result.ChapterNumber).IsEqualTo(1);
-        await Assert.That(result.ListingNumber).IsEqualTo(1);
-        await Assert.That(result.FileExtension).IsNotEmpty();
-        await Assert.That(result.Content).IsNotEmpty();
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.ChapterNumber).IsEqualTo(1);
+            await Assert.That(result.ListingNumber).IsEqualTo(1);
+            await Assert.That(result.FileExtension).IsNotEmpty();
+            await Assert.That(result.Content).IsNotEmpty();
+        }
     }
 
 
@@ -33,7 +35,6 @@ public class ListingSourceCodeControllerTests
     public async Task GetListing_WithInvalidChapter_Returns404()
     {
         // Arrange
-        using WebApplicationFactory factory = new();
         HttpClient client = factory.CreateClient();
 
         // Act
@@ -47,7 +48,6 @@ public class ListingSourceCodeControllerTests
     public async Task GetListing_WithInvalidListing_Returns404()
     {
         // Arrange
-        using WebApplicationFactory factory = new();
         HttpClient client = factory.CreateClient();
 
         // Act
@@ -61,7 +61,6 @@ public class ListingSourceCodeControllerTests
     public async Task GetListingsByChapter_WithValidChapter_ReturnsMultipleListings()
     {
         // Arrange
-        using WebApplicationFactory factory = new();
         HttpClient client = factory.CreateClient();
 
         // Act
@@ -81,7 +80,7 @@ public class ListingSourceCodeControllerTests
         }
 
         // Verify results are ordered by listing number
-        await Assert.That(results).IsEquivalentTo(results.OrderBy(r => r.ListingNumber).ToList());
+        await Assert.That(results).IsOrderedBy(r => r.ListingNumber);
 
         // Verify each listing has required properties
         foreach (var r in results)
@@ -95,7 +94,6 @@ public class ListingSourceCodeControllerTests
     public async Task GetListingsByChapter_WithInvalidChapter_ReturnsEmptyList()
     {
         // Arrange
-        using WebApplicationFactory factory = new();
         HttpClient client = factory.CreateClient();
 
         // Act

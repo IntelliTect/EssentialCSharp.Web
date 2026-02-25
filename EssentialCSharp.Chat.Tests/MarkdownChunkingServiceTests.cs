@@ -44,10 +44,18 @@ C# requires that the Main method return either `void` or `int` and that it take 
         var sections = MarkdownChunkingService.MarkdownContentToHeadersAndSection(markdown);
 
         await Assert.That(sections.Count).IsEqualTo(3);
-        await Assert.That(sections).Contains(s => s.Header == "Beginner Topic: What Is a Method?" && string.Join("\n", s.Content).Contains("Syntactically, a **method** in C# is a named block of code"));
-        await Assert.That(sections).Contains(s => s.Header == "Main Method" && string.Join("\n", s.Content).Contains("The location where C# programs begin execution is the **Main method**, which begins with `static void Main()`")
-            && string.Join("\n", s.Content).Contains("publicclass Program"));
-        await Assert.That(sections).Contains(s => s.Header == "Main Method: Advanced Topic: Declaration of the Main Method" && string.Join("\n", s.Content).Contains("C# requires that the Main method return either `void` or `int`"));
+        var beginnerSection = sections.FirstOrDefault(s => s.Header == "Beginner Topic: What Is a Method?");
+        await Assert.That(beginnerSection.Header).IsNotNull();
+        await Assert.That(string.Join("\n", beginnerSection.Content)).Contains("Syntactically, a **method** in C# is a named block of code");
+
+        var mainMethodSection = sections.FirstOrDefault(s => s.Header == "Main Method");
+        await Assert.That(mainMethodSection.Header).IsNotNull();
+        await Assert.That(string.Join("\n", mainMethodSection.Content)).Contains("The location where C# programs begin execution is the **Main method**, which begins with `static void Main()`");
+        await Assert.That(string.Join("\n", mainMethodSection.Content)).Contains("publicclass Program");
+
+        var advancedTopicSection = sections.FirstOrDefault(s => s.Header == "Main Method: Advanced Topic: Declaration of the Main Method");
+        await Assert.That(advancedTopicSection.Header).IsNotNull();
+        await Assert.That(string.Join("\n", advancedTopicSection.Content)).Contains("C# requires that the Main method return either `void` or `int`");
     }
 
     [Test]
@@ -89,7 +97,7 @@ To declare a variable is to define it, which you do by
         await Assert.That(sections.Count).IsEqualTo(2);
         // The code listing should be appended to the Working with Variables section, not as its own section
         var workingWithVariablesSection = sections.FirstOrDefault(s => s.Header == "Working with Variables");
-        await Assert.That(!string.IsNullOrEmpty(workingWithVariablesSection.Header)).IsTrue();
+        await Assert.That(workingWithVariablesSection.Header).IsNotNull().And.IsNotEmpty();
         await Assert.That(string.Join("\n", workingWithVariablesSection.Content)).Contains("publicclass MiracleMax");
         await Assert.That(sections).DoesNotContain(s => s.Header == "Listing 1.12: Declaring and Assigning a Variable");
     }
@@ -145,11 +153,25 @@ From this listing, observe that it is possible to assign a variable as part of t
         var sections = MarkdownChunkingService.MarkdownContentToHeadersAndSection(markdown);
         await Assert.That(sections.Count).IsEqualTo(5);
 
-        await Assert.That(sections).Contains(s => s.Header == "Beginner Topic: What Is a Data Type?" && string.Join("\n", s.Content).Contains("The type of data that a variable declaration specifies is called a **data type**"));
-        await Assert.That(sections).Contains(s => s.Header == "Declaring a Variable" && string.Join("\n", s.Content).Contains("In Listing 1.12, `string max` is a variable declaration"));
-        await Assert.That(sections).Contains(s => s.Header == "Declaring a Variable: Declaring another thing" && string.Join("\n", s.Content).Contains("Because a multivariable declaration statement allows developers to provide the data type only once"));
-        await Assert.That(sections).Contains(s => s.Header == "Assigning a Variable" && string.Join("\n", s.Content).Contains("After declaring a local variable, you must assign it a value before reading from it."));
-        await Assert.That(sections).Contains(s => s.Header == "Assigning a Variable: Continued Learning" && string.Join("\n", s.Content).Contains("From this listing, observe that it is possible to assign a variable as part of the variable declaration"));
+        var beginnerDataTypeSection = sections.FirstOrDefault(s => s.Header == "Beginner Topic: What Is a Data Type?");
+        await Assert.That(beginnerDataTypeSection.Header).IsNotNull();
+        await Assert.That(string.Join("\n", beginnerDataTypeSection.Content)).Contains("The type of data that a variable declaration specifies is called a **data type**");
+
+        var declaringSection = sections.FirstOrDefault(s => s.Header == "Declaring a Variable");
+        await Assert.That(declaringSection.Header).IsNotNull();
+        await Assert.That(string.Join("\n", declaringSection.Content)).Contains("In Listing 1.12, `string max` is a variable declaration");
+
+        var declaringAnotherSection = sections.FirstOrDefault(s => s.Header == "Declaring a Variable: Declaring another thing");
+        await Assert.That(declaringAnotherSection.Header).IsNotNull();
+        await Assert.That(string.Join("\n", declaringAnotherSection.Content)).Contains("Because a multivariable declaration statement allows developers to provide the data type only once");
+
+        var assigningSection = sections.FirstOrDefault(s => s.Header == "Assigning a Variable");
+        await Assert.That(assigningSection.Header).IsNotNull();
+        await Assert.That(string.Join("\n", assigningSection.Content)).Contains("After declaring a local variable, you must assign it a value before reading from it.");
+
+        var continuedLearningSection = sections.FirstOrDefault(s => s.Header == "Assigning a Variable: Continued Learning");
+        await Assert.That(continuedLearningSection.Header).IsNotNull();
+        await Assert.That(string.Join("\n", continuedLearningSection.Content)).Contains("From this listing, observe that it is possible to assign a variable as part of the variable declaration");
     }
     #endregion MarkdownContentToHeadersAndSection
 

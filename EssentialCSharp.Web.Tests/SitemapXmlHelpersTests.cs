@@ -5,11 +5,9 @@ using EssentialCSharp.Web.Helpers;
 using EssentialCSharp.Web.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Threading.Tasks;
-
 namespace EssentialCSharp.Web.Tests;
 
-[NotInParallel]
+[NotInParallel("SitemapTests")]
 [ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
 public class SitemapXmlHelpersTests
 {
@@ -117,8 +115,11 @@ public class SitemapXmlHelpersTests
 
         // Verify the root URL has highest priority
         var rootNode = nodes.First(node => node.Url == baseUrl);
-        await Assert.That(rootNode.Priority).IsEqualTo(1.0M);
-        await Assert.That(rootNode.ChangeFrequency).IsEqualTo(ChangeFrequency.Daily);
+        using (Assert.Multiple())
+        {
+            await Assert.That(rootNode.Priority).IsEqualTo(1.0M);
+            await Assert.That(rootNode.ChangeFrequency).IsEqualTo(ChangeFrequency.Daily);
+        }
     }
 
     [Test]

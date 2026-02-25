@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.FileProviders;
 using Moq;
 using Moq.AutoMock;
-using System.Threading.Tasks;
 
 namespace EssentialCSharp.Web.Tests;
 
@@ -21,10 +20,13 @@ public class ListingSourceCodeServiceTests
 
         // Assert
         await Assert.That(result).IsNotNull();
-        await Assert.That(result.ChapterNumber).IsEqualTo(1);
-        await Assert.That(result.ListingNumber).IsEqualTo(1);
-        await Assert.That(result.FileExtension).IsEqualTo("cs");
-        await Assert.That(result.Content).IsNotEmpty();
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.ChapterNumber).IsEqualTo(1);
+            await Assert.That(result.ListingNumber).IsEqualTo(1);
+            await Assert.That(result.FileExtension).IsEqualTo("cs");
+            await Assert.That(result.Content).IsNotEmpty();
+        }
     }
 
     [Test]
@@ -86,7 +88,7 @@ public class ListingSourceCodeServiceTests
         }
 
         // Verify results are ordered
-        await Assert.That(results).IsEquivalentTo(results.OrderBy(r => r.ListingNumber).ToList());
+        await Assert.That(results).IsOrderedBy(r => r.ListingNumber);
     }
 
     [Test]

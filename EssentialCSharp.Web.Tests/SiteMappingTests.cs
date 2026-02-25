@@ -1,5 +1,4 @@
 ﻿using EssentialCSharp.Web.Extensions;
-using System.Threading.Tasks;
 
 namespace EssentialCSharp.Web.Tests;
 

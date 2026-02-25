@@ -2,7 +2,6 @@ using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System.Threading.Tasks;
 
 namespace EssentialCSharp.Web.Extensions.Tests.Integration;
 
@@ -25,7 +24,7 @@ public class CaptchaTests(CaptchaServiceProvider serviceProvider)
     }
 }
 
-public class CaptchaServiceProvider
+public class CaptchaServiceProvider : IDisposable
 {
     public ServiceProvider ServiceProvider { get; } = CreateServiceProvider();
     public static ServiceProvider CreateServiceProvider()
@@ -40,5 +39,10 @@ public class CaptchaServiceProvider
         // Add other necessary services here
 
         return services.BuildServiceProvider();
+    }
+    public void Dispose()
+    {
+        ServiceProvider.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

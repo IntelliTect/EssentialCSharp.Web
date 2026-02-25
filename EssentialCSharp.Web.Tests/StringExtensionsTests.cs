@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace EssentialCSharp.Web.Extensions.Tests;
+﻿namespace EssentialCSharp.Web.Extensions.Tests;
 
 public class StringExtensionsTests
 {

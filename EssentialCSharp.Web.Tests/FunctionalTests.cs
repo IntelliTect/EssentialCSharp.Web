@@ -1,9 +1,9 @@
 using System.Net;
-using System.Threading.Tasks;
 
 namespace EssentialCSharp.Web.Tests;
 
-public class FunctionalTests
+[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
+public class FunctionalTests(WebApplicationFactory factory)
 {
     [Test]
     [Arguments("/")]
@@ -13,8 +13,6 @@ public class FunctionalTests
     [Arguments("/healthz")]
     public async Task WhenTheApplicationStarts_ItCanLoadLoadPages(string relativeUrl)
     {
-        using WebApplicationFactory factory = new();
-
         HttpClient client = factory.CreateClient();
         using HttpResponseMessage response = await client.GetAsync(relativeUrl);
 
@@ -31,8 +29,6 @@ public class FunctionalTests
     [Arguments("/about?someOtherParam=value")]
     public async Task WhenPagesAreAccessed_TheyReturnHtml(string relativeUrl)
     {
-        using WebApplicationFactory factory = new();
-
         HttpClient client = factory.CreateClient();
         using HttpResponseMessage response = await client.GetAsync(relativeUrl);
 
@@ -49,8 +45,6 @@ public class FunctionalTests
     [Test]
     public async Task WhenTheApplicationStarts_NonExistingPage_GivesCorrectStatusCode()
     {
-        using WebApplicationFactory factory = new();
-
         HttpClient client = factory.CreateClient();
         using HttpResponseMessage response = await client.GetAsync("/non-existing-page1234");
 
