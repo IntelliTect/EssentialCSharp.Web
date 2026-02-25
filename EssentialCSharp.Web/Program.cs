@@ -9,7 +9,9 @@ using EssentialCSharp.Web.Helpers;
 using EssentialCSharp.Web.Middleware;
 using EssentialCSharp.Web.Services;
 using EssentialCSharp.Web.Services.Referrals;
+using EssentialCSharp.Web.Tools;
 using Mailjet.Client;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -162,12 +164,42 @@ public partial class Program
             builder.Services.AddAzureOpenAIServices(configuration);
         }
 
+        // Add MCP server with JWT bearer auth for tool access
+        var mcpSigningKey = configuration["Mcp:SigningKey"];
+        if (!string.IsNullOrEmpty(mcpSigningKey))
+        {
+            var mcpTokenService = new McpTokenService(configuration);
+            builder.Services.AddSingleton(mcpTokenService);
+
+            builder.Services.AddAuthentication()
+                .AddJwtBearer("McpBearer", options =>
+                {
+                    options.TokenValidationParameters = mcpTokenService.GetTokenValidationParameters();
+                });
+
+            builder.Services.AddAuthorization(options =>
+                options.AddPolicy("McpPolicy", policy =>
+                    policy.AddAuthenticationSchemes("McpBearer")
+                          .RequireAuthenticatedUser()));
+
+            builder.Services.AddMcpServer()
+                .WithHttpTransport()
+                .WithTools<BookSearchTool>();
+        }
+        else
+        {
+            initialLogger.LogWarning("Mcp:SigningKey not configured. MCP server will be disabled.");
+        }
+
         // Add Rate Limiting for API endpoints
         builder.Services.AddRateLimiter(options =>
         {
             // Global rate limiter for authenticated users by username, anonymous by IP
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
             {
+                if (httpContext.Request.Path.StartsWithSegments("/.well-known"))
+                    return RateLimitPartition.GetNoLimiter("well-known");
+
                 var partitionKey = httpContext.User.Identity?.IsAuthenticated == true
                     ? httpContext.User.Identity.Name ?? "unknown-user"
                     : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip";
@@ -202,12 +234,23 @@ public partial class Program
             // Custom response when rate limit is exceeded
             options.OnRejected = async (context, cancellationToken) =>
             {
-                if (context.HttpContext.Request.Path.StartsWithSegments("/.well-known"))
-                {
-                    return;
-                }
                 context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
                 context.HttpContext.Response.Headers.RetryAfter = "60";
+                if (context.HttpContext.Request.Path.StartsWithSegments("/mcp"))
+                {
+                    context.HttpContext.Response.ContentType = "application/json";
+                    var mcpErrorResponse = new
+                    {
+                        jsonrpc = "2.0",
+                        error = new { code = -32000, message = "Rate limit exceeded. Please wait before sending another request." },
+                        id = (object?)null
+                    };
+                    await context.HttpContext.Response.WriteAsync(
+                        System.Text.Json.JsonSerializer.Serialize(mcpErrorResponse),
+                        cancellationToken);
+                    return;
+                }
+
                 if (context.HttpContext.Request.Path.StartsWithSegments("/api/chat"))
                 {
                     // Custom rejection handling logic
@@ -297,14 +340,20 @@ public partial class Program
         app.UseRouting();
 
         app.UseAuthentication();
-        app.UseAuthorization();
 
         app.UseRateLimiter();
+
+        app.UseAuthorization();
 
         app.UseMiddleware<ReferralMiddleware>();
 
         app.MapRazorPages();
         app.MapDefaultControllerRoute();
+
+        if (!string.IsNullOrEmpty(configuration["Mcp:SigningKey"]))
+        {
+            app.MapMcp("/mcp").RequireAuthorization("McpPolicy");
+        }
 
         app.MapFallbackToController("Index", "Home");
 
