@@ -76,7 +76,10 @@ public class ListingSourceCodeControllerTests(WebApplicationFactory factory)
         // Verify all results are from chapter 1
         foreach (var r in results)
         {
-            await Assert.That(r.ChapterNumber).IsEqualTo(1);
+            using (Assert.Multiple())
+            {
+                await Assert.That(r.ChapterNumber).IsEqualTo(1);
+            }
         }
 
         // Verify results are ordered by listing number
@@ -85,8 +88,11 @@ public class ListingSourceCodeControllerTests(WebApplicationFactory factory)
         // Verify each listing has required properties
         foreach (var r in results)
         {
-            await Assert.That(r.FileExtension).IsNotEmpty();
-            await Assert.That(r.Content).IsNotEmpty();
+            using (Assert.Multiple())
+            {
+                await Assert.That(r.FileExtension).IsNotEmpty();
+                await Assert.That(r.Content).IsNotEmpty();
+            }
         }
     }
 

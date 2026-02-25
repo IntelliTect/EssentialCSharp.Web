@@ -82,9 +82,12 @@ public class ListingSourceCodeServiceTests
         await Assert.That(results).IsNotEmpty();
         foreach (var r in results)
         {
-            await Assert.That(r.ChapterNumber).IsEqualTo(1);
-            await Assert.That(r.Content).IsNotEmpty();
-            await Assert.That(r.FileExtension).IsNotEmpty();
+            using (Assert.Multiple())
+            {
+                await Assert.That(r.ChapterNumber).IsEqualTo(1);
+                await Assert.That(r.Content).IsNotEmpty();
+                await Assert.That(r.FileExtension).IsNotEmpty();
+            }
         }
 
         // Verify results are ordered
@@ -106,8 +109,11 @@ public class ListingSourceCodeServiceTests
         // Ensure all results match the {CC}.{LL}.{ext} pattern
         foreach (var r in results)
         {
-            await Assert.That(r.ChapterNumber).IsEqualTo(10);
-            await Assert.That(r.ListingNumber).IsBetween(1, 99);
+            using (Assert.Multiple())
+            {
+                await Assert.That(r.ChapterNumber).IsEqualTo(10);
+                await Assert.That(r.ListingNumber).IsBetween(1, 99);
+            }
         }
     }
 

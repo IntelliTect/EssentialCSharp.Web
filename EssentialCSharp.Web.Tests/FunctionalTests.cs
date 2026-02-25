@@ -2,6 +2,7 @@ using System.Net;
 
 namespace EssentialCSharp.Web.Tests;
 
+[NotInParallel("FunctionalTests")]
 [ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
 public class FunctionalTests(WebApplicationFactory factory)
 {

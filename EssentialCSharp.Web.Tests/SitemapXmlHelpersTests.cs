@@ -147,9 +147,9 @@ public class SitemapXmlHelpersTests
 
         var allUrls = nodes.Select(n => n.Url).ToList();
 
-        await Assert.That(allUrls).Contains(url => url.Contains("test-page-1"));
-        await Assert.That(allUrls).DoesNotContain(url => url.Contains("test-page-2")); // Not marked for XML
-        await Assert.That(allUrls).Contains(url => url.Contains("test-page-3"));
+        await Assert.That(allUrls).Contains(url => url.Contains("test-page-1", StringComparison.OrdinalIgnoreCase));
+        await Assert.That(allUrls).DoesNotContain(url => url.Contains("test-page-2", StringComparison.OrdinalIgnoreCase)); // Not marked for XML
+        await Assert.That(allUrls).Contains(url => url.Contains("test-page-3", StringComparison.OrdinalIgnoreCase));
     }
 
     [Test]
