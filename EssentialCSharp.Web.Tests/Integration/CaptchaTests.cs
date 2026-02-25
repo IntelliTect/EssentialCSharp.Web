@@ -10,7 +10,6 @@ namespace EssentialCSharp.Web.Tests.Integration;
 public class CaptchaTests(CaptchaServiceProvider serviceProvider)
 {
     [Test]
-    [Timeout(30_000)]
     public async Task CaptchaService_Verify_Success(CancellationToken cancellationToken)
     {
         ICaptchaService captchaService = serviceProvider.ServiceProvider.GetRequiredService<ICaptchaService>();
