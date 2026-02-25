@@ -19,10 +19,7 @@ public class CaptchaTests(CaptchaServiceProvider serviceProvider)
         string hCaptchaSecret = "0x0000000000000000000000000000000000000000";
         string hCaptchaToken = "10000000-aaaa-bbbb-cccc-000000000001";
         string hCaptchaSiteKey = "10000000-ffff-ffff-ffff-000000000001";
-        // Note: cancellationToken is not passed to VerifyAsync because ICaptchaService.VerifyAsync
-        // does not currently accept a CancellationToken. If the timeout fires, the underlying
-        // HTTP request will continue running in the background.
-        HCaptchaResult? response = await captchaService.VerifyAsync(hCaptchaSecret, hCaptchaToken, hCaptchaSiteKey);
+        HCaptchaResult? response = await captchaService.VerifyAsync(hCaptchaSecret, hCaptchaToken, hCaptchaSiteKey, cancellationToken);
 
         await Assert.That(response).IsNotNull();
         await Assert.That(response.Success).IsTrue();
