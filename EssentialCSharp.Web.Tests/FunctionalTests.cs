@@ -1,15 +1,16 @@
 using System.Net;
+using System.Threading.Tasks;
 
 namespace EssentialCSharp.Web.Tests;
 
 public class FunctionalTests
 {
-    [Theory]
-    [InlineData("/")]
-    [InlineData("/hello-world")]
-    [InlineData("/hello-world#hello-world")]
-    [InlineData("/guidelines")]
-    [InlineData("/healthz")]
+    [Test]
+    [Arguments("/")]
+    [Arguments("/hello-world")]
+    [Arguments("/hello-world#hello-world")]
+    [Arguments("/guidelines")]
+    [Arguments("/healthz")]
     public async Task WhenTheApplicationStarts_ItCanLoadLoadPages(string relativeUrl)
     {
         using WebApplicationFactory factory = new();
@@ -17,17 +18,17 @@ public class FunctionalTests
         HttpClient client = factory.CreateClient();
         using HttpResponseMessage response = await client.GetAsync(relativeUrl);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
 
-    [Theory]
-    [InlineData("/guidelines?rid=test-referral-id")]
-    [InlineData("/about?rid=abc123")]
-    [InlineData("/hello-world?rid=user-referral")]
-    [InlineData("/guidelines?rid=")]
-    [InlineData("/about?rid=   ")]
-    [InlineData("/guidelines?foo=bar")]
-    [InlineData("/about?someOtherParam=value")]
+    [Test]
+    [Arguments("/guidelines?rid=test-referral-id")]
+    [Arguments("/about?rid=abc123")]
+    [Arguments("/hello-world?rid=user-referral")]
+    [Arguments("/guidelines?rid=")]
+    [Arguments("/about?rid=   ")]
+    [Arguments("/guidelines?foo=bar")]
+    [Arguments("/about?someOtherParam=value")]
     public async Task WhenPagesAreAccessed_TheyReturnHtml(string relativeUrl)
     {
         using WebApplicationFactory factory = new();
@@ -35,17 +36,17 @@ public class FunctionalTests
         HttpClient client = factory.CreateClient();
         using HttpResponseMessage response = await client.GetAsync(relativeUrl);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+
         // Ensure the response has content (not blank)
         string content = await response.Content.ReadAsStringAsync();
-        Assert.NotEmpty(content);
-        
+        await Assert.That(content).IsNotEmpty();
+
         // Verify it's actually HTML content, not just whitespace
-        Assert.Contains("<html", content, StringComparison.OrdinalIgnoreCase);
+        await Assert.That(content).Contains("<html", StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Test]
     public async Task WhenTheApplicationStarts_NonExistingPage_GivesCorrectStatusCode()
     {
         using WebApplicationFactory factory = new();
@@ -53,6 +54,6 @@ public class FunctionalTests
         HttpClient client = factory.CreateClient();
         using HttpResponseMessage response = await client.GetAsync("/non-existing-page1234");
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
     }
 }

@@ -2,12 +2,14 @@ using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace EssentialCSharp.Web.Extensions.Tests.Integration;
 
-public class CaptchaTests(CaptchaServiceProvider serviceProvider) : IClassFixture<CaptchaServiceProvider>
+[ClassDataSource<CaptchaServiceProvider>(Shared = SharedType.PerClass)]
+public class CaptchaTests(CaptchaServiceProvider serviceProvider)
 {
-    [Fact]
+    [Test]
     public async Task CaptchaService_Verify_Success()
     {
         ICaptchaService captchaService = serviceProvider.ServiceProvider.GetRequiredService<ICaptchaService>();
@@ -18,8 +20,8 @@ public class CaptchaTests(CaptchaServiceProvider serviceProvider) : IClassFixtur
         string hCaptchaSiteKey = "10000000-ffff-ffff-ffff-000000000001";
         HCaptchaResult? response = await captchaService.VerifyAsync(hCaptchaSecret, hCaptchaToken, hCaptchaSiteKey);
 
-        Assert.NotNull(response);
-        Assert.True(response.Success);
+        await Assert.That(response).IsNotNull();
+        await Assert.That(response.Success).IsTrue();
     }
 }
 
