@@ -35,7 +35,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore /p:AccessToNugetFeed=false
 
       - name: Run .NET Tests
-        run: dotnet test --no-build --configuration Release --logger trx --results-directory ${{ runner.temp }}
+        run: dotnet test --no-build --configuration Release --report-trx --coverage --results-directory ${{ runner.temp }}
       
       - name: Convert TRX to VS Playlist
         if: failure()

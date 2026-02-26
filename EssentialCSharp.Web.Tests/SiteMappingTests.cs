@@ -51,40 +51,40 @@ public class SiteMappingTests
         ];
     }
 
-    [Fact]
-    public void FindHelloWorldWithAnchorSlugReturnsCorrectSiteMap()
+    [Test]
+    public async Task FindHelloWorldWithAnchorSlugReturnsCorrectSiteMap()
     {
         SiteMapping? foundSiteMap = GetSiteMap().Find("hello-world#hello-world");
-        Assert.NotNull(foundSiteMap);
-        Assert.Equivalent(HelloWorldSiteMapping, foundSiteMap);
+        await Assert.That(foundSiteMap).IsNotNull();
+        await Assert.That(foundSiteMap).IsEquivalentTo(HelloWorldSiteMapping);
     }
 
-    [Fact]
-    public void FindCSyntaxFundamentalsWithSpacesReturnsCorrectSiteMap()
+    [Test]
+    public async Task FindCSyntaxFundamentalsWithSpacesReturnsCorrectSiteMap()
     {
         SiteMapping? foundSiteMap = GetSiteMap().Find("C# Syntax Fundamentals");
-        Assert.NotNull(foundSiteMap);
-        Assert.Equivalent(CSyntaxFundamentalsSiteMapping, foundSiteMap);
+        await Assert.That(foundSiteMap).IsNotNull();
+        await Assert.That(foundSiteMap).IsEquivalentTo(CSyntaxFundamentalsSiteMapping);
     }
 
-    [Fact]
-    public void FindCSyntaxFundamentalsWithSpacesAndAnchorReturnsCorrectSiteMap()
+    [Test]
+    public async Task FindCSyntaxFundamentalsWithSpacesAndAnchorReturnsCorrectSiteMap()
     {
         SiteMapping? foundSiteMap = GetSiteMap().Find("C# Syntax Fundamentals#hello-world");
-        Assert.NotNull(foundSiteMap);
-        Assert.Equivalent(CSyntaxFundamentalsSiteMapping, foundSiteMap);
+        await Assert.That(foundSiteMap).IsNotNull();
+        await Assert.That(foundSiteMap).IsEquivalentTo(CSyntaxFundamentalsSiteMapping);
     }
 
-    [Fact]
-    public void FindCSyntaxFundamentalsSanitizedWithAnchorReturnsCorrectSiteMap()
+    [Test]
+    public async Task FindCSyntaxFundamentalsSanitizedWithAnchorReturnsCorrectSiteMap()
     {
         SiteMapping? foundSiteMap = GetSiteMap().Find("c-syntax-fundamentals#hello-world");
-        Assert.NotNull(foundSiteMap);
-        Assert.Equivalent(CSyntaxFundamentalsSiteMapping, foundSiteMap);
+        await Assert.That(foundSiteMap).IsNotNull();
+        await Assert.That(foundSiteMap).IsEquivalentTo(CSyntaxFundamentalsSiteMapping);
     }
 
-    [Fact]
-    public void FindPercentComplete_KeyIsNull_ReturnsNull()
+    [Test]
+    public async Task FindPercentComplete_KeyIsNull_ReturnsNull()
     {
         // Arrange
 
@@ -92,29 +92,26 @@ public class SiteMappingTests
         string? percent = GetSiteMap().FindPercentComplete(null!);
 
         // Assert
-        Assert.Null(percent);
+        await Assert.That(percent).IsNull();
     }
 
-    [Theory]
-    [InlineData("   ")]
-    [InlineData("")]
-    public void FindPercentComplete_KeyIsWhiteSpace_ThrowsArgumentException(string? key)
+    [Test]
+    [Arguments("   ")]
+    [Arguments("")]
+    public async Task FindPercentComplete_KeyIsWhiteSpace_ThrowsArgumentException(string? key)
     {
         // Arrange
 
         // Act
 
         // Assert
-        Assert.Throws<ArgumentException>(() =>
-        {
-            GetSiteMap().FindPercentComplete(key);
-        });
+        await Assert.That(() => GetSiteMap().FindPercentComplete(key)).Throws<ArgumentException>();
     }
 
-    [Theory]
-    [InlineData("hello-world", "50.00")]
-    [InlineData("c-syntax-fundamentals", "100.00")]
-    public void FindPercentComplete_ValidKey_Success(string? key, string result)
+    [Test]
+    [Arguments("hello-world", "50.00")]
+    [Arguments("c-syntax-fundamentals", "100.00")]
+    public async Task FindPercentComplete_ValidKey_Success(string? key, string result)
     {
         // Arrange
 
@@ -122,11 +119,11 @@ public class SiteMappingTests
         string? percent = GetSiteMap().FindPercentComplete(key);
 
         // Assert
-        Assert.Equal(result, percent);
+        await Assert.That(percent).IsEqualTo(result);
     }
 
-    [Fact]
-    public void FindPercentComplete_EmptySiteMappings_ReturnsZeroPercent()
+    [Test]
+    public async Task FindPercentComplete_EmptySiteMappings_ReturnsZeroPercent()
     {
         // Arrange
         IList<SiteMapping> siteMappings = new List<SiteMapping>();
@@ -135,11 +132,11 @@ public class SiteMappingTests
         string? percent = siteMappings.FindPercentComplete("test");
 
         // Assert
-        Assert.Equal("0.00", percent);
+        await Assert.That(percent).IsEqualTo("0.00");
     }
 
-    [Fact]
-    public void FindPercentComplete_KeyNotFound_ReturnsZeroPercent()
+    [Test]
+    public async Task FindPercentComplete_KeyNotFound_ReturnsZeroPercent()
     {
         // Arrange
 
@@ -147,6 +144,6 @@ public class SiteMappingTests
         string? percent = GetSiteMap().FindPercentComplete("non-existent-key");
 
         // Assert
-        Assert.Equal("0.00", percent);
+        await Assert.That(percent).IsEqualTo("0.00");
     }
 }
