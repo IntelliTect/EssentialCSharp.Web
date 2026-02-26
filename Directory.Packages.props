@@ -21,7 +21,7 @@
     <PackageVersion Include="Azure.Identity" Version="1.17.1" />
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.4.0" />
     <PackageVersion Include="Microsoft.ApplicationInsights.Profiler.AspNetCore" Version="3.0.1" />
-    <PackageVersion Include="TUnit" Version="1.17.25" />
+    <PackageVersion Include="TUnit" Version="1.17.29" />
     <PackageVersion Include="EssentialCSharp.Shared.Models" Version="$(ToolingPackagesVersion)" />
     <PackageVersion Include="HtmlAgilityPack" Version="1.12.4" />
     <PackageVersion Include="IntelliTect.Multitool" Version="2.0.0" />
