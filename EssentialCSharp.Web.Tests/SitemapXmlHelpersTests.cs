@@ -1,13 +1,15 @@
+using System.IO;
 using System.Globalization;
 using DotnetSitemapGenerator;
 using EssentialCSharp.Web.Helpers;
 using EssentialCSharp.Web.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-
 namespace EssentialCSharp.Web.Tests;
 
-public class SitemapXmlHelpersTests : IClassFixture<WebApplicationFactory>
+[NotInParallel("SitemapTests")]
+[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
+public class SitemapXmlHelpersTests
 {
     private readonly WebApplicationFactory _Factory;
 
@@ -16,8 +18,8 @@ public class SitemapXmlHelpersTests : IClassFixture<WebApplicationFactory>
         _Factory = factory;
     }
 
-    [Fact]
-    public void EnsureSitemapHealthy_WithValidSiteMappings_DoesNotThrow()
+    [Test]
+    public async Task EnsureSitemapHealthy_WithValidSiteMappings_DoesNotThrow()
     {
         // Arrange
         var siteMappings = new List<SiteMapping>
@@ -28,12 +30,11 @@ public class SitemapXmlHelpersTests : IClassFixture<WebApplicationFactory>
         };
 
         // Act & Assert
-        var exception = Record.Exception(() => SitemapXmlHelpers.EnsureSitemapHealthy(siteMappings));
-        Assert.Null(exception);
+        await Assert.That(() => SitemapXmlHelpers.EnsureSitemapHealthy(siteMappings)).ThrowsNothing();
     }
 
-    [Fact]
-    public void EnsureSitemapHealthy_WithMultipleCanonicalLinksForSamePage_ThrowsException()
+    [Test]
+    public async Task EnsureSitemapHealthy_WithMultipleCanonicalLinksForSamePage_ThrowsException()
     {
         // Arrange - Two mappings for the same chapter/page both marked as canonical
         var siteMappings = new List<SiteMapping>
@@ -43,15 +44,14 @@ public class SitemapXmlHelpersTests : IClassFixture<WebApplicationFactory>
         };
 
         // Act & Assert
-        var exception = Assert.Throws<InvalidOperationException>(() =>
-            SitemapXmlHelpers.EnsureSitemapHealthy(siteMappings));
-
-        Assert.Contains("Chapter 1, Page 1", exception.Message);
-        Assert.Contains("more than one canonical link", exception.Message);
+        await Assert.That(() => SitemapXmlHelpers.EnsureSitemapHealthy(siteMappings))
+            .Throws<InvalidOperationException>()
+            .WithMessageContaining("Chapter 1, Page 1")
+            .And.WithMessageContaining("more than one canonical link");
     }
 
-    [Fact]
-    public void EnsureSitemapHealthy_WithNoCanonicalLinksForPage_ThrowsException()
+    [Test]
+    public async Task EnsureSitemapHealthy_WithNoCanonicalLinksForPage_ThrowsException()
     {
         // Arrange - No mappings marked as canonical for this page
         var siteMappings = new List<SiteMapping>
@@ -61,17 +61,16 @@ public class SitemapXmlHelpersTests : IClassFixture<WebApplicationFactory>
         };
 
         // Act & Assert
-        var exception = Assert.Throws<InvalidOperationException>(() =>
-            SitemapXmlHelpers.EnsureSitemapHealthy(siteMappings));
-
-        Assert.Contains("Chapter 1, Page 1", exception.Message);
+        await Assert.That(() => SitemapXmlHelpers.EnsureSitemapHealthy(siteMappings))
+            .Throws<InvalidOperationException>()
+            .WithMessageContaining("Chapter 1, Page 1");
     }
 
-    [Fact]
-    public void GenerateSitemapXml_DoesNotIncludeIdentityRoutes()
+    [Test]
+    public async Task GenerateSitemapXml_DoesNotIncludeIdentityRoutes()
     {
         // Arrange
-        var tempDir = new DirectoryInfo(Path.GetTempPath());
+        var tempDir = Directory.CreateTempSubdirectory("SitemapTest_");
         var siteMappings = new List<SiteMapping> { CreateSiteMapping(1, 1, true) };
         var baseUrl = "https://test.example.com/";
 
@@ -87,19 +86,19 @@ public class SitemapXmlHelpersTests : IClassFixture<WebApplicationFactory>
         var allUrls = nodes.Select(n => n.Url).ToList();
 
         // Verify no Identity routes are included
-        Assert.DoesNotContain(allUrls, url => url.Contains("Identity", StringComparison.OrdinalIgnoreCase));
-        Assert.DoesNotContain(allUrls, url => url.Contains("Account", StringComparison.OrdinalIgnoreCase));
+        await Assert.That(allUrls).DoesNotContain(url => url.Contains("Identity", StringComparison.OrdinalIgnoreCase));
+        await Assert.That(allUrls).DoesNotContain(url => url.Contains("Account", StringComparison.OrdinalIgnoreCase));
 
         // But verify that expected routes are included
-        Assert.Contains(allUrls, url => url.Contains("/home", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(allUrls, url => url.Contains("/about", StringComparison.OrdinalIgnoreCase));
+        await Assert.That(allUrls).Contains(url => url.Contains("/home", StringComparison.OrdinalIgnoreCase));
+        await Assert.That(allUrls).Contains(url => url.Contains("/about", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
-    public void GenerateSitemapXml_IncludesBaseUrl()
+    [Test]
+    public async Task GenerateSitemapXml_IncludesBaseUrl()
     {
         // Arrange
-        var tempDir = new DirectoryInfo(Path.GetTempPath());
+        var tempDir = Directory.CreateTempSubdirectory("SitemapTest_");
         var siteMappings = new List<SiteMapping>();
         var baseUrl = "https://test.example.com/";
 
@@ -112,19 +111,22 @@ public class SitemapXmlHelpersTests : IClassFixture<WebApplicationFactory>
             baseUrl,
             out var nodes);
 
-        Assert.Contains(nodes, node => node.Url == baseUrl);
+        await Assert.That(nodes).Contains(node => node.Url == baseUrl);
 
         // Verify the root URL has highest priority
         var rootNode = nodes.First(node => node.Url == baseUrl);
-        Assert.Equal(1.0M, rootNode.Priority);
-        Assert.Equal(ChangeFrequency.Daily, rootNode.ChangeFrequency);
+        using (Assert.Multiple())
+        {
+            await Assert.That(rootNode.Priority).IsEqualTo(1.0M);
+            await Assert.That(rootNode.ChangeFrequency).IsEqualTo(ChangeFrequency.Daily);
+        }
     }
 
-    [Fact]
-    public void GenerateSitemapXml_IncludesSiteMappingsMarkedForXml()
+    [Test]
+    public async Task GenerateSitemapXml_IncludesSiteMappingsMarkedForXml()
     {
         // Arrange
-        var tempDir = new DirectoryInfo(Path.GetTempPath());
+        var tempDir = Directory.CreateTempSubdirectory("SitemapTest_");
         var baseUrl = "https://test.example.com/";
 
         var siteMappings = new List<SiteMapping>
@@ -145,16 +147,16 @@ public class SitemapXmlHelpersTests : IClassFixture<WebApplicationFactory>
 
         var allUrls = nodes.Select(n => n.Url).ToList();
 
-        Assert.Contains(allUrls, url => url.Contains("test-page-1"));
-        Assert.DoesNotContain(allUrls, url => url.Contains("test-page-2")); // Not marked for XML
-        Assert.Contains(allUrls, url => url.Contains("test-page-3"));
+        await Assert.That(allUrls).Contains(url => url.Contains("test-page-1", StringComparison.OrdinalIgnoreCase));
+        await Assert.That(allUrls).DoesNotContain(url => url.Contains("test-page-2", StringComparison.OrdinalIgnoreCase)); // Not marked for XML
+        await Assert.That(allUrls).Contains(url => url.Contains("test-page-3", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
-    public void GenerateSitemapXml_DoesNotIncludeIndexRoutes()
+    [Test]
+    public async Task GenerateSitemapXml_DoesNotIncludeIndexRoutes()
     {
         // Arrange
-        var tempDir = new DirectoryInfo(Path.GetTempPath());
+        var tempDir = Directory.CreateTempSubdirectory("SitemapTest_");
         var siteMappings = new List<SiteMapping>();
         var baseUrl = "https://test.example.com/";
 
@@ -170,14 +172,14 @@ public class SitemapXmlHelpersTests : IClassFixture<WebApplicationFactory>
         var allUrls = nodes.Select(n => n.Url).ToList();
 
         // Should not include Index action routes (they're the default)
-        Assert.DoesNotContain(allUrls, url => url.Contains("/Index", StringComparison.OrdinalIgnoreCase));
+        await Assert.That(allUrls).DoesNotContain(url => url.Contains("/Index", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
-    public void GenerateSitemapXml_DoesNotIncludeErrorRoutes()
+    [Test]
+    public async Task GenerateSitemapXml_DoesNotIncludeErrorRoutes()
     {
         // Arrange
-        var tempDir = new DirectoryInfo(Path.GetTempPath());
+        var tempDir = Directory.CreateTempSubdirectory("SitemapTest_");
         var siteMappings = new List<SiteMapping>();
         var baseUrl = "https://test.example.com/";
 
@@ -193,14 +195,14 @@ public class SitemapXmlHelpersTests : IClassFixture<WebApplicationFactory>
         var allUrls = nodes.Select(n => n.Url).ToList();
 
         // Should not include Error action routes
-        Assert.DoesNotContain(allUrls, url => url.Contains("/Error", StringComparison.OrdinalIgnoreCase));
+        await Assert.That(allUrls).DoesNotContain(url => url.Contains("/Error", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
-    public void GenerateSitemapXml_UsesLastModifiedDateFromSiteMapping()
+    [Test]
+    public async Task GenerateSitemapXml_UsesLastModifiedDateFromSiteMapping()
     {
         // Arrange
-        var tempDir = new DirectoryInfo(Path.GetTempPath());
+        var tempDir = Directory.CreateTempSubdirectory("SitemapTest_");
         var baseUrl = "https://test.example.com/";
         var specificLastModified = new DateTime(2023, 5, 15, 10, 30, 0, DateTimeKind.Utc);
 
@@ -220,7 +222,7 @@ public class SitemapXmlHelpersTests : IClassFixture<WebApplicationFactory>
 
         // Assert
         var siteMappingNode = nodes.First(node => node.Url.Contains("test-page-1"));
-        Assert.Equal(specificLastModified, siteMappingNode.LastModificationDate);
+        await Assert.That(siteMappingNode.LastModificationDate).IsEqualTo(specificLastModified);
     }
 
     private static SiteMapping CreateSiteMapping(

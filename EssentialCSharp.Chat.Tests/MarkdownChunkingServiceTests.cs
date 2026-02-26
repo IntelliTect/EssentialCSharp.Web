@@ -1,14 +1,13 @@
-﻿using EssentialCSharp.Chat.Common.Services;
+using EssentialCSharp.Chat.Common.Services;
 using Moq;
 
 namespace EssentialCSharp.Chat.Tests;
-// TODO: Move to editorconfig later, just moving quick
-#pragma warning disable CA1707 // Identifiers should not contain underscores
+
 public class MarkdownChunkingServiceTests
 {
     #region MarkdownContentToHeadersAndSection
-    [Fact]
-    public void MarkdownContentToHeadersAndSection_ParsesSampleMarkdown_CorrectlyCombinesHeadersAndExtractsContent()
+    [Test]
+    public async Task MarkdownContentToHeadersAndSection_ParsesSampleMarkdown_CorrectlyCombinesHeadersAndExtractsContent()
     {
         string markdown = """
 ### Beginner Topic
@@ -43,15 +42,16 @@ C# requires that the Main method return either `void` or `int` and that it take 
 
         var sections = MarkdownChunkingService.MarkdownContentToHeadersAndSection(markdown);
 
-        Assert.Equal(3, sections.Count);
-        Assert.Contains(sections, s => s.Header == "Beginner Topic: What Is a Method?" && string.Join("\n", s.Content).Contains("Syntactically, a **method** in C# is a named block of code"));
-        Assert.Contains(sections, s => s.Header == "Main Method" && string.Join("\n", s.Content).Contains("The location where C# programs begin execution is the **Main method**, which begins with `static void Main()`")
-            && string.Join("\n", s.Content).Contains("publicclass Program"));
-        Assert.Contains(sections, s => s.Header == "Main Method: Advanced Topic: Declaration of the Main Method" && string.Join("\n", s.Content).Contains("C# requires that the Main method return either `void` or `int`"));
+        await Assert.That(sections).Count().IsEqualTo(3);
+        await Assert.That(sections).Contains(s => s.Header == "Beginner Topic: What Is a Method?" && string.Join("\n", s.Content).Contains("Syntactically, a **method** in C# is a named block of code"));
+
+        await Assert.That(sections).Contains(s => s.Header == "Main Method" && string.Join("\n", s.Content).Contains("The location where C# programs begin execution is the **Main method**, which begins with `static void Main()`") && string.Join("\n", s.Content).Contains("publicclass Program"));
+
+        await Assert.That(sections).Contains(s => s.Header == "Main Method: Advanced Topic: Declaration of the Main Method" && string.Join("\n", s.Content).Contains("C# requires that the Main method return either `void` or `int`"));
     }
 
-    [Fact]
-    public void MarkdownContentToHeadersAndSection_AppendsCodeListingToPriorSection()
+    [Test]
+    public async Task MarkdownContentToHeadersAndSection_AppendsCodeListingToPriorSection()
     {
         string markdown = """
 ##  Working with Variables
@@ -86,16 +86,14 @@ To declare a variable is to define it, which you do by
 
         var sections = MarkdownChunkingService.MarkdownContentToHeadersAndSection(markdown);
 
-        Assert.Equal(2, sections.Count);
+        await Assert.That(sections).Count().IsEqualTo(2);
         // The code listing should be appended to the Working with Variables section, not as its own section
-        var workingWithVariablesSection = sections.FirstOrDefault(s => s.Header == "Working with Variables");
-        Assert.True(!string.IsNullOrEmpty(workingWithVariablesSection.Header));
-        Assert.Contains("publicclass MiracleMax", string.Join("\n", workingWithVariablesSection.Content));
-        Assert.DoesNotContain(sections, s => s.Header == "Listing 1.12: Declaring and Assigning a Variable");
+        await Assert.That(sections).Contains(s => s.Header == "Working with Variables" && string.Join("\n", s.Content).Contains("publicclass MiracleMax"));
+        await Assert.That(sections).DoesNotContain(s => s.Header == "Listing 1.12: Declaring and Assigning a Variable");
     }
 
-    [Fact]
-    public void MarkdownContentToHeadersAndSection_KeepsPriorHeadersAppended()
+    [Test]
+    public async Task MarkdownContentToHeadersAndSection_KeepsPriorHeadersAppended()
     {
         string markdown = """
 ### Beginner Topic
@@ -143,19 +141,23 @@ From this listing, observe that it is possible to assign a variable as part of t
 """;
 
         var sections = MarkdownChunkingService.MarkdownContentToHeadersAndSection(markdown);
-        Assert.Equal(5, sections.Count);
+        await Assert.That(sections).Count().IsEqualTo(5);
 
-        Assert.Contains(sections, s => s.Header == "Beginner Topic: What Is a Data Type?" && string.Join("\n", s.Content).Contains("The type of data that a variable declaration specifies is called a **data type**"));
-        Assert.Contains(sections, s => s.Header == "Declaring a Variable" && string.Join("\n", s.Content).Contains("In Listing 1.12, `string max` is a variable declaration"));
-        Assert.Contains(sections, s => s.Header == "Declaring a Variable: Declaring another thing" && string.Join("\n", s.Content).Contains("Because a multivariable declaration statement allows developers to provide the data type only once"));
-        Assert.Contains(sections, s => s.Header == "Assigning a Variable" && string.Join("\n", s.Content).Contains("After declaring a local variable, you must assign it a value before reading from it."));
-        Assert.Contains(sections, s => s.Header == "Assigning a Variable: Continued Learning" && string.Join("\n", s.Content).Contains("From this listing, observe that it is possible to assign a variable as part of the variable declaration"));
+        await Assert.That(sections).Contains(s => s.Header == "Beginner Topic: What Is a Data Type?" && string.Join("\n", s.Content).Contains("The type of data that a variable declaration specifies is called a **data type**"));
+
+        await Assert.That(sections).Contains(s => s.Header == "Declaring a Variable" && string.Join("\n", s.Content).Contains("In Listing 1.12, `string max` is a variable declaration"));
+
+        await Assert.That(sections).Contains(s => s.Header == "Declaring a Variable: Declaring another thing" && string.Join("\n", s.Content).Contains("Because a multivariable declaration statement allows developers to provide the data type only once"));
+
+        await Assert.That(sections).Contains(s => s.Header == "Assigning a Variable" && string.Join("\n", s.Content).Contains("After declaring a local variable, you must assign it a value before reading from it."));
+
+        await Assert.That(sections).Contains(s => s.Header == "Assigning a Variable: Continued Learning" && string.Join("\n", s.Content).Contains("From this listing, observe that it is possible to assign a variable as part of the variable declaration"));
     }
     #endregion MarkdownContentToHeadersAndSection
 
     #region ProcessSingleMarkdownFile
-    [Fact]
-    public void ProcessSingleMarkdownFile_ProducesExpectedChunksAndHeaders()
+    [Test]
+    public async Task ProcessSingleMarkdownFile_ProducesExpectedChunksAndHeaders()
     {
         // Arrange
         var logger = new Mock<Microsoft.Extensions.Logging.ILogger<MarkdownChunkingService>>().Object;
@@ -178,15 +180,12 @@ From this listing, observe that it is possible to assign a variable as part of t
         var result = service.ProcessSingleMarkdownFile(fileContent, fileName, filePath);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(fileName, result.FileName);
-        Assert.Equal(filePath, result.FilePath);
-        Assert.Contains("This is the first section.", string.Join("\n", result.Chunks));
-        Assert.Contains("Console.WriteLine(\"Hello World\");", string.Join("\n", result.Chunks));
-        Assert.Contains("This is the second section.", string.Join("\n", result.Chunks));
-        Assert.Contains(result.Chunks, c => c.Contains("This is the second section."));
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result.FileName).IsEqualTo(fileName);
+        await Assert.That(result.FilePath).IsEqualTo(filePath);
+        await Assert.That(string.Join("\n", result.Chunks)).Contains("This is the first section.");
+        await Assert.That(string.Join("\n", result.Chunks)).Contains("Console.WriteLine(\"Hello World\");");
+        await Assert.That(result.Chunks).Contains(c => c.Contains("This is the second section."));
     }
     #endregion ProcessSingleMarkdownFile
 }
-
-#pragma warning restore CA1707 // Identifiers should not contain underscores
