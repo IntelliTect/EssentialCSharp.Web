@@ -71,7 +71,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: essentialcsharpwebimage
           path: ${{ github.workspace }}/essentialcsharpwebimage.tar
@@ -80,6 +80,9 @@ jobs:
     if: github.event_name != 'pull_request_target' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     needs: build-and-test
+    concurrency:
+      group: deploy-development
+      cancel-in-progress: false
     environment:
       name: "Development"
 
@@ -92,7 +95,7 @@ jobs:
           subscription-id: ${{ secrets.ESSENTIALCSHARP_SUBSCRIPTION_ID }}
 
       - name: Download artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: essentialcsharpwebimage
           path: ${{ github.workspace }}
@@ -174,6 +177,9 @@ jobs:
     if: github.event_name != 'pull_request_target' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     needs: [deploy-development]
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
     environment:
       name: "Production"
 
@@ -186,7 +192,7 @@ jobs:
           subscription-id: ${{ secrets.ESSENTIALCSHARP_SUBSCRIPTION_ID }}
 
       - name: Download artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: essentialcsharpwebimage
           path: ${{ github.workspace }}
@@ -232,7 +238,7 @@ jobs:
           ACR_USERNAME: ${{ secrets.ESSENTIALCSHARP_ACR_USERNAME }}
           ACR_PASSWORD: ${{ secrets.ESSENTIALCSHARP_ACR_PASSWORD }}
           AZURECLIENTID: ${{ secrets.IDENTITY_CLIENT_ID }}
-          TRYDOTNET_ORIGIN: ${{ vars.TRYDOTNET_ORIGIN }}
+          TRYDOTNET_ORIGIN: ${{ vars.PROD_TRYDOTNET_ORIGIN }}
         with:
           inlineScript: |
             az containerapp identity assign -n ${{ vars.CONTAINER_APP_NAME }} -g ${{ vars.RESOURCEGROUP }} --user-assigned ${{ vars.CONTAINER_APP_IDENTITY }}

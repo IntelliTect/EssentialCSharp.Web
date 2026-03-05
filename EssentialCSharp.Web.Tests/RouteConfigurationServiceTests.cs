@@ -3,7 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace EssentialCSharp.Web.Tests;
 
-public class RouteConfigurationServiceTests : IClassFixture<WebApplicationFactory>
+[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
+public class RouteConfigurationServiceTests
 {
     private readonly WebApplicationFactory _Factory;
 
@@ -12,8 +13,8 @@ public class RouteConfigurationServiceTests : IClassFixture<WebApplicationFactor
         _Factory = factory;
     }
 
-    [Fact]
-    public void GetStaticRoutes_ShouldReturnExpectedRoutes()
+    [Test]
+    public async Task GetStaticRoutes_ShouldReturnExpectedRoutes()
     {
         // Act
         var routes = _Factory.InServiceScope(serviceProvider =>
@@ -23,13 +24,13 @@ public class RouteConfigurationServiceTests : IClassFixture<WebApplicationFactor
         });
 
         // Assert
-        Assert.NotEmpty(routes);
+        await Assert.That(routes).IsNotEmpty();
 
         // Check for expected routes from the HomeController
-        Assert.Contains("home", routes);
-        Assert.Contains("about", routes);
-        Assert.Contains("guidelines", routes);
-        Assert.Contains("announcements", routes);
-        Assert.Contains("termsofservice", routes);
+        await Assert.That(routes).Contains("home");
+        await Assert.That(routes).Contains("about");
+        await Assert.That(routes).Contains("guidelines");
+        await Assert.That(routes).Contains("announcements");
+        await Assert.That(routes).Contains("termsofservice");
     }
 }

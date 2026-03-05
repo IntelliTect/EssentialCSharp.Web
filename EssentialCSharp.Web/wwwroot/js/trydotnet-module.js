@@ -133,7 +133,6 @@ function prependUsings(code) {
  * @returns {string} Scaffolded code with proper using statements and Main method
  */
 function createScaffolding(userCode) {
-    // return `${COMMON_USINGS}
     return `
 namespace Program
 {

@@ -9,7 +9,7 @@ namespace EssentialCSharp.Web.Tests;
 
 public class ListingSourceCodeServiceTests
 {
-    [Fact]
+    [Test]
     public async Task GetListingAsync_WithValidChapterAndListing_ReturnsCorrectListing()
     {
         // Arrange
@@ -19,14 +19,17 @@ public class ListingSourceCodeServiceTests
         ListingSourceCodeResponse? result = await service.GetListingAsync(1, 1);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(1, result.ChapterNumber);
-        Assert.Equal(1, result.ListingNumber);
-        Assert.Equal("cs", result.FileExtension);
-        Assert.NotEmpty(result.Content);
+        await Assert.That(result).IsNotNull();
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.ChapterNumber).IsEqualTo(1);
+            await Assert.That(result.ListingNumber).IsEqualTo(1);
+            await Assert.That(result.FileExtension).IsEqualTo("cs");
+            await Assert.That(result.Content).IsNotEmpty();
+        }
     }
 
-    [Fact]
+    [Test]
     public async Task GetListingAsync_WithInvalidChapter_ReturnsNull()
     {
         // Arrange
@@ -36,10 +39,10 @@ public class ListingSourceCodeServiceTests
         ListingSourceCodeResponse? result = await service.GetListingAsync(999, 1);
 
         // Assert
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task GetListingAsync_WithInvalidListing_ReturnsNull()
     {
         // Arrange
@@ -49,10 +52,10 @@ public class ListingSourceCodeServiceTests
         ListingSourceCodeResponse? result = await service.GetListingAsync(1, 999);
 
         // Assert
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task GetListingAsync_DifferentFileExtension_AutoDiscoversFileExtension()
     {
         // Arrange
@@ -62,11 +65,11 @@ public class ListingSourceCodeServiceTests
         ListingSourceCodeResponse? result = await service.GetListingAsync(1, 2);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal("xml", result.FileExtension);
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result.FileExtension).IsEqualTo("xml");
     }
 
-    [Fact]
+    [Test]
     public async Task GetListingsByChapterAsync_WithValidChapter_ReturnsAllListings()
     {
         // Arrange
@@ -76,16 +79,22 @@ public class ListingSourceCodeServiceTests
         IReadOnlyList<ListingSourceCodeResponse> results = await service.GetListingsByChapterAsync(1);
 
         // Assert
-        Assert.NotEmpty(results);
-        Assert.All(results, r => Assert.Equal(1, r.ChapterNumber));
-        Assert.All(results, r => Assert.NotEmpty(r.Content));
-        Assert.All(results, r => Assert.NotEmpty(r.FileExtension));
-        
+        await Assert.That(results).IsNotEmpty();
+        foreach (var r in results)
+        {
+            using (Assert.Multiple())
+            {
+                await Assert.That(r.ChapterNumber).IsEqualTo(1);
+                await Assert.That(r.Content).IsNotEmpty();
+                await Assert.That(r.FileExtension).IsNotEmpty();
+            }
+        }
+
         // Verify results are ordered
-        Assert.Equal(results.OrderBy(r => r.ListingNumber).ToList(), results);
+        await Assert.That(results).IsOrderedBy(r => r.ListingNumber);
     }
 
-    [Fact]
+    [Test]
     public async Task GetListingsByChapterAsync_DirectoryContainsNonListingFiles_ExcludesNonListingFiles()
     {
         // Arrange - Chapter 10 has Employee.cs which doesn't match the pattern
@@ -95,17 +104,20 @@ public class ListingSourceCodeServiceTests
         IReadOnlyList<ListingSourceCodeResponse> results = await service.GetListingsByChapterAsync(10);
 
         // Assert
-        Assert.NotEmpty(results);
-        
+        await Assert.That(results).IsNotEmpty();
+
         // Ensure all results match the {CC}.{LL}.{ext} pattern
-        Assert.All(results, r => 
+        foreach (var r in results)
         {
-            Assert.Equal(10, r.ChapterNumber);
-            Assert.InRange(r.ListingNumber, 1, 99);
-        });
+            using (Assert.Multiple())
+            {
+                await Assert.That(r.ChapterNumber).IsEqualTo(10);
+                await Assert.That(r.ListingNumber).IsBetween(1, 99);
+            }
+        }
     }
 
-    [Fact]
+    [Test]
     public async Task GetListingsByChapterAsync_WithInvalidChapter_ReturnsEmptyList()
     {
         // Arrange
@@ -115,7 +127,7 @@ public class ListingSourceCodeServiceTests
         IReadOnlyList<ListingSourceCodeResponse> results = await service.GetListingsByChapterAsync(999);
 
         // Assert
-        Assert.Empty(results);
+        await Assert.That(results).IsEmpty();
     }
 
     private static ListingSourceCodeService CreateService()
@@ -133,7 +145,7 @@ public class ListingSourceCodeServiceTests
     private static DirectoryInfo GetTestDataPath()
     {
         string baseDirectory = AppContext.BaseDirectory;
-        string testDataPath = Path.Combine(baseDirectory, "TestData");
+        string testDataPath = Path.Join(baseDirectory, "TestData");
         
         DirectoryInfo testDataDirectory = new(testDataPath);
         

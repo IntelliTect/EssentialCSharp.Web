@@ -1,14 +1,16 @@
+using EssentialCSharp.Web.Extensions;
 using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace EssentialCSharp.Web.Extensions.Tests.Integration;
+namespace EssentialCSharp.Web.Tests.Integration;
 
-public class CaptchaTests(CaptchaServiceProvider serviceProvider) : IClassFixture<CaptchaServiceProvider>
+[ClassDataSource<CaptchaServiceProvider>(Shared = SharedType.PerClass)]
+public class CaptchaTests(CaptchaServiceProvider serviceProvider)
 {
-    [Fact]
-    public async Task CaptchaService_Verify_Success()
+    [Test]
+    public async Task CaptchaService_Verify_Success(CancellationToken cancellationToken)
     {
         ICaptchaService captchaService = serviceProvider.ServiceProvider.GetRequiredService<ICaptchaService>();
 
@@ -16,14 +18,14 @@ public class CaptchaTests(CaptchaServiceProvider serviceProvider) : IClassFixtur
         string hCaptchaSecret = "0x0000000000000000000000000000000000000000";
         string hCaptchaToken = "10000000-aaaa-bbbb-cccc-000000000001";
         string hCaptchaSiteKey = "10000000-ffff-ffff-ffff-000000000001";
-        HCaptchaResult? response = await captchaService.VerifyAsync(hCaptchaSecret, hCaptchaToken, hCaptchaSiteKey);
+        HCaptchaResult? response = await captchaService.VerifyAsync(hCaptchaSecret, hCaptchaToken, hCaptchaSiteKey, cancellationToken);
 
-        Assert.NotNull(response);
-        Assert.True(response.Success);
+        await Assert.That(response).IsNotNull();
+        await Assert.That(response.Success).IsTrue();
     }
 }
 
-public class CaptchaServiceProvider
+public class CaptchaServiceProvider : IDisposable, IAsyncDisposable
 {
     public ServiceProvider ServiceProvider { get; } = CreateServiceProvider();
     public static ServiceProvider CreateServiceProvider()
@@ -38,5 +40,25 @@ public class CaptchaServiceProvider
         // Add other necessary services here
 
         return services.BuildServiceProvider();
+    }
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            ServiceProvider.Dispose();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await ServiceProvider.DisposeAsync().ConfigureAwait(false);
+        Dispose(disposing: false);
+        GC.SuppressFinalize(this);
     }
 }

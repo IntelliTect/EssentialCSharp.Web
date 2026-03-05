@@ -1,6 +1,7 @@
 using System.Data.Common;
 using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Services;
+using TUnit.Core.Interfaces;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
@@ -13,8 +14,17 @@ using Moq.AutoMock;
 
 namespace EssentialCSharp.Web.Tests;
 
-public sealed class WebApplicationFactory : WebApplicationFactory<Program>
+public sealed class WebApplicationFactory : WebApplicationFactory<Program>, IAsyncInitializer
 {
+    public Task InitializeAsync()
+    {
+        // Force eager server initialization before tests run.
+        // This is thread-safe and prevents race conditions from parallel tests
+        // calling CreateClient() concurrently during lazy init.
+        _ = Server;
+        return Task.CompletedTask;
+    }
+
     private static string SqlConnectionString => $"DataSource=file:{Guid.NewGuid()}?mode=memory&cache=shared";
     private SqliteConnection? _Connection;
 
@@ -59,7 +69,7 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>
             // Replace IListingSourceCodeService with one backed by TestData
             services.RemoveAll<IListingSourceCodeService>();
 
-            string testDataPath = Path.Combine(AppContext.BaseDirectory, "TestData");
+            string testDataPath = Path.Join(AppContext.BaseDirectory, "TestData");
             var fileProvider = new PhysicalFileProvider(testDataPath);
             services.AddSingleton<IListingSourceCodeService>(sp =>
             {
@@ -93,6 +103,17 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>
         var factory = Services.GetRequiredService<IServiceScopeFactory>();
         using var scope = factory.CreateScope();
         action(scope.ServiceProvider);
+    }
+
+    public override async ValueTask DisposeAsync()
+    {
+        await base.DisposeAsync().ConfigureAwait(false);
+        if (_Connection != null)
+        {
+            await _Connection.DisposeAsync().ConfigureAwait(false);
+            _Connection = null;
+        }
+        GC.SuppressFinalize(this);
     }
 
     protected override void Dispose(bool disposing)

@@ -47,14 +47,13 @@ public class RouteConfigurationService : IRouteConfigurationService
 
             // For actions without attribute routes, use conventional routing
             if (actionDescriptor.AttributeRouteInfo?.Template == null &&
-                actionDescriptor.RouteValues.TryGetValue("action", out var actionName) && 
-                actionDescriptor.RouteValues.TryGetValue("controller", out var controllerName))
+                actionDescriptor.RouteValues.TryGetValue("action", out var actionName) &&
+                actionDescriptor.RouteValues.TryGetValue("controller", out var controllerName) &&
+                controllerName?.Equals("Home", StringComparison.OrdinalIgnoreCase) == true &&
+                actionName != null)
             {
-                if (controllerName?.Equals("Home", StringComparison.OrdinalIgnoreCase) == true && actionName != null)
-                {
-                    // Use the action name directly as the route
-                    routes.Add(actionName.ToLowerInvariant());
-                }
+                // Use the action name directly as the route
+                routes.Add(actionName.ToLowerInvariant());
             }
         }
 

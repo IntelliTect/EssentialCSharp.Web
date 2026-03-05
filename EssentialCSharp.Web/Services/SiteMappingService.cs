@@ -8,7 +8,7 @@ public class SiteMappingService : ISiteMappingService
 
     public SiteMappingService(IWebHostEnvironment webHostEnvironment)
     {
-        string path = Path.Combine(webHostEnvironment.ContentRootPath, "Chapters", "sitemap.json");
+        string path = Path.Join(webHostEnvironment.ContentRootPath, "Chapters", "sitemap.json");
         List<SiteMapping>? siteMappings = System.Text.Json.JsonSerializer.Deserialize<List<SiteMapping>>(File.OpenRead(path)) ?? throw new InvalidOperationException("No table of contents found");
         SiteMappings = siteMappings;
     }
