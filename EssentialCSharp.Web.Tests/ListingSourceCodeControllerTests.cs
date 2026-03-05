@@ -4,104 +4,104 @@ using EssentialCSharp.Web.Models;
 
 namespace EssentialCSharp.Web.Tests;
 
-public class ListingSourceCodeControllerTests
+[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
+public class ListingSourceCodeControllerTests(WebApplicationFactory factory)
 {
-    [Fact]
+    [Test]
     public async Task GetListing_WithValidChapterAndListing_Returns200WithContent()
     {
         // Arrange
-        using WebApplicationFactory factory = new();
         HttpClient client = factory.CreateClient();
 
         // Act
         using HttpResponseMessage response = await client.GetAsync("/api/ListingSourceCode/chapter/1/listing/1");
         
         // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+
         ListingSourceCodeResponse? result = await response.Content.ReadFromJsonAsync<ListingSourceCodeResponse>();
-        Assert.NotNull(result);
-        Assert.Equal(1, result.ChapterNumber);
-        Assert.Equal(1, result.ListingNumber);
-        Assert.NotEmpty(result.FileExtension);
-        Assert.NotEmpty(result.Content);
+        await Assert.That(result).IsNotNull();
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.ChapterNumber).IsEqualTo(1);
+            await Assert.That(result.ListingNumber).IsEqualTo(1);
+            await Assert.That(result.FileExtension).IsNotEmpty();
+            await Assert.That(result.Content).IsNotEmpty();
+        }
     }
 
 
-    [Fact]
+    [Test]
     public async Task GetListing_WithInvalidChapter_Returns404()
     {
         // Arrange
-        using WebApplicationFactory factory = new();
         HttpClient client = factory.CreateClient();
 
         // Act
         using HttpResponseMessage response = await client.GetAsync("/api/ListingSourceCode/chapter/999/listing/1");
         
         // Assert
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
     }
 
-    [Fact]
+    [Test]
     public async Task GetListing_WithInvalidListing_Returns404()
     {
         // Arrange
-        using WebApplicationFactory factory = new();
         HttpClient client = factory.CreateClient();
 
         // Act
         using HttpResponseMessage response = await client.GetAsync("/api/ListingSourceCode/chapter/1/listing/999");
         
         // Assert
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
     }
 
-    [Fact]
+    [Test]
     public async Task GetListingsByChapter_WithValidChapter_ReturnsMultipleListings()
     {
         // Arrange
-        using WebApplicationFactory factory = new();
         HttpClient client = factory.CreateClient();
 
         // Act
         using HttpResponseMessage response = await client.GetAsync("/api/ListingSourceCode/chapter/1");
         
         // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+
         List<ListingSourceCodeResponse>? results = await response.Content.ReadFromJsonAsync<List<ListingSourceCodeResponse>>();
-        Assert.NotNull(results);
-        Assert.NotEmpty(results);
-        
-        // Verify all results are from chapter 1
-        Assert.All(results, r => Assert.Equal(1, r.ChapterNumber));
-        
+        await Assert.That(results).IsNotNull();
+        await Assert.That(results).IsNotEmpty();
+
         // Verify results are ordered by listing number
-        Assert.Equal(results.OrderBy(r => r.ListingNumber).ToList(), results);
-        
-        // Verify each listing has required properties
-        Assert.All(results, r => 
+        await Assert.That(results).IsOrderedBy(r => r.ListingNumber);
+
+        // Verify all results are from chapter 1 and have required properties
+        foreach (var r in results)
         {
-            Assert.NotEmpty(r.FileExtension);
-            Assert.NotEmpty(r.Content);
-        });
+            using (Assert.Multiple())
+            {
+                await Assert.That(r.ChapterNumber).IsEqualTo(1);
+                await Assert.That(r.FileExtension).IsNotEmpty();
+                await Assert.That(r.Content).IsNotEmpty();
+            }
+        }
     }
 
-    [Fact]
+    [Test]
     public async Task GetListingsByChapter_WithInvalidChapter_ReturnsEmptyList()
     {
         // Arrange
-        using WebApplicationFactory factory = new();
         HttpClient client = factory.CreateClient();
 
         // Act
         using HttpResponseMessage response = await client.GetAsync("/api/ListingSourceCode/chapter/999");
         
         // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+
         List<ListingSourceCodeResponse>? results = await response.Content.ReadFromJsonAsync<List<ListingSourceCodeResponse>>();
-        Assert.NotNull(results);
-        Assert.Empty(results);
+        await Assert.That(results).IsNotNull();
+        await Assert.That(results).IsEmpty();
     }
 }
