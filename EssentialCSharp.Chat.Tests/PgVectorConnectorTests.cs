@@ -1,8 +1,6 @@
 using EssentialCSharp.Chat.Common.Models;
 using Microsoft.SemanticKernel.Connectors.PgVector;
 
-#pragma warning disable SKEXP0010 // PgVector APIs are experimental
-
 namespace EssentialCSharp.Chat.Tests;
 
 public class PgVectorConnectorTests
@@ -17,10 +15,12 @@ public class PgVectorConnectorTests
     public async Task GetCollection_WithBookContentChunk_DoesNotThrowTypeLoadException()
     {
         // Arrange — no real DB connection is needed; connections are only opened for actual queries
-        var store = new PostgresVectorStore("Host=localhost;Database=test;Username=test;Password=test");
+#pragma warning disable SKEXP0010 // PostgresVectorStore is experimental
+        using var store = new PostgresVectorStore("Host=localhost;Database=test;Username=test;Password=test");
 
         // Act — this triggers loading internal PostgresModelBuilder via PostgresCollection ctor
         var collection = store.GetCollection<string, BookContentChunk>("test-collection");
+#pragma warning restore SKEXP0010
 
         // Assert
         await Assert.That(collection).IsNotNull();
