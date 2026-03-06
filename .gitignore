@@ -6,6 +6,7 @@ EssentialCSharpManuscript.[0-9]
 .vs/
 obj
 bin
+TestResults/
 ~$*.do[ct]x
 ~*.tmp
 ~$*.dotm
