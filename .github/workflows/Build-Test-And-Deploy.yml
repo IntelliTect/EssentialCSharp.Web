@@ -179,7 +179,7 @@ jobs:
     needs: [deploy-development]
     concurrency:
       group: deploy-production
-      cancel-in-progress: false
+      cancel-in-progress: true
     environment:
       name: "Production"
 
