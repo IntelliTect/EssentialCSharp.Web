@@ -50,7 +50,7 @@ let _runnableListingsPromise = null;
 /**
  * Loads chapter-listings.json (once) and builds a Set of normalised
  * "chapter.listing" keys, e.g. "1.3", "12.50".
- * Only includes listings where can_run is true.
+ * Only includes listings where both can_compile and can_run are true.
  * @returns {Promise<Set<string>>}
  */
 function loadRunnableListings() {
@@ -66,8 +66,8 @@ function loadRunnableListings() {
             const chapters = data.chapters || {};
             for (const [, files] of Object.entries(chapters)) {
                 for (const fileObj of files) {
-                    // fileObj is now { filename: "01.03.cs", can_run: true }
-                    if (!fileObj.can_run) continue; // Skip listings that can't be run
+                    // fileObj is now { filename: "01.03.cs", can_compile: true, can_run: true }
+                    if (!fileObj.can_compile || !fileObj.can_run) continue; // Skip listings that can't compile or can't run
                     
                     const filename = fileObj.filename;
                     // filename looks like "01.03.cs" → chapter 1, listing 3
