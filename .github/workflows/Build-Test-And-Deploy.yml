@@ -59,7 +59,7 @@ jobs:
 # Build but no push with a PR
       - name: Docker build (no push)
         if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           push: false
           tags: temp-pr-validation
@@ -67,7 +67,7 @@ jobs:
 
       - name: Build Container Image
         if: github.event_name != 'pull_request_target' && github.event_name != 'pull_request'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           tags: ${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb:${{ github.sha }},${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb:latest,${{ vars.PRODCONTAINER_REGISTRY }}/essentialcsharpweb:${{ github.sha }},${{ vars.PRODCONTAINER_REGISTRY }}/essentialcsharpweb:latest
           file: ./EssentialCSharp.Web/Dockerfile
