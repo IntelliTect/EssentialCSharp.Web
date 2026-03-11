@@ -43,16 +43,23 @@ jobs:
       - name: Build with dotnet
         run: dotnet build -p:ContinuousIntegrationBuild=True -p:ReleaseDateAttribute=True --configuration Release --no-restore
 
+      - name: Expose GitHub Actions Runtime
+        uses: actions/github-script@v8
+        with:
+          script: |
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env['ACTIONS_RUNTIME_TOKEN']);
+            core.exportVariable('ACTIONS_RESULTS_URL', process.env['ACTIONS_RESULTS_URL']);
+
       - name: Run .NET Tests
         run: dotnet test --no-build --configuration Release
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
 # Build but no push with a PR
       - name: Docker build (no push)
         if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           push: false
           tags: temp-pr-validation
@@ -60,7 +67,7 @@ jobs:
 
       - name: Build Container Image
         if: github.event_name != 'pull_request_target' && github.event_name != 'pull_request'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           tags: ${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb:${{ github.sha }},${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb:latest,${{ vars.PRODCONTAINER_REGISTRY }}/essentialcsharpweb:${{ github.sha }},${{ vars.PRODCONTAINER_REGISTRY }}/essentialcsharpweb:latest
           file: ./EssentialCSharp.Web/Dockerfile
@@ -106,7 +113,7 @@ jobs:
           docker image ls -a
 
       - name: Log in to container registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ vars.DEVCONTAINER_REGISTRY }}
           username: ${{ secrets.ESSENTIALCSHARP_ACR_USERNAME }}
@@ -179,7 +186,7 @@ jobs:
     needs: [deploy-development]
     concurrency:
       group: deploy-production
-      cancel-in-progress: false
+      cancel-in-progress: true
     environment:
       name: "Production"
 
@@ -203,7 +210,7 @@ jobs:
           docker image ls -a
 
       - name: Log in to container registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ vars.PRODCONTAINER_REGISTRY }}
           username: ${{ secrets.ESSENTIALCSHARP_ACR_USERNAME }}

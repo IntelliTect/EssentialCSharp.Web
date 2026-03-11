@@ -2,7 +2,7 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
-    <ToolingPackagesVersion>1.1.1.18791</ToolingPackagesVersion>
+    <ToolingPackagesVersion>1.1.1.18848</ToolingPackagesVersion>
     <AccessToNugetFeed>false</AccessToNugetFeed>
     <RestoreSources>
       https://api.nuget.org/v3/index.json;
@@ -11,6 +11,9 @@
       $(RestoreSources);
       https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json;
     </RestoreSources>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SemanticKernelVersion>1.72.0</SemanticKernelVersion>
   </PropertyGroup>
   <ItemGroup Condition="$(AccessToNugetFeed)">
     <PackageVersion Include="ContentFeedNuget" Version="$(ToolingPackagesVersion)" />
@@ -21,7 +24,7 @@
     <PackageVersion Include="Azure.Identity" Version="1.18.0" />
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.4.0" />
     <PackageVersion Include="Microsoft.ApplicationInsights.Profiler.AspNetCore" Version="3.0.1" />
-    <PackageVersion Include="TUnit" Version="1.18.21" />
+    <PackageVersion Include="TUnit" Version="1.19.16" />
     <PackageVersion Include="EssentialCSharp.Shared.Models" Version="$(ToolingPackagesVersion)" />
     <PackageVersion Include="HtmlAgilityPack" Version="1.12.4" />
     <PackageVersion Include="IntelliTect.Multitool" Version="2.0.0" />
@@ -36,8 +39,8 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.3" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.3" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.3" />
-    <PackageVersion Include="Microsoft.SemanticKernel" Version="1.72.0" />
-    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.PgVector" Version="1.70.0-preview" />
+    <PackageVersion Include="Microsoft.SemanticKernel" Version="$(SemanticKernelVersion)" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.PgVector" Version="$(SemanticKernelVersion)-preview" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.103" />
     <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="10.0.2" />
