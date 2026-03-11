@@ -54,7 +54,7 @@ jobs:
         run: dotnet test --no-build --configuration Release
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
 # Build but no push with a PR
       - name: Docker build (no push)
