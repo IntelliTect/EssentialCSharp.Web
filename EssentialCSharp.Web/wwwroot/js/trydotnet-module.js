@@ -114,25 +114,6 @@ function stripRegionDirectives(code) {
     return code.replace(/^\s*#(?:region|endregion)\s+(?:INCLUDE|EXCLUDE).*$/gm, '').trim();
 }
 
-// Common using directives that mirror the SDK's implicit global usings.
-// These are needed because TryDotNet's 'console' package does not inject them.
-const COMMON_USINGS = `using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Globalization;
-using System.Text.RegularExpressions;`;
-
-/**
- * Prepends COMMON_USINGS to code that has no using directives of its own.
- * @param {string} code - Source code
- * @returns {string}
- */
-function prependUsings(code) {
-    if (/^\s*using\s+/m.test(code)) return code; // already has usings
-    return `${COMMON_USINGS}\n\n${code}`;
-}
-
 /**
  * Creates scaffolding for user code to run in the TryDotNet environment.
  * @param {string} userCode - The user's C# code to wrap
@@ -480,7 +461,6 @@ export function useTryDotNet() {
         // Top-level statement files get region directives stripped so the
         // scaffolding wrapper doesn't contain raw #region lines.
         if (isCompleteProgram(code)) {
-            // return prependUsings(code);
             return code;
         }
         return stripRegionDirectives(code);
