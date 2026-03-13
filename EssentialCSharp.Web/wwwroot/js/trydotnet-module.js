@@ -94,17 +94,6 @@ function loadRunnableListings() {
 }
 
 /**
- * Checks whether a listing is present in the curated runnable set.
- * @param {string|number} chapter
- * @param {string|number} listing
- * @returns {Promise<boolean>}
- */
-async function isRunnableListing(chapter, listing) {
-    const set = await loadRunnableListings();
-    return set.has(`${parseInt(chapter, 10)}.${parseInt(listing, 10)}`);
-}
-
-/**
  * Strips #region / #endregion directive lines (INCLUDE, EXCLUDE, etc.)
  * from source code while keeping the code between them intact.
  * @param {string} code - Raw source code
