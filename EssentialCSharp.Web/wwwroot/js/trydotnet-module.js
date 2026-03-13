@@ -58,7 +58,12 @@ function loadRunnableListings() {
 
     _runnableListingsPromise = fetch('/js/chapter-listings.json')
         .then(res => {
-            if (!res.ok) throw new Error(`Failed to load chapter-listings.json: ${res.status}`);
+            if (!res.ok) {
+                const msg = res.status === 404
+                    ? 'chapter-listings.json not found (404). The NuGet content package may not be restored — Run buttons will not be shown.'
+                    : `Failed to load chapter-listings.json: ${res.status}`;
+                throw new Error(msg);
+            }
             return res.json();
         })
         .then(data => {
@@ -81,6 +86,7 @@ function loadRunnableListings() {
         })
         .catch(err => {
             console.warn('Could not load runnable listings:', err);
+            _runnableListingsPromise = null; // Allow retry on next call (e.g. transient network error)
             return new Set(); // graceful degradation — no Run buttons
         });
 
