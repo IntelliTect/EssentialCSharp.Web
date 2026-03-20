@@ -13,7 +13,7 @@
     </RestoreSources>
   </PropertyGroup>
   <PropertyGroup>
-    <SemanticKernelVersion>1.72.0</SemanticKernelVersion>
+    <SemanticKernelVersion>1.73.0</SemanticKernelVersion>
   </PropertyGroup>
   <ItemGroup Condition="$(AccessToNugetFeed)">
     <PackageVersion Include="ContentFeedNuget" Version="$(ToolingPackagesVersion)" />
