@@ -51,6 +51,15 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>, IAsy
                 services.Remove(dbConnectionDescriptor);
             }
 
+            // Remove DatabaseMigrationService: it calls MigrateAsync which conflicts
+            // with EnsureCreated() used below for the in-memory SQLite test database.
+            ServiceDescriptor? migrationServiceDescriptor = services.SingleOrDefault(
+                d => d.ImplementationType == typeof(DatabaseMigrationService));
+            if (migrationServiceDescriptor != null)
+            {
+                services.Remove(migrationServiceDescriptor);
+            }
+
             _Connection = new SqliteConnection(SqlConnectionString);
             _Connection.Open();
 

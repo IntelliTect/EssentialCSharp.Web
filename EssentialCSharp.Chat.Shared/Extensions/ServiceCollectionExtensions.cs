@@ -101,8 +101,7 @@ public static class ServiceCollectionExtensions
 
     /// <summary>
     /// Adds PostgreSQL vector store with managed identity authentication support.
-    /// NOTE: Token is obtained once at startup and will expire after ~1 hour. 
-    /// For long-running applications, consider implementing token refresh logic.
+    /// Uses periodic token refresh to ensure tokens are renewed before expiry.
     /// </summary>
     /// <param name="services">The service collection to add services to</param>
     /// <param name="connectionString">The PostgreSQL connection string (without password)</param>
@@ -115,36 +114,39 @@ public static class ServiceCollectionExtensions
     {
         credential ??= new DefaultAzureCredential();
 
-        // Parse the connection string to extract host, database, and username
-        var builder = new NpgsqlConnectionStringBuilder(connectionString);
-
-        // Check if this is an Azure PostgreSQL connection (contains .postgres.database.azure.com)
-        bool isAzurePostgres = builder.Host?.Contains(".postgres.database.azure.com", StringComparison.OrdinalIgnoreCase) ?? false;
-
-        if (isAzurePostgres && string.IsNullOrEmpty(builder.Password))
-        {
-            // Get access token for Azure PostgreSQL using managed identity
-            var tokenRequestContext = new TokenRequestContext(_PostgresScopes);
-            var accessToken = credential.GetToken(tokenRequestContext, default);
-
-            // Set the password to the access token
-            builder.Password = accessToken.Token;
-
-            // Ensure SSL is enabled for Azure
-            if (builder.SslMode == SslMode.Disable)
-            {
-                builder.SslMode = SslMode.Require;
-            }
-
-            connectionString = builder.ToString();
-        }
-
         // Register NpgsqlDataSource with UseVector() enabled - this is critical for pgvector support
         services.AddSingleton<NpgsqlDataSource>(sp =>
         {
+            var connBuilder = new NpgsqlConnectionStringBuilder(connectionString);
+            bool isAzurePostgres = connBuilder.Host?.Contains(".postgres.database.azure.com",
+                StringComparison.OrdinalIgnoreCase) ?? false;
+
             var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
             // IMPORTANT: UseVector() must be called to enable pgvector support
             dataSourceBuilder.UseVector();
+
+            if (isAzurePostgres && string.IsNullOrEmpty(connBuilder.Password))
+            {
+                // Ensure SSL is enabled for Azure PostgreSQL
+                if (dataSourceBuilder.ConnectionStringBuilder.SslMode < SslMode.Require)
+                {
+                    dataSourceBuilder.ConnectionStringBuilder.SslMode = SslMode.Require;
+                }
+
+                // Use periodic token refresh instead of a one-shot token at startup.
+                // Azure AD tokens expire after ~1 hour; refreshing every 50 minutes
+                // ensures uninterrupted connectivity for long-running applications.
+                dataSourceBuilder.UsePeriodicPasswordProvider(
+                    async (_, ct) =>
+                    {
+                        var tokenRequestContext = new TokenRequestContext(_PostgresScopes);
+                        var accessToken = await credential.GetTokenAsync(tokenRequestContext, ct);
+                        return accessToken.Token;
+                    },
+                    TimeSpan.FromMinutes(50),
+                    TimeSpan.FromSeconds(10));
+            }
+
             return dataSourceBuilder.Build();
         });
 

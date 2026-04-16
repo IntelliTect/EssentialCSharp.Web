@@ -1,5 +1,4 @@
 using System.Threading.RateLimiting;
-using Azure.Monitor.OpenTelemetry.AspNetCore;
 using EssentialCSharp.Chat.Common.Extensions;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
@@ -14,7 +13,13 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.RateLimiting;
+using Azure.Monitor.OpenTelemetry.AspNetCore;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 
 namespace EssentialCSharp.Web;
 
@@ -23,6 +28,47 @@ public partial class Program
     private static void Main(string[] args)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+        // Health checks (liveness/readiness probes for ACA and standalone hosting)
+        builder.Services.AddHealthChecks()
+            .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
+
+        // OpenTelemetry — Aspire injects OTEL_EXPORTER_OTLP_ENDPOINT when hosted.
+        // Azure Monitor is enabled in production when APPLICATIONINSIGHTS_CONNECTION_STRING is set.
+        bool useAzureMonitor = !string.IsNullOrEmpty(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]);
+        builder.Logging.AddOpenTelemetry(logging =>
+        {
+            logging.IncludeFormattedMessage = true;
+            logging.IncludeScopes = true;
+        });
+        builder.Services.AddOpenTelemetry()
+            .WithMetrics(metrics => metrics
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation()
+                .AddRuntimeInstrumentation())
+            .WithTracing(tracing =>
+            {
+                tracing.AddSource(builder.Environment.ApplicationName);
+                if (!useAzureMonitor)
+                {
+                    tracing
+                        .AddAspNetCoreInstrumentation(t =>
+                            t.Filter = ctx =>
+                                !ctx.Request.Path.StartsWithSegments("/health")
+                                && !ctx.Request.Path.StartsWithSegments("/alive"))
+                        .AddHttpClientInstrumentation()
+                        .AddSqlClientInstrumentation();
+                }
+            });
+        if (!string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]))
+            builder.Services.AddOpenTelemetry().UseOtlpExporter();
+        if (useAzureMonitor)
+            builder.Services.AddOpenTelemetry().UseAzureMonitor();
+
+        // HttpClient defaults — standard retry/circuit breaker for all named clients.
+        builder.Services.ConfigureHttpClientDefaults(http => http.AddStandardResilienceHandler());
+
+
 
         builder.Services.Configure<ForwardedHeadersOptions>(options =>
         {
@@ -39,37 +85,12 @@ public partial class Program
         ConfigurationManager configuration = builder.Configuration;
         string connectionString = builder.Configuration.GetConnectionString("EssentialCSharpWebContextConnection") ?? throw new InvalidOperationException("Connection string 'EssentialCSharpWebContextConnection' not found.");
 
-        builder.Logging.AddConsole();
-        builder.Services.AddHealthChecks();
-
         // Create a logger that's accessible throughout the entire method
         var loggerFactory = LoggerFactory.Create(loggingBuilder =>
             loggingBuilder.AddConsole().SetMinimumLevel(LogLevel.Information));
         var initialLogger = loggerFactory.CreateLogger<Program>();
 
-        if (!builder.Environment.IsDevelopment())
-        {
-            // Configure Azure Application Insights with OpenTelemetry only if connection string is available
-            var appInsightsConnectionString = builder.Configuration.GetConnectionString("ApplicationInsights")
-                ?? builder.Configuration["ApplicationInsights:ConnectionString"];
-
-            if (!string.IsNullOrEmpty(appInsightsConnectionString))
-            {
-                builder.Services.AddOpenTelemetry().UseAzureMonitor(
-                    options =>
-                    {
-                        options.ConnectionString = appInsightsConnectionString;
-                    });
-                builder.Services.AddApplicationInsightsTelemetry();
-                builder.Services.AddServiceProfiler();
-            }
-            else
-            {
-                initialLogger.LogWarning("Application Insights connection string not found. Telemetry collection will be disabled.");
-            }
-        }
-
-        builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString));
+        builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure(5)));
         builder.Services.AddDefaultIdentity<EssentialCSharpWebUser>(options =>
         {
             // Password settings
@@ -289,7 +310,11 @@ public partial class Program
             app.UseForwardedHeaders();
         }
 
-        app.MapHealthChecks("/healthz");
+        app.MapHealthChecks("/health");
+        app.MapHealthChecks("/alive", new HealthCheckOptions
+        {
+            Predicate = r => r.Tags.Contains("live")
+        });
 
         app.UseHttpsRedirection();
         app.UseStaticFiles();

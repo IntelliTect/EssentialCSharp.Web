@@ -5,7 +5,7 @@ This guide will help you set up your local development environment for working o
 ## What You Will Need
 
 - [Visual Studio](https://visualstudio.microsoft.com/) (or your preferred IDE)
-- [.NET 9.0 SDK](https://dotnet.microsoft.com/download)
+- [.NET 10.0 SDK](https://dotnet.microsoft.com/download)
   - If you already have .NET installed you can check the version by typing `dotnet --info` into cmd to make sure you have the right version
 
 ## Startup Steps
