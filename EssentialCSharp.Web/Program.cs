@@ -1,5 +1,4 @@
 using System.Threading.RateLimiting;
-using Azure.Identity;
 using EssentialCSharp.Chat.Common.Extensions;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;

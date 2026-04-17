@@ -36,24 +36,16 @@ public class EmbeddingService(VectorStore vectorStore, IEmbeddingGenerator<strin
         await collection.EnsureCollectionDeletedAsync(cancellationToken);
         await collection.EnsureCollectionExistsAsync(cancellationToken);
 
-        ParallelOptions parallelOptions = new()
-        {
-            MaxDegreeOfParallelism = 5,
-            CancellationToken = cancellationToken
-        };
-
         int uploadedCount = 0;
 
-        await Parallel.ForEachAsync(bookContents, parallelOptions, async (chunk, cancellationToken) =>
+        foreach (var chunk in bookContents)
         {
-            // Generate the text embedding using the new method.
+            cancellationToken.ThrowIfCancellationRequested();
             chunk.TextEmbedding = await GenerateEmbeddingAsync(chunk.ChunkText, cancellationToken);
-
             await collection.UpsertAsync(chunk, cancellationToken);
             Console.WriteLine($"Uploaded chunk '{chunk.Id}' to collection '{collectionName}' for file '{chunk.FileName}' with heading '{chunk.Heading}'.");
-
-            Interlocked.Increment(ref uploadedCount);
-        });
+            uploadedCount++;
+        }
         Console.WriteLine($"Successfully generated embeddings and uploaded {uploadedCount} chunks to collection '{collectionName}'.");
     }
 }
