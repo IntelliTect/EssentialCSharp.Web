@@ -256,8 +256,8 @@ jobs:
               emailsender-email=keyvaultref:$KEYVAULTURI/secrets/authmessagesender-sendfromemail,identityref:$MANAGEDIDENTITYID connectionstring=keyvaultref:$KEYVAULTURI/secrets/connectionstrings-essentialcsharpwebcontextconnection,identityref:$MANAGEDIDENTITYID \
               captcha-sitekey=keyvaultref:$KEYVAULTURI/secrets/captcha-sitekey,identityref:$MANAGEDIDENTITYID captcha-secretkey=keyvaultref:$KEYVAULTURI/secrets/captcha-secretkey,identityref:$MANAGEDIDENTITYID \
               appinsights-connectionstring=keyvaultref:$KEYVAULTURI/secrets/applicationinsights-connectionstring,identityref:$MANAGEDIDENTITYID \
-              ai-endpoint=keyvaultref:$KEYVAULTURI/secrets/AIOptions--Endpoint-V2,identityref:$MANAGEDIDENTITYID ai-apikey=keyvaultref:$KEYVAULTURI/secrets/AIOptions--ApiKey,identityref:$MANAGEDIDENTITYID \
-              ai-vectordeployment=keyvaultref:$KEYVAULTURI/secrets/AIOptions--VectorGenerationDeploymentName-V2,identityref:$MANAGEDIDENTITYID ai-chatdeployment=keyvaultref:$KEYVAULTURI/secrets/AIOptions--ChatDeploymentName-V2,identityref:$MANAGEDIDENTITYID \
+              ai-endpoint=keyvaultref:$KEYVAULTURI/secrets/AIOptions--Endpoint,identityref:$MANAGEDIDENTITYID ai-apikey=keyvaultref:$KEYVAULTURI/secrets/AIOptions--ApiKey,identityref:$MANAGEDIDENTITYID \
+              ai-vectordeployment=keyvaultref:$KEYVAULTURI/secrets/AIOptions--VectorGenerationDeploymentName,identityref:$MANAGEDIDENTITYID ai-chatdeployment=keyvaultref:$KEYVAULTURI/secrets/AIOptions--ChatDeploymentName,identityref:$MANAGEDIDENTITYID \
               ai-systemprompt=keyvaultref:$KEYVAULTURI/secrets/AIOptions--SystemPrompt,identityref:$MANAGEDIDENTITYID \
               postgres-vectorstore-connectionstring=keyvaultref:$KEYVAULTURI/secrets/connectionstrings--PostgresVectorDb,identityref:$MANAGEDIDENTITYID
             az containerapp update --name $CONTAINER_APP_NAME --resource-group $RESOURCEGROUP --replace-env-vars Authentication__github__clientId=secretref:github-clientid Authentication__github__clientSecret=secretref:github-clientsecret \
