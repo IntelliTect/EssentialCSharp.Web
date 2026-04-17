@@ -72,29 +72,53 @@ public class ChatController : ControllerBase
         Response.Headers.CacheControl = "no-cache";
         Response.Headers.Connection = "keep-alive";
 
-        await foreach (var (text, responseId) in _AiChatService.GetChatCompletionStream(
-            prompt: request.Message,
-            systemPrompt: request.SystemPrompt,
-            previousResponseId: request.PreviousResponseId,
-            enableContextualSearch: request.EnableContextualSearch,
-            cancellationToken: cancellationToken))
+        try
         {
-            if (!string.IsNullOrEmpty(text))
+            await foreach (var (text, responseId) in _AiChatService.GetChatCompletionStream(
+                prompt: request.Message,
+                systemPrompt: request.SystemPrompt,
+                previousResponseId: request.PreviousResponseId,
+                enableContextualSearch: request.EnableContextualSearch,
+                cancellationToken: cancellationToken))
             {
-                var eventData = JsonSerializer.Serialize(new { type = "text", data = text });
-                await Response.WriteAsync($"data: {eventData}\n\n", cancellationToken);
-                await Response.Body.FlushAsync(cancellationToken);
+                if (!string.IsNullOrEmpty(text))
+                {
+                    var eventData = JsonSerializer.Serialize(new { type = "text", data = text });
+                    await Response.WriteAsync($"data: {eventData}\n\n", cancellationToken);
+                    await Response.Body.FlushAsync(cancellationToken);
+                }
+
+                if (!string.IsNullOrEmpty(responseId))
+                {
+                    var eventData = JsonSerializer.Serialize(new { type = "responseId", data = responseId });
+                    await Response.WriteAsync($"data: {eventData}\n\n", cancellationToken);
+                    await Response.Body.FlushAsync(cancellationToken);
+                }
             }
 
-            if (!string.IsNullOrEmpty(responseId))
-            {
-                var eventData = JsonSerializer.Serialize(new { type = "responseId", data = responseId });
-                await Response.WriteAsync($"data: {eventData}\n\n", cancellationToken);
-                await Response.Body.FlushAsync(cancellationToken);
-            }
+            await Response.WriteAsync("data: [DONE]\n\n", cancellationToken);
+            await Response.Body.FlushAsync(cancellationToken);
         }
-
-        await Response.WriteAsync("data: [DONE]\n\n", cancellationToken);
-        await Response.Body.FlushAsync(cancellationToken);
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            _Logger.LogDebug("Chat stream cancelled for user {User}", User.Identity?.Name);
+        }
+        catch (Exception ex) when (!Response.HasStarted)
+        {
+            _Logger.LogError(ex, "Chat streaming error before response started for user {User}", User.Identity?.Name);
+            Response.StatusCode = 500;
+            Response.ContentType = "application/json";
+            await Response.WriteAsJsonAsync(new { error = "Chat service unavailable" }, CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            _Logger.LogError(ex, "Chat streaming error mid-stream for user {User}", User.Identity?.Name);
+            try
+            {
+                await Response.WriteAsync("data: {\"type\":\"error\",\"message\":\"Stream interrupted\"}\n\n", CancellationToken.None);
+                await Response.Body.FlushAsync(CancellationToken.None);
+            }
+            catch { /* client already disconnected */ }
+        }
     }
 }
