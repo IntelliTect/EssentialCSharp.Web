@@ -1,27 +1,54 @@
-﻿using EssentialCSharp.Chat.Common.Models;
+﻿using System.Diagnostics;
+using EssentialCSharp.Chat.Common.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.VectorData;
+using Npgsql;
 
 namespace EssentialCSharp.Chat.Common.Services;
 
-public class AISearchService(VectorStore vectorStore, EmbeddingService embeddingService)
+public class AISearchService(
+    VectorStore vectorStore,
+    EmbeddingService embeddingService,
+    ILogger<AISearchService> logger)
 {
     // TODO: Implement Hybrid Search functionality, may need to switch db providers to support full text search?
 
-    public async Task<IAsyncEnumerable<VectorSearchResult<BookContentChunk>>> ExecuteVectorSearch(string query, string? collectionName = null)
+    public async Task<IReadOnlyList<VectorSearchResult<BookContentChunk>>> ExecuteVectorSearch(
+        string query, string? collectionName = null, CancellationToken cancellationToken = default)
     {
         collectionName ??= EmbeddingService.CollectionName;
 
         VectorStoreCollection<string, BookContentChunk> collection = vectorStore.GetCollection<string, BookContentChunk>(collectionName);
 
-        ReadOnlyMemory<float> searchVector = await embeddingService.GenerateEmbeddingAsync(query);
+        ReadOnlyMemory<float> searchVector = await embeddingService.GenerateEmbeddingAsync(query, cancellationToken);
 
         var vectorSearchOptions = new VectorSearchOptions<BookContentChunk>
         {
             VectorProperty = x => x.TextEmbedding,
         };
 
-        var searchResults = collection.SearchAsync(searchVector, options: vectorSearchOptions, top: 3);
+        for (int attempt = 0; attempt <= 1; attempt++)
+        {
+            try
+            {
+                var results = new List<VectorSearchResult<BookContentChunk>>();
+                await foreach (var result in collection.SearchAsync(searchVector, options: vectorSearchOptions, top: 3, cancellationToken: cancellationToken))
+                {
+                    results.Add(result);
+                }
+                return results;
+            }
+            catch (PostgresException ex) when (ex.SqlState == "28000" && attempt == 0)
+            {
+                // The pooled connection held an expired Entra ID token. Npgsql automatically
+                // removes the broken connection from the pool on error — no manual pool clearing
+                // needed (clearing would evict all healthy connections, hurting concurrent users).
+                // The retry opens a fresh physical connection, which calls UsePasswordProvider
+                // and gets a new token from DefaultAzureCredential.
+                logger.LogWarning(ex, "Entra ID token expired on pooled connection (SqlState 28000); retrying once.");
+            }
+        }
 
-        return searchResults;
+        throw new UnreachableException("Retry loop exited without returning or throwing.");
     }
 }

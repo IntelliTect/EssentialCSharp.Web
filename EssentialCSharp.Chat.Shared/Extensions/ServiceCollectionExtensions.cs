@@ -101,7 +101,10 @@ public static class ServiceCollectionExtensions
 
     /// <summary>
     /// Adds PostgreSQL vector store with managed identity authentication support.
-    /// Uses periodic token refresh to ensure tokens are renewed before expiry.
+    /// Uses per-connection token refresh via <c>UsePasswordProvider</c>, which calls
+    /// <see cref="TokenCredential.GetTokenAsync"/> on every new physical connection.
+    /// <see cref="DefaultAzureCredential"/> caches tokens internally and auto-refreshes
+    /// ~5 minutes before expiry, so this does not add Azure AD overhead.
     /// </summary>
     /// <param name="services">The service collection to add services to</param>
     /// <param name="connectionString">The PostgreSQL connection string (without password)</param>
@@ -133,18 +136,30 @@ public static class ServiceCollectionExtensions
                     dataSourceBuilder.ConnectionStringBuilder.SslMode = SslMode.Require;
                 }
 
-                // Use periodic token refresh instead of a one-shot token at startup.
-                // Azure AD tokens expire after ~1 hour; refreshing every 50 minutes
-                // ensures uninterrupted connectivity for long-running applications.
-                dataSourceBuilder.UsePeriodicPasswordProvider(
-                    async (_, ct) =>
-                    {
-                        var tokenRequestContext = new TokenRequestContext(_PostgresScopes);
-                        var accessToken = await credential.GetTokenAsync(tokenRequestContext, ct);
-                        return accessToken.Token;
-                    },
-                    TimeSpan.FromMinutes(50),
-                    TimeSpan.FromSeconds(10));
+                var tokenRequestContext = new TokenRequestContext(_PostgresScopes);
+
+                // UsePasswordProvider is called for every new physical connection.
+                // DefaultAzureCredential caches tokens internally and auto-refreshes ~5 min before
+                // expiry — no extra Azure AD load. This is the approach recommended by the Npgsql
+                // docs for cloud providers that implement their own caching (Azure MI does).
+                // UsePeriodicPasswordProvider is only for token sources without built-in caching.
+                // See: https://www.npgsql.org/doc/security.html
+                // See: https://github.com/npgsql/npgsql/issues/5186
+                //
+                // Note: The username is expected to be set in the connection string already
+                // (Aspire sets it during deployment for Azure PostgreSQL Flexible Server).
+                // If a standalone username-extraction fallback is ever needed, use the
+                // Microsoft.Azure.PostgreSQL.Auth package (UseEntraAuthentication extension)
+                // once it ships on NuGet.
+                dataSourceBuilder.UsePasswordProvider(
+                    passwordProvider: _ => credential.GetToken(tokenRequestContext, default).Token,
+                    passwordProviderAsync: async (_, ct) =>
+                        (await credential.GetTokenAsync(tokenRequestContext, ct)).Token);
+
+                // Recycle pooled connections after 50 min, well before the 60-min JWT token TTL.
+                // Combined with UsePasswordProvider (called on every new physical connection),
+                // this ensures no pooled connection ever holds an expired token.
+                dataSourceBuilder.ConnectionStringBuilder.ConnectionLifetime = 3000;
             }
 
             return dataSourceBuilder.Build();
