@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.RateLimiting;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -352,7 +353,26 @@ public partial class Program
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
         {
-            app.UseExceptionHandler("/Error");
+            app.UseExceptionHandler(exceptionApp =>
+            {
+                exceptionApp.Run(async context =>
+                {
+                    var exceptionFeature = context.Features.Get<IExceptionHandlerFeature>();
+                    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+                    logger.LogError(exceptionFeature?.Error, "Unhandled exception on {Path}", context.Request.Path);
+
+                    if (context.Request.Path.StartsWithSegments("/api"))
+                    {
+                        context.Response.StatusCode = 500;
+                        context.Response.ContentType = "application/json";
+                        await context.Response.WriteAsJsonAsync(new { error = "An unexpected error occurred" });
+                    }
+                    else
+                    {
+                        context.Response.Redirect("/Home/Error?statusCode=500");
+                    }
+                });
+            });
             app.UseForwardedHeaders();
             app.UseSecurityHeadersMiddleware(new SecurityHeadersBuilder()
                 .AddDefaultSecurePolicy());
