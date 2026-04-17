@@ -5,22 +5,43 @@ using Microsoft.Extensions.FileProviders;
 
 namespace EssentialCSharp.Web.Services;
 
-public partial class ListingSourceCodeService : IListingSourceCodeService
+public partial class ListingSourceCodeService : IListingSourceCodeService, IDisposable
 {
-    private readonly IWebHostEnvironment _WebHostEnvironment;
+    private readonly IFileProvider _FileProvider;
+    private readonly bool _OwnsFileProvider;
+    private readonly string _ChapterDirectoryPrefix;
     private readonly ILogger<ListingSourceCodeService> _Logger;
 
-    public ListingSourceCodeService(IWebHostEnvironment webHostEnvironment, ILogger<ListingSourceCodeService> logger)
+    public ListingSourceCodeService(IWebHostEnvironment webHostEnvironment, ILogger<ListingSourceCodeService> logger, IConfiguration configuration)
     {
-        _WebHostEnvironment = webHostEnvironment;
         _Logger = logger;
+
+        string? listingSourceCodePath = configuration["LISTING_SOURCE_CODE_PATH"];
+        if (!string.IsNullOrEmpty(listingSourceCodePath) && Directory.Exists(listingSourceCodePath))
+        {
+            _FileProvider = new PhysicalFileProvider(listingSourceCodePath);
+            _OwnsFileProvider = true;
+            _ChapterDirectoryPrefix = "src";
+            _Logger.LogInformation("Using listing source code from: {Path}", listingSourceCodePath);
+        }
+        else
+        {
+            _FileProvider = webHostEnvironment.ContentRootFileProvider;
+            _ChapterDirectoryPrefix = "ListingSourceCode/src";
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_OwnsFileProvider && _FileProvider is IDisposable disposable)
+            disposable.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     public async Task<ListingSourceCodeResponse?> GetListingAsync(int chapterNumber, int listingNumber)
     {
-        string chapterDirectory = $"ListingSourceCode/src/Chapter{chapterNumber:D2}";
-        IFileProvider fileProvider = _WebHostEnvironment.ContentRootFileProvider;
-        IDirectoryContents directoryContents = fileProvider.GetDirectoryContents(chapterDirectory);
+        string chapterDirectory = $"{_ChapterDirectoryPrefix}/Chapter{chapterNumber:D2}";
+        IDirectoryContents directoryContents = _FileProvider.GetDirectoryContents(chapterDirectory);
 
         if (!directoryContents.Exists)
         {
@@ -52,9 +73,8 @@ public partial class ListingSourceCodeService : IListingSourceCodeService
 
     public async Task<IReadOnlyList<ListingSourceCodeResponse>> GetListingsByChapterAsync(int chapterNumber)
     {
-        string chapterDirectory = $"ListingSourceCode/src/Chapter{chapterNumber:D2}";
-        IFileProvider fileProvider = _WebHostEnvironment.ContentRootFileProvider;
-        IDirectoryContents directoryContents = fileProvider.GetDirectoryContents(chapterDirectory);
+        string chapterDirectory = $"{_ChapterDirectoryPrefix}/Chapter{chapterNumber:D2}";
+        IDirectoryContents directoryContents = _FileProvider.GetDirectoryContents(chapterDirectory);
 
         if (!directoryContents.Exists)
         {

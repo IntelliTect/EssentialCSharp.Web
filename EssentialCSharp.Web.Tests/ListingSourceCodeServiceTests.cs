@@ -1,9 +1,5 @@
 using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.FileProviders;
-using Moq;
-using Moq.AutoMock;
 
 namespace EssentialCSharp.Web.Tests;
 
@@ -130,30 +126,6 @@ public class ListingSourceCodeServiceTests
         await Assert.That(results).IsEmpty();
     }
 
-    private static ListingSourceCodeService CreateService()
-    {
-        DirectoryInfo testDataRoot = GetTestDataPath();
-
-        AutoMocker mocker = new();
-        Mock<IWebHostEnvironment> mockWebHostEnvironment = mocker.GetMock<IWebHostEnvironment>();
-        mockWebHostEnvironment.Setup(m => m.ContentRootPath).Returns(testDataRoot.FullName);
-        mockWebHostEnvironment.Setup(m => m.ContentRootFileProvider).Returns(new PhysicalFileProvider(testDataRoot.FullName));
-
-        return mocker.CreateInstance<ListingSourceCodeService>();
-    }
-
-    private static DirectoryInfo GetTestDataPath()
-    {
-        string baseDirectory = AppContext.BaseDirectory;
-        string testDataPath = Path.Join(baseDirectory, "TestData");
-        
-        DirectoryInfo testDataDirectory = new(testDataPath);
-        
-        if (!testDataDirectory.Exists)
-        {
-            throw new InvalidOperationException($"TestData directory not found at: {testDataDirectory.FullName}");
-        }
-        
-        return testDataDirectory;
-    }
+    private static ListingSourceCodeService CreateService() =>
+        TestListingSourceCodeServiceHelper.CreateService();
 }
