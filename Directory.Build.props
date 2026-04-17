@@ -11,8 +11,5 @@
     <!-- https://aka.ms/vs-build-acceleration -->
     <AccelerateBuildsInVisualStudio>True</AccelerateBuildsInVisualStudio>
     <UserSecretsId>18e91e0d-ea2d-490f-b77e-ec008f9d09ec</UserSecretsId>
-    <!-- Only fail the build for moderate-or-higher vulnerability advisories. Low-severity
-         transitive/tooling advisories (e.g. NuGet.Packaging) should not block builds. -->
-    <NuGetAuditLevel>moderate</NuGetAuditLevel>
   </PropertyGroup>
 </Project>
