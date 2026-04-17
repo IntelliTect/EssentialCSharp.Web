@@ -118,14 +118,14 @@ public class AIChatService
             return prompt;
         }
 
-        var searchResults = await _SearchService.ExecuteVectorSearch(prompt);
+        var searchResults = await _SearchService.ExecuteVectorSearch(prompt, cancellationToken: cancellationToken);
         var contextualInfo = new System.Text.StringBuilder();
 
         contextualInfo.AppendLine("## Contextual Information");
         contextualInfo.AppendLine("The following information might be relevant to your question:");
         contextualInfo.AppendLine();
 
-        await foreach (var result in searchResults)
+        foreach (var result in searchResults)
         {
             contextualInfo.AppendLine(System.Globalization.CultureInfo.InvariantCulture, $"**From: {result.Record.Heading}**");
             contextualInfo.AppendLine(result.Record.ChunkText);

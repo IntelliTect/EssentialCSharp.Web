@@ -11,7 +11,8 @@ public class FunctionalTests(WebApplicationFactory factory)
     [Arguments("/hello-world")]
     [Arguments("/hello-world#hello-world")]
     [Arguments("/guidelines")]
-    [Arguments("/healthz")]
+    [Arguments("/health")]
+    [Arguments("/alive")]
     public async Task WhenTheApplicationStarts_ItCanLoadLoadPages(string relativeUrl)
     {
         HttpClient client = factory.CreateClient();
