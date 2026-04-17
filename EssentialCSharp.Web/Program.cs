@@ -1,4 +1,5 @@
 using System.Threading.RateLimiting;
+
 using EssentialCSharp.Chat.Common.Extensions;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
@@ -111,6 +112,15 @@ public partial class Program
         var initialLogger = loggerFactory.CreateLogger<Program>();
 
         builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure(5)));
+
+        // Data Protection — persist keys in SQL Server so they survive container restarts.
+        // Local dev: SQL Server container with WithDataVolume keeps data between restarts.
+        // Production (ACA via Terraform): Azure SQL connection string injected via env vars.
+        // SetApplicationName ensures the discriminator is stable across container hostname changes.
+        builder.Services.AddDataProtection()
+            .SetApplicationName("EssentialCSharpWeb")
+            .PersistKeysToDbContext<EssentialCSharpWebContext>();
+
         builder.Services.AddDefaultIdentity<EssentialCSharpWebUser>(options =>
         {
             // Password settings
@@ -145,6 +155,25 @@ public partial class Program
             options.Cookie.HttpOnly = true;
             options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
             options.SlidingExpiration = true;
+            // API endpoints must return 401/403 instead of redirecting to the login page.
+            // Cookie auth's default behavior (302 redirect) causes fetch() to follow the
+            // redirect, eventually hitting the fallback controller and returning a 404.
+            options.Events.OnRedirectToLogin = context =>
+            {
+                if (context.Request.Path.StartsWithSegments("/api"))
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                else
+                    context.Response.Redirect(context.RedirectUri);
+                return Task.CompletedTask;
+            };
+            options.Events.OnRedirectToAccessDenied = context =>
+            {
+                if (context.Request.Path.StartsWithSegments("/api"))
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                else
+                    context.Response.Redirect(context.RedirectUri);
+                return Task.CompletedTask;
+            };
         });
 
         if (builder.Environment.IsDevelopment())
