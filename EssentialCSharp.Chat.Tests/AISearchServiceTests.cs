@@ -4,6 +4,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.VectorData;
 using Moq;
+using Moq.Language.Flow;
 using Npgsql;
 
 namespace EssentialCSharp.Chat.Tests;
@@ -44,19 +45,21 @@ public class AISearchServiceTests
         await Task.CompletedTask;
     }
 
+    private static ISetup<VectorStoreCollection<string, BookContentChunk>, IAsyncEnumerable<VectorSearchResult<BookContentChunk>>>
+        SetupSearch(Mock<VectorStoreCollection<string, BookContentChunk>> mock) =>
+            mock.Setup(c => c.SearchAsync(
+                It.IsAny<ReadOnlyMemory<float>>(),
+                It.IsAny<int>(),
+                It.IsAny<VectorSearchOptions<BookContentChunk>?>(),
+                It.IsAny<CancellationToken>()));
+
     [Test]
     public async Task ExecuteVectorSearch_HappyPath_ReturnsResultsWithoutRetry()
     {
         var (svc, collectionMock) = CreateService();
         int callCount = 0;
 
-        collectionMock
-            .Setup(c => c.SearchAsync(
-                It.IsAny<ReadOnlyMemory<float>>(),
-                It.IsAny<int>(),
-                It.IsAny<VectorSearchOptions<BookContentChunk>?>(),
-                It.IsAny<CancellationToken>()))
-            .Returns(() => { callCount++; return OneResultStream(); });
+        SetupSearch(collectionMock).Returns(() => { callCount++; return OneResultStream(); });
 
         var results = await svc.ExecuteVectorSearch("test query");
 
@@ -70,19 +73,13 @@ public class AISearchServiceTests
         var (svc, collectionMock) = CreateService();
         int callCount = 0;
 
-        collectionMock
-            .Setup(c => c.SearchAsync(
-                It.IsAny<ReadOnlyMemory<float>>(),
-                It.IsAny<int>(),
-                It.IsAny<VectorSearchOptions<BookContentChunk>?>(),
-                It.IsAny<CancellationToken>()))
-            .Returns(() =>
-            {
-                callCount++;
-                if (callCount == 1)
-                    throw new PostgresException("auth token expired", "FATAL", "FATAL", "28000");
-                return OneResultStream();
-            });
+        SetupSearch(collectionMock).Returns(() =>
+        {
+            callCount++;
+            if (callCount == 1)
+                throw new PostgresException("auth token expired", "FATAL", "FATAL", "28000");
+            return OneResultStream();
+        });
 
         var results = await svc.ExecuteVectorSearch("test query");
 
@@ -95,13 +92,7 @@ public class AISearchServiceTests
     {
         var (svc, collectionMock) = CreateService();
 
-        collectionMock
-            .Setup(c => c.SearchAsync(
-                It.IsAny<ReadOnlyMemory<float>>(),
-                It.IsAny<int>(),
-                It.IsAny<VectorSearchOptions<BookContentChunk>?>(),
-                It.IsAny<CancellationToken>()))
-            .Returns(() => throw new PostgresException("table not found", "ERROR", "ERROR", "42P01"));
+        SetupSearch(collectionMock).Returns(() => throw new PostgresException("table not found", "ERROR", "ERROR", "42P01"));
 
         await Assert.ThrowsAsync<PostgresException>(() => svc.ExecuteVectorSearch("test query"));
     }
@@ -111,13 +102,7 @@ public class AISearchServiceTests
     {
         var (svc, collectionMock) = CreateService();
 
-        collectionMock
-            .Setup(c => c.SearchAsync(
-                It.IsAny<ReadOnlyMemory<float>>(),
-                It.IsAny<int>(),
-                It.IsAny<VectorSearchOptions<BookContentChunk>?>(),
-                It.IsAny<CancellationToken>()))
-            .Returns(() => throw new PostgresException("auth failed", "FATAL", "FATAL", "28000"));
+        SetupSearch(collectionMock).Returns(() => throw new PostgresException("auth failed", "FATAL", "FATAL", "28000"));
 
         await Assert.ThrowsAsync<PostgresException>(() => svc.ExecuteVectorSearch("test query"));
     }
