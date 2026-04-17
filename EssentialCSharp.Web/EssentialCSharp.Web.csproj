@@ -5,9 +5,8 @@
     CA1873: Logging argument evaluation - suppress for now; affects 14+ scaffolded Identity pages.
     TODO: Address by converting to LoggerMessage source generators in a follow-up.
     -->
-    <!-- CA1873: Logging argument evaluation - scaffolded Identity pages.
-         LOGGEN036: LoggerMessage source generator - JsonResult lacks ToString/IConvertible (.NET 10). -->
-    <NoWarn>$(NoWarn);CA1873;LOGGEN036</NoWarn>
+    <!-- CA1873: Logging argument evaluation - scaffolded Identity pages. -->
+    <NoWarn>$(NoWarn);CA1873;</NoWarn>
   </PropertyGroup>
   
   <ItemGroup>
