@@ -2,6 +2,7 @@ using Azure.AI.OpenAI;
 using Azure.Core;
 using Azure.Identity;
 using EssentialCSharp.Chat.Common.Services;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
@@ -56,10 +57,12 @@ public static class ServiceCollectionExtensions
         // Add PostgreSQL vector store with managed identity support
         services.AddPostgresVectorStoreWithManagedIdentity(postgresConnectionString, credential);
 
-        services.AddAzureOpenAIEmbeddingGenerator(
-            aiOptions.VectorGenerationDeploymentName,
-            aiOptions.Endpoint,
-            credential);
+        services.AddEmbeddingGenerator(sp =>
+            sp.GetRequiredService<AzureOpenAIClient>()
+              .GetEmbeddingClient(aiOptions.VectorGenerationDeploymentName)
+              .AsIEmbeddingGenerator())
+            .UseLogging()
+            .UseOpenTelemetry();
 #pragma warning restore SKEXP0010
 
         // Register shared AI services
@@ -227,10 +230,12 @@ public static class ServiceCollectionExtensions
         // Add PostgreSQL vector store using the NpgsqlDataSource from DI
         services.AddPostgresVectorStore();
 
-        services.AddAzureOpenAIEmbeddingGenerator(
-            aiOptions.VectorGenerationDeploymentName,
-            aiOptions.Endpoint,
-            apiKey);
+        services.AddEmbeddingGenerator(sp =>
+            sp.GetRequiredService<AzureOpenAIClient>()
+              .GetEmbeddingClient(aiOptions.VectorGenerationDeploymentName)
+              .AsIEmbeddingGenerator())
+            .UseLogging()
+            .UseOpenTelemetry();
 #pragma warning restore SKEXP0010
 
         // Register shared AI services
