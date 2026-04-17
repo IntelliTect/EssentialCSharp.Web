@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using OpenTelemetry;
+using OpenTelemetry.Instrumentation.AspNetCore;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
@@ -33,37 +34,55 @@ public partial class Program
         builder.Services.AddHealthChecks()
             .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
 
-        // OpenTelemetry — Aspire injects OTEL_EXPORTER_OTLP_ENDPOINT when hosted.
-        // Azure Monitor is enabled in production when APPLICATIONINSIGHTS_CONNECTION_STRING is set.
+        // OpenTelemetry — two mutually exclusive export paths:
+        //   Production:  Azure Monitor (Application Insights) via APPLICATIONINSIGHTS_CONNECTION_STRING
+        //   Local/Aspire: OTLP to Aspire Dashboard via OTEL_EXPORTER_OTLP_ENDPOINT
+        // Never both simultaneously — that would cause duplicate telemetry in App Insights.
         bool useAzureMonitor = !string.IsNullOrEmpty(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]);
+        bool useOtlp = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
+
         builder.Logging.AddOpenTelemetry(logging =>
         {
             logging.IncludeFormattedMessage = true;
             logging.IncludeScopes = true;
         });
-        builder.Services.AddOpenTelemetry()
-            .WithMetrics(metrics => metrics
-                .AddAspNetCoreInstrumentation()
-                .AddHttpClientInstrumentation()
-                .AddRuntimeInstrumentation())
+
+        // Health probe paths excluded from tracing unconditionally — applies to both
+        // manual instrumentation and Azure Monitor's auto-instrumentation.
+        builder.Services.Configure<AspNetCoreTraceInstrumentationOptions>(options =>
+            options.Filter = ctx =>
+                !ctx.Request.Path.StartsWithSegments("/health")
+                && !ctx.Request.Path.StartsWithSegments("/alive"));
+
+        var otel = builder.Services.AddOpenTelemetry()
+            .WithMetrics(metrics =>
+            {
+                // Azure Monitor auto-instruments ASP.NET Core + HttpClient metrics; only add
+                // them manually when using OTLP so we don't register duplicate meter listeners.
+                if (!useAzureMonitor)
+                {
+                    metrics.AddAspNetCoreInstrumentation()
+                           .AddHttpClientInstrumentation();
+                }
+                // Runtime metrics are not included in the Azure Monitor distro.
+                metrics.AddRuntimeInstrumentation();
+            })
             .WithTracing(tracing =>
             {
                 tracing.AddSource(builder.Environment.ApplicationName);
+                // Azure Monitor distro auto-instruments tracing; add manually only for OTLP path.
                 if (!useAzureMonitor)
                 {
-                    tracing
-                        .AddAspNetCoreInstrumentation(t =>
-                            t.Filter = ctx =>
-                                !ctx.Request.Path.StartsWithSegments("/health")
-                                && !ctx.Request.Path.StartsWithSegments("/alive"))
-                        .AddHttpClientInstrumentation()
-                        .AddSqlClientInstrumentation();
+                    tracing.AddAspNetCoreInstrumentation()
+                           .AddHttpClientInstrumentation()
+                           .AddSqlClientInstrumentation();
                 }
             });
-        if (!string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]))
-            builder.Services.AddOpenTelemetry().UseOtlpExporter();
+
         if (useAzureMonitor)
-            builder.Services.AddOpenTelemetry().UseAzureMonitor();
+            otel.UseAzureMonitor();
+        else if (useOtlp)
+            otel.UseOtlpExporter();
 
         // HttpClient defaults — standard retry/circuit breaker for all named clients.
         builder.Services.ConfigureHttpClientDefaults(http => http.AddStandardResilienceHandler());
