@@ -38,7 +38,15 @@ public partial class Program
         //   Production:  Azure Monitor (Application Insights) via APPLICATIONINSIGHTS_CONNECTION_STRING
         //   Local/Aspire: OTLP to Aspire Dashboard via OTEL_EXPORTER_OTLP_ENDPOINT
         // Never both simultaneously — that would cause duplicate telemetry in App Insights.
-        bool useAzureMonitor = !string.IsNullOrEmpty(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]);
+        // Resolve from all config locations:
+        //   1. Standard Azure Monitor flat env var (SDK's own default key)
+        //   2. Double-underscore (hierarchical) format set by the deployment workflow
+        //   3. GetConnectionString fallback
+        string? appInsightsConnectionString =
+            builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]
+            ?? builder.Configuration["ApplicationInsights:ConnectionString"]
+            ?? builder.Configuration.GetConnectionString("ApplicationInsights");
+        bool useAzureMonitor = !string.IsNullOrWhiteSpace(appInsightsConnectionString);
         bool useOtlp = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
 
         builder.Logging.AddOpenTelemetry(logging =>
@@ -80,7 +88,7 @@ public partial class Program
             });
 
         if (useAzureMonitor)
-            otel.UseAzureMonitor();
+            otel.UseAzureMonitor(options => options.ConnectionString = appInsightsConnectionString);
         else if (useOtlp)
             otel.UseOtlpExporter();
 
