@@ -1,5 +1,5 @@
 using System.Threading.RateLimiting;
-
+using Azure.Identity;
 using EssentialCSharp.Chat.Common.Extensions;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.RateLimiting;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -117,9 +118,23 @@ public partial class Program
         // Local dev: SQL Server container with WithDataVolume keeps data between restarts.
         // Production (ACA via Terraform): Azure SQL connection string injected via env vars.
         // SetApplicationName ensures the discriminator is stable across container hostname changes.
-        builder.Services.AddDataProtection()
+        // Production: if DataProtection:AzureKeyVaultKeyUri is set (Terraform injects it as
+        //   DataProtection__AzureKeyVaultKeyUri env var), keys are wrapped with Key Vault.
+        //   Requires: RSA key in Key Vault + managed identity with Key Vault Crypto User role.
+        var dpBuilder = builder.Services.AddDataProtection()
             .SetApplicationName("EssentialCSharpWeb")
             .PersistKeysToDbContext<EssentialCSharpWebContext>();
+        var keyVaultKeyUri = builder.Configuration["DataProtection:AzureKeyVaultKeyUri"];
+        if (!string.IsNullOrEmpty(keyVaultKeyUri))
+        {
+            dpBuilder.ProtectKeysWithAzureKeyVault(new Uri(keyVaultKeyUri), new Azure.Identity.DefaultAzureCredential());
+        }
+        else if (!builder.Environment.IsDevelopment())
+        {
+            throw new InvalidOperationException(
+                "DataProtection:AzureKeyVaultKeyUri is required in non-Development environments. " +
+                "Set the DataProtection__AzureKeyVaultKeyUri environment variable to the Key Vault key URI.");
+        }
 
         builder.Services.AddDefaultIdentity<EssentialCSharpWebUser>(options =>
         {
@@ -176,15 +191,6 @@ public partial class Program
             };
         });
 
-        if (builder.Environment.IsDevelopment())
-        {
-            builder.Services.AddHsts(options =>
-            {
-                options.Preload = true;
-                options.MaxAge = TimeSpan.FromDays(365);
-                options.IncludeSubDomains = true;
-            });
-        }
         builder.Services.Configure<PasswordHasherOptions>(option =>
         {
             // https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2
@@ -349,7 +355,6 @@ public partial class Program
         {
             app.UseExceptionHandler("/Error");
             app.UseForwardedHeaders();
-            app.UseHsts();
             app.UseSecurityHeadersMiddleware(new SecurityHeadersBuilder()
                 .AddDefaultSecurePolicy());
         }
@@ -365,7 +370,10 @@ public partial class Program
             Predicate = r => r.Tags.Contains("live")
         });
 
+        if (app.Environment.IsDevelopment())
+        {
         app.UseHttpsRedirection();
+        }
         app.UseStaticFiles();
 
         app.UseRouting();

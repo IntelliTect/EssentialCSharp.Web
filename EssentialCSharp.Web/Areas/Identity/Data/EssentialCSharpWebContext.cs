@@ -1,16 +1,17 @@
 ﻿using EssentialCSharp.Web.Areas.Identity.Data;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace EssentialCSharp.Web.Data;
 
-public class EssentialCSharpWebContext(DbContextOptions options) : IdentityDbContext<EssentialCSharpWebUser>(options)
+public class EssentialCSharpWebContext(DbContextOptions<EssentialCSharpWebContext> options)
+    : IdentityDbContext<EssentialCSharpWebUser>(options), IDataProtectionKeyContext
 {
+    public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-        // Customize the ASP.NET Identity model and override the defaults if needed.
-        // For example, you can rename the ASP.NET Identity table names and more.
-        // Add your customizations after calling base.OnModelCreating(builder);
     }
 }
