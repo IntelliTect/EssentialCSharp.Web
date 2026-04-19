@@ -162,7 +162,7 @@ jobs:
               ai-endpoint=keyvaultref:$KEYVAULTURI/secrets/AIOptions--Endpoint,identityref:$MANAGEDIDENTITYID ai-apikey=keyvaultref:$KEYVAULTURI/secrets/AIOptions--ApiKey,identityref:$MANAGEDIDENTITYID \
               ai-vectordeployment=keyvaultref:$KEYVAULTURI/secrets/AIOptions--VectorGenerationDeploymentName,identityref:$MANAGEDIDENTITYID ai-chatdeployment=keyvaultref:$KEYVAULTURI/secrets/AIOptions--ChatDeploymentName,identityref:$MANAGEDIDENTITYID \
               ai-systemprompt=keyvaultref:$KEYVAULTURI/secrets/AIOptions--SystemPrompt,identityref:$MANAGEDIDENTITYID \
-              postgres-vectorstore-connectionstring=keyvaultref:$KEYVAULTURI/secrets/connectionstrings--PostgresVectorDb,identityref:$MANAGEDIDENTITYID
+              postgres-vectorstore-connectionstring=keyvaultref:$KEYVAULTURI/secrets/ConnectionStrings--PostgresVectorStore,identityref:$MANAGEDIDENTITYID
             az containerapp update --name $CONTAINER_APP_NAME --resource-group $RESOURCEGROUP --replace-env-vars Authentication__github__clientId=secretref:github-clientid Authentication__github__clientSecret=secretref:github-clientsecret \
               Authentication__microsoft__clientId=secretref:msft-clientid Authentication__microsoft__clientSecret=secretref:msft-clientsecret AuthMessageSender__ApiKey=secretref:emailsender-apikey AuthMessageSender__SecretKey=secretref:emailsender-secret \
               AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Staging \
@@ -259,7 +259,7 @@ jobs:
               ai-endpoint=keyvaultref:$KEYVAULTURI/secrets/AIOptions--Endpoint,identityref:$MANAGEDIDENTITYID ai-apikey=keyvaultref:$KEYVAULTURI/secrets/AIOptions--ApiKey,identityref:$MANAGEDIDENTITYID \
               ai-vectordeployment=keyvaultref:$KEYVAULTURI/secrets/AIOptions--VectorGenerationDeploymentName,identityref:$MANAGEDIDENTITYID ai-chatdeployment=keyvaultref:$KEYVAULTURI/secrets/AIOptions--ChatDeploymentName,identityref:$MANAGEDIDENTITYID \
               ai-systemprompt=keyvaultref:$KEYVAULTURI/secrets/AIOptions--SystemPrompt,identityref:$MANAGEDIDENTITYID \
-              postgres-vectorstore-connectionstring=keyvaultref:$KEYVAULTURI/secrets/connectionstrings--PostgresVectorDb,identityref:$MANAGEDIDENTITYID
+              postgres-vectorstore-connectionstring=keyvaultref:$KEYVAULTURI/secrets/ConnectionStrings--PostgresVectorStore,identityref:$MANAGEDIDENTITYID
             az containerapp update --name $CONTAINER_APP_NAME --resource-group $RESOURCEGROUP --replace-env-vars Authentication__github__clientId=secretref:github-clientid Authentication__github__clientSecret=secretref:github-clientsecret \
               Authentication__microsoft__clientId=secretref:msft-clientid Authentication__microsoft__clientSecret=secretref:msft-clientsecret AuthMessageSender__ApiKey=secretref:emailsender-apikey AuthMessageSender__SecretKey=secretref:emailsender-secret \
               AuthMessageSender__SendFromName=secretref:emailsender-name AuthMessageSender__SendFromEmail=secretref:emailsender-email ConnectionStrings__EssentialCSharpWebContextConnection=secretref:connectionstring ASPNETCORE_ENVIRONMENT=Production \
