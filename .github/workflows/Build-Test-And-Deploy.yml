@@ -128,7 +128,7 @@ jobs:
           CONTAINER_REGISTRY: ${{ vars.DEVCONTAINER_REGISTRY }}
         with:
           inlineScript: |
-            # Assumes container app already exists (provisioned by Terraform)
+            # Container app must already exist; use az containerapp up manually to bootstrap if needed
             az extension add --name containerapp --upgrade
             az containerapp identity assign --name $CONTAINER_APP_NAME --resource-group $RESOURCEGROUP --user-assigned ${{ secrets.WEB_UAMI_RESOURCE_ID }}
             az containerapp registry set --name $CONTAINER_APP_NAME --resource-group $RESOURCEGROUP --server $CONTAINER_REGISTRY --identity ${{ secrets.WEB_UAMI_RESOURCE_ID }}
@@ -220,7 +220,7 @@ jobs:
           CONTAINER_REGISTRY: ${{ vars.PRODCONTAINER_REGISTRY }}
         with:
           inlineScript: |
-            # Assumes container app already exists (provisioned by Terraform)
+            # Container app must already exist; use az containerapp up manually to bootstrap if needed
             az extension add --name containerapp --upgrade
             az containerapp identity assign --name $CONTAINER_APP_NAME --resource-group $RESOURCEGROUP --user-assigned ${{ secrets.WEB_UAMI_RESOURCE_ID }}
             az containerapp registry set --name $CONTAINER_APP_NAME --resource-group $RESOURCEGROUP --server $CONTAINER_REGISTRY --identity ${{ secrets.WEB_UAMI_RESOURCE_ID }}
