@@ -98,8 +98,8 @@ jobs:
         uses: azure/login@v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.ESSENTIALCSHARP_APPIDENTITY_TENANT_ID }}
-          subscription-id: ${{ secrets.ESSENTIALCSHARP_SUBSCRIPTION_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Download artifact
         uses: actions/download-artifact@v8
@@ -190,8 +190,8 @@ jobs:
         uses: azure/login@v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.ESSENTIALCSHARP_TENANT_ID }}
-          subscription-id: ${{ secrets.ESSENTIALCSHARP_SUBSCRIPTION_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Download artifact
         uses: actions/download-artifact@v8
