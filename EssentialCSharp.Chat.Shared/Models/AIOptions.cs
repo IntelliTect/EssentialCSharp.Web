@@ -22,8 +22,4 @@ public class AIOptions
     /// </summary>
     public string Endpoint { get; set; } = string.Empty;
 
-    /// <summary>
-    /// The API key for accessing Azure OpenAI services.
-    /// </summary>
-    public string ApiKey { get; set; } = string.Empty;
 }
