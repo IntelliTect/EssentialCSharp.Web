@@ -27,18 +27,6 @@ const tocData = markRaw(TOC_DATA);
 
 const featuresComingSoonList = [
     {
-        title: "AI Chat Assistant",
-        text: "Chat with an AI assistant that has access to Essential C# book content. Available as a floating widget on every page for contextual help while reading. Features streaming responses and markdown rendering.",
-    },
-    {
-        title: "Client-side Compiler",
-        text: "Write, compile, and run code snippets right from your browser. Enjoy hands-on experience with the code as you go through the site.",
-    },
-    {
-        title: "Interactive Code Listings",
-        text: "Edit, compile, and run the code listings found throughout Essential C#.",
-    },
-    {
         title: "Hyperlinking",
         text: "Easily navigate to interesting and relevant sites as well as related sections in Essential C#.",
     },
@@ -55,11 +43,23 @@ const contentComingSoonList = [
     },
     {
         title: "C# 13.0 Features",
-        text: "Various new features coming in .C# 13.0",
+        text: "Various new features coming in C# 13.0.",
     },
 ];
 
 const completedFeaturesList = [
+    {
+        title: "AI Chat Assistant",
+        text: "Chat with an AI assistant that has access to Essential C# book content from a floating widget available on every page. Supports streaming responses, markdown rendering, and saved conversation history. Requires sign-in.",
+    },
+    {
+        title: "Client-side Compiler",
+        text: "Write, compile, and run C# code snippets right from your browser using the integrated Try .NET editor.",
+    },
+    {
+        title: "Interactive Code Listings",
+        text: "Edit, compile, and run the code listings found throughout Essential C#. Runnable listings show a Run button that opens an interactive editor.",
+    },
     {
         title: "Copying Header Hyperlinks",
         text: "Easily copy a header URL to link to a book section.",
