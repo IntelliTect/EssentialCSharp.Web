@@ -139,7 +139,6 @@ jobs:
           CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
           RESOURCEGROUP: ${{ vars.RESOURCEGROUP }}
           CONTAINER_REGISTRY: ${{ vars.DEVCONTAINER_REGISTRY }}
-          CONTAINER_APP_ENVIRONMENT: ${{ vars.CONTAINER_APP_ENVIRONMENT }}
           KEYVAULTURI: ${{ secrets.ESSENTIALCSHARP_KEYVAULT_URI }}
           MANAGEDIDENTITYID: ${{ secrets.WEB_UAMI_RESOURCE_ID }}
           AZURECLIENTID: ${{ secrets.WEB_UAMI_CLIENT_ID }}
@@ -182,7 +181,7 @@ jobs:
     needs: [deploy-development]
     concurrency:
       group: deploy-production
-      cancel-in-progress: true
+      cancel-in-progress: false
     environment:
       name: "Production"
 
@@ -232,7 +231,6 @@ jobs:
           CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
           RESOURCEGROUP: ${{ vars.RESOURCEGROUP }}
           CONTAINER_REGISTRY: ${{ vars.PRODCONTAINER_REGISTRY }}
-          CONTAINER_APP_ENVIRONMENT: ${{ vars.CONTAINER_APP_ENVIRONMENT }}
           KEYVAULTURI: ${{ secrets.ESSENTIALCSHARP_KEYVAULT_URI }}
           MANAGEDIDENTITYID: ${{ secrets.WEB_UAMI_RESOURCE_ID }}
           AZURECLIENTID: ${{ secrets.WEB_UAMI_CLIENT_ID }}
