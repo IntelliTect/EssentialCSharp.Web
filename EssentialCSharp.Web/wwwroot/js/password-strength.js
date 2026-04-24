@@ -30,14 +30,19 @@ async function ensureZxcvbn() {
             import('@zxcvbn-ts/language-en'),
         ]);
     }
-    const [zxcvbnCommon, zxcvbnEn] = await zxcvbnLoadPromise;
-    zxcvbnOptions.setOptions({
-        translations: zxcvbnEn.translations,
-        graphs: zxcvbnCommon.adjacencyGraphs,
-        dictionary: { ...zxcvbnCommon.dictionary, ...zxcvbnEn.dictionary },
-        useLevenshteinDistance: true,
-    });
-    zxcvbnReady = true;
+    try {
+        const [zxcvbnCommon, zxcvbnEn] = await zxcvbnLoadPromise;
+        zxcvbnOptions.setOptions({
+            translations: zxcvbnEn.translations,
+            graphs: zxcvbnCommon.adjacencyGraphs,
+            dictionary: { ...zxcvbnCommon.dictionary, ...zxcvbnEn.dictionary },
+            useLevenshteinDistance: true,
+        });
+        zxcvbnReady = true;
+    } catch (err) {
+        zxcvbnLoadPromise = null; // Allow retry on next input
+        throw err;
+    }
 }
 
 function debounce(fn, ms) {
@@ -131,7 +136,6 @@ function clearMeter(container) {
     if (suggestionsEl) { suggestionsEl.textContent = ''; suggestionsEl.classList.add('d-none'); }
     const crackTimeEl = container.querySelector('.password-strength-cracktime');
     if (crackTimeEl) { crackTimeEl.textContent = ''; crackTimeEl.classList.add('d-none'); }
-    container.querySelector('.password-hibp-warning').classList.add('d-none');
 }
 
 // --- Requirements checklist ---
@@ -203,7 +207,7 @@ function initRequirements(container, passwordInput) {
 
 function initShowToggle(container, passwordInput) {
     const btn = container.querySelector('.password-show-toggle');
-    if (!btn) return;
+    if (!btn) return btn;
 
     btn.addEventListener('click', () => {
         const isShowing = passwordInput.type === 'text';
@@ -216,6 +220,8 @@ function initShowToggle(container, passwordInput) {
         btn.setAttribute('aria-label', isShowing ? 'Show password' : 'Hide password');
         btn.setAttribute('aria-pressed', String(!isShowing));
     });
+
+    return btn;
 }
 
 async function checkHibp(password) {
@@ -251,6 +257,7 @@ async function checkHibp(password) {
 function initMeter(container) {
     const passwordSelector = container.dataset.passwordField;
     const userInputFieldIds = container.dataset.userInputFields || '';
+    const minLength = parseInt(container.dataset.minLength, 10) || 15;
 
     const passwordInput = document.querySelector(passwordSelector);
     if (!passwordInput) return;
@@ -259,7 +266,7 @@ function initMeter(container) {
     initShowToggle(container, passwordInput);
 
     let hibpWarningActive = false;
-    let blurGeneration = 0;
+    let inputGeneration = 0;
 
     const onInput = debounce(async () => {
         const password = passwordInput.value;
@@ -271,39 +278,47 @@ function initMeter(container) {
         }
 
         await ensureZxcvbn();
+        // Guard against stale result if the user kept typing during the initial load
+        if (password !== passwordInput.value) return;
         const userInputs = getUserInputValues(userInputFieldIds);
         const result = zxcvbn(password, userInputs);
-        updateMeter(container, result.score, result.feedback, result.crackTimesDisplay);
 
-        // Re-show HIBP warning if previously triggered and password unchanged
-        const hibpEl = container.querySelector('.password-hibp-warning');
+        // Render zxcvbn result immediately; HIBP check runs asynchronously below.
         if (hibpWarningActive) {
-            hibpEl.classList.remove('d-none');
+            updateMeter(container, 0, { warning: 'This password appeared in a data breach.' }, null);
+        } else {
+            updateMeter(container, result.score, result.feedback, result.crackTimesDisplay);
+        }
+
+        // Check HIBP while the user is still typing — no need to wait for blur.
+        // Only fires once the password meets minimum length; short passwords fail
+        // server-side validation before HIBP is relevant.
+        if (password.length >= minLength) {
+            const gen = inputGeneration;
+            const breached = await checkHibp(password);
+            // Discard if the user typed something new while the request was in flight.
+            if (passwordInput.value !== password || inputGeneration !== gen) return;
+            hibpWarningActive = breached;
+            if (breached) {
+                updateMeter(container, 0, { warning: 'This password appeared in a data breach.' }, null);
+            }
         }
     }, 300);
 
-    const onBlur = async () => {
-        const password = passwordInput.value;
-        if (!password) return;
-
-        const generation = ++blurGeneration;
-        const hibpEl = container.querySelector('.password-hibp-warning');
-        const breached = await checkHibp(password);
-        // Discard if the password changed or a newer blur already started.
-        if (passwordInput.value !== password || generation !== blurGeneration) return;
-        hibpWarningActive = breached;
-        hibpEl.classList.toggle('d-none', !breached);
-    };
-
-    // Clear HIBP warning when user starts changing password again
+    // Clear HIBP override immediately when user starts changing password again.
+    // Also clear the meter instantly when the field becomes empty (no 300 ms debounce delay).
     passwordInput.addEventListener('input', () => {
         hibpWarningActive = false;
-        blurGeneration++;
-        container.querySelector('.password-hibp-warning').classList.add('d-none');
-        onInput();
+        inputGeneration++;
+        if (!passwordInput.value) {
+            clearMeter(container);
+        } else {
+            onInput();
+        }
     });
 
-    passwordInput.addEventListener('blur', onBlur);
+    // Catch autofill / password-manager injections which dispatch `change` but not `input`
+    passwordInput.addEventListener('change', onInput);
 
     // Recompute strength score when related fields (email, username) change,
     // since they are used as zxcvbn user inputs to penalise guessable passwords.
