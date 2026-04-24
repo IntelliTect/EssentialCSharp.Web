@@ -294,10 +294,7 @@ const app = createApp({
             return tocData.filter(item => filterItem(item, query));
         });
 
-        const isContentPage = computed(() => {
-            let path = window.location.pathname;
-            return path !== '/home' && path !== '/guidelines' && path !== '/about' && path !== '/announcements';
-        });
+        const isContentPage = computed(() => percentComplete.value !== null);
 
         function filterItem(item, query) {
             let matches = normalizeString(item.title).includes(query);
