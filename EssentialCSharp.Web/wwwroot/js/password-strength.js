@@ -96,16 +96,17 @@ function updateMeter(container, score, feedback, crackTimesDisplay) {
     const requirementsList = container.querySelector('.password-requirements');
     const requirementsPending = requirementsList && !requirementsList.classList.contains('d-none');
 
-    // Warning: what's wrong (null for score >= 3)
+    // Warning: specific diagnosis of what pattern was detected (null for score >= 3)
+    const warning = requirementsPending ? '' : (feedback.warning ?? '');
     if (warningEl) {
-        const warning = requirementsPending ? '' : (feedback.warning ?? '');
         warningEl.textContent = warning;
         warningEl.classList.toggle('d-none', !warning);
     }
 
-    // Suggestions: how to improve
+    // Suggestions: generic improvement tips — only shown when there is no specific warning,
+    // since both would otherwise say the same thing in different words.
     if (suggestionsEl) {
-        const tips = requirementsPending ? [] : (feedback.suggestions ?? []).filter(Boolean);
+        const tips = (!requirementsPending && !warning) ? (feedback.suggestions ?? []).filter(Boolean) : [];
         suggestionsEl.textContent = tips.join(' ');
         suggestionsEl.classList.toggle('d-none', tips.length === 0);
     }
