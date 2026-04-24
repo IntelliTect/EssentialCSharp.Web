@@ -90,6 +90,14 @@ public partial class Program
         // HttpClient defaults — standard retry/circuit breaker for all named clients.
         builder.Services.ConfigureHttpClientDefaults(http => http.AddStandardResilienceHandler());
 
+        builder.Services.AddHttpClient("HaveIBeenPwned", c =>
+        {
+            c.BaseAddress = new Uri("https://api.pwnedpasswords.com/");
+            c.DefaultRequestHeaders.UserAgent.ParseAdd("EssentialCSharp.Web/1.0");
+            // Short timeout: this check is advisory/fail-open, so cap latency impact on auth flows.
+            c.Timeout = TimeSpan.FromSeconds(3);
+        });
+
 
 
         builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -158,7 +166,8 @@ public partial class Program
         })
             .AddEntityFrameworkStores<EssentialCSharpWebContext>()
              .AddPasswordValidator<UsernameOrEmailAsPasswordValidator<EssentialCSharpWebUser>>()
-             .AddPasswordValidator<Top100000PasswordValidator<EssentialCSharpWebUser>>();
+             .AddPasswordValidator<Top100000PasswordValidator<EssentialCSharpWebUser>>()
+             .AddPasswordValidator<PwnedPasswordValidator<EssentialCSharpWebUser>>();
 
         builder.Configuration
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)

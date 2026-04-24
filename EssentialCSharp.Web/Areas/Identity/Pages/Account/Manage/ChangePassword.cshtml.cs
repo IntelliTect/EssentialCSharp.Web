@@ -22,6 +22,9 @@ public class ChangePasswordModel(
     [TempData]
     public string? StatusMessage { get; set; }
 
+    public string? UserEmail { get; private set; }
+    public string? UserName { get; private set; }
+
     public class InputModel
     {
         [Required]
@@ -49,6 +52,9 @@ public class ChangePasswordModel(
             return NotFound($"Unable to load user with ID '{userManager.GetUserId(User)}'.");
         }
 
+        UserEmail = user.Email;
+        UserName = user.UserName;
+
         bool hasPassword = await userManager.HasPasswordAsync(user);
         if (!hasPassword)
         {
@@ -62,6 +68,9 @@ public class ChangePasswordModel(
     {
         if (!ModelState.IsValid)
         {
+            EssentialCSharpWebUser? currentUser = await userManager.GetUserAsync(User);
+            UserEmail = currentUser?.Email;
+            UserName = currentUser?.UserName;
             return Page();
         }
 
@@ -70,6 +79,9 @@ public class ChangePasswordModel(
         {
             return NotFound($"Unable to load user with ID '{userManager.GetUserId(User)}'.");
         }
+
+        UserEmail = user.Email;
+        UserName = user.UserName;
 
         if (Input.NewPassword is null)
         {
