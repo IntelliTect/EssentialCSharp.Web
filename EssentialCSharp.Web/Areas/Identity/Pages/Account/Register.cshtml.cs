@@ -94,7 +94,7 @@ public class RegisterModel(
             return Page();
         }
 
-        HCaptchaResult? response = await captchaService.VerifyAsync(hCaptcha_response);
+        HCaptchaResult? response = await captchaService.VerifyAsync(hCaptcha_response, HttpContext.Connection.RemoteIpAddress?.ToString());
         if (response is null)
         {
             ModelState.AddModelError(CaptchaOptions.HttpPostResponseKeyName, "Error: HCaptcha API response unexpectedly null");

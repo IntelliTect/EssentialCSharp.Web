@@ -170,7 +170,16 @@ public class SecurityHeadersBuilder
     }
 
     /// <summary>
-    /// Adds a custom header to all requests
+    /// Adds a Content-Security-Policy header to all requests.
+    /// </summary>
+    /// <param name="value">The CSP directive string.</param>
+    public SecurityHeadersBuilder AddContentSecurityPolicy(string value)
+    {
+        return AddCustomHeader("Content-Security-Policy", value);
+    }
+
+    /// <summary>
+    /// Add a custom header to all requests
     /// </summary>
     /// <param name="header">The header name</param>
     /// <param name="value">The value for the header</param>

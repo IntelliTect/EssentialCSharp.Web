@@ -2,15 +2,18 @@
 using System.Text;
 using System.Text.Encodings.Web;
 using EssentialCSharp.Web.Areas.Identity.Data;
+using EssentialCSharp.Web.Models;
+using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
-public class ForgotPasswordModel(UserManager<EssentialCSharpWebUser> userManager, IEmailSender emailSender) : PageModel
+public class ForgotPasswordModel(UserManager<EssentialCSharpWebUser> userManager, IEmailSender emailSender, ICaptchaService captchaService, IOptions<CaptchaOptions> optionsAccessor) : PageModel
 {
     private InputModel? _Input;
     [BindProperty]
@@ -19,6 +22,8 @@ public class ForgotPasswordModel(UserManager<EssentialCSharpWebUser> userManager
         get => _Input!;
         set => _Input = value ?? throw new ArgumentNullException(nameof(value));
     }
+
+    public CaptchaOptions CaptchaOptions { get; } = optionsAccessor.Value;
 
     public class InputModel
     {
@@ -30,6 +35,14 @@ public class ForgotPasswordModel(UserManager<EssentialCSharpWebUser> userManager
 
     public async Task<IActionResult> OnPostAsync()
     {
+        string? captchaToken = Request.Form[CaptchaOptions.HttpPostResponseKeyName];
+        HCaptchaResult? captchaResult = await captchaService.VerifyAsync(captchaToken, HttpContext.Connection.RemoteIpAddress?.ToString());
+        if (captchaResult?.Success != true)
+        {
+            ModelState.AddModelError(string.Empty, "Human verification failed. Please try again.");
+            return Page();
+        }
+
         if (ModelState.IsValid)
         {
             if (Input.Email is null)

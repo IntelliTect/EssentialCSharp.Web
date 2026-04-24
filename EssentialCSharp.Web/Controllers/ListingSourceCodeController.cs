@@ -1,10 +1,12 @@
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace EssentialCSharp.Web.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting("content")]
 public class ListingSourceCodeController : ControllerBase
 {
     private readonly IListingSourceCodeService _ListingSourceCodeService;

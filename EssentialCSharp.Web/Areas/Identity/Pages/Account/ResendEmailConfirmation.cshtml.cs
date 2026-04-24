@@ -2,17 +2,20 @@
 using System.Text;
 using System.Text.Encodings.Web;
 using EssentialCSharp.Web.Areas.Identity.Data;
+using EssentialCSharp.Web.Models;
+using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
 [AllowAnonymous]
-public class ResendEmailConfirmationModel(UserManager<EssentialCSharpWebUser> userManager, IEmailSender emailSender) : PageModel
+public class ResendEmailConfirmationModel(UserManager<EssentialCSharpWebUser> userManager, IEmailSender emailSender, ICaptchaService captchaService, IOptions<CaptchaOptions> optionsAccessor) : PageModel
 {
     private InputModel? _Input;
     [BindProperty]
@@ -21,6 +24,8 @@ public class ResendEmailConfirmationModel(UserManager<EssentialCSharpWebUser> us
         get => _Input!;
         set => _Input = value ?? throw new ArgumentNullException(nameof(value));
     }
+
+    public CaptchaOptions CaptchaOptions { get; } = optionsAccessor.Value;
 
     public class InputModel
     {
@@ -31,6 +36,14 @@ public class ResendEmailConfirmationModel(UserManager<EssentialCSharpWebUser> us
 
     public async Task<IActionResult> OnPostAsync()
     {
+        string? captchaToken = Request.Form[CaptchaOptions.HttpPostResponseKeyName];
+        HCaptchaResult? captchaResult = await captchaService.VerifyAsync(captchaToken, HttpContext.Connection.RemoteIpAddress?.ToString());
+        if (captchaResult?.Success != true)
+        {
+            ModelState.AddModelError(string.Empty, "Human verification failed. Please try again.");
+            return Page();
+        }
+
         if (!ModelState.IsValid)
         {
             return Page();
@@ -45,7 +58,9 @@ public class ResendEmailConfirmationModel(UserManager<EssentialCSharpWebUser> us
         EssentialCSharpWebUser? user = await userManager.FindByEmailAsync(Input.Email);
         if (user is null)
         {
-            return NotFound($"Unable to load user with ID '{userManager.GetUserId(User)}'.");
+            // Don't reveal that the user does not exist — return the same success message
+            ModelState.AddModelError(string.Empty, "Verification email sent. Please check your email. If you can't find the email, please check your spam folder.");
+            return Page();
         }
 
         string userId = await userManager.GetUserIdAsync(user);

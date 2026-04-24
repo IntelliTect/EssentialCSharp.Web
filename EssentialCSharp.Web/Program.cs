@@ -268,20 +268,38 @@ public partial class Program
                     });
             });
 
-            options.AddFixedWindowLimiter("ChatEndpoint", rateLimiterOptions =>
+            options.AddPolicy("ChatEndpoint", httpContext =>
             {
-                rateLimiterOptions.PermitLimit = 15; // chat messages per window (reasonable limit)
-                rateLimiterOptions.Window = TimeSpan.FromMinutes(1); // minute window
-                rateLimiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                rateLimiterOptions.QueueLimit = 0; // No queuing to make rate limiting immediate
+                // Partitioned per-user (when authenticated) or per-IP (anonymous)
+                var partitionKey = httpContext.User.Identity?.IsAuthenticated == true
+                    ? $"chat-user:{httpContext.User.Identity.Name ?? "unknown-user"}"
+                    : $"chat-ip:{httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip"}";
+
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: partitionKey,
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 15,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit = 0
+                    });
             });
 
-            options.AddFixedWindowLimiter("Anonymous", rateLimiterOptions =>
+            // Sliding window limiter for content/listing endpoints — anti-scraping
+            options.AddPolicy("content", httpContext =>
             {
-                rateLimiterOptions.PermitLimit = 5; // requests per window for anonymous users
-                rateLimiterOptions.Window = TimeSpan.FromMinutes(1);
-                rateLimiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                rateLimiterOptions.QueueLimit = 0; // No queuing for anonymous users
+                string partitionKey = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip";
+                return RateLimitPartition.GetSlidingWindowLimiter(
+                    partitionKey: partitionKey,
+                    factory: _ => new SlidingWindowRateLimiterOptions
+                    {
+                        PermitLimit = 60,
+                        Window = TimeSpan.FromMinutes(1),
+                        SegmentsPerWindow = 3,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit = 0
+                    });
             });
 
             // Custom response when rate limit is exceeded
@@ -383,8 +401,28 @@ public partial class Program
                 });
             });
             app.UseForwardedHeaders();
+
+            // Build dynamic CSP — TryDotNet origin comes from runtime config
+            string? tryDotNetOrigin = app.Configuration["TryDotNet:Origin"];
+            string tryDotNetSources = string.IsNullOrWhiteSpace(tryDotNetOrigin) ? string.Empty : $" {tryDotNetOrigin}";
+
+            string csp = string.Join("; ",
+                $"default-src 'self'",
+                $"script-src 'self' 'unsafe-inline' cdn.jsdelivr.net esm.sh www.clarity.ms www.googletagmanager.com https://hcaptcha.com https://*.hcaptcha.com{tryDotNetSources}",
+                $"style-src 'self' 'unsafe-inline' cdn.jsdelivr.net cdnjs.cloudflare.com fonts.googleapis.com https://hcaptcha.com https://*.hcaptcha.com",
+                $"font-src 'self' fonts.gstatic.com cdnjs.cloudflare.com",
+                $"img-src 'self' data: https:",
+                $"connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://api.pwnedpasswords.com https://*.algolia.net https://*.algolianet.com{tryDotNetSources}",
+                $"frame-src https://hcaptcha.com https://*.hcaptcha.com https://newassets.hcaptcha.com{tryDotNetSources}",
+                $"worker-src blob:",
+                $"frame-ancestors 'none'",
+                $"base-uri 'self'",
+                $"form-action 'self'"
+            );
+
             app.UseSecurityHeadersMiddleware(new SecurityHeadersBuilder()
-                .AddDefaultSecurePolicy());
+                .AddDefaultSecurePolicy()
+                .AddContentSecurityPolicy(csp));
         }
         else
         {
