@@ -1,4 +1,6 @@
+using System.ComponentModel.DataAnnotations;
 using EssentialCSharp.Web.Areas.Identity.Data;
+using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -6,52 +8,71 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage;
 
-public class McpAccessModel : PageModel
+public class McpAccessModel(
+    McpApiTokenService tokenService,
+    UserManager<EssentialCSharpWebUser> userManager) : PageModel
 {
-    private readonly McpTokenService? _McpTokenService;
-    private readonly UserManager<EssentialCSharpWebUser> _UserManager;
-
     [TempData]
     public string? StatusMessage { get; set; }
 
     public string? GeneratedToken { get; private set; }
 
-    public DateTime? TokenExpiresAt { get; private set; }
+    public McpApiToken? GeneratedTokenEntity { get; private set; }
 
-    public bool McpEnabled => _McpTokenService is not null;
+    public List<McpApiToken> UserTokens { get; private set; } = [];
 
-    public McpAccessModel(IServiceProvider serviceProvider, UserManager<EssentialCSharpWebUser> userManager)
+    [BindProperty]
+    [StringLength(256, ErrorMessage = "Token name must be 256 characters or fewer.")]
+    public string TokenName { get; set; } = "My Token";
+
+    [BindProperty]
+    public DateOnly? ExpiresOn { get; set; }
+
+    public async Task<IActionResult> OnGetAsync()
     {
-        _McpTokenService = serviceProvider.GetService<McpTokenService>();
-        _UserManager = userManager;
+        string? userId = userManager.GetUserId(User);
+        if (userId is null) return Challenge();
+        UserTokens = await tokenService.GetUserTokensAsync(userId);
+        return Page();
     }
 
-    public IActionResult OnGet() => Page();
-
-    public async Task<IActionResult> OnPostAsync()
+    public async Task<IActionResult> OnPostCreateAsync()
     {
-        if (_McpTokenService is null)
+        string? userId = userManager.GetUserId(User);
+        if (userId is null) return Challenge();
+
+        if (string.IsNullOrWhiteSpace(TokenName))
+            ModelState.AddModelError(nameof(TokenName), "Token name is required.");
+
+        if (ExpiresOn.HasValue && ExpiresOn.Value < DateOnly.FromDateTime(DateTime.UtcNow))
+            ModelState.AddModelError(nameof(ExpiresOn), "Expiry date must be today or in the future.");
+
+        if (!ModelState.IsValid)
         {
-            StatusMessage = "Error: MCP is not enabled on this server.";
+            UserTokens = await tokenService.GetUserTokensAsync(userId);
             return Page();
         }
 
-        EssentialCSharpWebUser? user = await _UserManager.GetUserAsync(User);
-        if (user is null)
-        {
-            return NotFound($"Unable to load user with ID '{_UserManager.GetUserId(User)}'.");
-        }
+        // Convert date-only boundary to end-of-day UTC instant before persisting
+        DateTime? expiresAt = ExpiresOn?.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
 
-        string userId = await _UserManager.GetUserIdAsync(user);
-        string? userName = user.UserName;
-        string? email = await _UserManager.GetEmailAsync(user);
-
-        // TODO: Implement per-user token tracking and limit to prevent unbounded token generation.
-        // Store issued jti claims in the database and enforce a maximum active token count per user.
-        var (token, expiresAt) = _McpTokenService.GenerateToken(userId, userName, email);
-        GeneratedToken = token;
-        TokenExpiresAt = expiresAt;
-
+        var (rawToken, entity) = await tokenService.CreateTokenAsync(userId, TokenName.Trim(), expiresAt);
+        GeneratedToken = rawToken;
+        GeneratedTokenEntity = entity;
+        UserTokens = await tokenService.GetUserTokensAsync(userId);
         return Page();
+    }
+
+    public async Task<IActionResult> OnPostRevokeAsync(Guid tokenId)
+    {
+        string? userId = userManager.GetUserId(User);
+        if (userId is null) return Challenge();
+
+        bool revoked = await tokenService.RevokeTokenAsync(tokenId, userId);
+        StatusMessage = revoked
+            ? "Token revoked successfully."
+            : "Error: Token not found or already revoked.";
+
+        return RedirectToPage();
     }
 }

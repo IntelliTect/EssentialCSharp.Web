@@ -19,7 +19,8 @@ public sealed class BookSearchTool
         _SiteMappingService = siteMappingService;
     }
 
-    [McpServerTool, Description("Search the Essential C# book content using semantic vector search. Returns relevant text chunks with chapter and heading context. Use this to find information about C# programming concepts covered in the book.")]
+    [McpServerTool(Title = "Search Book Content", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
+     Description("Search the Essential C# book content using semantic vector search. Returns relevant text chunks with chapter and heading context. Use this to find information about C# programming concepts covered in the book.")]
     public async Task<string> SearchBookContent(
         [Description("The search query describing the C# concept or topic to find in the book.")] string query,
         CancellationToken cancellationToken = default)
@@ -29,12 +30,12 @@ public sealed class BookSearchTool
             return "Book search is not available in this environment (AI services are not configured).";
         }
 
-        var results = await _SearchService.ExecuteVectorSearch(query);
+        var results = await _SearchService.ExecuteVectorSearch(query, cancellationToken: cancellationToken);
 
         var sb = new StringBuilder();
         int resultCount = 0;
 
-        await foreach (var result in results.WithCancellation(cancellationToken))
+        foreach (var result in results)
         {
             resultCount++;
             sb.AppendLine(CultureInfo.InvariantCulture, $"--- Result {resultCount} (Score: {result.Score:F4}) ---");
@@ -61,7 +62,8 @@ public sealed class BookSearchTool
         return sb.ToString();
     }
 
-    [McpServerTool, Description("Get the table of contents for the Essential C# book, listing all chapters and their sections with navigation links.")]
+    [McpServerTool(Title = "Get Chapter List", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
+     Description("Get the table of contents for the Essential C# book, listing all chapters and their sections with navigation links.")]
     public string GetChapterList()
     {
         var tocData = _SiteMappingService.GetTocData();

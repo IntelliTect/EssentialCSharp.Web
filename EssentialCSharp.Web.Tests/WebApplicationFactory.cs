@@ -28,11 +28,6 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>, IAsy
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        // Inject a stable test signing key so MCP services are registered during
-        // service registration in Program.cs (which reads configuration["Mcp:SigningKey"]
-        // before builder.Build() is called — ConfigureAppConfiguration fires too late).
-        builder.UseSetting("Mcp:SigningKey", "TestOnly-EssentialCSharp-MCP-SigningKey-For-Integration-Tests!");
-
         builder.ConfigureServices(services =>
         {
             ServiceDescriptor? dbContextDescriptor = services.SingleOrDefault(

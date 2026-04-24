@@ -1,4 +1,5 @@
 ﻿using EssentialCSharp.Web.Areas.Identity.Data;
+using EssentialCSharp.Web.Models;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +10,7 @@ public class EssentialCSharpWebContext(DbContextOptions<EssentialCSharpWebContex
     : IdentityDbContext<EssentialCSharpWebUser>(options), IDataProtectionKeyContext
 {
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
+    public DbSet<McpApiToken> McpApiTokens { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

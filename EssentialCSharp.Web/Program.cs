@@ -2,6 +2,7 @@ using System.Threading.RateLimiting;
 using EssentialCSharp.Chat.Common.Extensions;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
+using EssentialCSharp.Web.Auth;
 using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Extensions;
 using EssentialCSharp.Web.Helpers;
@@ -10,7 +11,7 @@ using EssentialCSharp.Web.Services;
 using EssentialCSharp.Web.Services.Referrals;
 using EssentialCSharp.Web.Tools;
 using Mailjet.Client;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -247,32 +248,21 @@ public partial class Program
             builder.Services.AddAzureOpenAIServices(configuration);
         }
 
-        // Add MCP server with JWT bearer auth for tool access
-        var mcpSigningKey = configuration["Mcp:SigningKey"];
-        if (!string.IsNullOrEmpty(mcpSigningKey))
-        {
-            var mcpTokenService = new McpTokenService(configuration);
-            builder.Services.AddSingleton(mcpTokenService);
+        // MCP server — always enabled, authenticated via opaque DB-backed tokens.
+        builder.Services.AddScoped<McpApiTokenService>();
 
-            builder.Services.AddAuthentication()
-                .AddJwtBearer("McpBearer", options =>
-                {
-                    options.TokenValidationParameters = mcpTokenService.GetTokenValidationParameters();
-                });
+        builder.Services.AddAuthentication()
+            .AddScheme<AuthenticationSchemeOptions, McpApiKeyAuthenticationHandler>(
+                "McpBearer", _ => { });
 
-            builder.Services.AddAuthorization(options =>
-                options.AddPolicy("McpPolicy", policy =>
-                    policy.AddAuthenticationSchemes("McpBearer")
-                          .RequireAuthenticatedUser()));
+        builder.Services.AddAuthorization(options =>
+            options.AddPolicy("McpPolicy", policy =>
+                policy.AddAuthenticationSchemes("McpBearer")
+                      .RequireAuthenticatedUser()));
 
-            builder.Services.AddMcpServer()
-                .WithHttpTransport()
-                .WithTools<BookSearchTool>();
-        }
-        else
-        {
-            initialLogger.LogWarning("Mcp:SigningKey not configured. MCP server will be disabled.");
-        }
+        builder.Services.AddMcpServer()
+            .WithHttpTransport(options => options.Stateless = true)
+            .WithTools<BookSearchTool>();
 
         // Add Rate Limiting for API endpoints
         builder.Services.AddRateLimiter(options =>
@@ -284,7 +274,7 @@ public partial class Program
                     return RateLimitPartition.GetNoLimiter("well-known");
 
                 var partitionKey = httpContext.User.Identity?.IsAuthenticated == true
-                    ? httpContext.User.Identity.Name ?? "unknown-user"
+                    ? httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "unknown-user"
                     : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip";
 
                 return RateLimitPartition.GetFixedWindowLimiter(
@@ -498,10 +488,7 @@ public partial class Program
         app.MapRazorPages();
         app.MapDefaultControllerRoute();
 
-        if (!string.IsNullOrEmpty(configuration["Mcp:SigningKey"]))
-        {
-            app.MapMcp("/mcp").RequireAuthorization("McpPolicy");
-        }
+        app.MapMcp("/mcp").RequireAuthorization("McpPolicy");
 
         app.MapFallbackToController("Index", "Home");
 

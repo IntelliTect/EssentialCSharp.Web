@@ -1,19 +1,21 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
+using EssentialCSharp.Web.Areas.Identity.Data;
+using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using System.Threading.Tasks;
 
 namespace EssentialCSharp.Web.Tests;
 
-public class McpTests
+[NotInParallel("McpTests")]
+[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
+public class McpTests(WebApplicationFactory factory)
 {
-    [Fact]
+    [Test]
     public async Task McpTokenEndpoint_WithoutAuth_Returns401()
     {
-        using WebApplicationFactory factory = new();
         HttpClient client = factory.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false
@@ -21,42 +23,58 @@ public class McpTests
 
         using HttpResponseMessage response = await client.PostAsync("/api/McpToken", null);
 
-        // [ApiController] returns 401 directly; it does not redirect to login like Razor Pages
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
     }
 
-    [Fact]
+    [Test]
     public async Task McpEndpoint_WithoutToken_Returns401()
     {
-        using WebApplicationFactory factory = new();
         HttpClient client = factory.CreateClient();
 
         var request = CreateMcpInitializeRequest("/mcp");
         using HttpResponseMessage response = await client.SendAsync(request);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
     }
 
-    [Fact]
+    [Test]
     public async Task McpEndpoint_WithValidToken_Returns200AndListsTools()
     {
-        using WebApplicationFactory factory = new();
+        // Seed a minimal user row to satisfy the FK on McpApiToken.UserId, then
+        // create an opaque token via McpApiTokenService (replaces old JWT path).
+        string testUserId = Guid.NewGuid().ToString();
+        string rawToken;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<EssentialCSharpWebContext>();
+            db.Users.Add(new EssentialCSharpWebUser
+            {
+                Id = testUserId,
+                UserName = "mcp-testuser",
+                NormalizedUserName = "MCP-TESTUSER",
+                Email = "mcp-test@example.com",
+                NormalizedEmail = "MCP-TEST@EXAMPLE.COM",
+                SecurityStamp = Guid.NewGuid().ToString(),
+            });
+            await db.SaveChangesAsync();
 
-        McpTokenService? tokenService = factory.Services.GetService<McpTokenService>();
-        Assert.NotNull(tokenService);
-
-        var (token, _) = tokenService.GenerateToken("test-user-id", "testuser", "test@example.com");
+            var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
+            (rawToken, _) = await tokenService.CreateTokenAsync(testUserId, "integration-test");
+        }
 
         HttpClient client = factory.CreateClient();
 
         // Step 1: Initialize the MCP session
         var initRequest = CreateMcpInitializeRequest("/mcp");
-        initRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        initRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", rawToken);
 
         using HttpResponseMessage initResponse = await client.SendAsync(initRequest);
-        Assert.Equal(HttpStatusCode.OK, initResponse.StatusCode);
+        await Assert.That(initResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
 
-        string sessionId = initResponse.Headers.GetValues("Mcp-Session-Id").First();
+        // Session ID is optional in stateless transport mode
+        string? sessionId = null;
+        if (initResponse.Headers.TryGetValues("Mcp-Session-Id", out IEnumerable<string>? sessionIdValues))
+            sessionId = sessionIdValues.First();
 
         // Step 2: List tools
         var listToolsRequest = new HttpRequestMessage(HttpMethod.Post, "/mcp")
@@ -65,31 +83,106 @@ public class McpTests
                 """{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}""",
                 Encoding.UTF8, "application/json")
         };
-        listToolsRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        listToolsRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", rawToken);
         listToolsRequest.Headers.Accept.ParseAdd("application/json");
         listToolsRequest.Headers.Accept.ParseAdd("text/event-stream");
-        listToolsRequest.Headers.Add("Mcp-Session-Id", sessionId);
+        if (sessionId is not null)
+            listToolsRequest.Headers.Add("Mcp-Session-Id", sessionId);
 
         using HttpResponseMessage toolsResponse = await client.SendAsync(
             listToolsRequest, HttpCompletionOption.ResponseHeadersRead);
-        Assert.Equal(HttpStatusCode.OK, toolsResponse.StatusCode);
+        await Assert.That(toolsResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
 
-        // SSE streams arrive line-by-line; read until we find the data line or timeout
+        // Streamable HTTP response: read until we find the tool names or timeout
         using Stream stream = await toolsResponse.Content.ReadAsStreamAsync();
         using StreamReader reader = new(stream);
         using CancellationTokenSource cts = new(TimeSpan.FromSeconds(10));
-        string body = "";
+        var body = new StringBuilder();
         string? line;
         while ((line = await reader.ReadLineAsync(cts.Token)) is not null)
         {
-            body += line + "\n";
-            if (body.Contains("search_book_content") && body.Contains("get_chapter_list"))
+            body.AppendLine(line);
+            if (body.ToString().Contains("search_book_content") &&
+                body.ToString().Contains("get_chapter_list"))
                 break;
         }
 
-        // The MCP C# SDK converts PascalCase method names to snake_case for the wire protocol
-        Assert.Contains("search_book_content", body);
-        Assert.Contains("get_chapter_list", body);
+        string bodyText = body.ToString();
+        await Assert.That(bodyText).Contains("search_book_content");
+        await Assert.That(bodyText).Contains("get_chapter_list");
+    }
+
+    [Test]
+    public async Task McpEndpoint_WithInvalidToken_Returns401()
+    {
+        HttpClient client = factory.CreateClient();
+        var request = CreateMcpInitializeRequest("/mcp");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", "mcp_invalid_token_that_does_not_exist");
+        using HttpResponseMessage response = await client.SendAsync(request);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
+    }
+
+    [Test]
+    public async Task McpEndpoint_WithRevokedToken_Returns401()
+    {
+        string testUserId = Guid.NewGuid().ToString();
+        string rawToken;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<EssentialCSharpWebContext>();
+            db.Users.Add(new EssentialCSharpWebUser
+            {
+                Id = testUserId,
+                UserName = $"revoked-user-{testUserId[..8]}",
+                NormalizedUserName = $"REVOKED-USER-{testUserId[..8].ToUpperInvariant()}",
+                Email = $"revoked-{testUserId[..8]}@example.com",
+                NormalizedEmail = $"REVOKED-{testUserId[..8].ToUpperInvariant()}@EXAMPLE.COM",
+                SecurityStamp = Guid.NewGuid().ToString(),
+            });
+            await db.SaveChangesAsync();
+
+            var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
+            (rawToken, var entity) = await tokenService.CreateTokenAsync(testUserId, "revoke-test");
+            await tokenService.RevokeTokenAsync(entity.Id, testUserId);
+        }
+
+        HttpClient client = factory.CreateClient();
+        var request = CreateMcpInitializeRequest("/mcp");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", rawToken);
+        using HttpResponseMessage response = await client.SendAsync(request);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
+    }
+
+    [Test]
+    public async Task McpEndpoint_WithExpiredToken_Returns401()
+    {
+        string testUserId = Guid.NewGuid().ToString();
+        string rawToken;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<EssentialCSharpWebContext>();
+            db.Users.Add(new EssentialCSharpWebUser
+            {
+                Id = testUserId,
+                UserName = $"expired-user-{testUserId[..8]}",
+                NormalizedUserName = $"EXPIRED-USER-{testUserId[..8].ToUpperInvariant()}",
+                Email = $"expired-{testUserId[..8]}@example.com",
+                NormalizedEmail = $"EXPIRED-{testUserId[..8].ToUpperInvariant()}@EXAMPLE.COM",
+                SecurityStamp = Guid.NewGuid().ToString(),
+            });
+            await db.SaveChangesAsync();
+
+            var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
+            // Create with an expiry in the past (1 second ago)
+            DateTime pastExpiry = DateTime.UtcNow.AddSeconds(-1);
+            (rawToken, _) = await tokenService.CreateTokenAsync(testUserId, "expired-test", pastExpiry);
+        }
+
+        HttpClient client = factory.CreateClient();
+        var request = CreateMcpInitializeRequest("/mcp");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", rawToken);
+        using HttpResponseMessage response = await client.SendAsync(request);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
     }
 
     private static HttpRequestMessage CreateMcpInitializeRequest(string path)
