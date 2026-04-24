@@ -91,15 +91,21 @@ function updateMeter(container, score, feedback, crackTimesDisplay) {
 
     label.textContent = config.label;
 
+    // Suppress zxcvbn feedback while hard requirements (e.g. minimum length) are still unmet —
+    // the requirements checklist already tells the user what to fix; showing both is redundant.
+    const requirementsList = container.querySelector('.password-requirements');
+    const requirementsPending = requirementsList && !requirementsList.classList.contains('d-none');
+
     // Warning: what's wrong (null for score >= 3)
     if (warningEl) {
-        warningEl.textContent = feedback.warning ?? '';
-        warningEl.classList.toggle('d-none', !feedback.warning);
+        const warning = requirementsPending ? '' : (feedback.warning ?? '');
+        warningEl.textContent = warning;
+        warningEl.classList.toggle('d-none', !warning);
     }
 
     // Suggestions: how to improve
     if (suggestionsEl) {
-        const tips = (feedback.suggestions ?? []).filter(Boolean);
+        const tips = requirementsPending ? [] : (feedback.suggestions ?? []).filter(Boolean);
         suggestionsEl.textContent = tips.join(' ');
         suggestionsEl.classList.toggle('d-none', tips.length === 0);
     }
