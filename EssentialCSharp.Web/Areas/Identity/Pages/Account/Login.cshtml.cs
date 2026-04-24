@@ -1,14 +1,17 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using EssentialCSharp.Web.Areas.Identity.Data;
+using EssentialCSharp.Web.Models;
+using EssentialCSharp.Web.Services;
 using EssentialCSharp.Web.Services.Referrals;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
-public class LoginModel(SignInManager<EssentialCSharpWebUser> signInManager, UserManager<EssentialCSharpWebUser> userManager, ILogger<LoginModel> logger, IReferralService referralService) : PageModel
+public class LoginModel(SignInManager<EssentialCSharpWebUser> signInManager, UserManager<EssentialCSharpWebUser> userManager, ILogger<LoginModel> logger, IReferralService referralService, ICaptchaService captchaService, IOptions<CaptchaOptions> optionsAccessor) : PageModel
 {
     private InputModel? _Input;
     [BindProperty]
@@ -22,6 +25,8 @@ public class LoginModel(SignInManager<EssentialCSharpWebUser> signInManager, Use
 
     public string? ReturnUrl { get; set; }
 
+    public string CaptchaSiteKey { get; } = optionsAccessor.Value.SiteKey ?? string.Empty;
+
     [TempData]
     public string? ErrorMessage { get; set; }
 
@@ -33,10 +38,9 @@ public class LoginModel(SignInManager<EssentialCSharpWebUser> signInManager, Use
         public string? Email { get; set; }
 
         [Required]
+        [MaxLength(PasswordRequirementOptions.PasswordMaximumLength)]
         [DataType(DataType.Password)]
         public string? Password { get; set; }
-
-        [Display(Name = "Remember me?")]
         public bool RememberMe { get; set; }
     }
 
@@ -60,6 +64,15 @@ public class LoginModel(SignInManager<EssentialCSharpWebUser> signInManager, Use
     public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
     {
         returnUrl ??= Url.Content("~/");
+
+        string? captchaToken = Request.Form[CaptchaOptions.HttpPostResponseKeyName];
+        HCaptchaResult? captchaResult = await captchaService.VerifyAsync(captchaToken, HttpContext.Connection.RemoteIpAddress?.ToString());
+        if (captchaResult?.Success != true)
+        {
+            ModelState.AddModelError(string.Empty, "Human verification failed. Please try again.");
+            ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+            return Page();
+        }
 
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 

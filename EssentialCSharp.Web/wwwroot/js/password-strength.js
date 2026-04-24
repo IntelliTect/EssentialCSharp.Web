@@ -6,6 +6,7 @@
  *   data-password-field        — CSS selector for the password input (e.g. "#Input_Password")
  *   data-user-input-fields     — Comma-separated CSS selectors for fields whose live values
  *                                should penalise the strength score (e.g. "#Input_Email,#Input_UserName")
+ *   data-min-length            — Minimum password length enforced server-side (from PasswordRequirementOptions)
  */
 
 import { zxcvbn, zxcvbnOptions } from '@zxcvbn-ts/core';
@@ -126,6 +127,90 @@ function clearMeter(container) {
     container.querySelector('.password-hibp-warning').classList.add('d-none');
 }
 
+// --- Requirements checklist ---
+
+function initRequirements(container, passwordInput) {
+    const minLength = parseInt(container.dataset.minLength, 10) || 8;
+    const listEl = container.querySelector('.password-requirements');
+    if (!listEl) return;
+
+    const rules = [
+        {
+            el: listEl.querySelector('[data-rule="minlength"]'),
+            label: `At least ${minLength} characters`,
+            test: pw => pw.length >= minLength,
+        },
+    ];
+
+    // Set rule label text
+    for (const rule of rules) {
+        if (rule.el) rule.el.querySelector('.req-text').textContent = rule.label;
+    }
+
+    function updateRequirements() {
+        const pw = passwordInput.value;
+        let allMet = true;
+
+        for (const rule of rules) {
+            if (!rule.el) continue;
+            const met = rule.test(pw);
+            if (!met) allMet = false;
+            rule.el.classList.toggle('d-none', met);
+            const icon = rule.el.querySelector('.req-icon');
+            if (icon) icon.textContent = met ? '✓' : '○';
+            rule.el.classList.toggle('text-success', met);
+        }
+
+        // Hide entire checklist when all rules pass; show when any fail (and field has focus or value)
+        const hasValue = pw.length > 0;
+        listEl.classList.toggle('d-none', allMet || !hasValue);
+    }
+
+    passwordInput.addEventListener('focus', () => {
+        if (passwordInput.value.length === 0) {
+            // Show all rules unmet on first focus so user knows what to satisfy
+            for (const rule of rules) {
+                if (rule.el) {
+                    rule.el.classList.remove('d-none');
+                    const icon = rule.el.querySelector('.req-icon');
+                    if (icon) icon.textContent = '○';
+                    rule.el.classList.remove('text-success');
+                }
+            }
+            listEl.classList.remove('d-none');
+        } else {
+            updateRequirements();
+        }
+    });
+
+    passwordInput.addEventListener('blur', () => {
+        // Keep showing failures after blur so user knows what's still needed
+        updateRequirements();
+        if (passwordInput.value.length === 0) listEl.classList.add('d-none');
+    });
+
+    passwordInput.addEventListener('input', updateRequirements);
+}
+
+// --- Show/hide password toggle ---
+
+function initShowToggle(container, passwordInput) {
+    const btn = container.querySelector('.password-show-toggle');
+    if (!btn) return;
+
+    btn.addEventListener('click', () => {
+        const isShowing = passwordInput.type === 'text';
+        passwordInput.type = isShowing ? 'password' : 'text';
+        const icon = btn.querySelector('i');
+        if (icon) {
+            icon.classList.toggle('bi-eye', isShowing);
+            icon.classList.toggle('bi-eye-slash', !isShowing);
+        }
+        btn.setAttribute('aria-label', isShowing ? 'Show password' : 'Hide password');
+        btn.setAttribute('aria-pressed', String(!isShowing));
+    });
+}
+
 async function checkHibp(password) {
     try {
         const data = new TextEncoder().encode(password);
@@ -162,6 +247,9 @@ function initMeter(container) {
 
     const passwordInput = document.querySelector(passwordSelector);
     if (!passwordInput) return;
+
+    initRequirements(container, passwordInput);
+    initShowToggle(container, passwordInput);
 
     let hibpWarningActive = false;
     let blurGeneration = 0;

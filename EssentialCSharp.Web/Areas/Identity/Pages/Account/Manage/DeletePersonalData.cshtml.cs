@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using EssentialCSharp.Web.Areas.Identity.Data;
+using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -22,6 +23,7 @@ public class DeletePersonalDataModel(
     public class InputModel
     {
         [Required]
+        [MaxLength(PasswordRequirementOptions.PasswordMaximumLength)]
         [DataType(DataType.Password)]
         public string? Password { get; set; }
     }
@@ -42,6 +44,11 @@ public class DeletePersonalDataModel(
 
     public async Task<IActionResult> OnPostAsync()
     {
+        if (!ModelState.IsValid)
+        {
+            return Page();
+        }
+
         EssentialCSharpWebUser? user = await userManager.GetUserAsync(User);
         if (user is null)
         {

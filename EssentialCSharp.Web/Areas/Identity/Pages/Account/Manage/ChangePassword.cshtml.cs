@@ -28,6 +28,7 @@ public class ChangePasswordModel(
     public class InputModel
     {
         [Required]
+        [MaxLength(Web.Services.PasswordRequirementOptions.PasswordMaximumLength)]
         [DataType(DataType.Password)]
         [Display(Name = "Current password")]
         public string? OldPassword { get; set; }

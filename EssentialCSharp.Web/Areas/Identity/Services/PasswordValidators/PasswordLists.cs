@@ -19,7 +19,6 @@ public class PasswordLists
         // based on our current password requirements
         return new HashSet<string>(File.ReadLines(Path.Join(_Prefix, listName))
             .Where(password => password.Length >= PasswordRequirementOptions.PasswordMinimumLength
-            && password.Length <= PasswordRequirementOptions.PasswordMaximumLength
-            && password.Distinct().Count() >= PasswordRequirementOptions.RequiredUniqueChars));
+            && password.Length <= PasswordRequirementOptions.PasswordMaximumLength));
     }
 }
