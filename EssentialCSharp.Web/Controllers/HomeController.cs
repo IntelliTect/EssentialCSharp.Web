@@ -121,8 +121,13 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error(string? errorMessage = null, int statusCode = 404)
     {
+        if (statusCode is < 400 or > 599)
+        {
+            statusCode = 500;
+        }
         Response.StatusCode = statusCode;
-        ViewBag.ErrorMessage = $"{statusCode}: {errorMessage}";
+        ViewBag.StatusCode = statusCode;
+        ViewBag.ErrorMessage = string.IsNullOrWhiteSpace(errorMessage) ? null : $"{statusCode}: {errorMessage}";
         ViewBag.PageTitle = $"Error-{statusCode}";
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
