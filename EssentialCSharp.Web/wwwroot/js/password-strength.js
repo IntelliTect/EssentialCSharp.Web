@@ -9,8 +9,6 @@
  */
 
 import { zxcvbn, zxcvbnOptions } from '@zxcvbn-ts/core';
-import * as zxcvbnCommon from '@zxcvbn-ts/language-common';
-import * as zxcvbnEn from '@zxcvbn-ts/language-en';
 
 const SCORE_CONFIG = [
     { label: 'Very weak', barClass: 'bg-danger',            width: 20 },
@@ -21,13 +19,22 @@ const SCORE_CONFIG = [
 ];
 
 let zxcvbnReady = false;
+let zxcvbnLoadPromise = null;
 
 async function ensureZxcvbn() {
     if (zxcvbnReady) return;
+    if (!zxcvbnLoadPromise) {
+        zxcvbnLoadPromise = Promise.all([
+            import('@zxcvbn-ts/language-common'),
+            import('@zxcvbn-ts/language-en'),
+        ]);
+    }
+    const [zxcvbnCommon, zxcvbnEn] = await zxcvbnLoadPromise;
     zxcvbnOptions.setOptions({
         translations: zxcvbnEn.translations,
         graphs: zxcvbnCommon.adjacencyGraphs,
         dictionary: { ...zxcvbnCommon.dictionary, ...zxcvbnEn.dictionary },
+        useLevenshteinDistance: true,
     });
     zxcvbnReady = true;
 }
@@ -42,17 +49,36 @@ function debounce(fn, ms) {
 
 function getUserInputValues(userInputFieldIds) {
     if (!userInputFieldIds) return [];
-    return userInputFieldIds
+    const raw = userInputFieldIds
         .split(',')
         .map(sel => document.querySelector(sel.trim())?.value)
         .filter(Boolean);
+
+    const parts = [];
+    for (const val of raw) {
+        parts.push(val);
+        // Split email addresses: "john.doe@gmail.com" → "john.doe", "john", "doe", "gmail"
+        if (val.includes('@')) {
+            const [local, domain] = val.split('@');
+            parts.push(local);
+            parts.push(...local.split(/[._+\-]/));
+            const domainBase = domain?.split('.')[0];
+            if (domainBase) parts.push(domainBase);
+        }
+        // Split on common word-separators: spaces, dots, underscores, hyphens
+        parts.push(...val.split(/[\s._@+\-]+/));
+    }
+    // Deduplicate and discard single-character fragments (too noisy)
+    return [...new Set(parts.filter(s => s.length >= 2))];
 }
 
-function updateMeter(container, score, feedback) {
+function updateMeter(container, score, feedback, crackTimesDisplay) {
     const config = SCORE_CONFIG[score];
     const bar = container.querySelector('.password-strength-bar');
     const label = container.querySelector('.password-strength-label');
-    const feedbackEl = container.querySelector('.password-strength-feedback');
+    const warningEl = container.querySelector('.password-strength-warning');
+    const suggestionsEl = container.querySelector('.password-strength-suggestions');
+    const crackTimeEl = container.querySelector('.password-strength-cracktime');
 
     // Reset bar classes
     bar.className = 'progress-bar password-strength-bar ' + config.barClass;
@@ -64,10 +90,25 @@ function updateMeter(container, score, feedback) {
 
     label.textContent = config.label;
 
-    const suggestions = [feedback.warning, ...(feedback.suggestions ?? [])]
-        .filter(Boolean)
-        .join(' ');
-    feedbackEl.textContent = suggestions;
+    // Warning: what's wrong (null for score >= 3)
+    if (warningEl) {
+        warningEl.textContent = feedback.warning ?? '';
+        warningEl.classList.toggle('d-none', !feedback.warning);
+    }
+
+    // Suggestions: how to improve
+    if (suggestionsEl) {
+        const tips = (feedback.suggestions ?? []).filter(Boolean);
+        suggestionsEl.textContent = tips.join(' ');
+        suggestionsEl.classList.toggle('d-none', tips.length === 0);
+    }
+
+    // Crack time estimate (online throttled — most relevant for web app context)
+    if (crackTimeEl) {
+        const display = crackTimesDisplay?.onlineThrottling100PerHour;
+        crackTimeEl.textContent = display ? `Time to crack: ${display}` : '';
+        crackTimeEl.classList.toggle('d-none', !display);
+    }
 }
 
 function clearMeter(container) {
@@ -76,7 +117,12 @@ function clearMeter(container) {
     bar.style.width = '0';
     container.querySelector('.progress').setAttribute('aria-valuenow', '0');
     container.querySelector('.password-strength-label').textContent = '';
-    container.querySelector('.password-strength-feedback').textContent = '';
+    const warningEl = container.querySelector('.password-strength-warning');
+    if (warningEl) { warningEl.textContent = ''; warningEl.classList.add('d-none'); }
+    const suggestionsEl = container.querySelector('.password-strength-suggestions');
+    if (suggestionsEl) { suggestionsEl.textContent = ''; suggestionsEl.classList.add('d-none'); }
+    const crackTimeEl = container.querySelector('.password-strength-cracktime');
+    if (crackTimeEl) { crackTimeEl.textContent = ''; crackTimeEl.classList.add('d-none'); }
     container.querySelector('.password-hibp-warning').classList.add('d-none');
 }
 
@@ -132,7 +178,7 @@ function initMeter(container) {
         await ensureZxcvbn();
         const userInputs = getUserInputValues(userInputFieldIds);
         const result = zxcvbn(password, userInputs);
-        updateMeter(container, result.score, result.feedback);
+        updateMeter(container, result.score, result.feedback, result.crackTimesDisplay);
 
         // Re-show HIBP warning if previously triggered and password unchanged
         const hibpEl = container.querySelector('.password-hibp-warning');
