@@ -1,0 +1,19 @@
+@model EssentialCSharp.Web.Models.HCaptchaWidgetModel
+@* Reusable hCaptcha widget partial.
+   Size "normal" = visible checkbox (use for registration).
+   Size "invisible" = no UI unless suspicious (use for login/password reset flows; requires legal disclosure below).
+   The hCaptcha JS is already loaded globally via _Layout.cshtml — no per-page script tag needed.
+*@
+<div class="h-captcha"
+     data-sitekey="@Model.SiteKey"
+     data-size="@Model.Size"
+     @(Model.Callback is not null ? Html.Raw($"data-callback=\"{Html.Encode(Model.Callback)}\"") : Html.Raw(string.Empty))></div>
+@if (Model.Size == "invisible")
+{
+    <p class="small text-muted mt-2">
+        This site is protected by hCaptcha and its
+        <a href="https://www.hcaptcha.com/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+        and <a href="https://www.hcaptcha.com/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a>
+        apply.
+    </p>
+}

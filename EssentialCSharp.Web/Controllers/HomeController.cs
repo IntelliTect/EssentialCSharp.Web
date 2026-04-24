@@ -3,12 +3,14 @@ using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using HtmlAgilityPack;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.CodeAnalysis;
 
 namespace EssentialCSharp.Web.Controllers;
 
 public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment hostingEnvironment, ISiteMappingService siteMappingService, IHttpContextAccessor httpContextAccessor, IRouteConfigurationService routeConfigurationService) : BaseController(routeConfigurationService, httpContextAccessor)
 {
+    [EnableRateLimiting("content")]
     public IActionResult Index()
     {
         string? key = Request.Path.Value?.TrimStart('/');

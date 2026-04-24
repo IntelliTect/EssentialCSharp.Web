@@ -4,49 +4,80 @@ using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Services;
 
-public class CaptchaService(IHttpClientFactory clientFactory, IOptions<CaptchaOptions> optionsAccessor) : ICaptchaService
+public class CaptchaService(IHttpClientFactory clientFactory, IOptions<CaptchaOptions> optionsAccessor, ILogger<CaptchaService> logger) : ICaptchaService
 {
     private IHttpClientFactory ClientFactory { get; } = clientFactory;
     private CaptchaOptions Options { get; } = optionsAccessor.Value;
 
-    // Verify captcha. Optionally add overload to pass in remoteIp as in the docs
-    // https://docs.hcaptcha.com/#verify-the-user-response-server-side
+    // Explicit overload used by integration tests: https://docs.hcaptcha.com/#verify-the-user-response-server-side
     public async Task<HCaptchaResult?> VerifyAsync(string secret, string response, string sitekey, CancellationToken cancellationToken = default)
     {
-        // create post data
         List<KeyValuePair<string, string>> postData =
         [
-            new KeyValuePair<string, string>("secret", secret),
-            new KeyValuePair<string, string>("response", response),
-            new KeyValuePair<string, string>("sitekey", sitekey)
+            new("secret", secret),
+            new("response", response),
+            new("sitekey", sitekey)
         ];
 
         return await PostVerification(postData, cancellationToken);
     }
 
-    public async Task<HCaptchaResult?> VerifyAsync(string? response, CancellationToken cancellationToken = default)
+    public Task<HCaptchaResult?> VerifyAsync(string? response, CancellationToken cancellationToken = default)
+        => VerifyAsync(response, remoteIp: null, cancellationToken);
+
+    public async Task<HCaptchaResult?> VerifyAsync(string? response, string? remoteIp, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(response))
         {
             return null;
         }
+
         string secret = Options.SecretKey ?? throw new InvalidOperationException($"{CaptchaOptions.CaptchaSender} {nameof(Options.SecretKey)} is unexpectedly null");
         string sitekey = Options.SiteKey ?? throw new InvalidOperationException($"{CaptchaOptions.CaptchaSender} {nameof(Options.SiteKey)} is unexpectedly null");
 
-        return await VerifyAsync(secret, response, sitekey, cancellationToken);
+        List<KeyValuePair<string, string>> postData =
+        [
+            new("secret", secret),
+            new("response", response),
+            new("sitekey", sitekey)
+        ];
+
+        if (Options.VerifyRemoteIp && !string.IsNullOrWhiteSpace(remoteIp))
+        {
+            postData.Add(new("remoteip", remoteIp));
+        }
+
+        HCaptchaResult? result = await PostVerification(postData, cancellationToken);
+
+        if (result is { Success: true } && Options.ExpectedHostname is { Length: > 0 } expectedHostname)
+        {
+            if (!string.Equals(result.Hostname, expectedHostname, StringComparison.OrdinalIgnoreCase))
+            {
+                logger.LogWarning("hCaptcha hostname mismatch: expected {Expected}, got {Actual}", expectedHostname, result.Hostname);
+                result.Success = false;
+            }
+        }
+
+        return result;
     }
 
-    public async Task<HCaptchaResult?> PostVerification(List<KeyValuePair<string, string>> postData, CancellationToken cancellationToken = default)
+    private async Task<HCaptchaResult?> PostVerification(List<KeyValuePair<string, string>> postData, CancellationToken cancellationToken = default)
     {
-        HttpClient client = ClientFactory.CreateClient("hCaptcha");
+        try
+        {
+            HttpClient client = ClientFactory.CreateClient("hCaptcha");
 
-        // request api
-        // hCaptcha wants URL-encoded POST; base url is given in IHttpClientFactory service registration
-        using FormUrlEncodedContent content = new(postData);
-        HttpResponseMessage res = await client.PostAsync("/siteverify", content, cancellationToken);
+            // hCaptcha siteverify requires URL-encoded POST; base URL is set in IHttpClientFactory registration
+            using FormUrlEncodedContent content = new(postData);
+            HttpResponseMessage res = await client.PostAsync("/siteverify", content, cancellationToken);
 
-        res.EnsureSuccessStatusCode();
-        // convert JSON string into Class
-        return JsonSerializer.Deserialize<HCaptchaResult>(await res.Content.ReadAsStringAsync(cancellationToken));
+            res.EnsureSuccessStatusCode();
+            return JsonSerializer.Deserialize<HCaptchaResult>(await res.Content.ReadAsStringAsync(cancellationToken));
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
+        {
+            logger.LogError(ex, "hCaptcha siteverify request failed");
+            return null;
+        }
     }
 }

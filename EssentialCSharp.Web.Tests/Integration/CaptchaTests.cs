@@ -12,7 +12,7 @@ public class CaptchaTests(CaptchaServiceProvider serviceProvider)
     [Test]
     public async Task CaptchaService_Verify_Success(CancellationToken cancellationToken)
     {
-        ICaptchaService captchaService = serviceProvider.ServiceProvider.GetRequiredService<ICaptchaService>();
+        CaptchaService captchaService = (CaptchaService)serviceProvider.ServiceProvider.GetRequiredService<ICaptchaService>();
 
         // From https://docs.hcaptcha.com/#integration-testing-test-keys
         string hCaptchaSecret = "0x0000000000000000000000000000000000000000";

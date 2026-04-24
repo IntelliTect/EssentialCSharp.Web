@@ -10,6 +10,12 @@
   </PropertyGroup>
   
   <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>EssentialCSharp.Web.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Remove="ListingSourceCode\**\*.cs" />
     <None Include="ListingSourceCode\**\*.cs" />
     <!-- Copy all ListingSourceCode files to output directory for testing -->
