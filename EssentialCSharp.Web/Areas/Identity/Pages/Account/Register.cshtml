@@ -39,6 +39,8 @@
                 <label asp-for="Input.Password">Password</label>
                 <span asp-validation-for="Input.Password" class="text-danger"></span>
             </div>
+            <partial name="~/Areas/Identity/Pages/_PasswordStrengthMeter.cshtml"
+                     model='new EssentialCSharp.Web.Areas.Identity.Pages.PasswordStrengthMeterModel("Input_Password", "#Input_Email,#Input_UserName,#Input_FirstName,#Input_LastName")' />
             <div class="form-floating mb-3">
                 <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
                 <label asp-for="Input.ConfirmPassword">Confirm Password</label>
@@ -90,4 +92,5 @@
 @section Scripts {
     <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
     <partial name="_ValidationScriptsPartial" />
+    <script type="module" src="~/js/password-strength.js" asp-append-version="true"></script>
 }
