@@ -122,13 +122,12 @@ public partial class Program
 
         builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure(5)));
 
-        // Data Protection — persist keys in SQL Server so they survive container restarts.
-        // Local dev: SQL Server container with WithDataVolume keeps data between restarts.
-        // Production (ACA via Terraform): Azure SQL connection string injected via env vars.
+        // Must be registered before AddDataProtection(): hosted services start in registration
+        // order, and DataProtectionHostedService reads DataProtectionKeys during startup.
+        builder.Services.AddHostedService<DatabaseMigrationService>();
+
+        // Data Protection — persist keys to SQL Server so they survive container restarts.
         // SetApplicationName ensures the discriminator is stable across container hostname changes.
-        // Production: if DataProtection:AzureKeyVaultKeyUri is set (Terraform injects it as
-        //   DataProtection__AzureKeyVaultKeyUri env var), keys are wrapped with Key Vault.
-        //   Requires: RSA key in Key Vault + managed identity with Key Vault Crypto User role.
         var dpBuilder = builder.Services.AddDataProtection()
             .SetApplicationName("EssentialCSharpWeb")
             .PersistKeysToDbContext<EssentialCSharpWebContext>();
@@ -238,7 +237,6 @@ public partial class Program
         builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
         builder.Services.AddSingleton<IRouteConfigurationService, RouteConfigurationService>();
         builder.Services.AddSingleton<IListingSourceCodeService, ListingSourceCodeService>();
-        builder.Services.AddHostedService<DatabaseMigrationService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
 
         // Add AI Chat services
@@ -359,6 +357,7 @@ public partial class Program
         loggerFactory.Dispose();
 
         WebApplication app = builder.Build();
+
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
         {

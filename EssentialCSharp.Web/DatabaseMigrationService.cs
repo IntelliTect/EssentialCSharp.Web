@@ -1,13 +1,12 @@
-﻿using EssentialCSharp.Web.Data;
+using EssentialCSharp.Web.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace EssentialCSharp.Web;
 
 /// <summary>
-/// Runs EF Core migrations synchronously in <see cref="StartAsync"/> so the schema
-/// is fully applied before the HTTP server begins accepting traffic. This prevents
-/// race conditions where a request touches the DataProtectionKeys (or Identity) tables
-/// before the migration that creates them has run.
+/// Runs EF Core database migrations on application startup. Must be registered before
+/// any hosted service that reads the database (e.g. <c>DataProtectionHostedService</c>),
+/// because <c>IHostedService</c> instances start in DI registration order.
 /// </summary>
 public class DatabaseMigrationService(IServiceScopeFactory services) : IHostedService
 {
