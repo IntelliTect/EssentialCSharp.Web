@@ -31,7 +31,7 @@ public sealed class BookListingTool
             return $"Listing {chapter}.{listing} not found. Verify that both the chapter and listing numbers are correct.";
         }
 
-        string langHint = BookToolHelpers.NormalizeExtension(response.FileExtension);
+        string langHint = response.FileExtension == "cs" ? "csharp" : response.FileExtension;
         return $"## Listing {response.ChapterNumber}.{response.ListingNumber}\n\n```{langHint}\n{response.Content}\n```";
     }
 
@@ -68,7 +68,7 @@ public sealed class BookListingTool
                 if (found >= maxResults) break;
                 if (listing.Content.Contains(pattern, StringComparison.OrdinalIgnoreCase))
                 {
-                    string langHint = BookToolHelpers.NormalizeExtension(listing.FileExtension);
+                    string langHint = listing.FileExtension == "cs" ? "csharp" : listing.FileExtension;
                     sb.AppendLine(CultureInfo.InvariantCulture, $"### Listing {listing.ChapterNumber}.{listing.ListingNumber}");
                     sb.AppendLine(CultureInfo.InvariantCulture, $"```{langHint}");
                     sb.AppendLine(listing.Content);

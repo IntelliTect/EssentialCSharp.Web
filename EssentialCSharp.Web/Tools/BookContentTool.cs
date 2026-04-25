@@ -158,7 +158,7 @@ public sealed partial class BookContentTool
             return $"Listing {chapter}.{listing} not found. Verify the chapter and listing numbers.";
         }
 
-        string langHint = BookToolHelpers.NormalizeExtension(response.FileExtension);
+        string langHint = response.FileExtension == "cs" ? "csharp" : response.FileExtension;
         var sb = new StringBuilder();
         sb.AppendLine(CultureInfo.InvariantCulture, $"## Listing {response.ChapterNumber}.{response.ListingNumber}");
         sb.AppendLine(CultureInfo.InvariantCulture, $"```{langHint}");
