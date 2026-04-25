@@ -35,6 +35,10 @@ function readSidebarPreference() {
     return storedValue === "true";
 }
 
+function isIdentityPath() {
+    return window.location.pathname.toLowerCase().startsWith("/identity");
+}
+
 function removeHashPath(path) {
     if (!path) {
         return null;
@@ -51,7 +55,8 @@ export function useSiteShell() {
     const nextPageUrl = ref(removeHashPath(window.NEXT_PAGE));
     const snackbarMessage = ref(null);
     const snackbarColor = ref(null);
-    const sidebarShown = ref(readSidebarPreference());
+    const identityPage = isIdentityPath();
+    const sidebarShown = ref(identityPage ? false : readSidebarPreference());
     const enableTocFilter = ref("none");
     const searchQuery = ref("");
     const expandedTocs = reactive(new Set());
@@ -138,7 +143,9 @@ export function useSiteShell() {
 
     function toggleSidebar() {
         sidebarShown.value = !sidebarShown.value;
-        localStorage.setItem("sidebarShown", String(sidebarShown.value));
+        if (!identityPage) {
+            localStorage.setItem("sidebarShown", String(sidebarShown.value));
+        }
     }
 
     function normalizeString(value) {

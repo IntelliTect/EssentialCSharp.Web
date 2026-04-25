@@ -51,11 +51,6 @@
     }
 }
 
-/* When sidebar is visible, adjust position */
-.layout.has-sidebar .chat-widget {
-    right: calc(24px + 375px);
-}
-
 /* Chat trigger button */
 .chat-button {
     background: linear-gradient(135deg, #1976d2 0%, #1565c0 50%, #0d47a1 100%);
