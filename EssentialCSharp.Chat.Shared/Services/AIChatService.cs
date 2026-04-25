@@ -86,16 +86,13 @@ public class AIChatService
         var enrichedPrompt = await EnrichPromptWithContext(prompt, enableContextualSearch, cancellationToken);
 
         // Construct the user input with system context if provided
-        var systemContext = systemPrompt ?? _Options.SystemPrompt;
+        var systemContext = !string.IsNullOrWhiteSpace(systemPrompt) ? systemPrompt : _Options.SystemPrompt;
 
         // Create the streaming response using the Responses API
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        List<ResponseItem> responseItems = [ResponseItem.CreateUserMessageItem(enrichedPrompt)];
-        if (systemContext is not null)
-        {
-            responseItems.Add(
-                ResponseItem.CreateSystemMessageItem(systemContext));
-        }
+        List<ResponseItem> responseItems = systemContext is not null
+            ? [ResponseItem.CreateSystemMessageItem(systemContext), ResponseItem.CreateUserMessageItem(enrichedPrompt)]
+            : [ResponseItem.CreateUserMessageItem(enrichedPrompt)];
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         var streamingUpdates = _ResponseClient.CreateResponseStreamingAsync(
             responseItems,
@@ -319,16 +316,13 @@ public class AIChatService
         CancellationToken cancellationToken = default)
     {
         // Construct the user input with system context if provided
-        var systemContext = systemPrompt ?? _Options.SystemPrompt;
+        var systemContext = !string.IsNullOrWhiteSpace(systemPrompt) ? systemPrompt : _Options.SystemPrompt;
 
         // Create the streaming response using the Responses API
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        List<ResponseItem> responseItems = [ResponseItem.CreateUserMessageItem(prompt)];
-        if (systemContext is not null)
-        {
-            responseItems.Add(
-                ResponseItem.CreateSystemMessageItem(systemContext));
-        }
+        List<ResponseItem> responseItems = systemContext is not null
+            ? [ResponseItem.CreateSystemMessageItem(systemContext), ResponseItem.CreateUserMessageItem(prompt)]
+            : [ResponseItem.CreateUserMessageItem(prompt)];
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
         // Create the response using the Responses API

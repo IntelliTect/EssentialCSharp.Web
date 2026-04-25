@@ -24,21 +24,17 @@ public class ChatController : ControllerBase
     [HttpPost("message")]
     public async Task<IActionResult> SendMessage([FromBody] ChatMessageRequest request, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.Message))
-        {
+        request.Message = request.Message.Trim();
+        if (string.IsNullOrEmpty(request.Message))
             return BadRequest(new { error = "Message cannot be empty." });
-        }
 
-        // Require user authentication for chat
-        if (!User.Identity?.IsAuthenticated ?? true)
-        {
-            return Unauthorized(new { error = "User must be logged in to use chat." });
-        }
+        var previousResponseId = string.IsNullOrWhiteSpace(request.PreviousResponseId)
+            ? null
+            : request.PreviousResponseId.Trim();
 
         var (response, responseId) = await _AiChatService.GetChatCompletion(
             prompt: request.Message,
-            systemPrompt: request.SystemPrompt,
-            previousResponseId: request.PreviousResponseId,
+            previousResponseId: previousResponseId,
             enableContextualSearch: request.EnableContextualSearch,
             cancellationToken: cancellationToken);
 
@@ -53,20 +49,17 @@ public class ChatController : ControllerBase
     [HttpPost("stream")]
     public async Task StreamMessage([FromBody] ChatMessageRequest request, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.Message))
+        request.Message = request.Message.Trim();
+        if (string.IsNullOrEmpty(request.Message))
         {
             Response.StatusCode = 400;
-            await Response.WriteAsync(JsonSerializer.Serialize(new { error = "Message cannot be empty." }), cancellationToken);
+            await Response.WriteAsJsonAsync(new { error = "Message cannot be empty." }, CancellationToken.None);
             return;
         }
 
-        // Require user authentication for chat
-        if (!User.Identity?.IsAuthenticated ?? true)
-        {
-            Response.StatusCode = 401;
-            await Response.WriteAsync(JsonSerializer.Serialize(new { error = "User must be logged in to use chat." }), cancellationToken);
-            return;
-        }
+        var previousResponseId = string.IsNullOrWhiteSpace(request.PreviousResponseId)
+            ? null
+            : request.PreviousResponseId.Trim();
 
         Response.ContentType = "text/event-stream";
         Response.Headers.CacheControl = "no-cache";
@@ -76,8 +69,7 @@ public class ChatController : ControllerBase
         {
             await foreach (var (text, responseId) in _AiChatService.GetChatCompletionStream(
                 prompt: request.Message,
-                systemPrompt: request.SystemPrompt,
-                previousResponseId: request.PreviousResponseId,
+                previousResponseId: previousResponseId,
                 enableContextualSearch: request.EnableContextualSearch,
                 cancellationToken: cancellationToken))
             {

@@ -71,6 +71,10 @@ public class ExternalLoginModel(
         }
 
         // Sign in the user with this external login provider if the user already has a login.
+        // bypassTwoFactor: true is intentional — OAuth providers (GitHub, Microsoft) handle their own
+        // authentication including any provider-side MFA. The app's local TOTP 2FA is designed to protect
+        // the password-based sign-in path only. If policy changes to require local 2FA for all sign-in
+        // methods, set bypassTwoFactor to false AND add a RequiresTwoFactor redirect handler here.
         Microsoft.AspNetCore.Identity.SignInResult result = await signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
         if (result.Succeeded)
         {
