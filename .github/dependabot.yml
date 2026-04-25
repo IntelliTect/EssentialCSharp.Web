@@ -31,6 +31,11 @@ updates:
     schedule:
       interval: "weekly" 
 
+  - package-ecosystem: "npm"
+    directory: "/EssentialCSharp.Web/"
+    schedule:
+      interval: "weekly"
+
   - package-ecosystem: "docker"
     # Look for a `Dockerfile` in the `root` directory
     directory: "/EssentialCSharp.Web/"
