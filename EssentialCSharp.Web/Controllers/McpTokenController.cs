@@ -26,12 +26,12 @@ public class McpTokenController(McpApiTokenService tokenService) : ControllerBas
             return BadRequest(new { Error = "Token name must be 256 characters or fewer." });
 
         DateTime? expiresAt = null;
-        if (request?.ExpiresOn.HasValue == true)
+        if (request?.ExpiresOn is DateOnly expiresOn)
         {
-            if (request.ExpiresOn.Value < DateOnly.FromDateTime(DateTime.UtcNow))
+            if (expiresOn < DateOnly.FromDateTime(DateTime.UtcNow))
                 return BadRequest(new { Error = "ExpiresOn must be today or in the future." });
             // Convert date-only boundary to end-of-day UTC instant before persisting
-            expiresAt = request.ExpiresOn.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
+            expiresAt = expiresOn.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
         }
 
         var (rawToken, entity) = await tokenService.CreateTokenAsync(

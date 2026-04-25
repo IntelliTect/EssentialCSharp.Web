@@ -354,22 +354,17 @@ public class AIChatService
                     Dictionary<string, object?> arguments = [];
                     foreach (var kvp in jsonArguments)
                     {
-                        if (kvp.Value is System.Text.Json.JsonElement jsonElement)
-                        {
-                            arguments[kvp.Key] = jsonElement.ValueKind switch
+                        arguments[kvp.Key] = kvp.Value is System.Text.Json.JsonElement jsonElement
+                            ? jsonElement.ValueKind switch
                             {
                                 System.Text.Json.JsonValueKind.String => jsonElement.GetString(),
                                 System.Text.Json.JsonValueKind.Number => jsonElement.GetDecimal(),
                                 System.Text.Json.JsonValueKind.True => true,
                                 System.Text.Json.JsonValueKind.False => false,
                                 System.Text.Json.JsonValueKind.Null => null,
-                                _ => jsonElement.ToString()
-                            };
-                        }
-                        else
-                        {
-                            arguments[kvp.Key] = kvp.Value;
-                        }
+                                _ => (object?)jsonElement.ToString()
+                            }
+                            : kvp.Value;
                     }
 
                     var toolResult = await mcpClient.CallToolAsync(

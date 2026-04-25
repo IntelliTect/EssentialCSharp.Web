@@ -260,9 +260,14 @@ public partial class Program
                 policy.AddAuthenticationSchemes("McpBearer")
                       .RequireAuthenticatedUser()));
 
+        builder.Services.AddSingleton<IGuidelinesService, GuidelinesService>();
+
         builder.Services.AddMcpServer()
             .WithHttpTransport(options => options.Stateless = true)
-            .WithTools<BookSearchTool>();
+            .WithTools<BookSearchTool>()
+            .WithTools<BookListingTool>()
+            .WithTools<BookGuidelinesTool>()
+            .WithTools<BookContentTool>();
 
         // Add Rate Limiting for API endpoints
         builder.Services.AddRateLimiter(options =>

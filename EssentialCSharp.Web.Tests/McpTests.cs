@@ -31,7 +31,7 @@ public class McpTests(WebApplicationFactory factory)
     {
         HttpClient client = factory.CreateClient();
 
-        var request = CreateMcpInitializeRequest("/mcp");
+        using var request = CreateMcpInitializeRequest("/mcp");
         using HttpResponseMessage response = await client.SendAsync(request);
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
@@ -65,7 +65,7 @@ public class McpTests(WebApplicationFactory factory)
         HttpClient client = factory.CreateClient();
 
         // Step 1: Initialize the MCP session
-        var initRequest = CreateMcpInitializeRequest("/mcp");
+        using var initRequest = CreateMcpInitializeRequest("/mcp");
         initRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", rawToken);
 
         using HttpResponseMessage initResponse = await client.SendAsync(initRequest);
@@ -77,7 +77,7 @@ public class McpTests(WebApplicationFactory factory)
             sessionId = sessionIdValues.First();
 
         // Step 2: List tools
-        var listToolsRequest = new HttpRequestMessage(HttpMethod.Post, "/mcp")
+        using var listToolsRequest = new HttpRequestMessage(HttpMethod.Post, "/mcp")
         {
             Content = new StringContent(
                 """{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}""",
@@ -116,7 +116,7 @@ public class McpTests(WebApplicationFactory factory)
     public async Task McpEndpoint_WithInvalidToken_Returns401()
     {
         HttpClient client = factory.CreateClient();
-        var request = CreateMcpInitializeRequest("/mcp");
+        using var request = CreateMcpInitializeRequest("/mcp");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", "mcp_invalid_token_that_does_not_exist");
         using HttpResponseMessage response = await client.SendAsync(request);
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
@@ -147,7 +147,7 @@ public class McpTests(WebApplicationFactory factory)
         }
 
         HttpClient client = factory.CreateClient();
-        var request = CreateMcpInitializeRequest("/mcp");
+        using var request = CreateMcpInitializeRequest("/mcp");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", rawToken);
         using HttpResponseMessage response = await client.SendAsync(request);
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
@@ -179,7 +179,7 @@ public class McpTests(WebApplicationFactory factory)
         }
 
         HttpClient client = factory.CreateClient();
-        var request = CreateMcpInitializeRequest("/mcp");
+        using var request = CreateMcpInitializeRequest("/mcp");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", rawToken);
         using HttpResponseMessage response = await client.SendAsync(request);
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
