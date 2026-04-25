@@ -312,13 +312,11 @@ public sealed class BookSearchTool
         {
             assessment = "**Mentioned** — referenced in book content but no dedicated section heading";
         }
-        else if (!semanticAvailable)
-        {
-            assessment = "**Not found in headings** — semantic search unavailable; topic may still be discussed in prose";
-        }
         else
         {
-            assessment = "**Not covered** — not found in section headings or semantic search";
+            assessment = semanticAvailable
+                ? "**Not covered** — not found in section headings or semantic search"
+                : "**Not found in headings** — semantic search unavailable; topic may still be discussed in prose";
         }
 
         sb.AppendLine(CultureInfo.InvariantCulture, $"**Assessment:** {assessment}");

@@ -34,11 +34,11 @@ public sealed class BookGuidelinesTool
 
         IEnumerable<GuidelineListing> filtered = _guidelinesService.Guidelines;
 
-        if (chapter.HasValue)
-            filtered = filtered.Where(g => g.ChapterNumber == chapter.Value);
+        if (chapter is int chapterValue)
+            filtered = filtered.Where(g => g.ChapterNumber == chapterValue);
 
-        if (typeFilter.HasValue)
-            filtered = filtered.Where(g => g.Type == typeFilter.Value);
+        if (typeFilter is GuidelineType typeFilterValue)
+            filtered = filtered.Where(g => g.Type == typeFilterValue);
 
         if (!string.IsNullOrWhiteSpace(keyword))
             filtered = filtered.Where(g =>
