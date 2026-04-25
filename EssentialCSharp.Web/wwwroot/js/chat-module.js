@@ -144,8 +144,16 @@ export function useChatWidget() {
     async function ensureCaptchaWidget() {
         if (!window.HCAPTCHA_SITE_KEY) throw new Error('Captcha is not configured.');
         await nextTick();
-        if (!window.hcaptcha?.render) throw new Error('Captcha script is not ready.');
         if (captchaWidgetId !== null) return;
+
+        // Wait for hcaptcha.js to load — uses the shared whenHcaptchaReady queue from hcaptcha-form.js
+        await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('Captcha script is not ready.')), 10000);
+            window.EssentialCSharp.HCaptcha.whenHcaptchaReady(() => {
+                clearTimeout(timeout);
+                resolve();
+            });
+        });
 
         captchaWidgetId = window.hcaptcha.render(captchaContainerEl.value, {
             sitekey: window.HCAPTCHA_SITE_KEY,

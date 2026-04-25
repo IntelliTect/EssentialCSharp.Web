@@ -11,6 +11,7 @@ const {
     isTyping,
     chatMessagesEl,
     chatInputField,
+    captchaContainerEl,
     openChatDialog,
     closeChatDialog,
     clearChatHistory,
@@ -189,6 +190,8 @@ const {
                             Type your question and press Enter or click send. Maximum 500 characters.
                         </div>
                     </form>
+                    <!-- Invisible hCaptcha widget attachment point — no visible UI in invisible mode -->
+                    <div ref="captchaContainerEl" style="display:none;" aria-hidden="true"></div>
                 </div>
             </div>
         </div>

@@ -188,6 +188,7 @@
         window.TRYDOTNET_ORIGIN = @Json.Serialize(Configuration["TryDotNet:Origin"]);
         window.BUILD_LABEL = @Json.Serialize(buildLabel);
         window.ENABLE_CHAT_WIDGET = @Json.Serialize(!Context.Request.Path.StartsWithSegments("/Identity"));
+        window.HCAPTCHA_SITE_KEY = @Json.Serialize(Configuration["HCaptcha:SiteKey"]);
     </script>
     <script src="~/dist/assets/site-shell.js" type="module" asp-append-version="true"></script>
 </body>
