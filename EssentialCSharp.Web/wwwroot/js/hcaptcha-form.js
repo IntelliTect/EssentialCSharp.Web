@@ -44,6 +44,41 @@ window.EssentialCSharp = window.EssentialCSharp || {};
         return window.jQuery(form).valid();
     }
 
+    function resolveGlobalCallback(callbackName) {
+        if (!callbackName) {
+            return null;
+        }
+
+        const callback = window[callbackName];
+        return typeof callback === 'function' ? callback : null;
+    }
+
+    function renderDeclarativeWidgets() {
+        document.querySelectorAll('.h-captcha[data-sitekey]').forEach(function (element) {
+            if (element.dataset.ecsRendered === 'true') {
+                return;
+            }
+
+            const siteKey = element.dataset.sitekey;
+            if (!siteKey) {
+                return;
+            }
+
+            const options = {
+                sitekey: siteKey,
+                size: element.dataset.size || 'normal'
+            };
+
+            const callback = resolveGlobalCallback(element.dataset.callback);
+            if (callback) {
+                options.callback = callback;
+            }
+
+            window.hcaptcha.render(element, options);
+            element.dataset.ecsRendered = 'true';
+        });
+    }
+
     namespace.whenHcaptchaReady = function (callback) {
         if (isHcaptchaReady()) {
             callback();
@@ -122,6 +157,12 @@ window.EssentialCSharp = window.EssentialCSharp || {};
             });
         });
     };
+
+    onDomReady(function () {
+        namespace.whenHcaptchaReady(function () {
+            renderDeclarativeWidgets();
+        });
+    });
 })(window.EssentialCSharp.HCaptcha = window.EssentialCSharp.HCaptcha || {});
 
 window.ecsOnHcaptchaLoad = function () {

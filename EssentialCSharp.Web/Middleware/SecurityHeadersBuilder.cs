@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using EssentialCSharp.Web.Middleware.Constants;
 
 namespace EssentialCSharp.Web.Middleware;
@@ -35,8 +35,12 @@ public class SecurityHeadersBuilder
         AddCustomHeader("X-Permitted-Cross-Domain-Policies", "master-only");
         // <add name="Referrer-Policy" value="no-referrer" />
         AddCustomHeader("Referrer-Policy", "no-referrer");
-        // <add name="Permissions-Policy" value="accelerometer=(),ambient-light-sensor=(),autoplay=(),battery=(),camera=(),display-capture=(),document-domain=(),encrypted-media=(),fullscreen=(),gamepad=(),geolocation=(),gyroscope=(),layout-animations=(self),legacy-image-formats=(self),magnetometer=(),microphone=(),midi=(),oversized-images=(self),payment=(),picture-in-picture=(),publickey-credentials-get=(),speaker-selection=(),sync-xhr=(self),unoptimized-images=(self),unsized-media=(self),usb=(),screen-wake-lock=(),web-share=(),xr-spatial-tracking=()" />
-        AddCustomHeader("Permissions-Policy", "accelerometer=(),ambient-light-sensor=(),autoplay=(),battery=(),camera=(),display-capture=(),document-domain=(),encrypted-media=(),fullscreen=(),gamepad=(),geolocation=(),gyroscope=(),layout-animations=(self),legacy-image-formats=(self),magnetometer=(),microphone=(),midi=(),oversized-images=(self),payment=(),picture-in-picture=(),publickey-credentials-get=(),speaker-selection=(),sync-xhr=(self),unoptimized-images=(self),unsized-media=(self),usb=(),screen-wake-lock=(),web-share=(),xr-spatial-tracking=()");
+        const string permissionsPolicy =
+            "accelerometer=(), autoplay=(), camera=(), display-capture=(), encrypted-media=(), fullscreen=(), " +
+            "gamepad=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), " +
+            "picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), sync-xhr=(), usb=(), " +
+            "web-share=(), xr-spatial-tracking=()";
+        AddCustomHeader("Permissions-Policy", permissionsPolicy);
 
         // Headers to Remove: https://owasp.org/www-project-secure-headers/ci/headers_remove.json
         RemoveServerHeader();
