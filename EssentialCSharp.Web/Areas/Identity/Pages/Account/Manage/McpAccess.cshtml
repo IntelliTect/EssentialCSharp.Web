@@ -14,6 +14,7 @@
     <p>
         The <strong>Model Context Protocol (MCP)</strong> lets AI tools like GitHub Copilot and Claude access
         Essential C# book content directly. Create a named API token below and add it to your MCP client configuration.
+        <a href="/mcp-setup" class="ms-1">Setup guide &amp; FAQ →</a>
     </p>
 
     @if (Model.GeneratedToken is not null && Model.GeneratedTokenEntity is not null)
@@ -43,7 +44,7 @@
     }
   }
 }</code></pre>
-                <p class="mt-2">To test locally with mcp-inspector, set the URL to <code>@(HttpContext.Request.Scheme)://@(HttpContext.Request.Host)/mcp</code> and add an <code>Authorization</code> header with value <code>Bearer &lt;token&gt;</code>.</p>
+                <p class="mt-2 small text-muted">See the <a href="/mcp-setup#setup">AI Tools setup guide</a> for per-client configuration snippets.</p>
             </div>
         </div>
     }

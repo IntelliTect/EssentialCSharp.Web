@@ -1,0 +1,431 @@
+@using Microsoft.AspNetCore.Identity
+@using EssentialCSharp.Web.Areas.Identity.Data
+@inject SignInManager<EssentialCSharpWebUser> SignInManager
+@{
+    ViewData["Title"] = "AI Tools Setup";
+    string mcpUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/mcp";
+    bool isSignedIn = SignInManager.IsSignedIn(User);
+}
+
+<div class="container py-4" style="max-width:900px">
+
+    
+    <div class="mb-5">
+        <h1 class="mb-2">Use AI Tools with Essential C#</h1>
+        <p class="lead text-muted">
+            Connect GitHub Copilot, Claude, Cursor, or any MCP-compatible AI client directly to the Essential C#
+            book content. Search chapters by concept or browse the full table of contents — right from your editor.
+        </p>
+        @if (isSignedIn)
+        {
+            <a href="/Identity/Account/Manage/McpAccess" class="btn btn-primary">Get your token →</a>
+        }
+        else
+        {
+            <a href="/Identity/Account/Login?returnUrl=%2FIdentity%2FAccount%2FManage%2FMcpAccess" class="btn btn-primary">Sign in to get a token →</a>
+        }
+        <a href="#setup" class="btn btn-outline-secondary ms-2">Setup guide ↓</a>
+    </div>
+
+    
+    <section id="setup" class="mb-5">
+        <h2 class="mb-1">Setup Guide</h2>
+        <p class="text-muted mb-3">Three steps to connect any MCP-compatible client.</p>
+
+        <h5>Step 1 — Create an account</h5>
+        <p>
+            @if (isSignedIn)
+            {
+                <span class="text-success">✔ You're signed in.</span>
+            }
+            else
+            {
+                <span>
+                    <a href="/Identity/Account/Register">Register</a> or
+                    <a href="/Identity/Account/Login">sign in</a> to your Essential C# account.
+                </span>
+            }
+        </p>
+
+        <h5>Step 2 — Generate a token</h5>
+        <p>
+            Go to <a href="/Identity/Account/Manage/McpAccess">MCP Access</a> under your account settings.
+            Enter a name for the token (e.g. "VS Code"), choose an optional expiry date, and click
+            <strong>Create Token</strong>. Copy the token — it won't be shown again.
+        </p>
+
+        <h5 class="mb-3">Step 3 — Configure your client</h5>
+
+        <div class="accordion" id="clientAccordion">
+
+            
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapseVscode" aria-expanded="true" aria-controls="collapseVscode">
+                        VS Code
+                    </button>
+                </h2>
+                <div id="collapseVscode" class="accordion-collapse collapse show" data-bs-parent="#clientAccordion">
+                    <div class="accordion-body">
+                        <p>
+                            Add to your VS Code user <code>mcp.json</code> so the server is available across all workspaces.
+                            Open it via <kbd>Ctrl+Shift+P</kbd> → <em>MCP: Open User Configuration</em>:
+                        </p>
+                        <ul class="small text-muted mb-2">
+                            <li><strong>Windows:</strong> <code>%APPDATA%\Code\User\mcp.json</code></li>
+                            <li><strong>macOS:</strong> <code>~/Library/Application Support/Code/User/mcp.json</code></li>
+                            <li><strong>Linux:</strong> <code>~/.config/Code/User/mcp.json</code></li>
+                        </ul>
+                        <div class="position-relative">
+                            <pre class="bg-light p-3 border rounded" id="vscodeSnippet"><code>{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "ecs-token",
+      "description": "Essential C# MCP token (from essentialcsharp.com)",
+      "password": true
+    }
+  ],
+  "servers": {
+    "essentialcsharp": {
+      "type": "http",
+      "url": "@mcpUrl",
+      "headers": {
+        "Authorization": "Bearer ${input:ecs-token}"
+      }
+    }
+  }
+}</code></pre>
+                            <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
+                                    onclick="copySnippet('vscodeSnippet', this)">Copy</button>
+                        </div>
+                        <p class="small text-muted mt-2">
+                            VS Code will prompt you to enter your token once and store it securely — it's never written
+                            to disk in plain text.
+                            To scope to a single workspace instead, add the same <code>servers</code> block (without the outer
+                            <code>mcp</code> wrapper) to <code>.vscode/mcp.json</code> in your project root.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapseGhCli" aria-expanded="false" aria-controls="collapseGhCli">
+                        GitHub Copilot CLI
+                    </button>
+                </h2>
+                <div id="collapseGhCli" class="accordion-collapse collapse" data-bs-parent="#clientAccordion">
+                    <div class="accordion-body">
+                        <p>
+                            Add to <code>~/.copilot/mcp-config.json</code> (create the file if it doesn't exist)
+                            to make the server available in every Copilot CLI session:
+                        </p>
+                        <div class="position-relative">
+                            <pre class="bg-light p-3 border rounded" id="ghCliSnippet"><code>{
+  "mcpServers": {
+    "essentialcsharp": {
+      "type": "http",
+      "url": "@mcpUrl",
+      "headers": {
+        "Authorization": "Bearer &lt;your-token&gt;"
+      }
+    }
+  }
+}</code></pre>
+                            <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
+                                    onclick="copySnippet('ghCliSnippet', this)">Copy</button>
+                        </div>
+                        <p class="small text-muted mt-2">
+                            Replace <code>&lt;your-token&gt;</code> with the token you created in Step 2.
+                            To scope to a single project instead, add the same config to <code>.mcp.json</code>
+                            in your project root.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapseClaude" aria-expanded="false" aria-controls="collapseClaude">
+                        Claude Desktop
+                    </button>
+                </h2>
+                <div id="collapseClaude" class="accordion-collapse collapse" data-bs-parent="#clientAccordion">
+                    <div class="accordion-body">
+                        <p>Edit your Claude Desktop config file:</p>
+                        <ul class="small mb-2">
+                            <li><strong>Windows:</strong> <code>%APPDATA%\Claude\claude_desktop_config.json</code></li>
+                            <li><strong>macOS:</strong> <code>~/Library/Application Support/Claude/claude_desktop_config.json</code></li>
+                        </ul>
+                        <div class="position-relative">
+                            <pre class="bg-light p-3 border rounded" id="claudeSnippet"><code>{
+  "mcpServers": {
+    "essentialcsharp": {
+      "url": "@mcpUrl",
+      "headers": {
+        "Authorization": "Bearer &lt;your-token&gt;"
+      }
+    }
+  }
+}</code></pre>
+                            <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
+                                    onclick="copySnippet('claudeSnippet', this)">Copy</button>
+                        </div>
+                        <p class="small text-muted mt-2">
+                            Replace <code>&lt;your-token&gt;</code> with the token you created in Step 2.
+                            If your version of Claude Desktop doesn't support remote MCP yet, use
+                            <code>npx -y mcp-remote @mcpUrl</code> with the
+                            <code>MCP_REMOTE_HEADER_AUTHORIZATION</code> env var set to your Bearer token.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapseClaudeCode" aria-expanded="false" aria-controls="collapseClaudeCode">
+                        Claude Code
+                    </button>
+                </h2>
+                <div id="collapseClaudeCode" class="accordion-collapse collapse" data-bs-parent="#clientAccordion">
+                    <div class="accordion-body">
+                        <p>Run this command once to register the server for all your projects:</p>
+                        <div class="position-relative">
+                            <pre class="bg-light p-3 border rounded" id="claudeCodeSnippet"><code>claude mcp add --transport http essentialcsharp @mcpUrl \
+  --scope user \
+  --header "Authorization: Bearer &lt;your-token&gt;"</code></pre>
+                            <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
+                                    onclick="copySnippet('claudeCodeSnippet', this)">Copy</button>
+                        </div>
+                        <p class="small text-muted mt-2">
+                            Replace <code>&lt;your-token&gt;</code> with the token you created in Step 2.
+                            Omit <code>--scope user</code> to limit to the current project only, or use
+                            <code>--scope project</code> to commit the server to <code>.mcp.json</code> for your team.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapseCursor" aria-expanded="false" aria-controls="collapseCursor">
+                        Cursor
+                    </button>
+                </h2>
+                <div id="collapseCursor" class="accordion-collapse collapse" data-bs-parent="#clientAccordion">
+                    <div class="accordion-body">
+                        <p>
+                            Add to <code>~/.cursor/mcp.json</code> to make the server available in all Cursor workspaces
+                            (create the file if it doesn't exist):
+                        </p>
+                        <div class="position-relative">
+                            <pre class="bg-light p-3 border rounded" id="cursorSnippet"><code>{
+  "mcpServers": {
+    "essentialcsharp": {
+      "url": "@mcpUrl",
+      "headers": {
+        "Authorization": "Bearer &lt;your-token&gt;"
+      }
+    }
+  }
+}</code></pre>
+                            <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
+                                    onclick="copySnippet('cursorSnippet', this)">Copy</button>
+                        </div>
+                        <p class="small text-muted mt-2">
+                            Replace <code>&lt;your-token&gt;</code> with the token you created in Step 2.
+                            To scope to a single project instead, use <code>.cursor/mcp.json</code> in your project root.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section id="tools" class="mb-5">
+        <div class="d-flex align-items-center mb-3">
+            <h2 class="mb-0">Available Tools</h2>
+            <button class="btn btn-sm btn-outline-secondary ms-auto" id="expandToolsBtn"
+                    onclick="toggleAllTools(this)">Expand all</button>
+        </div>
+        <p>Once connected, your AI client has access to the following tools:</p>
+
+        <details class="card mb-3">
+            <summary class="card-header d-flex align-items-center gap-2" style="cursor:pointer;list-style:none">
+                <span class="details-chevron">&#9656;</span>
+                <span class="font-monospace fw-semibold">search_book_content</span>
+                <span class="text-muted small ms-auto">Semantic search over book chapters</span>
+            </summary>
+            <div class="card-body">
+                <p class="card-text">
+                    Semantic vector search over all Essential C# book chapters. Returns the most relevant text
+                    chunks with chapter number, section heading, and relevance score. Use this to ask questions
+                    like "How does async/await work in C#?" or "What is pattern matching?"
+                </p>
+                <dl class="row mb-0 small">
+                    <dt class="col-sm-3">Input</dt>
+                    <dd class="col-sm-9"><code>query</code> — a natural-language description of the C# concept to find</dd>
+                    <dt class="col-sm-3">Returns</dt>
+                    <dd class="col-sm-9">Ranked text chunks with chapter, section, and score context</dd>
+                </dl>
+            </div>
+        </details>
+
+        <details class="card mb-3">
+            <summary class="card-header d-flex align-items-center gap-2" style="cursor:pointer;list-style:none">
+                <span class="details-chevron">&#9656;</span>
+                <span class="font-monospace fw-semibold">get_chapter_list</span>
+                <span class="text-muted small ms-auto">Full table of contents</span>
+            </summary>
+            <div class="card-body">
+                <p class="card-text">
+                    Returns the full table of contents for Essential C# — all chapters and their sections with
+                    navigation links. Useful for orientation or when you want to explore a specific chapter.
+                </p>
+                <dl class="row mb-0 small">
+                    <dt class="col-sm-3">Input</dt>
+                    <dd class="col-sm-9">None</dd>
+                    <dt class="col-sm-3">Returns</dt>
+                    <dd class="col-sm-9">Markdown table of contents with chapter titles, sections, and links</dd>
+                </dl>
+            </div>
+        </details>
+    </section>
+
+    
+    <section id="faq" class="mb-5">
+        <h2 class="mb-3">Troubleshooting &amp; FAQ</h2>
+
+        <div class="accordion" id="faqAccordion">
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#faq1" aria-expanded="false">
+                        I'm getting a 401 Unauthorized error
+                    </button>
+                </h2>
+                <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        <ul>
+                            <li>Make sure you've included the <code>Authorization: Bearer mcp_...</code> header in your client config.</li>
+                            <li>Check that the token hasn't been revoked or expired on the <a href="/Identity/Account/Manage/McpAccess">MCP Access</a> page.</li>
+                            <li>Token values are case-sensitive — copy/paste carefully.</li>
+                            <li>The token must start with <code>mcp_</code>. Tokens from other systems (e.g. GitHub tokens) won't work.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#faq3" aria-expanded="false">
+                        Should I use one token per client?
+                    </button>
+                </h2>
+                <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        <p>
+                            <strong>Yes — create a dedicated token for each client.</strong> For example: one token named
+                            "VS Code", a separate one named "Claude Desktop", and so on. This way, if a token is ever
+                            compromised or you stop using a particular client, you can revoke just that token without
+                            disrupting your other tools. Tokens are free and easy to create, so there's no reason to share them.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#faq4" aria-expanded="false">
+                        I lost my token — how do I recover it?
+                    </button>
+                </h2>
+                <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        <p>
+                            Token values are stored as a one-way hash and cannot be recovered. Revoke the old token
+                            on the <a href="/Identity/Account/Manage/McpAccess">MCP Access</a> page and create a new one.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#faq5" aria-expanded="false">
+                        What is MCP?
+                    </button>
+                </h2>
+                <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        <p>
+                            The <a href="https://modelcontextprotocol.io" target="_blank" rel="noopener">Model Context Protocol (MCP)</a>
+                            is an open standard that lets AI assistants call external tools and data sources in a
+                            structured, secure way. It's supported by GitHub Copilot, Claude, Cursor, and many
+                            other AI coding tools. This site exposes its book content as an MCP server so AI
+                            assistants can answer C# questions with accurate, up-to-date content from the book.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+</div>
+
+@section Scripts {
+    <style>
+        .details-chevron {
+            display: inline-block;
+            transition: transform 0.2s ease;
+            color: var(--bs-secondary-color, #6c757d);
+            font-size: .75rem;
+        }
+        details[open] > summary .details-chevron {
+            transform: rotate(90deg);
+        }
+    </style>
+    <script>
+        function toggleAllTools(btn) {
+            const details = document.querySelectorAll('#tools details');
+            const anyOpen = [...details].some(d => d.open);
+            details.forEach(d => d.open = !anyOpen);
+            btn.textContent = anyOpen ? 'Expand all' : 'Collapse all';
+        }
+
+        function copySnippet(elementId, btn) {
+            const pre = document.getElementById(elementId);
+            const text = pre.innerText;
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    const orig = btn.textContent;
+                    btn.textContent = 'Copied!';
+                    setTimeout(() => btn.textContent = orig, 2000);
+                })
+                .catch(() => {
+                    const range = document.createRange();
+                    range.selectNode(pre);
+                    window.getSelection().removeAllRanges();
+                    window.getSelection().addRange(range);
+                    document.execCommand('copy');
+                    window.getSelection().removeAllRanges();
+                });
+        }
+    </script>
+}
