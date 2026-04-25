@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Http.Resilience;
 using OpenTelemetry;
 using OpenTelemetry.Instrumentation.AspNetCore;
 using OpenTelemetry.Metrics;
@@ -242,6 +243,21 @@ public partial class Program
         // Add AI Chat services — always registered (Ollama in local mode, Azure OpenAI in production).
         // AIOptions__UseLocalAI=true enables Ollama local mode (set via aspire secret or dashboard).
         builder.AddAIServices(configuration);
+
+        // When using local Ollama, Polly's default 30s TotalRequestTimeout fires before LLM inference
+        // completes (qwen2.5-coder:7b consistently takes >30s). Override globally — this code path
+        // is only reached in local dev when UseLocalAI=true, so widening all clients is acceptable.
+        var aiOptsForTimeout = configuration.GetSection("AIOptions").Get<EssentialCSharp.Chat.AIOptions>();
+        if (aiOptsForTimeout?.UseLocalAI == true)
+        {
+            builder.Services.PostConfigureAll<HttpStandardResilienceOptions>(options =>
+            {
+                options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(10);
+                options.AttemptTimeout.Timeout = TimeSpan.FromMinutes(5);
+                // Polly requires SamplingDuration >= 2x AttemptTimeout; default 30s is now invalid.
+                options.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(11);
+            });
+        }
 
         // Add Rate Limiting for API endpoints
         builder.Services.AddRateLimiter(options =>
