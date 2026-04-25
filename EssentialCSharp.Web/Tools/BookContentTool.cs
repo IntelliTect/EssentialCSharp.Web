@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -33,7 +33,7 @@ public sealed partial class BookContentTool
         _searchService = serviceProvider.GetService<AISearchService>();
     }
 
-    [McpServerTool(Title = "Get Section Content", ReadOnly = true, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Get Section Content", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
      Description("Retrieve the prose content of a specific book section identified by its slug/key (e.g., 'hello-world', 'creating-editing-compiling-and-running-c-source-code'). Returns the section text with code examples preserved. Use GetChapterSections to discover available slugs.")]
     public async Task<string> GetSectionContent(
         [Description("The section slug/key (e.g., 'hello-world'). Use GetChapterSections to get valid slugs.")] string sectionKey,
@@ -145,7 +145,7 @@ public sealed partial class BookContentTool
         return body.Length == 0 ? $"No content found after section heading '{mapping.RawHeading}'." : header.Append(body).ToString();
     }
 
-    [McpServerTool(Title = "Get Listing With Context", ReadOnly = true, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Get Listing With Context", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
      Description("Retrieve a specific book listing's source code together with the semantic book content that explains it. Combines code from GetListingSourceCode with related explanatory text found via search. Ideal for understanding what a listing demonstrates.")]
     public async Task<string> GetListingWithContext(
         [Description("The chapter number of the listing.")] int chapter,
@@ -191,7 +191,7 @@ public sealed partial class BookContentTool
         return sb.ToString();
     }
 
-    [McpServerTool(Title = "Get Navigation Context", ReadOnly = true, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Get Navigation Context", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
      Description("Get the navigation context for a book section: its breadcrumb path, the previous and next sections, its parent section, and its sibling sections. Useful for understanding where a section sits in the book's structure.")]
     public string GetNavigationContext(
         [Description("The section slug/key (e.g., 'hello-world'). Use GetChapterSections to get valid slugs.")] string sectionKey)
@@ -325,7 +325,7 @@ public sealed partial class BookContentTool
         return sb.ToString();
     }
 
-    [McpServerTool(Title = "Get Chapter Summary", ReadOnly = true, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Get Chapter Summary", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
      Description("Get a structural overview of a book chapter: its top-level section headings in reading order, and the coding guidelines associated with that chapter. Useful for understanding what a chapter covers before diving in.")]
     public string GetChapterSummary(
         [Description("The chapter number (e.g., 5 for Chapter 5).")] int chapter)

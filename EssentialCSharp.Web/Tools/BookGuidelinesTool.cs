@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Globalization;
 using System.Text;
 using EssentialCSharp.Web.Services;
@@ -16,7 +16,7 @@ public sealed class BookGuidelinesTool
         _guidelinesService = guidelinesService;
     }
 
-    [McpServerTool(Title = "Get C# Guidelines", ReadOnly = true, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Get C# Guidelines", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
      Description("Retrieve C# coding guidelines from the Essential C# book. Optionally filter by keyword, chapter number, or guideline type (do/consider/avoid/donot). The book contains guidelines covering naming conventions, error handling, LINQ, async/await, generics, and many other topics. Each guideline includes its chapter and subsection context.")]
     public string GetCSharpGuidelines(
         [Description("Optional keyword to filter guidelines by (searched in guideline text and subsection name).")] string? keyword = null,
@@ -67,7 +67,7 @@ public sealed class BookGuidelinesTool
         return sb.ToString();
     }
 
-    [McpServerTool(Title = "Get Guidelines By Topic", ReadOnly = true, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Get Guidelines By Topic", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
      Description("Search C# coding guidelines from the Essential C# book by topic or concept. More discoverable than filtering by chapter — finds all guidelines related to exceptions, naming, async, LINQ, generics, interfaces, and more. Results are ordered by relevance to the topic.")]
     public string GetGuidelinesByTopic(
         [Description("The topic or concept to search guidelines for (e.g., 'exception handling', 'naming', 'async', 'LINQ', 'generics', 'interface').")] string topic,

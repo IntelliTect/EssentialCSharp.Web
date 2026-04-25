@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -35,7 +35,7 @@ public sealed class BookSearchTool
         _guidelinesService = guidelinesService;
     }
 
-    [McpServerTool(Title = "Search Book Content", ReadOnly = true, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Search Book Content", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
      Description("Search the Essential C# book content using semantic vector search. Returns relevant text chunks with chapter and heading context. Use this to find information about C# programming concepts covered in the book.")]
     public async Task<string> SearchBookContent(
         [Description("The search query describing the C# concept or topic to find in the book.")] string query,
@@ -87,7 +87,7 @@ public sealed class BookSearchTool
         return sb.ToString();
     }
 
-    [McpServerTool(Title = "Get Chapter List", ReadOnly = true, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Get Chapter List", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
      Description("Get the table of contents for the Essential C# book, listing all chapters and their sections with navigation links.")]
     public string GetChapterList()
     {
@@ -118,7 +118,7 @@ public sealed class BookSearchTool
         return sb.ToString();
     }
 
-    [McpServerTool(Title = "Get Chapter Sections", ReadOnly = true, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Get Chapter Sections", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
      Description("Get all sections and subsections in a specific chapter of the Essential C# book, in reading order. Returns each section's heading, slug, anchor link, and indent level. Use the returned slugs with other tools like GetSectionContent or GetNavigationContext.")]
     public string GetChapterSections(
         [Description("The chapter number (e.g., 5 for Chapter 5).")] int chapter)
@@ -150,7 +150,7 @@ public sealed class BookSearchTool
         return sb.ToString();
     }
 
-    [McpServerTool(Title = "Get Direct Content URL", ReadOnly = true, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Get Direct Content URL", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
      Description("Get the canonical deep-link URL for a specific book section or subsection. Returns a clickable URL that navigates directly to the section. Use this to include precise references in responses.")]
     public string GetDirectContentUrl(
         [Description("The section slug/key (e.g., 'hello-world'). Use GetChapterSections or GetChapterList to find valid slugs.")] string sectionKey)
@@ -175,7 +175,7 @@ public sealed class BookSearchTool
                $"URL: {url}";
     }
 
-    [McpServerTool(Title = "Get Book Metadata", ReadOnly = true, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Get Book Metadata", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
      Description("Get citation-quality metadata for the Essential C# book: title, authors, edition, C# version covered, ISBN, publisher, and website URL. Use this when generating citations or when asked which edition or C# version the book covers.")]
     public string GetBookMetadata()
     {
@@ -192,7 +192,7 @@ public sealed class BookSearchTool
                 """;
     }
 
-    [McpServerTool(Title = "Lookup Concept", ReadOnly = true, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Lookup Concept", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
      Description("Find all sections in the Essential C# book that cover a specific C# concept. Combines section heading search with semantic vector search (when available) to give broad coverage. Returns section slugs, chapter numbers, and direct links.")]
     public async Task<string> LookupConcept(
         [Description("The C# concept, feature, or topic to find in the book (e.g., 'LINQ', 'async/await', 'pattern matching', 'generics').")] string concept,
@@ -267,7 +267,7 @@ public sealed class BookSearchTool
         return sb.ToString();
     }
 
-    [McpServerTool(Title = "Check Topic Coverage", ReadOnly = true, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Check Topic Coverage", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
      Description("Determine whether and how thoroughly the Essential C# book covers a given topic. Returns a coverage assessment: 'Comprehensive', 'Mentioned', or 'Not found in headings'. Use this before citing the book to calibrate confidence.")]
     public async Task<string> CheckTopicCoverage(
         [Description("The C# topic, feature, or concept to check (e.g., 'source generators', 'records', 'LINQ').")] string topic,
@@ -337,7 +337,7 @@ public sealed class BookSearchTool
         return sb.ToString();
     }
 
-    [McpServerTool(Title = "Find Book Help For Diagnostic", ReadOnly = true, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Find Book Help For Diagnostic", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
      Description("Find Essential C# book sections, content, and coding guidelines that help explain a C# compiler error, warning, or runtime exception. Accepts a CS diagnostic code (e.g., 'CS8600') or a plain description (e.g., 'null reference exception', 'cannot implicitly convert'). Returns relevant sections, explanatory prose, and related guidelines.")]
     public async Task<string> FindBookHelpForDiagnostic(
         [Description("A C# compiler diagnostic code (e.g., 'CS8600', 'CS0029') or a plain error description (e.g., 'null reference exception', 'async method lacks await').")] string diagnostic,
@@ -437,7 +437,7 @@ public sealed class BookSearchTool
         return sb.ToString();
     }
 
-    [McpServerTool(Title = "Find Related Sections", ReadOnly = true, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Find Related Sections", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
      Description("Find other sections in the Essential C# book that are semantically related to a given section. Uses the section heading as a search query to discover thematically connected content across the entire book. Requires AI services to be configured.")]
     public async Task<string> FindRelatedSections(
         [Description("The section slug/key to find related content for (e.g., 'async-await'). Use GetChapterSections to get valid slugs.")] string sectionKey,
