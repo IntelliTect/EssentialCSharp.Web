@@ -12,10 +12,10 @@ namespace EssentialCSharp.Web.Controllers;
 [EnableRateLimiting("ChatEndpoint")]
 public class ChatController : ControllerBase
 {
-    private readonly AIChatService _AiChatService;
+    private readonly IAIChatService _AiChatService;
     private readonly ILogger<ChatController> _Logger;
 
-    public ChatController(ILogger<ChatController> logger, AIChatService aiChatService)
+    public ChatController(ILogger<ChatController> logger, IAIChatService aiChatService)
     {
         _AiChatService = aiChatService;
         _Logger = logger;

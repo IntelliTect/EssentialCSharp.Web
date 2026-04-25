@@ -9,7 +9,7 @@ namespace EssentialCSharp.Chat.Common.Services;
 /// <summary>
 /// Service for handling AI chat completions using the OpenAI Responses API
 /// </summary>
-public class AIChatService
+public class AIChatService : IAIChatService
 {
     private readonly AIOptions _Options;
     private readonly AzureOpenAIClient _AzureClient;

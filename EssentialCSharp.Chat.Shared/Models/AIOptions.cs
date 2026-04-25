@@ -22,4 +22,10 @@ public class AIOptions
     /// </summary>
     public string Endpoint { get; set; } = string.Empty;
 
+    /// <summary>
+    /// When true, uses a local Ollama backend via IChatClient instead of Azure OpenAI.
+    /// Set by Aspire via the AIOptions__UseLocalAI environment variable.
+    /// </summary>
+    public bool UseLocalAI { get; set; }
+
 }

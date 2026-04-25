@@ -239,11 +239,9 @@ public partial class Program
         builder.Services.AddSingleton<IListingSourceCodeService, ListingSourceCodeService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
 
-        // Add AI Chat services
-        if (!builder.Environment.IsDevelopment())
-        {
-            builder.Services.AddAzureOpenAIServices(configuration);
-        }
+        // Add AI Chat services — always registered (Ollama in local mode, Azure OpenAI in production).
+        // AIOptions__UseLocalAI=true enables Ollama local mode (set via aspire secret or dashboard).
+        builder.AddAIServices(configuration);
 
         // Add Rate Limiting for API endpoints
         builder.Services.AddRateLimiter(options =>
