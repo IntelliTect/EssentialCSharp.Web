@@ -41,6 +41,8 @@ public class LoginModel(SignInManager<EssentialCSharpWebUser> signInManager, Use
         [MaxLength(PasswordRequirementOptions.PasswordMaximumLength)]
         [DataType(DataType.Password)]
         public string? Password { get; set; }
+
+        [Display(Name = "Remember me?")]
         public bool RememberMe { get; set; }
     }
 
