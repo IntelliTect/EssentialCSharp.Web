@@ -31,26 +31,10 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-    (function () {
-        let resendEmailWidgetId;
-        let captchaSolved = false;
-        const form = document.getElementById('resend-email-form');
-
-        document.addEventListener('DOMContentLoaded', function () {
-            resendEmailWidgetId = hcaptcha.render('resend-email-captcha', {
-                sitekey: '@Model.CaptchaSiteKey',
-                size: 'invisible',
-                callback: function () { captchaSolved = true; form.requestSubmit(); },
-                'expired-callback': function () { captchaSolved = false; },
-                'error-callback': function () { captchaSolved = false; }
-            });
-            form.addEventListener('submit', function (e) {
-                if (!captchaSolved) {
-                    e.preventDefault();
-                    if (!window.jQuery || $(form).valid()) { hcaptcha.execute(resendEmailWidgetId); }
-                }
-            });
+        window.EssentialCSharp.HCaptcha.initializeInvisibleForm({
+            formId: 'resend-email-form',
+            containerId: 'resend-email-captcha',
+            siteKey: @Json.Serialize(Model.CaptchaSiteKey)
         });
-    })();
     </script>
 }

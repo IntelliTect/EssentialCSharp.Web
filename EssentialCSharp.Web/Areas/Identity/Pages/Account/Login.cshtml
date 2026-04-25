@@ -91,26 +91,10 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-    (function () {
-        let loginWidgetId;
-        let captchaSolved = false;
-        const form = document.getElementById('account');
-
-        document.addEventListener('DOMContentLoaded', function () {
-            loginWidgetId = hcaptcha.render('login-captcha', {
-                sitekey: '@Model.CaptchaSiteKey',
-                size: 'invisible',
-                callback: function () { captchaSolved = true; form.requestSubmit(); },
-                'expired-callback': function () { captchaSolved = false; },
-                'error-callback': function () { captchaSolved = false; }
-            });
-            form.addEventListener('submit', function (e) {
-                if (!captchaSolved) {
-                    e.preventDefault();
-                    if (!window.jQuery || $(form).valid()) { hcaptcha.execute(loginWidgetId); }
-                }
-            });
+        window.EssentialCSharp.HCaptcha.initializeInvisibleForm({
+            formId: 'account',
+            containerId: 'login-captcha',
+            siteKey: @Json.Serialize(Model.CaptchaSiteKey)
         });
-    })();
     </script>
 }

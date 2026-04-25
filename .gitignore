@@ -284,5 +284,7 @@ EssentialCSharp.Web/Markdown/
 
 EssentialCSharp.Web/Guidelines/
 
+EssentialCSharp.Web/wwwroot/dist/
+
 # DevContainer environment files with sensitive data
 .devcontainer/.env

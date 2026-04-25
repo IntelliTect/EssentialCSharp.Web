@@ -100,9 +100,34 @@
     <Using Include="EssentialCSharp.Common" />
   </ItemGroup>
 
+  <ItemGroup>
+    <FrontendSource Include="src\**\*" />
+    <FrontendSource Include="package.json" />
+    <FrontendSource Include="package-lock.json" Condition="Exists('package-lock.json')" />
+    <FrontendSource Include="vite.config.js" />
+    <FrontendSource Include="wwwroot\js\chat-module.js" />
+    <FrontendSource Include="wwwroot\js\password-strength.js" />
+    <FrontendSource Include="wwwroot\js\trydotnet-module.js" />
+  </ItemGroup>
+
   <Target Name="RemoveIdentityAssets">
     <ItemGroup>
       <StaticWebAsset Remove="@(StaticWebAsset)" Condition="%(SourceId) == 'Microsoft.AspNetCore.Identity.UI'" />
     </ItemGroup>
+  </Target>
+
+  <Target Name="EnsureNodeModules"
+          BeforeTargets="Build"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(SkipFrontendBuild)' != 'true' and Exists('package.json') and !Exists('node_modules')">
+    <Exec WorkingDirectory="$(MSBuildProjectDirectory)" Command="npm ci" />
+  </Target>
+
+  <Target Name="BuildFrontend"
+          BeforeTargets="Build"
+          DependsOnTargets="EnsureNodeModules"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(SkipFrontendBuild)' != 'true' and Exists('package.json')"
+          Inputs="@(FrontendSource)"
+          Outputs="$(MSBuildProjectDirectory)\wwwroot\dist\assets\site-shell.js;$(MSBuildProjectDirectory)\wwwroot\dist\assets\password-strength.js">
+    <Exec WorkingDirectory="$(MSBuildProjectDirectory)" Command="npm run build" />
   </Target>
 </Project>

@@ -393,20 +393,31 @@ public partial class Program
 
             // Build dynamic CSP — TryDotNet origin comes from runtime config
             string? tryDotNetOrigin = app.Configuration["TryDotNet:Origin"];
-            string tryDotNetSources = string.IsNullOrWhiteSpace(tryDotNetOrigin) ? string.Empty : $" {tryDotNetOrigin}";
+            string tryDotNetSources = string.Empty;
+            if (!string.IsNullOrWhiteSpace(tryDotNetOrigin))
+            {
+                if (Uri.TryCreate(tryDotNetOrigin, UriKind.Absolute, out Uri? tryDotNetUri))
+                {
+                    tryDotNetSources = $" {tryDotNetUri.GetLeftPart(UriPartial.Authority)}";
+                }
+                else
+                {
+                    app.Logger.LogWarning("Ignoring invalid TryDotNet origin in CSP: {Origin}", tryDotNetOrigin);
+                }
+            }
 
             string csp = string.Join("; ",
                 $"default-src 'self'",
-                $"script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: cdn.jsdelivr.net esm.sh www.clarity.ms www.googletagmanager.com https://hcaptcha.com https://*.hcaptcha.com{tryDotNetSources}",
-                $"style-src 'self' 'unsafe-inline' cdn.jsdelivr.net cdnjs.cloudflare.com fonts.googleapis.com https://hcaptcha.com https://*.hcaptcha.com",
-                $"font-src 'self' fonts.gstatic.com cdnjs.cloudflare.com cdn.jsdelivr.net",
+                $"script-src 'self' 'unsafe-inline' cdn.jsdelivr.net www.clarity.ms www.googletagmanager.com https://hcaptcha.com https://*.hcaptcha.com{tryDotNetSources}",
+                $"style-src 'self' 'unsafe-inline' cdnjs.cloudflare.com fonts.googleapis.com https://hcaptcha.com https://*.hcaptcha.com",
+                $"font-src 'self' fonts.gstatic.com cdnjs.cloudflare.com",
                 $"img-src 'self' data: https:",
                 $"connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://api.pwnedpasswords.com https://*.algolia.net https://*.algolianet.com https://*.google-analytics.com https://*.clarity.ms{tryDotNetSources}",
                 $"frame-src https://hcaptcha.com https://*.hcaptcha.com https://newassets.hcaptcha.com{tryDotNetSources}",
                 $"worker-src blob:",
                 $"frame-ancestors 'none'",
                 $"base-uri 'self'",
-                $"form-action 'self'"
+                $"form-action 'self' https://login.microsoftonline.com https://github.com"
             );
 
             app.UseSecurityHeadersMiddleware(new SecurityHeadersBuilder()

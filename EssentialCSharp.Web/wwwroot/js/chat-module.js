@@ -1,5 +1,7 @@
 // Chat Module - Vue.js composable for AI chat functionality
-import { ref, nextTick, watch, onMounted, onUnmounted } from 'vue';
+import DOMPurify from "dompurify";
+import { marked } from "marked";
+import { ref, nextTick, watch, onMounted, onUnmounted } from "vue";
 
 export function useChatWidget() {
     // Authentication state
@@ -119,15 +121,9 @@ export function useChatWidget() {
 
     function formatMessage(content) {
         if (!content) return '';
-        
-        // Use marked.js for markdown rendering with DOMPurify sanitization
-        if (typeof window.marked !== 'undefined' && typeof window.DOMPurify !== 'undefined') {
-            const rawHtml = window.marked.parse(content);
-            return window.DOMPurify.sanitize(rawHtml);
-        }
-        
-        // Fallback to simple line break replacement
-        return content.replace(/\n/g, '<br>');
+
+        const rawHtml = marked.parse(content);
+        return DOMPurify.sanitize(rawHtml);
     }
 
     function getErrorMessageClass(errorType) {

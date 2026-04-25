@@ -1,3 +1,10 @@
+@using EssentialCSharp.Web.Models
+@{
+    var webFeaturesComingSoon = AnnouncementCatalog.WebFeaturesComingSoon.Take(3);
+    var contentComingSoon = AnnouncementCatalog.ContentComingSoon.Take(3);
+    var recentlyCompleted = AnnouncementCatalog.RecentlyCompleted.Take(3);
+}
+
 <div class="px-3">
     <div>
         <h1>Welcome to Essential C#</h1>
@@ -66,42 +73,51 @@
         <div class="col-12 my-2">
             <h3>Web Features Coming Soon</h3>
         </div>
-        <div v-for="(feature, i) in featuresComingSoonList.slice(0, 3)" key="i" class="col-sm-12 col-md-6 col-lg-4 mb-5">
+        @foreach (var feature in webFeaturesComingSoon)
+        {
+        <div class="col-sm-12 col-md-6 col-lg-4 mb-5">
             <div class="card card-primary">
                 <div class="card-body">
-                    <h5 class="card-title" v-html="feature.title"></h5>
-                    <p class="card-text" v-html="feature.text"></p>
+                    <h5 class="card-title">@feature.Title</h5>
+                    <p class="card-text">@feature.Text</p>
                 </div>
             </div>
         </div>
+        }
     </div>
 
     <div class="row">
         <div class="col-12 my-2">
             <h3>Content Coming Soon</h3>
         </div>
-        <div v-for="(feature, i) in contentComingSoonList.slice(0, 3)" key="i" class="col-sm-12 col-md-6 col-lg-4 mb-5">
+        @foreach (var feature in contentComingSoon)
+        {
+        <div class="col-sm-12 col-md-6 col-lg-4 mb-5">
             <div class="card card-secondary">
                 <div class="card-body">
-                    <h5 class="card-title" v-html="feature.title"></h5>
-                    <p class="card-text" v-html="feature.text"></p>
+                    <h5 class="card-title">@feature.Title</h5>
+                    <p class="card-text">@feature.Text</p>
                 </div>
             </div>
         </div>
+        }
     </div>
 
     <div class="row">
         <div class="col-12 my-2">
             <h3>Recently Completed</h3>
         </div>
-        <div v-for="(feature, i) in completedFeaturesList.slice(0, 3)" key="i" class="col-sm-12 col-md-6 col-lg-4 mb-5">
+        @foreach (var feature in recentlyCompleted)
+        {
+        <div class="col-sm-12 col-md-6 col-lg-4 mb-5">
             <div class="card card-accent">
                 <div class="card-body">
-                    <h5 class="card-title" v-html="feature.title"></h5>
-                    <p class="card-text" v-html="feature.text"></p>
+                    <h5 class="card-title">@feature.Title</h5>
+                    <p class="card-text">@feature.Text</p>
                 </div>
             </div>
         </div>
+        }
     </div>
 
     <div class="row justify-content-center">
