@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 using EssentialCSharp.Chat.Common.Services;
 using EssentialCSharp.Web.Extensions;
 using EssentialCSharp.Web.Services;
@@ -10,7 +11,7 @@ using ModelContextProtocol.Server;
 namespace EssentialCSharp.Web.Tools;
 
 [McpServerToolType]
-public sealed class BookContentTool
+public sealed partial class BookContentTool
 {
     private readonly ISiteMappingService _siteMappingService;
     private readonly IListingSourceCodeService _listingService;
@@ -32,32 +33,72 @@ public sealed class BookContentTool
         _searchService = serviceProvider.GetService<AISearchService>();
     }
 
-    [McpServerTool(Title = "Get Section Content", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Get Section Content", ReadOnly = true, Idempotent = true, OpenWorld = false),
      Description("Retrieve the prose content of a specific book section identified by its slug/key (e.g., 'hello-world', 'creating-editing-compiling-and-running-c-source-code'). Returns the section text with code examples preserved. Use GetChapterSections to discover available slugs.")]
-    public string GetSectionContent(
+    public async Task<string> GetSectionContent(
         [Description("The section slug/key (e.g., 'hello-world'). Use GetChapterSections to get valid slugs.")] string sectionKey,
-        [Description("Maximum number of characters to return (500–8000, default 4000). Long sections are truncated.")] int maxChars = 4000)
+        [Description("Maximum number of characters to return (500–8000, default 4000). Long sections are truncated.")] int maxChars = 4000,
+        CancellationToken cancellationToken = default)
     {
         maxChars = Math.Clamp(maxChars, 500, 8000);
+
+        if (string.IsNullOrWhiteSpace(sectionKey))
+        {
+            return "Section key must not be empty. Use GetChapterSections to discover valid section slugs.";
+        }
 
         SiteMapping? mapping = _siteMappingService.SiteMappings.Find(sectionKey);
         if (mapping is null)
         {
             return $"Section '{sectionKey}' not found. Use GetChapterSections to discover valid section slugs.";
         }
-        if (mapping.AnchorId is null)
+        if (mapping.AnchorId is null || string.IsNullOrWhiteSpace(mapping.AnchorId))
         {
             return $"Section '{sectionKey}' does not have an anchor ID and cannot be extracted.";
         }
+        if (!AnchorIdRegex().IsMatch(mapping.AnchorId))
+        {
+            return $"Section '{sectionKey}' has an invalid anchor ID.";
+        }
 
-        string filePath = Path.Join(_environment.ContentRootPath, Path.Join(mapping.PagePath));
-        if (!File.Exists(filePath))
+        string contentRoot = Path.GetFullPath(_environment.ContentRootPath);
+        string filePath = Path.GetFullPath(Path.Join(contentRoot, Path.Join(mapping.PagePath)));
+        string relative = Path.GetRelativePath(contentRoot, filePath);
+        if (relative == ".." ||
+            relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal) ||
+            Path.IsPathRooted(relative))
+        {
+            return $"Section '{sectionKey}' has an invalid path.";
+        }
+        if (!string.Equals(Path.GetExtension(filePath), ".html", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"Section '{sectionKey}' has an invalid path.";
+        }
+
+        string htmlContent;
+        try
+        {
+            htmlContent = await File.ReadAllTextAsync(filePath, cancellationToken);
+        }
+        catch (FileNotFoundException)
         {
             return $"Chapter HTML file not found for section '{sectionKey}'. Content may not be generated yet.";
         }
+        catch (DirectoryNotFoundException)
+        {
+            return $"Chapter HTML file not found for section '{sectionKey}'. Content may not be generated yet.";
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return $"Chapter HTML could not be accessed for section '{sectionKey}'.";
+        }
+        catch (IOException)
+        {
+            return $"Failed to read chapter HTML for section '{sectionKey}'.";
+        }
 
         HtmlDocument doc = new();
-        doc.Load(filePath);
+        doc.LoadHtml(htmlContent);
 
         var sectionNode = doc.DocumentNode.SelectSingleNode(
             $"//div[@id='{mapping.AnchorId}' and contains(@class,'section-heading')]");
@@ -68,11 +109,12 @@ public sealed class BookContentTool
         }
 
         var parent = sectionNode.ParentNode;
-        var sb = new StringBuilder();
-        sb.AppendLine(CultureInfo.InvariantCulture, $"## {mapping.RawHeading}");
-        sb.AppendLine(CultureInfo.InvariantCulture, $"Chapter {mapping.ChapterNumber}: {mapping.ChapterTitle}");
-        sb.AppendLine();
+        var header = new StringBuilder();
+        header.AppendLine(CultureInfo.InvariantCulture, $"## {mapping.RawHeading}");
+        header.AppendLine(CultureInfo.InvariantCulture, $"Chapter {mapping.ChapterNumber}: {mapping.ChapterTitle}");
+        header.AppendLine();
 
+        var body = new StringBuilder();
         bool collecting = false;
         foreach (HtmlNode child in parent.ChildNodes)
         {
@@ -91,19 +133,19 @@ public sealed class BookContentTool
                 break;
             }
 
-            ExtractNodeContent(child, sb);
+            ExtractNodeContent(child, body);
 
-            if (sb.Length >= maxChars)
+            if (body.Length >= maxChars)
             {
-                sb.Append("\n\n[Content truncated — use a larger maxChars value to see more.]");
+                body.Append("\n\n[Content truncated — use a larger maxChars value to see more.]");
                 break;
             }
         }
 
-        return sb.Length == 0 ? $"No content found after section heading '{mapping.RawHeading}'." : sb.ToString();
+        return body.Length == 0 ? $"No content found after section heading '{mapping.RawHeading}'." : header.Append(body).ToString();
     }
 
-    [McpServerTool(Title = "Get Listing With Context", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Get Listing With Context", ReadOnly = true, Idempotent = true, OpenWorld = false),
      Description("Retrieve a specific book listing's source code together with the semantic book content that explains it. Combines code from GetListingSourceCode with related explanatory text found via search. Ideal for understanding what a listing demonstrates.")]
     public async Task<string> GetListingWithContext(
         [Description("The chapter number of the listing.")] int chapter,
@@ -116,7 +158,7 @@ public sealed class BookContentTool
             return $"Listing {chapter}.{listing} not found. Verify the chapter and listing numbers.";
         }
 
-        string langHint = NormalizeExtension(response.FileExtension);
+        string langHint = BookToolHelpers.NormalizeExtension(response.FileExtension);
         var sb = new StringBuilder();
         sb.AppendLine(CultureInfo.InvariantCulture, $"## Listing {response.ChapterNumber}.{response.ListingNumber}");
         sb.AppendLine(CultureInfo.InvariantCulture, $"```{langHint}");
@@ -149,11 +191,16 @@ public sealed class BookContentTool
         return sb.ToString();
     }
 
-    [McpServerTool(Title = "Get Navigation Context", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Get Navigation Context", ReadOnly = true, Idempotent = true, OpenWorld = false),
      Description("Get the navigation context for a book section: its breadcrumb path, the previous and next sections, its parent section, and its sibling sections. Useful for understanding where a section sits in the book's structure.")]
     public string GetNavigationContext(
         [Description("The section slug/key (e.g., 'hello-world'). Use GetChapterSections to get valid slugs.")] string sectionKey)
     {
+        if (string.IsNullOrWhiteSpace(sectionKey))
+        {
+            return "Section key must not be empty. Use GetChapterSections to discover valid section slugs.";
+        }
+
         SiteMapping? mapping = _siteMappingService.SiteMappings.Find(sectionKey);
         if (mapping is null)
         {
@@ -166,7 +213,7 @@ public sealed class BookContentTool
             .ThenBy(m => m.OrderOnPage)
             .ToList();
 
-        int idx = ordered.IndexOf(mapping);
+        int idx = ordered.FindIndex(m => ReferenceEquals(m, mapping));
         if (idx < 0)
         {
             return $"Section '{sectionKey}' could not be located in the ordered mapping list.";
@@ -213,7 +260,7 @@ public sealed class BookContentTool
         }
         if (parent is not null)
         {
-            sb.AppendLine(CultureInfo.InvariantCulture, $"**Parent:** {parent.RawHeading} (`/{parent.Keys.First()}#{parent.AnchorId}`)");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"**Parent:** {parent.RawHeading} (`/{parent.Keys.FirstOrDefault() ?? parent.PrimaryKey}#{parent.AnchorId}`)");
             sb.AppendLine();
         }
 
@@ -230,7 +277,7 @@ public sealed class BookContentTool
         }
         if (prev is not null)
         {
-            sb.AppendLine(CultureInfo.InvariantCulture, $"**Previous:** {prev.RawHeading} (`/{prev.Keys.First()}#{prev.AnchorId}`)");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"**Previous:** {prev.RawHeading} (`/{prev.Keys.FirstOrDefault() ?? prev.PrimaryKey}#{prev.AnchorId}`)");
         }
 
         // Next section at same indent level in the same chapter
@@ -247,13 +294,13 @@ public sealed class BookContentTool
         }
         if (next is not null)
         {
-            sb.AppendLine(CultureInfo.InvariantCulture, $"**Next:** {next.RawHeading} (`/{next.Keys.First()}#{next.AnchorId}`)");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"**Next:** {next.RawHeading} (`/{next.Keys.FirstOrDefault() ?? next.PrimaryKey}#{next.AnchorId}`)");
         }
 
         // Siblings: all siblings sharing the same parent
         if (parent is not null)
         {
-            int parentIdx = ordered.IndexOf(parent);
+            int parentIdx = ordered.FindIndex(m => ReferenceEquals(m, parent));
             var siblings = new List<SiteMapping>();
             for (int i = parentIdx + 1; i < ordered.Count; i++)
             {
@@ -270,7 +317,7 @@ public sealed class BookContentTool
                 sb.AppendLine("**Sibling sections:**");
                 foreach (var s in siblings)
                 {
-                    sb.AppendLine(CultureInfo.InvariantCulture, $"  - {s.RawHeading} (`/{s.Keys.First()}#{s.AnchorId}`)");
+                    sb.AppendLine(CultureInfo.InvariantCulture, $"  - {s.RawHeading} (`/{s.Keys.FirstOrDefault() ?? s.PrimaryKey}#{s.AnchorId}`)");
                 }
             }
         }
@@ -278,7 +325,7 @@ public sealed class BookContentTool
         return sb.ToString();
     }
 
-    [McpServerTool(Title = "Get Chapter Summary", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Get Chapter Summary", ReadOnly = true, Idempotent = true, OpenWorld = false),
      Description("Get a structural overview of a book chapter: its top-level section headings in reading order, and the coding guidelines associated with that chapter. Useful for understanding what a chapter covers before diving in.")]
     public string GetChapterSummary(
         [Description("The chapter number (e.g., 5 for Chapter 5).")] int chapter)
@@ -304,7 +351,7 @@ public sealed class BookContentTool
         foreach (var m in chapterMappings.Where(m => m.IndentLevel <= 1))
         {
             string indent = m.IndentLevel == 0 ? "" : "  ";
-            string link = $"`/{m.Keys.First()}#{m.AnchorId}`";
+            string link = $"`/{m.Keys.FirstOrDefault() ?? m.PrimaryKey}#{m.AnchorId}`";
             sb.AppendLine(CultureInfo.InvariantCulture, $"{indent}- {m.RawHeading} ({link})");
         }
 
@@ -356,10 +403,11 @@ public sealed class BookContentTool
             {
                 foreach (var line in codeLines)
                 {
-                    // Remove the line-number span before extracting text
-                    var lineNumberSpan = line.SelectSingleNode(".//span[contains(@class,'code-line-number')]");
+                    // Clone to avoid mutating the live HtmlDocument DOM
+                    var lineClone = line.CloneNode(deep: true);
+                    var lineNumberSpan = lineClone.SelectSingleNode(".//span[contains(@class,'code-line-number')]");
                     lineNumberSpan?.Remove();
-                    sb.AppendLine(HtmlEntity.DeEntitize(line.InnerText));
+                    sb.AppendLine(HtmlEntity.DeEntitize(lineClone.InnerText));
                 }
             }
             sb.AppendLine("```");
@@ -385,16 +433,6 @@ public sealed class BookContentTool
         }
     }
 
-    private static string NormalizeExtension(string ext) =>
-        ext.TrimStart('.').ToLowerInvariant() switch
-        {
-            "cs" => "csharp",
-            "vb" => "vbnet",
-            "fs" => "fsharp",
-            "" => "",
-            var e => e
-        };
-
     private static string FormatGuidelineType(GuidelineType type) => type switch
     {
         GuidelineType.Do => "DO",
@@ -403,4 +441,7 @@ public sealed class BookContentTool
         GuidelineType.DoNot => "DO NOT",
         _ => "NOTE"
     };
+
+    [GeneratedRegex(@"^[A-Za-z0-9_-]{1,128}$")]
+    private static partial Regex AnchorIdRegex();
 }

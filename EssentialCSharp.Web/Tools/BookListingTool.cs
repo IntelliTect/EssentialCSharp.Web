@@ -18,7 +18,7 @@ public sealed class BookListingTool
         _siteMappingService = siteMappingService;
     }
 
-    [McpServerTool(Title = "Get Listing Source Code", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Get Listing Source Code", ReadOnly = true, Idempotent = true, OpenWorld = false),
      Description("Retrieve the complete source code for a specific numbered listing from the Essential C# book. Example: chapter=5, listing=3 retrieves Listing 5.3. Returns the code and its file type.")]
     public async Task<string> GetListingSourceCode(
         [Description("The chapter number containing the listing (e.g., 5 for Chapter 5).")] int chapter,
@@ -31,11 +31,11 @@ public sealed class BookListingTool
             return $"Listing {chapter}.{listing} not found. Verify that both the chapter and listing numbers are correct.";
         }
 
-        string langHint = NormalizeExtension(response.FileExtension);
+        string langHint = BookToolHelpers.NormalizeExtension(response.FileExtension);
         return $"## Listing {response.ChapterNumber}.{response.ListingNumber}\n\n```{langHint}\n{response.Content}\n```";
     }
 
-    [McpServerTool(Title = "Search Listings By Code", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Search Listings By Code", ReadOnly = true, Idempotent = true, OpenWorld = false),
      Description("Search all code listings in the Essential C# book for a specific code pattern, keyword, or identifier. Searches actual C# source code (not prose). Useful for finding examples of Task.WhenAll, yield return, IDisposable, pattern matching, and similar code constructs.")]
     public async Task<string> SearchListingsByCode(
         [Description("The code pattern or keyword to search for in listing source code (case-insensitive substring match).")] string pattern,
@@ -68,7 +68,7 @@ public sealed class BookListingTool
                 if (found >= maxResults) break;
                 if (listing.Content.Contains(pattern, StringComparison.OrdinalIgnoreCase))
                 {
-                    string langHint = NormalizeExtension(listing.FileExtension);
+                    string langHint = BookToolHelpers.NormalizeExtension(listing.FileExtension);
                     sb.AppendLine(CultureInfo.InvariantCulture, $"### Listing {listing.ChapterNumber}.{listing.ListingNumber}");
                     sb.AppendLine(CultureInfo.InvariantCulture, $"```{langHint}");
                     sb.AppendLine(listing.Content);
@@ -87,14 +87,4 @@ public sealed class BookListingTool
         sb.Insert(0, $"# Listings Containing '{pattern}' ({found} result{(found == 1 ? "" : "s")})\n\n");
         return sb.ToString();
     }
-
-    private static string NormalizeExtension(string ext) =>
-        ext.TrimStart('.').ToLowerInvariant() switch
-        {
-            "cs" => "csharp",
-            "vb" => "vbnet",
-            "fs" => "fsharp",
-            "" => "",
-            var e => e
-        };
 }
