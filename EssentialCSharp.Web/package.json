@@ -17,7 +17,7 @@
     "dompurify": "3.4.1",
     "jquery": "3.7.1",
     "marked": "18.0.2",
-    "vue": "3.5.12",
+    "vue": "3.5.33",
     "vuetify": "3.9.2"
   },
   "devDependencies": {
