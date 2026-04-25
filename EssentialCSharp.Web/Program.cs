@@ -397,9 +397,9 @@ public partial class Program
 
             string csp = string.Join("; ",
                 $"default-src 'self'",
-                $"script-src 'self' 'unsafe-inline' cdn.jsdelivr.net esm.sh www.clarity.ms www.googletagmanager.com https://hcaptcha.com https://*.hcaptcha.com{tryDotNetSources}",
+                $"script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: cdn.jsdelivr.net esm.sh www.clarity.ms www.googletagmanager.com https://hcaptcha.com https://*.hcaptcha.com{tryDotNetSources}",
                 $"style-src 'self' 'unsafe-inline' cdn.jsdelivr.net cdnjs.cloudflare.com fonts.googleapis.com https://hcaptcha.com https://*.hcaptcha.com",
-                $"font-src 'self' fonts.gstatic.com cdnjs.cloudflare.com",
+                $"font-src 'self' fonts.gstatic.com cdnjs.cloudflare.com cdn.jsdelivr.net",
                 $"img-src 'self' data: https:",
                 $"connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://api.pwnedpasswords.com https://*.algolia.net https://*.algolianet.com https://*.google-analytics.com https://*.clarity.ms{tryDotNetSources}",
                 $"frame-src https://hcaptcha.com https://*.hcaptcha.com https://newassets.hcaptcha.com{tryDotNetSources}",
