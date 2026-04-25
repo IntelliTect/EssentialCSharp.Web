@@ -31,8 +31,16 @@ jobs:
       - name: Restore with dotnet
         run: dotnet restore /p:AccessToNugetFeed=false
 
+      - name: Restore local dotnet tools
+        run: dotnet tool restore
+
       - name: Build with dotnet
         run: dotnet build --configuration Release --no-restore /p:AccessToNugetFeed=false
+
+      - name: Check for pending EF Core model changes
+        run: dotnet ef migrations has-pending-model-changes --project EssentialCSharp.Web --configuration Release --no-build
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
 
       - name: Expose GitHub Actions Runtime
         uses: actions/github-script@v9
