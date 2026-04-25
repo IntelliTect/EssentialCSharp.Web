@@ -5,7 +5,7 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-FROM node:24-bookworm-slim AS frontend-build
+FROM node:25-bookworm-slim AS frontend-build
 WORKDIR /frontend/EssentialCSharp.Web
 COPY EssentialCSharp.Web/package.json EssentialCSharp.Web/package-lock.json ./
 RUN npm ci
