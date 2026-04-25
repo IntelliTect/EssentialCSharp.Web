@@ -16,6 +16,12 @@ export function useChatWidget() {
     const chatInputField = ref(null);
     const lastResponseId = ref(null);
 
+    // hCaptcha invisible widget state
+    const captchaContainerEl = ref(null);
+    let captchaWidgetId = null;
+    let captchaResolve = null;
+    let captchaReject = null;
+
     // Load chat history from localStorage on initialization
     function loadChatHistory() {
         try {
@@ -109,6 +115,67 @@ export function useChatWidget() {
     }
 
     // Remove captcha callback functions as they're no longer needed for chat
+
+    // hCaptcha invisible widget — programmatic callbacks (not string-based data-callback attributes)
+    function onCaptchaSuccess(token) {
+        if (captchaResolve) {
+            captchaResolve(token);
+            captchaResolve = null;
+            captchaReject = null;
+        }
+    }
+
+    function onCaptchaExpired() {
+        if (captchaReject) {
+            captchaReject(new Error('Captcha expired'));
+            captchaResolve = null;
+            captchaReject = null;
+        }
+    }
+
+    function onCaptchaError() {
+        if (captchaReject) {
+            captchaReject(new Error('Captcha error'));
+            captchaResolve = null;
+            captchaReject = null;
+        }
+    }
+
+    async function ensureCaptchaWidget() {
+        if (!window.HCAPTCHA_SITE_KEY) throw new Error('Captcha is not configured.');
+        await nextTick();
+        if (!window.hcaptcha?.render) throw new Error('Captcha script is not ready.');
+        if (captchaWidgetId !== null) return;
+
+        captchaWidgetId = window.hcaptcha.render(captchaContainerEl.value, {
+            sitekey: window.HCAPTCHA_SITE_KEY,
+            size: 'invisible',
+            callback: onCaptchaSuccess,
+            'expired-callback': onCaptchaExpired,
+            'error-callback': onCaptchaError
+        });
+    }
+
+    async function getFreshCaptchaToken() {
+        await ensureCaptchaWidget();
+
+        return await new Promise((resolve, reject) => {
+            captchaResolve = resolve;
+            captchaReject = reject;
+
+            window.hcaptcha.reset(captchaWidgetId);
+            window.hcaptcha.execute(captchaWidgetId);
+
+            // Safety timeout — should not normally be reached
+            setTimeout(() => {
+                if (captchaReject) {
+                    captchaReject(new Error('Captcha timed out'));
+                    captchaResolve = null;
+                    captchaReject = null;
+                }
+            }, 15000);
+        });
+    }
     // The captcha service can still be used elsewhere in the application
 
     function scrollToBottom() {
@@ -182,7 +249,24 @@ export function useChatWidget() {
             saveChatHistory();
             return;
         }
-        
+
+        // Acquire captcha token BEFORE mutating UI state — so if captcha fails the user
+        // message is still in the input and nothing is incorrectly shown in the chat history.
+        let captchaToken;
+        try {
+            captchaToken = await getFreshCaptchaToken();
+        } catch (captchaErr) {
+            console.warn('Captcha acquisition failed:', captchaErr);
+            chatMessages.value.push({
+                role: 'error',
+                errorType: 'captcha-error',
+                content: 'Security verification failed. Please refresh the page and try again.',
+                timestamp: new Date().toISOString()
+            });
+            saveChatHistory();
+            return;
+        }
+
         chatInput.value = '';
 
         // Add user message
@@ -191,6 +275,7 @@ export function useChatWidget() {
             content: userMessage,
             timestamp: new Date().toISOString()
         });
+        const userMessageIndex = chatMessages.value.length - 1;
 
         // Save immediately after adding user message
         saveChatHistory();
@@ -207,25 +292,37 @@ export function useChatWidget() {
 
         let reader = null;
         try {
-            const requestBody = {
-                message: userMessage,
-                enableContextualSearch: true,
-                previousResponseId: lastResponseId.value
-            };
-
-            const response = await fetch('/api/chat/stream', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestBody)
-            });
+            const response = await fetchChatStream(userMessage, captchaToken);
 
             if (!response.ok) {
                 if (response.status === 401) {
                     throw new Error('Authentication required');
+                } else if (response.status === 403) {
+                    // Captcha failed — try once more with a fresh token
+                    let errorData = {};
+                    try { errorData = await response.json(); } catch (_) {}
+
+                    if (errorData.retryable) {
+                        let retryToken;
+                        try {
+                            retryToken = await getFreshCaptchaToken();
+                        } catch (_) {
+                            throw new Error('captcha-failed');
+                        }
+
+                        const retryResponse = await fetchChatStream(userMessage, retryToken);
+                        if (!retryResponse.ok) {
+                            // Remove optimistic user message and restore input
+                            chatMessages.value.splice(userMessageIndex, 1);
+                            chatInput.value = userMessage;
+                            throw new Error('captcha-failed');
+                        }
+                        // Use retry response for the rest of the streaming flow
+                        reader = retryResponse.body.getReader();
+                    } else {
+                        throw new Error('captcha-failed');
+                    }
                 } else if (response.status === 429) {
-                    // Handle rate limiting - simple error message without captcha
                     let errorData;
                     try {
                         errorData = await response.json();
@@ -237,11 +334,8 @@ export function useChatWidget() {
                     }
                     
                     const retryAfter = errorData.retryAfter || 60;
-                    const errorMessage = `Rate limit exceeded. Please wait ${Math.ceil(retryAfter)} seconds before sending another message.`;
-                    
-                    throw new Error(errorMessage);
+                    throw new Error(`Rate limit exceeded. Please wait ${Math.ceil(retryAfter)} seconds before sending another message.`);
                 } else if (response.status === 400) {
-                    // Handle validation errors
                     const errorData = await response.json();
                     throw new Error(errorData.error || 'Bad request');
                 }
@@ -249,7 +343,7 @@ export function useChatWidget() {
             }
 
             // Handle streaming response
-            reader = response.body.getReader();
+            if (!reader) reader = response.body.getReader();
             const decoder = new TextDecoder();
             let assistantMessage = '';
             let assistantMessageIndex = -1;
@@ -321,6 +415,9 @@ export function useChatWidget() {
             if (error.name === 'AbortError') {
                 errorMessage = 'Request was cancelled. Please try again.';
                 errorType = 'error';
+            } else if (error.message === 'captcha-failed') {
+                errorMessage = 'Security verification failed. Please try again.';
+                errorType = 'captcha-error';
             } else if (error.message?.includes('Authentication required')) {
                 errorMessage = 'You must be logged in to use the chat feature. Please log in and try again.';
                 errorType = 'auth-error';
@@ -365,6 +462,19 @@ export function useChatWidget() {
         }
     }
 
+    function fetchChatStream(message, captchaToken) {
+        return fetch('/api/chat/stream', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message,
+                enableContextualSearch: true,
+                previousResponseId: lastResponseId.value,
+                captchaToken
+            })
+        });
+    }
+
     // Clean up old chat sessions (keep only last 7 days)
     function cleanupOldSessions() {
         try {
@@ -396,6 +506,7 @@ export function useChatWidget() {
         isTyping,
         chatMessagesEl,
         chatInputField,
+        captchaContainerEl,
 
         // Methods
         openChatDialog,

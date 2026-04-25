@@ -10,5 +10,7 @@ public class ChatMessageRequest
     [StringLength(200)]
     public string? PreviousResponseId { get; set; }
     public bool EnableContextualSearch { get; set; } = true;
-    public string? CaptchaResponse { get; set; } // For future captcha implementation
+
+    [StringLength(4096)]
+    public string? CaptchaToken { get; set; }
 }
