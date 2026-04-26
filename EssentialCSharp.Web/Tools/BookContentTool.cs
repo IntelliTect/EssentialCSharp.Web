@@ -401,10 +401,8 @@ public sealed partial class BookContentTool
             var codeLines = node.SelectNodes(".//div[contains(@class,'code-line')]");
             if (codeLines is not null)
             {
-                foreach (var line in codeLines)
+                foreach (var lineClone in codeLines.Select(line => line.CloneNode(deep: true)))
                 {
-                    // Clone to avoid mutating the live HtmlDocument DOM
-                    var lineClone = line.CloneNode(deep: true);
                     var lineNumberSpan = lineClone.SelectSingleNode(".//span[contains(@class,'code-line-number')]");
                     lineNumberSpan?.Remove();
                     sb.AppendLine(HtmlEntity.DeEntitize(lineClone.InnerText));

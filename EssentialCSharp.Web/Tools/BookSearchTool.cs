@@ -9,15 +9,8 @@ using ModelContextProtocol.Server;
 
 namespace EssentialCSharp.Web.Tools;
 
-// Book metadata constants — update here when edition changes.
 file static class BookMetadata
 {
-    public const string Title = "Essential C#";
-    public const string Edition = "9th Edition";
-    public const string CSharpVersion = "C# 13.0";
-    public const string Authors = "Mark and Benjamin Michaelis";
-    public const string Publisher = "Addison-Wesley Professional";
-    public const string Isbn13 = "978-0-13-576056-5";
     public const string SiteUrl = "https://essentialcsharp.com";
 }
 
@@ -173,23 +166,6 @@ public sealed class BookSearchTool
         return $"**{mapping.RawHeading}**\n" +
                $"Chapter {mapping.ChapterNumber}: {mapping.ChapterTitle}\n" +
                $"URL: {url}";
-    }
-
-    [McpServerTool(Title = "Get Book Metadata", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
-     Description("Get citation-quality metadata for the Essential C# book: title, authors, edition, C# version covered, ISBN, publisher, and website URL. Use this when generating citations or when asked which edition or C# version the book covers.")]
-    public string GetBookMetadata()
-    {
-        return $"""
-                # {BookMetadata.Title} — Book Metadata
-
-                **Title:** {BookMetadata.Title}
-                **Edition:** {BookMetadata.Edition}
-                **C# Version:** {BookMetadata.CSharpVersion}
-                **Authors:** {BookMetadata.Authors}
-                **Publisher:** {BookMetadata.Publisher}
-                **ISBN-13:** {BookMetadata.Isbn13}
-                **Website:** {BookMetadata.SiteUrl}
-                """;
     }
 
     [McpServerTool(Title = "Lookup Concept", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
