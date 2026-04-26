@@ -46,7 +46,7 @@ public class FunctionalTests(WebApplicationFactory factory)
 
     [Test]
     [Arguments("/guidelines", "window.PERCENT_COMPLETE = null;")]
-    public async Task WhenPagesAreRendered_LayoutIncludesExpectedPercentCompleteValue(string relativeUrl, string expectedSnippet)
+    public async Task WhenNonContentPageIsRendered_LayoutIncludesNullPercentComplete(string relativeUrl, string expectedSnippet)
     {
         HttpClient client = factory.CreateClient();
         using HttpResponseMessage response = await client.GetAsync(relativeUrl);
