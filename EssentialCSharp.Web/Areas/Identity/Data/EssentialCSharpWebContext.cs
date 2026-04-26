@@ -15,6 +15,8 @@ public class EssentialCSharpWebContext(DbContextOptions<EssentialCSharpWebContex
     {
         base.OnModelCreating(builder);
 
+        // EF design-time model building does not infer Identity store options,
+        // so keep the persisted schema explicit for login/token key lengths.
         builder.Entity<IdentityUserLogin<string>>(login =>
         {
             login.Property(entry => entry.LoginProvider).HasMaxLength(EssentialCSharpWebIdentitySchema.KeyMaxLength);
