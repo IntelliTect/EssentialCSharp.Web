@@ -51,7 +51,11 @@ jobs:
       - name: Install additional development tools
         run: |
           echo "Installing additional tools for Copilot agent environment..."
-          dotnet tool update --global dotnet-ef || dotnet tool install --global dotnet-ef
+          if dotnet tool list --global | grep -q '^dotnet-ef '; then
+            dotnet tool update --global dotnet-ef
+          else
+            dotnet tool install --global dotnet-ef
+          fi
 
       - name: Restore with dotnet
         run: dotnet restore
