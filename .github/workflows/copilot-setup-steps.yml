@@ -55,7 +55,7 @@ jobs:
       - name: Set up Node.js for frontend development
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Install additional development tools
         run: |
