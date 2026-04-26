@@ -38,7 +38,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore /p:AccessToNugetFeed=false
 
       - name: Check for pending EF Core model changes
-        run: dotnet ef migrations has-pending-model-changes --project EssentialCSharp.Web --configuration Release --no-build
+        run: dotnet tool run dotnet-ef -- migrations has-pending-model-changes --project EssentialCSharp.Web --configuration Release --no-build
         env:
           ASPNETCORE_ENVIRONMENT: Development
 
