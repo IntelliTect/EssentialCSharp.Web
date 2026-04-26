@@ -13,6 +13,7 @@ updates:
   - package-ecosystem: "nuget" # See documentation for possible values
     directories:
       - "/"
+      - "/.config"
     registries:
       - nuget-azure-artifacts
     schedule:
