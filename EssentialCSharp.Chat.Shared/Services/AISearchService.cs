@@ -35,11 +35,29 @@ public partial class AISearchService(
         {
             try
             {
-                var results = new List<VectorSearchResult<BookContentChunk>>();
-                await foreach (var result in collection.SearchAsync(searchVector, options: vectorSearchOptions, top: top, cancellationToken: cancellationToken))
+                // Fetch more candidates than needed so we can deduplicate by heading.
+                // Multiple chunks from the same section share the same Heading; without dedup
+                // all top-N results could come from one long section, reducing context diversity.
+                int candidates = top * 3;
+
+                var candidatesList = new List<VectorSearchResult<BookContentChunk>>();
+                await foreach (var result in collection.SearchAsync(searchVector, options: vectorSearchOptions, top: candidates, cancellationToken: cancellationToken))
                 {
-                    results.Add(result);
+                    candidatesList.Add(result);
                 }
+
+                // Keep only the highest-scoring chunk per unique heading, then take the globally
+                // top-N by score. GroupBy on a materialized list preserves insertion (score desc)
+                // order, but we make the ordering explicit via OrderByDescending so the result
+                // is correct regardless of provider sort guarantees.
+                // MaxBy on a non-empty IGrouping never returns null; ! asserts this invariant.
+                var results = candidatesList
+                    .GroupBy(r => r.Record.Heading)
+                    .Select(g => g.MaxBy(r => r.Score)!)
+                    .OrderByDescending(r => r.Score)
+                    .Take(top)
+                    .ToList();
+
                 return results;
             }
             catch (PostgresException ex) when (ex.SqlState == "28000" && attempt == 0)

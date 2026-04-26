@@ -38,6 +38,13 @@ public sealed class BookContentChunk
     public int? ChapterNumber { get; set; }
 
     /// <summary>
+    /// Zero-based ordinal of this chunk within its source file.
+    /// Together with FileName, forms the basis for the deterministic Id.
+    /// </summary>
+    [VectorStoreData]
+    public int ChunkIndex { get; set; }
+
+    /// <summary>
     /// SHA256 hash of the chunk content for change detection
     /// </summary>
     [VectorStoreData]

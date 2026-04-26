@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using System.Linq;
 using EssentialCSharp.Chat.Common.Models;
 
 namespace EssentialCSharp.Chat.Common.Services;
@@ -12,16 +11,17 @@ public static partial class ChunkingResultExtensions
         int? chapterNumber = ExtractChapterNumber(result.FileName);
 
         var chunks = result.Chunks
-            .Select(chunkText =>
+            .Select((markdownChunk, index) =>
             {
-                var contentHash = ComputeSha256Hash(chunkText);
+                var contentHash = ComputeSha256Hash(markdownChunk.ChunkText);
                 return new BookContentChunk
                 {
-                    Id = Guid.NewGuid().ToString(),
+                    Id = $"{result.FileName}_{index}",
                     FileName = result.FileName,
-                    Heading = ExtractHeading(chunkText),
-                    ChunkText = chunkText,
+                    Heading = markdownChunk.Heading,
+                    ChunkText = markdownChunk.ChunkText,
                     ChapterNumber = chapterNumber,
+                    ChunkIndex = index,
                     ContentHash = contentHash
                 };
             })
@@ -30,25 +30,13 @@ public static partial class ChunkingResultExtensions
         return chunks;
     }
 
-    private static string ExtractHeading(string chunkText)
+    private static int? ExtractChapterNumber(string fileName)
     {
-        // get characters until the first " - " or newline
-        var firstLine = chunkText.Split(["\r\n", "\r", "\n"], StringSplitOptions.None)[0];
-        var headingParts = firstLine.Split([" - "], StringSplitOptions.None);
-        return headingParts.Length > 0 ? headingParts[0].Trim() : string.Empty;
-    }
-
-    private static int ExtractChapterNumber(string fileName)
-    {
-        // Example: "Chapter01.md" -> 1
-        // Regex: Chapter(?<ChapterNumber>[0-9]{2})
+        // Example: "Chapter01.md" -> 1; non-chapter files return null.
         var match = ChapterNumberRegex().Match(fileName);
         if (match.Success && int.TryParse(match.Groups["ChapterNumber"].Value, out int chapterNumber))
-
-        {
             return chapterNumber;
-        }
-        throw new InvalidOperationException($"File name '{fileName}' does not contain a valid chapter number in the expected format.");
+        return null;
     }
 
     private static string ComputeSha256Hash(string text)
