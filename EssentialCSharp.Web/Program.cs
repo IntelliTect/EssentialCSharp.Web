@@ -1,4 +1,5 @@
 using System.Threading.RateLimiting;
+using EssentialCSharp.Chat;
 using EssentialCSharp.Chat.Common.Extensions;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
@@ -160,6 +161,7 @@ public partial class Program
 
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(30);
             options.Lockout.MaxFailedAccessAttempts = 3;
+            options.Stores.MaxLengthForKeys = EssentialCSharpWebIdentitySchema.KeyMaxLength;
 
             //TODO: Implement IProtectedUserStore
             //options.Stores.ProtectPersonalData = true;
@@ -240,14 +242,15 @@ public partial class Program
         builder.Services.AddSingleton<IListingSourceCodeService, ListingSourceCodeService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
 
-        // Add AI Chat services — always registered (Ollama in local mode, Azure OpenAI in production).
-        // AIOptions__UseLocalAI=true enables Ollama local mode (set via aspire secret or dashboard).
-        builder.AddAIServices(configuration);
+        AIConfigurationState aiConfiguration = AIConfigurationState.From(
+            configuration.GetSection("AIOptions").Get<AIOptions>());
+
+        // Development supports Disabled, Local, and Azure modes. Non-Development remains strict.
+        builder.AddAIServices(configuration, aiConfiguration);
 
         // When using local Ollama in development, Polly's default 30s TotalRequestTimeout fires
         // before LLM inference completes (qwen2.5-coder:7b consistently takes >30s).
-        var aiOptsForTimeout = configuration.GetSection("AIOptions").Get<EssentialCSharp.Chat.AIOptions>();
-        if (builder.Environment.IsDevelopment() && aiOptsForTimeout?.UseLocalAI == true)
+        if (builder.Environment.IsDevelopment() && aiConfiguration.UsesLocalAI)
         {
             builder.Services.PostConfigureAll<HttpStandardResilienceOptions>(options =>
             {

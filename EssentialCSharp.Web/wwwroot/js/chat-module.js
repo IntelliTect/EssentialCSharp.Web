@@ -10,6 +10,7 @@ const MAX_SAVED_MESSAGES = 100;
 const MINIMAL_SAVED_MESSAGES = 20;
 const CAPTCHA_SCRIPT_TIMEOUT_MS = 10000;
 const CAPTCHA_TIMEOUT_MS = 15000;
+const CHAT_WIDGET = window.CHAT_WIDGET ?? {};
 
 const DEFAULT_ERROR_DISPLAY = {
     heading: "Error",
@@ -31,6 +32,11 @@ const ERROR_DISPLAY = {
         ...DEFAULT_ERROR_DISPLAY,
         heading: "Invalid Input",
         iconClass: "fas fa-exclamation-circle"
+    },
+    "chat-unavailable": {
+        ...DEFAULT_ERROR_DISPLAY,
+        heading: "AI Chat Unavailable",
+        iconClass: "fas fa-robot"
     },
     "rate-limit": {
         ...DEFAULT_ERROR_DISPLAY,
@@ -516,6 +522,13 @@ export function useChatWidget() {
 
         if (streamResponse.status === 503) {
             const errorData = await tryReadJson(streamResponse);
+            if (errorData.errorCode === "ai_unavailable") {
+                throw createChatError(
+                    "chat-unavailable",
+                    errorData.error || CHAT_WIDGET.unavailableMessage || "AI chat is unavailable for this local run."
+                );
+            }
+
             if (errorData.errorCode === "captcha_unavailable") {
                 throw createChatError("captcha-error", "Security verification is temporarily unavailable. Please try again later.");
             }
@@ -545,6 +558,11 @@ export function useChatWidget() {
 
     async function sendChatMessage() {
         if (!chatInput.value.trim() || isTyping.value || isSubmitting.value) {
+            return;
+        }
+
+        if (CHAT_WIDGET.available === false) {
+            pushError("chat-unavailable", CHAT_WIDGET.unavailableMessage || "AI chat is unavailable for this local run.");
             return;
         }
 

@@ -9,12 +9,15 @@ namespace EssentialCSharp.Chat.Tests;
 public class ServiceCollectionExtensionsTests
 {
     [Test]
-    public async Task AddAIServices_WhenDevelopmentWithoutConfiguration_ThrowsInvalidOperationException()
+    public async Task AddAIServices_WhenDevelopmentWithoutConfiguration_RegistersUnavailableAIService()
     {
         var builder = CreateBuilder(Environments.Development);
 
-        await Assert.That(() => builder.AddAIServices(builder.Configuration))
-            .Throws<InvalidOperationException>();
+        builder.AddAIServices(builder.Configuration);
+
+        var descriptor = builder.Services.LastOrDefault(service => service.ServiceType == typeof(IAIChatService));
+        await Assert.That(descriptor).IsNotNull();
+        await Assert.That(descriptor!.ImplementationType).IsEqualTo(typeof(UnavailableAIChatService));
     }
 
     [Test]
@@ -55,9 +58,44 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Test]
+    public async Task AddAIServices_WhenEndpointAndUseLocalAIConfigured_UsesAzureAI()
+    {
+        var builder = CreateBuilder(
+            Environments.Development,
+            new Dictionary<string, string?>
+            {
+                ["AIOptions:UseLocalAI"] = bool.TrueString,
+                ["AIOptions:Endpoint"] = "https://example.openai.azure.com/",
+                ["AIOptions:ChatDeploymentName"] = "chat",
+                ["AIOptions:VectorGenerationDeploymentName"] = "embeddings",
+                ["ConnectionStrings:PostgresVectorStore"] = "Host=test.postgres.database.azure.com;Database=app;Username=user",
+                ["ConnectionStrings:ollama-chat"] = "Endpoint=http://localhost:11434;Model=qwen2.5-coder:7b"
+            });
+
+        builder.AddAIServices(builder.Configuration);
+
+        await Assert.That(builder.Services.Any(service => service.ServiceType == typeof(AIChatService))).IsTrue();
+        await Assert.That(builder.Services.Any(service => service.ImplementationType == typeof(LocalAIChatService))).IsFalse();
+    }
+
+    [Test]
     public async Task AddAIServices_WhenProductionWithoutConfiguration_ThrowsInvalidOperationException()
     {
         var builder = CreateBuilder(Environments.Production);
+
+        await Assert.That(() => builder.AddAIServices(builder.Configuration))
+            .Throws<InvalidOperationException>();
+    }
+
+    [Test]
+    public async Task AddAIServices_WhenProductionUsesLocalAI_ThrowsInvalidOperationException()
+    {
+        var builder = CreateBuilder(
+            Environments.Production,
+            new Dictionary<string, string?>
+            {
+                ["AIOptions:UseLocalAI"] = bool.TrueString
+            });
 
         await Assert.That(() => builder.AddAIServices(builder.Configuration))
             .Throws<InvalidOperationException>();

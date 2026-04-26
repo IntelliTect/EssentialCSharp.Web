@@ -16,29 +16,35 @@ public static class ServiceCollectionExtensions
     private static readonly string[] _PostgresScopes = ["https://ossrdbms-aad.database.windows.net/.default"];
 
     /// <summary>
-    /// Dispatches to <see cref="AddLocalAIServices"/> or <see cref="AddAzureOpenAIServices"/>
-    /// based on <c>AIOptions:UseLocalAI</c>. AI chat requires either local AI mode
-    /// or a configured Azure/Foundry endpoint in every environment.
+    /// Resolves the AI mode once and applies environment-specific enforcement.
+    /// Development allows Disabled, Local, or Azure modes. Non-Development requires Azure.
     /// </summary>
     public static IHostApplicationBuilder AddAIServices(
         this IHostApplicationBuilder builder,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        AIConfigurationState? aiConfigurationState = null)
     {
         builder.Services.Configure<AIOptions>(configuration.GetSection("AIOptions"));
-        var aiOptions = configuration.GetSection("AIOptions").Get<AIOptions>() ?? new AIOptions();
+        aiConfigurationState ??= AIConfigurationState.From(configuration.GetSection("AIOptions").Get<AIOptions>());
+        builder.Services.AddSingleton(aiConfigurationState);
 
-        if (aiOptions.UseLocalAI)
+        if (!builder.Environment.IsDevelopment() && !aiConfigurationState.UsesAzureAI)
+        {
+            throw new InvalidOperationException(
+                "Non-Development environments require AIOptions:Endpoint to be configured. Local AI is only supported in Development.");
+        }
+
+        if (aiConfigurationState.UsesLocalAI)
         {
             builder.AddLocalAIServices(configuration);
         }
-        else if (!string.IsNullOrEmpty(aiOptions.Endpoint))
+        else if (aiConfigurationState.UsesAzureAI)
         {
             builder.Services.AddAzureOpenAIServices(configuration);
         }
         else
         {
-            throw new InvalidOperationException(
-                "AI chat requires either AIOptions:UseLocalAI=true or AIOptions:Endpoint to be configured.");
+            builder.Services.AddSingleton<IAIChatService, UnavailableAIChatService>();
         }
 
         return builder;

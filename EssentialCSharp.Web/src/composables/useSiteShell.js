@@ -62,7 +62,10 @@ export function useSiteShell() {
     const expandedTocs = reactive(new Set());
     const percentComplete = ref(window.PERCENT_COMPLETE);
     const buildLabel = window.BUILD_LABEL ?? null;
-    const enableChatWidget = Boolean(window.ENABLE_CHAT_WIDGET);
+    const chatWidget = window.CHAT_WIDGET ?? {};
+    const enableChatWidget = Boolean(chatWidget.enabled);
+    const chatWidgetAvailable = Boolean(chatWidget.available);
+    const chatWidgetUnavailableMessage = chatWidget.unavailableMessage ?? null;
     const { width: windowWidth } = useWindowSize();
 
     let snackbarTimeoutId = null;
@@ -270,6 +273,8 @@ export function useSiteShell() {
         percentComplete,
         buildLabel,
         enableChatWidget,
+        chatWidgetAvailable,
+        chatWidgetUnavailableMessage,
         smallScreen,
         currentPage,
         chapterParentPage,

@@ -28,10 +28,13 @@ const {
     <div class="chat-widget">
         <button
             class="chat-button elevation-6"
-            :class="{ 'chat-button--active': showChatDialog }"
+            :class="{
+                'chat-button--active': showChatDialog && shell.chatWidgetAvailable,
+                'chat-button--unavailable': !shell.chatWidgetAvailable
+            }"
             :aria-expanded="showChatDialog"
-            :aria-label="isAuthenticated ? 'Open AI Chat Assistant' : 'Login required for AI Chat'"
-            :title="isAuthenticated ? 'Chat with AI Assistant about C# programming' : 'Login required to use chat'"
+            :aria-label="!shell.chatWidgetAvailable ? 'AI Chat unavailable for this local run' : isAuthenticated ? 'Open AI Chat Assistant' : 'Login required for AI Chat'"
+            :title="!shell.chatWidgetAvailable ? shell.chatWidgetUnavailableMessage : isAuthenticated ? 'Chat with AI Assistant about C# programming' : 'Login required to use chat'"
             type="button"
             @click="openChatDialog"
         >
@@ -97,12 +100,18 @@ const {
                     aria-live="polite"
                     aria-label="Chat conversation"
                 >
-                    <div v-if="chatMessages.length === 0 && isAuthenticated" class="welcome-message">
+                    <div v-if="!shell.chatWidgetAvailable" class="login-required-message">
+                        <i class="mdi mdi-robot-off-outline" aria-hidden="true" />
+                        <h3>AI Chat Unavailable</h3>
+                        <p>{{ shell.chatWidgetUnavailableMessage }}</p>
+                    </div>
+
+                    <div v-else-if="chatMessages.length === 0 && isAuthenticated" class="welcome-message">
                         <i class="mdi mdi-chat-outline" aria-hidden="true" />
                         <p>Hi! I'm your AI assistant. Ask me anything about C# programming!</p>
                     </div>
 
-                    <div v-if="!isAuthenticated" class="login-required-message">
+                    <div v-else-if="!isAuthenticated" class="login-required-message">
                         <i class="mdi mdi-lock-outline" aria-hidden="true" />
                         <h3>Login Required</h3>
                         <p>Please log in to chat with the AI assistant about C# programming.</p>
@@ -157,7 +166,7 @@ const {
                     </div>
                 </div>
 
-                <div v-if="isAuthenticated" class="chat-footer">
+                <div v-if="isAuthenticated && shell.chatWidgetAvailable" class="chat-footer">
                     <form class="chat-form" @submit.prevent="sendChatMessage">
                         <div class="input-wrapper">
                             <label for="chat-input" class="visually-hidden">

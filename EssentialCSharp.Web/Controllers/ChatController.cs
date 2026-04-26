@@ -1,4 +1,5 @@
 using System.Text.Json;
+using EssentialCSharp.Chat;
 using EssentialCSharp.Chat.Common.Services;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -13,12 +14,20 @@ namespace EssentialCSharp.Web.Controllers;
 [EnableRateLimiting("ChatEndpoint")]
 public class ChatController : ControllerBase
 {
+    private const string AIUnavailableErrorCode = "ai_unavailable";
+
+    private readonly AIConfigurationState _AiConfiguration;
     private readonly IAIChatService _AiChatService;
     private readonly ICaptchaService _CaptchaService;
     private readonly ILogger<ChatController> _Logger;
 
-    public ChatController(ILogger<ChatController> logger, IAIChatService aiChatService, ICaptchaService captchaService)
+    public ChatController(
+        ILogger<ChatController> logger,
+        AIConfigurationState aiConfiguration,
+        IAIChatService aiChatService,
+        ICaptchaService captchaService)
     {
+        _AiConfiguration = aiConfiguration;
         _AiChatService = aiChatService;
         _CaptchaService = captchaService;
         _Logger = logger;
@@ -27,6 +36,11 @@ public class ChatController : ControllerBase
     [HttpPost("message")]
     public async Task<IActionResult> SendMessage([FromBody] ChatMessageRequest request, CancellationToken cancellationToken = default)
     {
+        if (!_AiConfiguration.IsAvailable)
+        {
+            return CreateAIUnavailableResult();
+        }
+
         var (captchaOk, captchaError) = await VerifyCaptchaAsync(request.CaptchaToken, cancellationToken);
         if (!captchaOk) return captchaError!;
 
@@ -38,23 +52,38 @@ public class ChatController : ControllerBase
             ? null
             : request.PreviousResponseId.Trim();
 
-        var (response, responseId) = await _AiChatService.GetChatCompletion(
-            prompt: request.Message,
-            previousResponseId: previousResponseId,
-            enableContextualSearch: request.EnableContextualSearch,
-            cancellationToken: cancellationToken);
-
-        return Ok(new ChatMessageResponse
+        try
         {
-            Response = response,
-            ResponseId = responseId,
-            Timestamp = DateTime.UtcNow
-        });
+            var (response, responseId) = await _AiChatService.GetChatCompletion(
+                prompt: request.Message,
+                previousResponseId: previousResponseId,
+                enableContextualSearch: request.EnableContextualSearch,
+                cancellationToken: cancellationToken);
+
+            return Ok(new ChatMessageResponse
+            {
+                Response = response,
+                ResponseId = responseId,
+                Timestamp = DateTime.UtcNow
+            });
+        }
+        catch (AIChatUnavailableException ex)
+        {
+            _Logger.LogInformation(ex, "Chat unavailable for user {User}", User.Identity?.Name);
+            return CreateAIUnavailableResult(ex.Message);
+        }
     }
 
     [HttpPost("stream")]
     public async Task StreamMessage([FromBody] ChatMessageRequest request, CancellationToken cancellationToken = default)
     {
+        if (!_AiConfiguration.IsAvailable)
+        {
+            Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+            await Response.WriteAsJsonAsync(CreateAIUnavailablePayload(), CancellationToken.None);
+            return;
+        }
+
         // Captcha and input validation must happen before SSE headers are set,
         // so we can still return a proper HTTP status code on failure.
         var (captchaOk, captchaError) = await VerifyCaptchaAsync(request.CaptchaToken, cancellationToken);
@@ -111,6 +140,33 @@ public class ChatController : ControllerBase
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
         {
             _Logger.LogDebug("Chat stream cancelled for user {User}", User.Identity?.Name);
+        }
+        catch (AIChatUnavailableException ex)
+        {
+            _Logger.LogInformation(ex, "Chat unavailable for user {User}", User.Identity?.Name);
+            if (!Response.HasStarted)
+            {
+                Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+                Response.ContentType = "application/json";
+                await Response.WriteAsJsonAsync(CreateAIUnavailablePayload(ex.Message), CancellationToken.None);
+                return;
+            }
+
+            try
+            {
+                var eventData = JsonSerializer.Serialize(new
+                {
+                    type = "error",
+                    errorCode = AIUnavailableErrorCode,
+                    message = ex.Message
+                });
+                await Response.WriteAsync($"data: {eventData}\n\n", CancellationToken.None);
+                await Response.Body.FlushAsync(CancellationToken.None);
+            }
+            catch
+            {
+                // The client may already be gone; there's nothing else to do.
+            }
         }
         catch (Exception ex) when (!Response.HasStarted)
         {
@@ -171,5 +227,16 @@ public class ChatController : ControllerBase
                 errorCode = "captcha_unavailable",
                 retryable = true
             });
+
+    private static object CreateAIUnavailablePayload(string? message = null) =>
+        new
+        {
+            error = string.IsNullOrWhiteSpace(message) ? AIConfigurationState.DevelopmentUnavailableMessage : message,
+            errorCode = AIUnavailableErrorCode,
+            retryable = false
+        };
+
+    private ObjectResult CreateAIUnavailableResult(string? message = null) =>
+        StatusCode(StatusCodes.Status503ServiceUnavailable, CreateAIUnavailablePayload(message));
 
 }
