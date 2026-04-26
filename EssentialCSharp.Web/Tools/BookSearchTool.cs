@@ -32,6 +32,7 @@ public sealed class BookSearchTool
      Description("Search the Essential C# book content using semantic vector search. Returns relevant text chunks with chapter and heading context. Use this to find information about C# programming concepts covered in the book.")]
     public async Task<string> SearchBookContent(
         [Description("The search query describing the C# concept or topic to find in the book.")] string query,
+        [Description("Number of results to return (1–10). Default is 5. Use a higher value for broad topics or comprehensive research; lower for quick lookups.")] int maxResults = AISearchService.DefaultSearchTop,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(query))
@@ -48,7 +49,7 @@ public sealed class BookSearchTool
             return "Book search is not available in this environment (AI services are not configured).";
         }
 
-        var results = await _SearchService.ExecuteVectorSearch(query, cancellationToken: cancellationToken);
+        var results = await _SearchService.ExecuteVectorSearch(query, top: maxResults, cancellationToken: cancellationToken);
 
         var sb = new StringBuilder();
         int resultCount = 0;
@@ -172,6 +173,7 @@ public sealed class BookSearchTool
      Description("Find all sections in the Essential C# book that cover a specific C# concept. Combines section heading search with semantic vector search (when available) to give broad coverage. Returns section slugs, chapter numbers, and direct links.")]
     public async Task<string> LookupConcept(
         [Description("The C# concept, feature, or topic to find in the book (e.g., 'LINQ', 'async/await', 'pattern matching', 'generics').")] string concept,
+        [Description("Number of semantic search results to return (1–10). Default is 5.")] int maxResults = AISearchService.DefaultSearchTop,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(concept))
@@ -197,7 +199,7 @@ public sealed class BookSearchTool
         var vectorMatches = new List<(int chapter, string heading, string chunkText)>();
         if (_SearchService is not null)
         {
-            var results = await _SearchService.ExecuteVectorSearch(concept, cancellationToken: cancellationToken);
+            var results = await _SearchService.ExecuteVectorSearch(concept, top: maxResults, cancellationToken: cancellationToken);
             foreach (var r in results)
             {
                 vectorMatches.Add((r.Record.ChapterNumber ?? 0, r.Record.Heading ?? "", r.Record.ChunkText));
@@ -415,6 +417,7 @@ public sealed class BookSearchTool
      Description("Find other sections in the Essential C# book that are semantically related to a given section. Uses the section heading as a search query to discover thematically connected content across the entire book. Requires AI services to be configured.")]
     public async Task<string> FindRelatedSections(
         [Description("The section slug/key to find related content for (e.g., 'async-await'). Use GetChapterSections to get valid slugs.")] string sectionKey,
+        [Description("Number of related sections to return (1–10). Default is 5.")] int maxResults = AISearchService.DefaultSearchTop,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(sectionKey))
@@ -434,7 +437,7 @@ public sealed class BookSearchTool
         }
 
         string query = $"{mapping.RawHeading} {mapping.ChapterTitle}";
-        var results = await _SearchService.ExecuteVectorSearch(query, cancellationToken: cancellationToken);
+        var results = await _SearchService.ExecuteVectorSearch(query, top: maxResults, cancellationToken: cancellationToken);
 
         var sb = new StringBuilder();
         sb.AppendLine(CultureInfo.InvariantCulture, $"# Sections Related to: {mapping.RawHeading}");
@@ -447,7 +450,7 @@ public sealed class BookSearchTool
         {
             string heading = r.Record.Heading ?? "";
             if (!seen.Add(heading)) continue;
-            if (count++ >= 3) break;
+            if (count++ >= maxResults) break;
 
             // Find the SiteMapping for this heading to get the link
             SiteMapping? relatedMapping = _SiteMappingService.SiteMappings
