@@ -9,6 +9,7 @@ const {
     chatMessages,
     chatInput,
     isTyping,
+    isSubmitting,
     chatMessagesEl,
     chatInputField,
     captchaContainerEl,
@@ -16,6 +17,7 @@ const {
     closeChatDialog,
     clearChatHistory,
     formatMessage,
+    getErrorHeading,
     getErrorMessageClass,
     getErrorIconClass,
     sendChatMessage
@@ -122,11 +124,7 @@ const {
                         <div v-if="message.role === 'error'" :class="getErrorMessageClass(message.errorType)">
                             <i :class="getErrorIconClass(message.errorType)" />
                             <div class="message-text">
-                                <h4 v-if="message.errorType === 'rate-limit'">Rate Limit Reached</h4>
-                                <h4 v-else-if="message.errorType === 'auth-error'">Authentication Required</h4>
-                                <h4 v-else-if="message.errorType === 'captcha-error'">Verification Required</h4>
-                                <h4 v-else-if="message.errorType === 'validation-error'">Invalid Input</h4>
-                                <h4 v-else>Error</h4>
+                                <h4>{{ getErrorHeading(message.errorType) }}</h4>
                                 <p v-html="formatMessage(message.content)" />
                                 <div v-if="message.errorType === 'rate-limit'" class="retry-info">
                                     Please wait before sending another message
@@ -171,7 +169,7 @@ const {
                                 v-model="chatInput"
                                 class="chat-input"
                                 placeholder="Ask me about C#..."
-                                :disabled="isTyping || !isAuthenticated"
+                                :disabled="isSubmitting || isTyping || !isAuthenticated"
                                 autocomplete="off"
                                 aria-describedby="chat-input-help"
                                 maxlength="500"
@@ -179,7 +177,7 @@ const {
                             <button
                                 type="submit"
                                 class="send-button"
-                                :disabled="isTyping || !chatInput.trim() || !isAuthenticated"
+                                :disabled="isSubmitting || isTyping || !chatInput.trim() || !isAuthenticated"
                                 aria-label="Send message"
                                 title="Send message"
                             >
