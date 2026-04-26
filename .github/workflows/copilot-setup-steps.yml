@@ -49,6 +49,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Install additional development tools
+        shell: bash
         run: |
           echo "Installing additional tools for Copilot agent environment..."
           if dotnet tool list --global | grep -q 'dotnet-ef'; then
