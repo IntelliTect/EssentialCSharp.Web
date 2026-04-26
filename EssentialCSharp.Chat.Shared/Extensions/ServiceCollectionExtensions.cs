@@ -17,13 +17,14 @@ public static class ServiceCollectionExtensions
 
     /// <summary>
     /// Dispatches to <see cref="AddLocalAIServices"/> or <see cref="AddAzureOpenAIServices"/>
-    /// based on <c>AIOptions:UseLocalAI</c>. Replaces the <c>if (!IsDevelopment())</c> guard in
-    /// Program.cs so that AI services are always registered regardless of environment.
+    /// based on <c>AIOptions:UseLocalAI</c>. AI chat requires either local AI mode
+    /// or a configured Azure/Foundry endpoint in every environment.
     /// </summary>
     public static IHostApplicationBuilder AddAIServices(
         this IHostApplicationBuilder builder,
         IConfiguration configuration)
     {
+        builder.Services.Configure<AIOptions>(configuration.GetSection("AIOptions"));
         var aiOptions = configuration.GetSection("AIOptions").Get<AIOptions>() ?? new AIOptions();
 
         if (aiOptions.UseLocalAI)
@@ -34,14 +35,11 @@ public static class ServiceCollectionExtensions
         {
             builder.Services.AddAzureOpenAIServices(configuration);
         }
-        else if (!builder.Environment.IsDevelopment())
+        else
         {
-            // Non-development without an endpoint is a misconfiguration — fail loudly.
             throw new InvalidOperationException(
-                "AIOptions:Endpoint is required when UseLocalAI=false in non-development environments. " +
-                "Set the endpoint or enable local AI mode with aspire secret set Parameters:UseLocalAI true");
+                "AI chat requires either AIOptions:UseLocalAI=true or AIOptions:Endpoint to be configured.");
         }
-        // else: development + no config — graceful degradation, chat endpoints unavailable.
 
         return builder;
     }

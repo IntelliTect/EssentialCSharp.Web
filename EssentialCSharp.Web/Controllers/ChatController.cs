@@ -132,30 +132,44 @@ public class ChatController : ControllerBase
     }
 
     /// <summary>
-    /// Verifies the hCaptcha token. Fails-open on service outage (returns success with warning)
-    /// since the endpoint is already protected by [Authorize] and rate limiting.
+    /// Verifies the hCaptcha token and denies chat access when verification cannot be completed.
     /// </summary>
     private async Task<(bool Success, IActionResult? Error)> VerifyCaptchaAsync(
         string? captchaToken, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(captchaToken))
-            return (false, StatusCode(StatusCodes.Status403Forbidden,
-                new { error = "Captcha verification required.", errorCode = "captcha_required", retryable = true }));
+            return (false, CreateCaptchaRequiredResult());
 
         var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
         var result = await _CaptchaService.VerifyAsync(captchaToken, remoteIp, cancellationToken);
 
         if (result is null)
         {
-            // hCaptcha service is unreachable — fail-open since [Authorize] + rate limiting still protect the endpoint.
-            _Logger.LogWarning("hCaptcha service unavailable for user {User} — allowing request", User.Identity?.Name);
-            return (true, null);
+            _Logger.LogWarning("hCaptcha service unavailable for user {User} — denying request", User.Identity?.Name);
+            return (false, CreateCaptchaUnavailableResult());
         }
 
         if (!result.Success)
-            return (false, StatusCode(StatusCodes.Status403Forbidden,
-                new { error = "Captcha verification failed.", errorCode = "captcha_failed", retryable = true }));
+            return (false, CreateCaptchaFailedResult());
 
         return (true, null);
     }
+
+    private ObjectResult CreateCaptchaRequiredResult() =>
+        StatusCode(StatusCodes.Status403Forbidden,
+            new { error = "Captcha verification required.", errorCode = "captcha_required", retryable = true });
+
+    private ObjectResult CreateCaptchaFailedResult() =>
+        StatusCode(StatusCodes.Status403Forbidden,
+            new { error = "Captcha verification failed.", errorCode = "captcha_failed", retryable = true });
+
+    private ObjectResult CreateCaptchaUnavailableResult() =>
+        StatusCode(StatusCodes.Status503ServiceUnavailable,
+            new
+            {
+                error = "Captcha verification is temporarily unavailable. Please try again later.",
+                errorCode = "captcha_unavailable",
+                retryable = true
+            });
+
 }

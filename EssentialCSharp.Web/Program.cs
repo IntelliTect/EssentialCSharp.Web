@@ -244,11 +244,10 @@ public partial class Program
         // AIOptions__UseLocalAI=true enables Ollama local mode (set via aspire secret or dashboard).
         builder.AddAIServices(configuration);
 
-        // When using local Ollama, Polly's default 30s TotalRequestTimeout fires before LLM inference
-        // completes (qwen2.5-coder:7b consistently takes >30s). Override globally — this code path
-        // is only reached in local dev when UseLocalAI=true, so widening all clients is acceptable.
+        // When using local Ollama in development, Polly's default 30s TotalRequestTimeout fires
+        // before LLM inference completes (qwen2.5-coder:7b consistently takes >30s).
         var aiOptsForTimeout = configuration.GetSection("AIOptions").Get<EssentialCSharp.Chat.AIOptions>();
-        if (aiOptsForTimeout?.UseLocalAI == true)
+        if (builder.Environment.IsDevelopment() && aiOptsForTimeout?.UseLocalAI == true)
         {
             builder.Services.PostConfigureAll<HttpStandardResilienceOptions>(options =>
             {

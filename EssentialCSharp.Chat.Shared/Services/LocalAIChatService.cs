@@ -94,10 +94,14 @@ public class LocalAIChatService : IAIChatService
 #pragma warning restore OPENAI001
     {
         if (tools is not null || reasoningEffortLevel is not null)
+        {
             _logger.LogWarning("LocalAIChatService: ResponseTool and ReasoningEffortLevel are Azure-specific and are ignored in local mode.");
+        }
 
         if (enableContextualSearch)
+        {
             _logger.LogWarning("LocalAIChatService: Vector search (RAG) is disabled in local mode (Phase 1). Run in Azure mode to enable contextual search.");
+        }
     }
 
     private List<ChatMessage> BuildMessages(string prompt, string? systemPrompt, string? previousResponseId)

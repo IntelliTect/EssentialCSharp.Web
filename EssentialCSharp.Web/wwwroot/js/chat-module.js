@@ -114,9 +114,7 @@ export function useChatWidget() {
         });
     }
 
-    // Remove captcha callback functions as they're no longer needed for chat
-
-    // hCaptcha invisible widget — programmatic callbacks (not string-based data-callback attributes)
+    // Captcha callbacks used by the hCaptcha invisible widget during chat requests.
     function onCaptchaSuccess(token) {
         if (captchaResolve) {
             captchaResolve(token);
@@ -142,9 +140,11 @@ export function useChatWidget() {
     }
 
     async function ensureCaptchaWidget() {
-        if (!window.HCAPTCHA_SITE_KEY) throw new Error('Captcha is not configured.');
+        const siteKey = window.HCAPTCHA_SITE_KEY?.trim();
+        if (!siteKey) throw new Error('Captcha is not configured.');
         await nextTick();
         if (captchaWidgetId !== null) return;
+        if (!captchaContainerEl.value) throw new Error('Captcha container is missing.');
 
         // Wait for hcaptcha.js to load — uses the shared whenHcaptchaReady queue from hcaptcha-form.js
         await new Promise((resolve, reject) => {
@@ -156,7 +156,7 @@ export function useChatWidget() {
         });
 
         captchaWidgetId = window.hcaptcha.render(captchaContainerEl.value, {
-            sitekey: window.HCAPTCHA_SITE_KEY,
+            sitekey: siteKey,
             size: 'invisible',
             callback: onCaptchaSuccess,
             'expired-callback': onCaptchaExpired,
@@ -300,15 +300,15 @@ export function useChatWidget() {
 
         let reader = null;
         try {
-            const response = await fetchChatStream(userMessage, captchaToken);
+            let streamResponse = await fetchChatStream(userMessage, captchaToken);
 
-            if (!response.ok) {
-                if (response.status === 401) {
+            if (!streamResponse.ok) {
+                if (streamResponse.status === 401) {
                     throw new Error('Authentication required');
-                } else if (response.status === 403) {
+                } else if (streamResponse.status === 403) {
                     // Captcha failed — try once more with a fresh token
                     let errorData = {};
-                    try { errorData = await response.json(); } catch (_) {}
+                    try { errorData = await streamResponse.json(); } catch (_) {}
 
                     if (errorData.retryable) {
                         let retryToken;
@@ -325,15 +325,14 @@ export function useChatWidget() {
                             chatInput.value = userMessage;
                             throw new Error('captcha-failed');
                         }
-                        // Use retry response for the rest of the streaming flow
-                        reader = retryResponse.body.getReader();
+                        streamResponse = retryResponse;
                     } else {
                         throw new Error('captcha-failed');
                     }
-                } else if (response.status === 429) {
+                } else if (streamResponse.status === 429) {
                     let errorData;
                     try {
-                        errorData = await response.json();
+                        errorData = await streamResponse.json();
                     } catch (e) {
                         errorData = { 
                             error: 'Rate limit exceeded. Please wait before sending another message.',
@@ -343,15 +342,23 @@ export function useChatWidget() {
                     
                     const retryAfter = errorData.retryAfter || 60;
                     throw new Error(`Rate limit exceeded. Please wait ${Math.ceil(retryAfter)} seconds before sending another message.`);
-                } else if (response.status === 400) {
-                    const errorData = await response.json();
+                } else if (streamResponse.status === 400) {
+                    const errorData = await streamResponse.json();
                     throw new Error(errorData.error || 'Bad request');
+                } else if (streamResponse.status === 503) {
+                    let errorData = {};
+                    try { errorData = await streamResponse.json(); } catch (_) {}
+
+                    if (errorData.errorCode === 'captcha_unavailable') {
+                        throw new Error('captcha-unavailable');
+                    }
+
+                    throw new Error(errorData.error || 'Service unavailable');
                 }
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(`HTTP error! status: ${streamResponse.status}`);
             }
 
-            // Handle streaming response
-            if (!reader) reader = response.body.getReader();
+            reader = streamResponse.body.getReader();
             const decoder = new TextDecoder();
             let assistantMessage = '';
             let assistantMessageIndex = -1;
@@ -426,6 +433,9 @@ export function useChatWidget() {
             } else if (error.message === 'captcha-failed') {
                 errorMessage = 'Security verification failed. Please try again.';
                 errorType = 'captcha-error';
+            } else if (error.message === 'captcha-unavailable') {
+                errorMessage = 'Security verification is temporarily unavailable. Please try again later.';
+                errorType = 'captcha-error';
             } else if (error.message?.includes('Authentication required')) {
                 errorMessage = 'You must be logged in to use the chat feature. Please log in and try again.';
                 errorType = 'auth-error';
@@ -433,6 +443,9 @@ export function useChatWidget() {
             } else if (error.message?.includes('Rate limit exceeded')) {
                 errorMessage = error.message; // Use the specific rate limit message with timing
                 errorType = 'rate-limit';
+            } else if (error.message?.includes('Service unavailable')) {
+                errorMessage = error.message;
+                errorType = 'connection-error';
             } else if (error.message?.includes('HTTP error')) {
                 errorMessage = 'Unable to connect to the chat service. Please check your connection and try again.';
                 errorType = 'connection-error';
