@@ -52,7 +52,7 @@
 }
 
 /* Chat trigger button */
-.chat-button {
+.chat-widget .chat-button {
     background: linear-gradient(135deg, #1976d2 0%, #1565c0 50%, #0d47a1 100%);
     border: none;
     border-radius: 28px;
@@ -98,7 +98,7 @@
     height: 120%;
 }
 
-.chat-button:hover {
+.chat-widget .chat-button:hover {
     background: linear-gradient(135deg, #1565c0 0%, #0d47a1 50%, #1a237e 100%);
     box-shadow: 
         0 5px 5px -3px rgba(0,0,0,.2), 
@@ -108,7 +108,7 @@
     transform: translateY(-2px) scale(1.02);
 }
 
-.chat-button:focus {
+.chat-widget .chat-button:focus {
     outline: 3px solid rgba(25, 118, 210, 0.3);
     outline-offset: 2px;
     box-shadow: 
@@ -118,7 +118,7 @@
         0 0 0 3px rgba(25, 118, 210, 0.3);
 }
 
-.chat-button:active {
+.chat-widget .chat-button:active {
     box-shadow: 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.12), 0 1px 5px 0 rgba(0,0,0,.2);
 }
 
@@ -144,7 +144,12 @@
     }
 }
 
-.chat-button-text {
+.chat-widget .chat-button-text,
+.chat-widget .chat-button i {
+    color: white;
+}
+
+.chat-widget .chat-button-text {
     margin-left: 4px;
     white-space: nowrap;
 }
