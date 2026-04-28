@@ -1,14 +1,18 @@
 @using EssentialCSharp.Web.Extensions
 @using System.Globalization
+@using EssentialCSharp.Chat
 @using EssentialCSharp.Web.Services
 @using IntelliTect.Multitool
 @using EssentialCSharp.Common
 @using Microsoft.AspNetCore.Identity
 @using EssentialCSharp.Web.Areas.Identity.Data
 @using Microsoft.Extensions.Configuration
+@using Microsoft.Extensions.Hosting
 @inject ISiteMappingService _SiteMappings
 @inject SignInManager<EssentialCSharpWebUser> SignInManager
 @inject IConfiguration Configuration
+@inject AIConfigurationState CurrentAIConfiguration
+@inject IHostEnvironment HostEnvironment
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -178,6 +182,11 @@
             var buildLabel = ReleaseDateAttribute.GetReleaseDate() is DateTime date
                 ? TimeZoneInfo.ConvertTimeFromUtc(date, TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time")).ToString("d MMM, yyyy h:mm:ss tt", CultureInfo.InvariantCulture)
                 : null;
+            var enableChatWidget = !Context.Request.Path.StartsWithSegments("/Identity")
+                && (CurrentAIConfiguration.IsAvailable || HostEnvironment.IsDevelopment());
+            var chatWidgetUnavailableMessage = !CurrentAIConfiguration.IsAvailable && HostEnvironment.IsDevelopment()
+                ? AIConfigurationState.DevelopmentUnavailableMessage
+                : null;
         }
         window.PERCENT_COMPLETE = @Json.Serialize(percentComplete);
         window.PREVIOUS_PAGE = @Json.Serialize(ViewBag.PreviousPage);
@@ -187,8 +196,15 @@
         window.IS_AUTHENTICATED = @Json.Serialize(SignInManager.IsSignedIn(User));
         window.TRYDOTNET_ORIGIN = @Json.Serialize(Configuration["TryDotNet:Origin"]);
         window.BUILD_LABEL = @Json.Serialize(buildLabel);
-        window.ENABLE_CHAT_WIDGET = @Json.Serialize(!Context.Request.Path.StartsWithSegments("/Identity"));
+        window.CHAT_WIDGET = @Json.Serialize(new
+        {
+            enabled = enableChatWidget,
+            available = CurrentAIConfiguration.IsAvailable,
+            unavailableMessage = chatWidgetUnavailableMessage
+        });
+        window.HCAPTCHA_SITE_KEY = @Json.Serialize(Configuration["HCaptcha:SiteKey"]);
     </script>
     <script src="~/dist/assets/site-shell.js" type="module" asp-append-version="true"></script>
 </body>
 </html>
+

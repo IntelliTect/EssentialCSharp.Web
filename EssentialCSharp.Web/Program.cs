@@ -1,4 +1,5 @@
 using System.Threading.RateLimiting;
+using EssentialCSharp.Chat;
 using EssentialCSharp.Chat.Common.Extensions;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
@@ -19,6 +20,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Http.Resilience;
 using OpenTelemetry;
 using OpenTelemetry.Instrumentation.AspNetCore;
 using OpenTelemetry.Metrics;
@@ -159,6 +161,7 @@ public partial class Program
 
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(30);
             options.Lockout.MaxFailedAccessAttempts = 3;
+            options.Stores.MaxLengthForKeys = EssentialCSharpWebIdentitySchema.KeyMaxLength;
 
             //TODO: Implement IProtectedUserStore
             //options.Stores.ProtectPersonalData = true;
@@ -239,10 +242,23 @@ public partial class Program
         builder.Services.AddSingleton<IListingSourceCodeService, ListingSourceCodeService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
 
-        // Add AI Chat services
-        if (!builder.Environment.IsDevelopment())
+        AIConfigurationState aiConfiguration = AIConfigurationState.From(
+            configuration.GetSection("AIOptions").Get<AIOptions>());
+
+        // Development supports Disabled, Local, and Azure modes. Non-Development remains strict.
+        builder.AddAIServices(configuration, aiConfiguration);
+
+        // When using local Ollama in development, Polly's default 30s TotalRequestTimeout fires
+        // before LLM inference completes (qwen2.5-coder:7b consistently takes >30s).
+        if (builder.Environment.IsDevelopment() && aiConfiguration.UsesLocalAI)
         {
-            builder.Services.AddAzureOpenAIServices(configuration);
+            builder.Services.PostConfigureAll<HttpStandardResilienceOptions>(options =>
+            {
+                options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(10);
+                options.AttemptTimeout.Timeout = TimeSpan.FromMinutes(5);
+                // Polly requires SamplingDuration >= 2x AttemptTimeout; default 30s is now invalid.
+                options.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(11);
+            });
         }
 
         // Add Rate Limiting for API endpoints

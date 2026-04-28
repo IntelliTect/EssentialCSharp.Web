@@ -9,12 +9,15 @@ const {
     chatMessages,
     chatInput,
     isTyping,
+    isSubmitting,
     chatMessagesEl,
     chatInputField,
+    captchaContainerEl,
     openChatDialog,
     closeChatDialog,
     clearChatHistory,
     formatMessage,
+    getErrorHeading,
     getErrorMessageClass,
     getErrorIconClass,
     sendChatMessage
@@ -25,10 +28,13 @@ const {
     <div class="chat-widget">
         <button
             class="chat-button elevation-6"
-            :class="{ 'chat-button--active': showChatDialog }"
+            :class="{
+                'chat-button--active': showChatDialog && shell.chatWidgetAvailable,
+                'chat-button--unavailable': !shell.chatWidgetAvailable
+            }"
             :aria-expanded="showChatDialog"
-            :aria-label="isAuthenticated ? 'Open AI Chat Assistant' : 'Login required for AI Chat'"
-            :title="isAuthenticated ? 'Chat with AI Assistant about C# programming' : 'Login required to use chat'"
+            :aria-label="!shell.chatWidgetAvailable ? 'AI Chat unavailable for this local run' : isAuthenticated ? 'Open AI Chat Assistant' : 'Login required for AI Chat'"
+            :title="!shell.chatWidgetAvailable ? shell.chatWidgetUnavailableMessage : isAuthenticated ? 'Chat with AI Assistant about C# programming' : 'Login required to use chat'"
             type="button"
             @click="openChatDialog"
         >
@@ -94,12 +100,18 @@ const {
                     aria-live="polite"
                     aria-label="Chat conversation"
                 >
-                    <div v-if="chatMessages.length === 0 && isAuthenticated" class="welcome-message">
+                    <div v-if="!shell.chatWidgetAvailable" class="login-required-message">
+                        <i class="mdi mdi-robot-off-outline" aria-hidden="true" />
+                        <h3>AI Chat Unavailable</h3>
+                        <p>{{ shell.chatWidgetUnavailableMessage }}</p>
+                    </div>
+
+                    <div v-else-if="chatMessages.length === 0 && isAuthenticated" class="welcome-message">
                         <i class="mdi mdi-chat-outline" aria-hidden="true" />
                         <p>Hi! I'm your AI assistant. Ask me anything about C# programming!</p>
                     </div>
 
-                    <div v-if="!isAuthenticated" class="login-required-message">
+                    <div v-else-if="!isAuthenticated" class="login-required-message">
                         <i class="mdi mdi-lock-outline" aria-hidden="true" />
                         <h3>Login Required</h3>
                         <p>Please log in to chat with the AI assistant about C# programming.</p>
@@ -121,11 +133,7 @@ const {
                         <div v-if="message.role === 'error'" :class="getErrorMessageClass(message.errorType)">
                             <i :class="getErrorIconClass(message.errorType)" />
                             <div class="message-text">
-                                <h4 v-if="message.errorType === 'rate-limit'">Rate Limit Reached</h4>
-                                <h4 v-else-if="message.errorType === 'auth-error'">Authentication Required</h4>
-                                <h4 v-else-if="message.errorType === 'captcha-error'">Verification Required</h4>
-                                <h4 v-else-if="message.errorType === 'validation-error'">Invalid Input</h4>
-                                <h4 v-else>Error</h4>
+                                <h4>{{ getErrorHeading(message.errorType) }}</h4>
                                 <p v-html="formatMessage(message.content)" />
                                 <div v-if="message.errorType === 'rate-limit'" class="retry-info">
                                     Please wait before sending another message
@@ -158,7 +166,7 @@ const {
                     </div>
                 </div>
 
-                <div v-if="isAuthenticated" class="chat-footer">
+                <div v-if="isAuthenticated && shell.chatWidgetAvailable" class="chat-footer">
                     <form class="chat-form" @submit.prevent="sendChatMessage">
                         <div class="input-wrapper">
                             <label for="chat-input" class="visually-hidden">
@@ -170,7 +178,7 @@ const {
                                 v-model="chatInput"
                                 class="chat-input"
                                 placeholder="Ask me about C#..."
-                                :disabled="isTyping || !isAuthenticated"
+                                :disabled="isSubmitting || isTyping || !isAuthenticated"
                                 autocomplete="off"
                                 aria-describedby="chat-input-help"
                                 maxlength="500"
@@ -178,7 +186,7 @@ const {
                             <button
                                 type="submit"
                                 class="send-button"
-                                :disabled="isTyping || !chatInput.trim() || !isAuthenticated"
+                                :disabled="isSubmitting || isTyping || !chatInput.trim() || !isAuthenticated"
                                 aria-label="Send message"
                                 title="Send message"
                             >
@@ -189,6 +197,8 @@ const {
                             Type your question and press Enter or click send. Maximum 500 characters.
                         </div>
                     </form>
+                    <!-- Invisible hCaptcha widget attachment point — no visible UI in invisible mode -->
+                    <div ref="captchaContainerEl" style="display:none;" aria-hidden="true"></div>
                 </div>
             </div>
         </div>

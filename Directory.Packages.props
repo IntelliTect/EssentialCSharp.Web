@@ -63,6 +63,9 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.15.2" />
+    <PackageVersion Include="CommunityToolkit.Aspire.OllamaSharp" Version="13.1.1" />
+    <!-- Pin transitive OpenTelemetry.Api to non-vulnerable version (1.12.0 from OllamaSharp is GHSA-g94r-2vxg-569j) -->
+    <PackageVersion Include="OpenTelemetry.Api" Version="1.15.3" />
     <PackageVersion Include="DotnetSitemapGenerator" Version="2.0.0" />
   </ItemGroup>
 </Project>

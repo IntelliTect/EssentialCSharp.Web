@@ -5,6 +5,7 @@ using EssentialCSharp.Chat.Common.Services;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.SemanticKernel;
 using Npgsql;
 
@@ -13,6 +14,66 @@ namespace EssentialCSharp.Chat.Common.Extensions;
 public static class ServiceCollectionExtensions
 {
     private static readonly string[] _PostgresScopes = ["https://ossrdbms-aad.database.windows.net/.default"];
+
+    /// <summary>
+    /// Resolves the AI mode once and applies environment-specific enforcement.
+    /// Development allows Disabled, Local, or Azure modes. Non-Development requires Azure.
+    /// </summary>
+    public static IHostApplicationBuilder AddAIServices(
+        this IHostApplicationBuilder builder,
+        IConfiguration configuration,
+        AIConfigurationState? aiConfigurationState = null)
+    {
+        builder.Services.Configure<AIOptions>(configuration.GetSection("AIOptions"));
+        aiConfigurationState ??= AIConfigurationState.From(configuration.GetSection("AIOptions").Get<AIOptions>());
+        builder.Services.AddSingleton(aiConfigurationState);
+
+        if (!builder.Environment.IsDevelopment() && !aiConfigurationState.UsesAzureAI)
+        {
+            throw new InvalidOperationException(
+                "Non-Development environments require AIOptions:Endpoint to be configured. Local AI is only supported in Development.");
+        }
+
+        if (aiConfigurationState.UsesLocalAI)
+        {
+            builder.AddLocalAIServices(configuration);
+        }
+        else if (aiConfigurationState.UsesAzureAI)
+        {
+            builder.Services.AddAzureOpenAIServices(configuration);
+        }
+        else
+        {
+            builder.Services.AddSingleton<IAIChatService, UnavailableAIChatService>();
+        }
+
+        return builder;
+    }
+
+    /// <summary>
+    /// Registers the Ollama-backed local AI services. Uses IChatClient from
+    /// CommunityToolkit.Aspire.OllamaSharp. Vector search (RAG) is disabled in Phase 1
+    /// due to the embedding dimension mismatch (Ollama nomic-embed-text = 768 dims,
+    /// pgvector schema expects 1536).
+    /// </summary>
+    public static IHostApplicationBuilder AddLocalAIServices(
+        this IHostApplicationBuilder builder,
+        IConfiguration configuration)
+    {
+        builder.Services.Configure<AIOptions>(configuration.GetSection("AIOptions"));
+
+        // Registers IChatClient backed by the Ollama "ollama-chat" resource.
+        // Connection string injected by Aspire: Endpoint=http://...:11434;Model=qwen2.5-coder:7b
+        builder.AddOllamaApiClient("ollama-chat")
+               .AddChatClient();
+
+        // NOTE: ollama-embed (nomic-embed-text, 768 dims) not registered in Phase 1.
+        // The pgvector schema hardcodes 1536 dims — incompatible without schema migration.
+        // Phase 2: register IEmbeddingGenerator + configure VectorStoreCollectionDefinition.
+
+        builder.Services.AddSingleton<IAIChatService, LocalAIChatService>();
+        return builder;
+    }
 
     /// <summary>
     /// Adds Azure OpenAI and related AI services to the service collection using Managed Identity
@@ -65,10 +126,13 @@ public static class ServiceCollectionExtensions
             .UseOpenTelemetry();
 #pragma warning restore SKEXP0010
 
-        // Register shared AI services
+        // Register shared AI services — forward IAIChatService to the concrete instance
+        // so the CLI tool (GetRequiredService<AIChatService>()) and the web app
+        // (GetRequiredService<IAIChatService>()) share the same singleton.
         services.AddSingleton<EmbeddingService>();
         services.AddSingleton<AISearchService>();
         services.AddSingleton<AIChatService>();
+        services.AddSingleton<IAIChatService>(sp => sp.GetRequiredService<AIChatService>());
         services.AddSingleton<MarkdownChunkingService>();
 
         return services;
