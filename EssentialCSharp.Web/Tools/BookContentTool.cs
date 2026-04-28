@@ -37,7 +37,7 @@ public sealed partial class BookContentTool
      Description("Retrieve the prose content of a specific book section identified by its slug/key (e.g., 'hello-world', 'creating-editing-compiling-and-running-c-source-code'). Returns the section text with code examples preserved. Use GetChapterSections to discover available slugs.")]
     public async Task<string> GetSectionContent(
         [Description("The section slug/key (e.g., 'hello-world'). Use GetChapterSections to get valid slugs.")] string sectionKey,
-        [Description("Maximum number of characters to return (500–8000, default 4000). Long sections are truncated.")] int maxChars = 4000,
+        [Description("Maximum number of characters to return (500–8000). Long sections are truncated.")] int maxChars = 4000,
         CancellationToken cancellationToken = default)
     {
         maxChars = Math.Clamp(maxChars, 500, 8000);
@@ -365,7 +365,7 @@ public sealed partial class BookContentTool
             sb.AppendLine("## Guidelines in this Chapter");
             foreach (var g in guidelines)
             {
-                sb.AppendLine(CultureInfo.InvariantCulture, $"- **[{FormatGuidelineType(g.Type)}]** {g.Guideline}");
+                sb.AppendLine(CultureInfo.InvariantCulture, $"- **[{g.Type.ToDisplayString()}]** {g.Guideline}");
             }
         }
 
@@ -430,15 +430,6 @@ public sealed partial class BookContentTool
             ExtractNodeContent(child, sb);
         }
     }
-
-    private static string FormatGuidelineType(GuidelineType type) => type switch
-    {
-        GuidelineType.Do => "DO",
-        GuidelineType.Consider => "CONSIDER",
-        GuidelineType.Avoid => "AVOID",
-        GuidelineType.DoNot => "DO NOT",
-        _ => "NOTE"
-    };
 
     [GeneratedRegex(@"^[A-Za-z0-9_-]{1,128}$")]
     private static partial Regex AnchorIdRegex();

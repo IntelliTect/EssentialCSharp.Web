@@ -39,12 +39,19 @@ public sealed class BookListingTool
      Description("Search all code listings in the Essential C# book for a specific code pattern, keyword, or identifier. Searches actual C# source code (not prose). Useful for finding examples of Task.WhenAll, yield return, IDisposable, pattern matching, and similar code constructs.")]
     public async Task<string> SearchListingsByCode(
         [Description("The code pattern or keyword to search for in listing source code (case-insensitive substring match).")] string pattern,
-        [Description("Maximum number of matching listings to return (1–20, default 10).")] int maxResults = 10,
+        [Description("Maximum number of matching listings to return (1–20).")] int maxResults = 10,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(pattern))
         {
             return "Pattern must not be empty.";
+        }
+
+        string trimmedPattern = pattern.Trim();
+        bool isKnownOperator = trimmedPattern is "=>" or "??" or "?." or "::" or "??=" or "==" or "!=" or "<=" or ">=" or "&&" or "||";
+        if (!isKnownOperator && trimmedPattern.Count(char.IsLetterOrDigit) < 2)
+        {
+            return "Pattern must contain at least two letters or digits, or be a recognized C# operator (=>, ??, ?., ::, ??=, ==, !=, <=, >=, &&, ||).";
         }
 
         maxResults = Math.Clamp(maxResults, 1, 20);
@@ -66,7 +73,7 @@ public sealed class BookListingTool
             foreach (var listing in listings)
             {
                 if (found >= maxResults) break;
-                if (listing.Content.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+                if (listing.Content.Contains(trimmedPattern, StringComparison.OrdinalIgnoreCase))
                 {
                     string langHint = listing.FileExtension == "cs" ? "csharp" : listing.FileExtension;
                     sb.AppendLine(CultureInfo.InvariantCulture, $"### Listing {listing.ChapterNumber}.{listing.ListingNumber}");

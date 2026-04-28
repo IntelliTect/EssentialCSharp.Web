@@ -1,5 +1,7 @@
 @using Microsoft.AspNetCore.Identity
 @using EssentialCSharp.Web.Areas.Identity.Data
+@using EssentialCSharp.Web.Controllers
+@model IReadOnlyList<McpToolInfo>
 @inject SignInManager<EssentialCSharpWebUser> SignInManager
 @{
     ViewData["Title"] = "AI Tools Setup";
@@ -259,338 +261,34 @@
             <button class="btn btn-sm btn-outline-secondary ms-auto" id="expandToolsBtn"
                     onclick="toggleAllTools(this)">Expand all</button>
         </div>
-        <p>Once connected, your AI client has access to 17 tools organized into four groups:</p>
+        <p>Once connected, your AI client has access to @Model.Count tool@(Model.Count == 1 ? "" : "s"):</p>
 
-        <h5 class="mt-4 mb-2 text-muted text-uppercase small fw-semibold letter-spacing-1">Search &amp; Discovery</h5>
-
-        <details class="card mb-2">
-            <summary class="card-header d-flex align-items-center gap-2" style="cursor:pointer;list-style:none">
-                <span class="details-chevron">&#9656;</span>
-                <span class="font-monospace fw-semibold">search_book_content</span>
-                <span class="text-muted small ms-auto">Semantic search over book chapters</span>
-            </summary>
-            <div class="card-body">
-                <p class="card-text">
-                    Semantic vector search over all Essential C# book chapters. Returns the most relevant text
-                    chunks with chapter number, section heading, and relevance score. Use for questions like
-                    "How does async/await work?" or "What is pattern matching?"
-                </p>
-                <dl class="row mb-0 small">
-                    <dt class="col-sm-3">Input</dt>
-                    <dd class="col-sm-9"><code>query</code> — natural-language C# concept or question</dd>
-                    <dt class="col-sm-3">Returns</dt>
-                    <dd class="col-sm-9">Ranked text chunks with chapter, section, and relevance score</dd>
-                </dl>
-            </div>
-        </details>
-
-        <details class="card mb-2">
-            <summary class="card-header d-flex align-items-center gap-2" style="cursor:pointer;list-style:none">
-                <span class="details-chevron">&#9656;</span>
-                <span class="font-monospace fw-semibold">lookup_concept</span>
-                <span class="text-muted small ms-auto">Find all sections covering a concept</span>
-            </summary>
-            <div class="card-body">
-                <p class="card-text">
-                    Combines section heading text-match with semantic search to find every place a C# concept
-                    appears in the book. Good for topics like "LINQ", "generics", or "async/await".
-                </p>
-                <dl class="row mb-0 small">
-                    <dt class="col-sm-3">Input</dt>
-                    <dd class="col-sm-9"><code>concept</code> — C# feature or topic name</dd>
-                    <dt class="col-sm-3">Returns</dt>
-                    <dd class="col-sm-9">Section headings with chapter numbers and deep links</dd>
-                </dl>
-            </div>
-        </details>
-
-        <details class="card mb-2">
-            <summary class="card-header d-flex align-items-center gap-2" style="cursor:pointer;list-style:none">
-                <span class="details-chevron">&#9656;</span>
-                <span class="font-monospace fw-semibold">check_topic_coverage</span>
-                <span class="text-muted small ms-auto">Assess how thoroughly a topic is covered</span>
-            </summary>
-            <div class="card-body">
-                <p class="card-text">
-                    Tells the AI how well the book covers a given topic — "Comprehensive" (dedicated sections),
-                    "Mentioned" (in prose only), or "Not covered". Helps AI calibrate its confidence before citing the book.
-                </p>
-                <dl class="row mb-0 small">
-                    <dt class="col-sm-3">Input</dt>
-                    <dd class="col-sm-9"><code>topic</code> — C# concept to check (e.g., "source generators", "records")</dd>
-                    <dt class="col-sm-3">Returns</dt>
-                    <dd class="col-sm-9">Coverage assessment with relevant section links</dd>
-                </dl>
-            </div>
-        </details>
-
-        <details class="card mb-2">
-            <summary class="card-header d-flex align-items-center gap-2" style="cursor:pointer;list-style:none">
-                <span class="details-chevron">&#9656;</span>
-                <span class="font-monospace fw-semibold">find_book_help_for_diagnostic</span>
-                <span class="text-muted small ms-auto">Map compiler errors to book sections</span>
-            </summary>
-            <div class="card-body">
-                <p class="card-text">
-                    Given a C# compiler error code (e.g. CS8600) or a plain description (e.g. "null reference exception"),
-                    returns the most relevant book sections and guidelines. Especially useful when debugging C# code with AI assistance.
-                </p>
-                <dl class="row mb-0 small">
-                    <dt class="col-sm-3">Input</dt>
-                    <dd class="col-sm-9"><code>diagnostic</code> — a CS error code or plain error description</dd>
-                    <dt class="col-sm-3">Returns</dt>
-                    <dd class="col-sm-9">Relevant sections, prose excerpts, and related coding guidelines</dd>
-                </dl>
-            </div>
-        </details>
-
-        <details class="card mb-4">
-            <summary class="card-header d-flex align-items-center gap-2" style="cursor:pointer;list-style:none">
-                <span class="details-chevron">&#9656;</span>
-                <span class="font-monospace fw-semibold">find_related_sections</span>
-                <span class="text-muted small ms-auto">Semantically related sections</span>
-            </summary>
-            <div class="card-body">
-                <p class="card-text">
-                    Given a section slug, finds other book sections with similar themes using vector search.
-                    Great for "what else should I read after this?" recommendations.
-                </p>
-                <dl class="row mb-0 small">
-                    <dt class="col-sm-3">Input</dt>
-                    <dd class="col-sm-9"><code>sectionKey</code> — section slug (use <code>get_chapter_sections</code> to find valid values)</dd>
-                    <dt class="col-sm-3">Returns</dt>
-                    <dd class="col-sm-9">Up to 3 related sections with headings, links, and content previews</dd>
-                </dl>
-            </div>
-        </details>
-
-        <h5 class="mt-2 mb-2 text-muted text-uppercase small fw-semibold">Navigation &amp; Content</h5>
-
-        <details class="card mb-2">
-            <summary class="card-header d-flex align-items-center gap-2" style="cursor:pointer;list-style:none">
-                <span class="details-chevron">&#9656;</span>
-                <span class="font-monospace fw-semibold">get_chapter_list</span>
-                <span class="text-muted small ms-auto">Full table of contents</span>
-            </summary>
-            <div class="card-body">
-                <p class="card-text">
-                    Returns the full table of contents — all chapters and sections with navigation links.
-                    A good starting point for any AI session with this server.
-                </p>
-                <dl class="row mb-0 small">
-                    <dt class="col-sm-3">Input</dt>
-                    <dd class="col-sm-9">None</dd>
-                    <dt class="col-sm-3">Returns</dt>
-                    <dd class="col-sm-9">Hierarchical chapter and section list with links</dd>
-                </dl>
-            </div>
-        </details>
-
-        <details class="card mb-2">
-            <summary class="card-header d-flex align-items-center gap-2" style="cursor:pointer;list-style:none">
-                <span class="details-chevron">&#9656;</span>
-                <span class="font-monospace fw-semibold">get_chapter_sections</span>
-                <span class="text-muted small ms-auto">All sections in one chapter</span>
-            </summary>
-            <div class="card-body">
-                <p class="card-text">
-                    Lists every section and subsection in a given chapter with headings, slugs, and anchor links.
-                    Use the returned slugs with content tools like <code>get_section_content</code> or <code>get_navigation_context</code>.
-                </p>
-                <dl class="row mb-0 small">
-                    <dt class="col-sm-3">Input</dt>
-                    <dd class="col-sm-9"><code>chapter</code> — chapter number (e.g., 10)</dd>
-                    <dt class="col-sm-3">Returns</dt>
-                    <dd class="col-sm-9">Indented section list with slugs and deep links</dd>
-                </dl>
-            </div>
-        </details>
-
-        <details class="card mb-2">
-            <summary class="card-header d-flex align-items-center gap-2" style="cursor:pointer;list-style:none">
-                <span class="details-chevron">&#9656;</span>
-                <span class="font-monospace fw-semibold">get_section_content</span>
-                <span class="text-muted small ms-auto">Read a section's prose text</span>
-            </summary>
-            <div class="card-body">
-                <p class="card-text">
-                    Extracts and returns the readable text of a specific section from the HTML chapter pages,
-                    with code examples preserved. Use this to quote or summarize specific book passages.
-                </p>
-                <dl class="row mb-0 small">
-                    <dt class="col-sm-3">Input</dt>
-                    <dd class="col-sm-9"><code>sectionKey</code>, optional <code>maxChars</code> (500–8000, default 4000)</dd>
-                    <dt class="col-sm-3">Returns</dt>
-                    <dd class="col-sm-9">Section heading, chapter context, and formatted prose text</dd>
-                </dl>
-            </div>
-        </details>
-
-        <details class="card mb-2">
-            <summary class="card-header d-flex align-items-center gap-2" style="cursor:pointer;list-style:none">
-                <span class="details-chevron">&#9656;</span>
-                <span class="font-monospace fw-semibold">get_navigation_context</span>
-                <span class="text-muted small ms-auto">Breadcrumbs, prev/next, siblings</span>
-            </summary>
-            <div class="card-body">
-                <p class="card-text">
-                    Returns the full navigation context for a section: breadcrumb path, previous section,
-                    next section, parent, and sibling list. Powers AI "what should I read next?" flows.
-                </p>
-                <dl class="row mb-0 small">
-                    <dt class="col-sm-3">Input</dt>
-                    <dd class="col-sm-9"><code>sectionKey</code> — section slug</dd>
-                    <dt class="col-sm-3">Returns</dt>
-                    <dd class="col-sm-9">Breadcrumbs, previous, next, parent, and sibling section links</dd>
-                </dl>
-            </div>
-        </details>
-
-        <details class="card mb-2">
-            <summary class="card-header d-flex align-items-center gap-2" style="cursor:pointer;list-style:none">
-                <span class="details-chevron">&#9656;</span>
-                <span class="font-monospace fw-semibold">get_chapter_summary</span>
-                <span class="text-muted small ms-auto">Chapter overview with guidelines</span>
-            </summary>
-            <div class="card-body">
-                <p class="card-text">
-                    Returns a chapter overview: all sections in reading order plus the most relevant coding
-                    guidelines for that chapter. Ideal for "give me an overview of chapter N" prompts.
-                </p>
-                <dl class="row mb-0 small">
-                    <dt class="col-sm-3">Input</dt>
-                    <dd class="col-sm-9"><code>chapter</code> — chapter number</dd>
-                    <dt class="col-sm-3">Returns</dt>
-                    <dd class="col-sm-9">Chapter title, section list with links, and relevant guidelines</dd>
-                </dl>
-            </div>
-        </details>
-
-        <details class="card mb-4">
-            <summary class="card-header d-flex align-items-center gap-2" style="cursor:pointer;list-style:none">
-                <span class="details-chevron">&#9656;</span>
-                <span class="font-monospace fw-semibold">get_direct_content_url</span>
-                <span class="text-muted small ms-auto">Deep-link URL for any section</span>
-            </summary>
-            <div class="card-body">
-                <p class="card-text">
-                    Returns the canonical URL for any section or subsection so AI can include clickable
-                    references in its answers (e.g. <code>https://essentialcsharp.com/async-await#awaitExpression</code>).
-                </p>
-                <dl class="row mb-0 small">
-                    <dt class="col-sm-3">Input</dt>
-                    <dd class="col-sm-9"><code>sectionKey</code> — section slug</dd>
-                    <dt class="col-sm-3">Returns</dt>
-                    <dd class="col-sm-9">Section heading, chapter info, and full URL</dd>
-                </dl>
-            </div>
-        </details>
-
-        <h5 class="mt-2 mb-2 text-muted text-uppercase small fw-semibold">Code Listings</h5>
-
-        <details class="card mb-2">
-            <summary class="card-header d-flex align-items-center gap-2" style="cursor:pointer;list-style:none">
-                <span class="details-chevron">&#9656;</span>
-                <span class="font-monospace fw-semibold">get_listing_source_code</span>
-                <span class="text-muted small ms-auto">Source code for a numbered listing</span>
-            </summary>
-            <div class="card-body">
-                <p class="card-text">
-                    Retrieves the complete source code for any numbered listing in the book
-                    (e.g. "show me Listing 10.3"). Returns the code with its language hint.
-                </p>
-                <dl class="row mb-0 small">
-                    <dt class="col-sm-3">Input</dt>
-                    <dd class="col-sm-9"><code>chapter</code>, <code>listing</code> — e.g., chapter=10, listing=3 for Listing 10.3</dd>
-                    <dt class="col-sm-3">Returns</dt>
-                    <dd class="col-sm-9">Formatted code block with language hint</dd>
-                </dl>
-            </div>
-        </details>
-
-        <details class="card mb-2">
-            <summary class="card-header d-flex align-items-center gap-2" style="cursor:pointer;list-style:none">
-                <span class="details-chevron">&#9656;</span>
-                <span class="font-monospace fw-semibold">get_listing_with_context</span>
-                <span class="text-muted small ms-auto">Listing + book explanation</span>
-            </summary>
-            <div class="card-body">
-                <p class="card-text">
-                    Gets a listing's source code together with the semantically nearest prose excerpts that
-                    explain it. Useful for "explain this listing" prompts.
-                </p>
-                <dl class="row mb-0 small">
-                    <dt class="col-sm-3">Input</dt>
-                    <dd class="col-sm-9"><code>chapter</code>, <code>listing</code></dd>
-                    <dt class="col-sm-3">Returns</dt>
-                    <dd class="col-sm-9">Source code + explanatory prose from nearby sections</dd>
-                </dl>
-            </div>
-        </details>
-
-        <details class="card mb-4">
-            <summary class="card-header d-flex align-items-center gap-2" style="cursor:pointer;list-style:none">
-                <span class="details-chevron">&#9656;</span>
-                <span class="font-monospace fw-semibold">search_listings_by_code</span>
-                <span class="text-muted small ms-auto">Search source files for a code pattern</span>
-            </summary>
-            <div class="card-body">
-                <p class="card-text">
-                    Searches all listing source files for a code pattern, identifier, or construct
-                    (e.g. "Task.WhenAll", "yield return", "IDisposable"). Searches actual C#, not prose.
-                </p>
-                <dl class="row mb-0 small">
-                    <dt class="col-sm-3">Input</dt>
-                    <dd class="col-sm-9"><code>pattern</code> — case-insensitive substring; optional <code>maxResults</code> (1–20, default 10)</dd>
-                    <dt class="col-sm-3">Returns</dt>
-                    <dd class="col-sm-9">Matching source listings with chapter.listing numbering</dd>
-                </dl>
-            </div>
-        </details>
-
-        <h5 class="mt-2 mb-2 text-muted text-uppercase small fw-semibold">Coding Guidelines</h5>
-
-        <details class="card mb-2">
-            <summary class="card-header d-flex align-items-center gap-2" style="cursor:pointer;list-style:none">
-                <span class="details-chevron">&#9656;</span>
-                <span class="font-monospace fw-semibold">get_csharp_guidelines</span>
-                <span class="text-muted small ms-auto">241 C# coding guidelines, filterable</span>
-            </summary>
-            <div class="card-body">
-                <p class="card-text">
-                    Access the book's 241 C# coding guidelines — DO, CONSIDER, AVOID, and DO NOT rules
-                    covering naming conventions, error handling, LINQ, async/await, generics, and more.
-                    Filter by keyword, chapter, or rule type.
-                </p>
-                <dl class="row mb-0 small">
-                    <dt class="col-sm-3">Input</dt>
-                    <dd class="col-sm-9">Optional: <code>keyword</code>, <code>chapter</code>, <code>type</code> (do/consider/avoid/donot), <code>maxResults</code></dd>
-                    <dt class="col-sm-3">Returns</dt>
-                    <dd class="col-sm-9">Guidelines with type label, chapter, and subsection context</dd>
-                </dl>
-            </div>
-        </details>
-
-        <details class="card mb-2">
-            <summary class="card-header d-flex align-items-center gap-2" style="cursor:pointer;list-style:none">
-                <span class="details-chevron">&#9656;</span>
-                <span class="font-monospace fw-semibold">get_guidelines_by_topic</span>
-                <span class="text-muted small ms-auto">Guidelines ranked by topic relevance</span>
-            </summary>
-            <div class="card-body">
-                <p class="card-text">
-                    Finds guidelines related to a concept (e.g. "exception handling", "naming", "interfaces")
-                    and ranks them by how closely they match. More discoverable than filtering by chapter number.
-                </p>
-                <dl class="row mb-0 small">
-                    <dt class="col-sm-3">Input</dt>
-                    <dd class="col-sm-9"><code>topic</code> — concept or keyword; optional <code>maxResults</code> (1–30, default 15)</dd>
-                    <dt class="col-sm-3">Returns</dt>
-                    <dd class="col-sm-9">Guidelines ranked by relevance with type labels and chapter context</dd>
-                </dl>
-            </div>
-        </details>
-
+        @foreach (var tool in Model)
+        {
+            <details class="card mb-2">
+                <summary class="card-header d-flex align-items-center gap-2" style="cursor:pointer;list-style:none">
+                    <span class="details-chevron">&#9656;</span>
+                    <span class="font-monospace fw-semibold">@tool.Name</span>
+                    <span class="text-muted small ms-auto">@tool.Title</span>
+                </summary>
+                <div class="card-body">
+                    <p class="card-text">@tool.Description</p>
+                    @if (tool.Parameters.Count > 0)
+                    {
+                        <dl class="row mb-0 small">
+                            @foreach (var param in tool.Parameters)
+                            {
+                                <dt class="col-sm-3">
+                                    <code>@param.Name</code>
+                                    @if (!param.Required) { <span class="text-muted">(optional)</span> }
+                                </dt>
+                                <dd class="col-sm-9">@param.Description</dd>
+                            }
+                        </dl>
+                    }
+                </div>
+            </details>
+        }
 
     </section>
 

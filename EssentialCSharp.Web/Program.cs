@@ -1,4 +1,5 @@
 using System.Threading.RateLimiting;
+using ModelContextProtocol.Protocol;
 using EssentialCSharp.Chat.Common.Extensions;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
@@ -324,15 +325,19 @@ public partial class Program
                 if (context.HttpContext.Request.Path.StartsWithSegments("/mcp"))
                 {
                     context.HttpContext.Response.ContentType = "application/json";
-                    var mcpErrorResponse = new
+                    var mcpErrorResponse = new JsonRpcError
                     {
-                        jsonrpc = "2.0",
-                        error = new { code = -32000, message = "Rate limit exceeded. Please wait before sending another request." },
-                        id = (object?)null
+                        JsonRpc = "2.0",
+                        Error = new JsonRpcErrorDetail
+                        {
+                            Code = -32000,
+                            Message = "Rate limit exceeded. Please wait before sending another request."
+                        }
                     };
-                    await context.HttpContext.Response.WriteAsync(
-                        System.Text.Json.JsonSerializer.Serialize(mcpErrorResponse),
-                        cancellationToken);
+                    await System.Text.Json.JsonSerializer.SerializeAsync(
+                        context.HttpContext.Response.Body,
+                        mcpErrorResponse,
+                        cancellationToken: cancellationToken);
                     return;
                 }
 
