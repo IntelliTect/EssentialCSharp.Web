@@ -9,7 +9,16 @@ namespace EssentialCSharp.Web.Services;
 
 public class McpApiTokenService(EssentialCSharpWebContext db)
 {
+    public const int DefaultLifetimeMonths = 6;
+    public const string MaxExpiryValidationMessage = "MCP tokens can expire at most 6 months from today.";
+
     public sealed record ResolvedMcpApiToken(Guid TokenId, string UserId);
+
+    public static DateOnly GetDefaultExpiryDate(DateTime? utcNow = null)
+        => DateOnly.FromDateTime(utcNow ?? DateTime.UtcNow).AddMonths(DefaultLifetimeMonths);
+
+    public static DateTime GetDefaultExpirationUtc(DateTime? utcNow = null)
+        => GetDefaultExpiryDate(utcNow).ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
 
     /// <summary>Returns SHA-256 hash of the raw token as a byte array (varbinary(32)).</summary>
     public static byte[] HashToken(string rawToken)
@@ -30,13 +39,19 @@ public class McpApiTokenService(EssentialCSharpWebContext db)
         CancellationToken cancellationToken = default)
     {
         string raw = GenerateRawToken();
+        DateTime createdAt = DateTime.UtcNow;
+        DateTime maxExpiration = GetDefaultExpirationUtc(createdAt);
+        DateTime effectiveExpiration = expiresAt ?? maxExpiration;
+        if (effectiveExpiration > maxExpiration)
+            throw new ArgumentOutOfRangeException(nameof(expiresAt), MaxExpiryValidationMessage);
+
         var entity = new McpApiToken
         {
             UserId = userId,
             Name = name,
             TokenHash = HashToken(raw),
-            CreatedAt = DateTime.UtcNow,
-            ExpiresAt = expiresAt,
+            CreatedAt = createdAt,
+            ExpiresAt = effectiveExpiration,
         };
         db.McpApiTokens.Add(entity);
         await db.SaveChangesAsync(cancellationToken);
