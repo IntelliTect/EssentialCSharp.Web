@@ -8,9 +8,10 @@ namespace EssentialCSharp.Web.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
+[ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
 public class McpTokenController(McpApiTokenService tokenService) : ControllerBase
 {
-    public record CreateTokenRequest(string Name, DateOnly? ExpiresOn = null);
+    public record CreateTokenRequest(string? Name, DateOnly? ExpiresOn = null);
 
     [HttpPost]
     public async Task<IActionResult> CreateToken(

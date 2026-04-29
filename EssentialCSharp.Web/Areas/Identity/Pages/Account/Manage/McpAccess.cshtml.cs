@@ -30,6 +30,7 @@ public class McpAccessModel(
 
     public async Task<IActionResult> OnGetAsync()
     {
+        DisableCaching();
         string? userId = userManager.GetUserId(User);
         if (userId is null) return Challenge();
         UserTokens = await tokenService.GetUserTokensAsync(userId);
@@ -38,6 +39,7 @@ public class McpAccessModel(
 
     public async Task<IActionResult> OnPostCreateAsync()
     {
+        DisableCaching();
         string? userId = userManager.GetUserId(User);
         if (userId is null) return Challenge();
 
@@ -65,6 +67,7 @@ public class McpAccessModel(
 
     public async Task<IActionResult> OnPostRevokeAsync(Guid tokenId)
     {
+        DisableCaching();
         string? userId = userManager.GetUserId(User);
         if (userId is null) return Challenge();
 
@@ -74,5 +77,12 @@ public class McpAccessModel(
             : "Error: Token not found or already revoked.";
 
         return RedirectToPage();
+    }
+
+    private void DisableCaching()
+    {
+        Response.Headers.CacheControl = "no-store, no-cache, max-age=0";
+        Response.Headers.Pragma = "no-cache";
+        Response.Headers.Expires = "0";
     }
 }

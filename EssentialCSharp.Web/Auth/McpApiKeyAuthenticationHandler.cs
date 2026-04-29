@@ -20,25 +20,35 @@ public class McpApiKeyAuthenticationHandler(
 {
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        string? authHeader = Request.Headers.Authorization.FirstOrDefault();
-        if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-            return AuthenticateResult.NoResult();
-
-        string rawToken = authHeader["Bearer ".Length..].Trim();
-        if (!rawToken.StartsWith("mcp_", StringComparison.Ordinal))
-            return AuthenticateResult.NoResult();
-
-        var (token, userId) = await tokenService.ValidateTokenAsync(rawToken, Context.RequestAborted);
-        if (token is null || userId is null)
-            return AuthenticateResult.Fail("Invalid or revoked MCP token.");
-
-        var claims = new[]
+        if (!McpBearerAuthentication.TryGetRawToken(Request, out string? rawToken))
         {
-            new Claim(ClaimTypes.NameIdentifier, userId),
-        };
-        var identity = new ClaimsIdentity(claims, Scheme.Name);
-        var principal = new ClaimsPrincipal(identity);
-        var ticket = new AuthenticationTicket(principal, Scheme.Name);
+            return AuthenticateResult.NoResult();
+        }
+
+        McpApiTokenService.ResolvedMcpApiToken? resolvedToken;
+        if (McpBearerAuthentication.TryGetStoredResolution(Context, out resolvedToken))
+        {
+            if (resolvedToken is null)
+            {
+                return AuthenticateResult.Fail("Invalid or revoked MCP token.");
+            }
+        }
+        else
+        {
+            resolvedToken = await tokenService.ResolveValidTokenAsync(rawToken, Context.RequestAborted);
+            if (resolvedToken is null)
+            {
+                return AuthenticateResult.Fail("Invalid or revoked MCP token.");
+            }
+        }
+
+        if (!await tokenService.MarkTokenUsedAsync(resolvedToken.TokenId, Context.RequestAborted))
+        {
+            return AuthenticateResult.Fail("Invalid or revoked MCP token.");
+        }
+
+        ClaimsPrincipal principal = McpBearerAuthentication.CreatePrincipal(resolvedToken.UserId);
+        var ticket = new AuthenticationTicket(principal, McpBearerAuthentication.Scheme);
         return AuthenticateResult.Success(ticket);
     }
 }

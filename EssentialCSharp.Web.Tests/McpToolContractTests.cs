@@ -1,9 +1,6 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using EssentialCSharp.Web.Areas.Identity.Data;
-using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -203,11 +200,14 @@ public class McpToolContractTests(WebApplicationFactory factory)
 
     private async Task<(HttpClient Client, string RawToken, string? SessionId)> CreateAuthenticatedSessionAsync()
     {
-        string rawToken = await CreateTokenAsync();
-        HttpClient client = factory.CreateClient();
+        (_, string rawToken) = await McpTestHelper.CreateUserAndTokenAsync(
+            factory,
+            "mcp-contract-test",
+            userPrefix: "mcp-contract");
+        HttpClient client = McpTestHelper.CreateClient(factory);
 
-        using var initRequest = CreateMcpInitializeRequest("/mcp");
-        initRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", rawToken);
+        using var initRequest = McpTestHelper.CreateInitializeRequest("/mcp");
+        McpTestHelper.AddBearerToken(initRequest, rawToken);
 
         using HttpResponseMessage initResponse = await client.SendAsync(initRequest);
         await Assert.That(initResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
@@ -219,27 +219,6 @@ public class McpToolContractTests(WebApplicationFactory factory)
         }
 
         return (client, rawToken, sessionId);
-    }
-
-    private async Task<string> CreateTokenAsync()
-    {
-        string testUserId = Guid.NewGuid().ToString();
-        using var scope = factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<EssentialCSharpWebContext>();
-        db.Users.Add(new EssentialCSharpWebUser
-        {
-            Id = testUserId,
-            UserName = $"mcp-contract-{testUserId[..8]}",
-            NormalizedUserName = $"MCP-CONTRACT-{testUserId[..8].ToUpperInvariant()}",
-            Email = $"mcp-contract-{testUserId[..8]}@example.com",
-            NormalizedEmail = $"MCP-CONTRACT-{testUserId[..8].ToUpperInvariant()}@EXAMPLE.COM",
-            SecurityStamp = Guid.NewGuid().ToString(),
-        });
-        await db.SaveChangesAsync();
-
-        var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
-        (string rawToken, _) = await tokenService.CreateTokenAsync(testUserId, "mcp-contract-test");
-        return rawToken;
     }
 
     private string GetConfiguredBaseUrl()
@@ -254,11 +233,11 @@ public class McpToolContractTests(WebApplicationFactory factory)
         string? sessionId,
         string payload)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, "/mcp")
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/mcp")
         {
             Content = new StringContent(payload, Encoding.UTF8, "application/json")
         };
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", rawToken);
+        McpTestHelper.AddBearerToken(request, rawToken);
         request.Headers.Accept.ParseAdd("application/json");
         request.Headers.Accept.ParseAdd("text/event-stream");
         if (sessionId is not null)
@@ -300,38 +279,16 @@ public class McpToolContractTests(WebApplicationFactory factory)
 
     private static JsonElement GetTool(JsonElement tools, string toolName)
     {
-        foreach (JsonElement tool in tools.EnumerateArray())
+        JsonElement tool = tools.EnumerateArray()
+            .Where(tool => string.Equals(tool.GetProperty("name").GetString(), toolName, StringComparison.Ordinal))
+            .FirstOrDefault();
+
+        if (tool.ValueKind is not JsonValueKind.Undefined)
         {
-            if (string.Equals(tool.GetProperty("name").GetString(), toolName, StringComparison.Ordinal))
-            {
-                return tool;
-            }
+            return tool;
         }
 
         throw new InvalidOperationException($"Could not find MCP tool '{toolName}' in tools/list response.");
     }
 
-    private static HttpRequestMessage CreateMcpInitializeRequest(string path)
-    {
-        var request = new HttpRequestMessage(HttpMethod.Post, path)
-        {
-            Content = new StringContent(
-                """
-                {
-                    "jsonrpc": "2.0",
-                    "id": 1,
-                    "method": "initialize",
-                    "params": {
-                        "protocolVersion": "2024-11-05",
-                        "capabilities": {},
-                        "clientInfo": { "name": "test-client", "version": "1.0" }
-                    }
-                }
-                """,
-                Encoding.UTF8, "application/json")
-        };
-        request.Headers.Accept.ParseAdd("application/json");
-        request.Headers.Accept.ParseAdd("text/event-stream");
-        return request;
-    }
 }

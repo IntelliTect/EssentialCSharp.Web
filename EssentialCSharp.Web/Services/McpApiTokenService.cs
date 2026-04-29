@@ -9,6 +9,8 @@ namespace EssentialCSharp.Web.Services;
 
 public class McpApiTokenService(EssentialCSharpWebContext db)
 {
+    public sealed record ResolvedMcpApiToken(Guid TokenId, string UserId);
+
     /// <summary>Returns SHA-256 hash of the raw token as a byte array (varbinary(32)).</summary>
     public static byte[] HashToken(string rawToken)
         => SHA256.HashData(Encoding.UTF8.GetBytes(rawToken));
@@ -67,27 +69,35 @@ public class McpApiTokenService(EssentialCSharpWebContext db)
             .ToListAsync(cancellationToken);
 
     /// <summary>
-    /// Validates a raw token string. Updates LastUsedAt and UsageCount on success.
-    /// Returns (token, userId) on success, or (null, null) on failure.
+    /// Resolves a raw token string to its owning user if the token exists and is currently valid.
+    /// Does not update LastUsedAt or UsageCount.
     /// </summary>
-    public async Task<(McpApiToken? Token, string? UserId)> ValidateTokenAsync(
+    public Task<ResolvedMcpApiToken?> ResolveValidTokenAsync(
         string rawToken,
         CancellationToken cancellationToken = default)
     {
         byte[] hash = HashToken(rawToken);
         DateTime now = DateTime.UtcNow;
 
-        // Initial read — early exit for completely unknown tokens before hitting the update round-trip
-        McpApiToken? token = await db.McpApiTokens
+        return db.McpApiTokens
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.TokenHash == hash, cancellationToken);
+            .Where(t => t.TokenHash == hash
+                     && t.RevokedAt == null
+                     && (t.ExpiresAt == null || t.ExpiresAt > now))
+            .Select(t => new ResolvedMcpApiToken(t.Id, t.UserId))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
 
-        if (token is null) return (null, null);
-
-        // Atomic guard: re-checks validity at the moment of update so a concurrent
-        // revoke between the read above and this update cannot slip through (TOCTOU fix).
+    /// <summary>
+    /// Records successful authenticated token usage. Returns false if the token is no longer valid.
+    /// </summary>
+    public async Task<bool> MarkTokenUsedAsync(
+        Guid tokenId,
+        CancellationToken cancellationToken = default)
+    {
+        DateTime now = DateTime.UtcNow;
         int rows = await db.McpApiTokens
-            .Where(t => t.Id == token.Id
+            .Where(t => t.Id == tokenId
                      && t.RevokedAt == null
                      && (t.ExpiresAt == null || t.ExpiresAt > now))
             .ExecuteUpdateAsync(s => s
@@ -95,8 +105,6 @@ public class McpApiTokenService(EssentialCSharpWebContext db)
                 .SetProperty(t => t.UsageCount, t => t.UsageCount + 1),
                 cancellationToken);
 
-        if (rows == 0) return (null, null);
-
-        return (token, token.UserId);
+        return rows > 0;
     }
 }

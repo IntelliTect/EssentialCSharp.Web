@@ -35,16 +35,15 @@
         <div class="card mb-4">
             <div class="card-header">MCP Client Configuration</div>
             <div class="card-body">
-                <p>Add the following to your MCP client (e.g. <code>.vscode/mcp.json</code> or <code>claude_desktop_config.json</code>):</p>
-                <pre class="bg-light p-3 border rounded"><code>{
-  "essentialcsharp": {
-    "url": "@(HttpContext.Request.Scheme)://@(HttpContext.Request.Host)/mcp",
-    "headers": {
-      "Authorization": "Bearer @Model.GeneratedToken"
-    }
+                <p>Add this server entry inside your MCP client's <code>servers</code> or <code>mcpServers</code> section:</p>
+                <pre class="bg-light p-3 border rounded"><code>"essentialcsharp": {
+  "type": "http",
+  "url": "@(HttpContext.Request.Scheme)://@(HttpContext.Request.Host)/mcp",
+  "headers": {
+    "Authorization": "Bearer @Model.GeneratedToken"
   }
 }</code></pre>
-                <p class="mt-2 small text-muted">See the <a href="/mcp-setup#setup">AI Tools setup guide</a> for per-client configuration snippets.</p>
+                <p class="mt-2 small text-muted">This is the inner server entry only. See the <a href="/mcp-setup#setup">AI Tools setup guide</a> for the exact top-level wrapper each client expects.</p>
             </div>
         </div>
     }
