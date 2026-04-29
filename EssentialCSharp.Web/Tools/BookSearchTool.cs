@@ -1,18 +1,13 @@
-﻿using System.ComponentModel;
-using System.Globalization;
-using System.Text;
+using System.ComponentModel;
 using System.Text.RegularExpressions;
 using EssentialCSharp.Chat.Common.Services;
 using EssentialCSharp.Web.Extensions;
+using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 
 namespace EssentialCSharp.Web.Tools;
-
-file static class BookMetadata
-{
-    public const string SiteUrl = "https://essentialcsharp.com";
-}
 
 [McpServerToolType]
 public sealed class BookSearchTool
@@ -20,12 +15,18 @@ public sealed class BookSearchTool
     private readonly AISearchService? _SearchService;
     private readonly ISiteMappingService _SiteMappingService;
     private readonly IGuidelinesService _guidelinesService;
+    private readonly IBookToolQueryService _bookToolQueryService;
 
-    public BookSearchTool(IServiceProvider serviceProvider, ISiteMappingService siteMappingService, IGuidelinesService guidelinesService)
+    public BookSearchTool(
+        IServiceProvider serviceProvider,
+        ISiteMappingService siteMappingService,
+        IGuidelinesService guidelinesService,
+        IBookToolQueryService bookToolQueryService)
     {
         _SearchService = serviceProvider.GetService<AISearchService>();
         _SiteMappingService = siteMappingService;
         _guidelinesService = guidelinesService;
+        _bookToolQueryService = bookToolQueryService;
     }
 
     [McpServerTool(Title = "Search Book Content", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
@@ -49,125 +50,40 @@ public sealed class BookSearchTool
             return "Book search is not available in this environment (AI services are not configured).";
         }
 
-        var results = await _SearchService.ExecuteVectorSearch(query, top: maxResults, cancellationToken: cancellationToken);
+        List<SearchBookContentMatchTextResult> matches = (await _SearchService.ExecuteVectorSearch(
+                query,
+                top: maxResults,
+                cancellationToken: cancellationToken))
+            .Select(result => new SearchBookContentMatchTextResult(
+                result.Score ?? 0,
+                result.Record.ChapterNumber,
+                result.Record.Heading,
+                result.Record.ChunkText))
+            .ToList();
 
-        var sb = new StringBuilder();
-        int resultCount = 0;
-
-        foreach (var result in results)
-        {
-            resultCount++;
-            sb.AppendLine(CultureInfo.InvariantCulture, $"--- Result {resultCount} (Score: {result.Score:F4}) ---");
-
-            if (result.Record.ChapterNumber.HasValue)
-            {
-                sb.AppendLine(CultureInfo.InvariantCulture, $"Chapter: {result.Record.ChapterNumber}");
-            }
-            if (!string.IsNullOrEmpty(result.Record.Heading))
-            {
-                sb.AppendLine(CultureInfo.InvariantCulture, $"Section: {result.Record.Heading}");
-            }
-
-            sb.AppendLine();
-            sb.AppendLine(result.Record.ChunkText);
-            sb.AppendLine();
-        }
-
-        if (resultCount == 0)
+        if (matches.Count == 0)
         {
             return "No results found for the given query.";
         }
 
-        return sb.ToString();
+        return new SearchBookContentTextResult(matches).ToMcpString();
     }
 
-    [McpServerTool(Title = "Get Chapter List", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Get Chapter List", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false, UseStructuredContent = true),
      Description("Get the table of contents for the Essential C# book, listing all chapters and their sections with navigation links.")]
-    public string GetChapterList()
-    {
-        var tocData = _SiteMappingService.GetTocData();
+    public ChapterListToolResult GetChapterList() => _bookToolQueryService.GetChapterList();
 
-        var sb = new StringBuilder();
-        sb.AppendLine("# Essential C# - Table of Contents");
-        sb.AppendLine();
-
-        foreach (var chapter in tocData)
-        {
-            sb.AppendLine(CultureInfo.InvariantCulture, $"## {chapter.Title}");
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  Link: {chapter.Href}");
-
-            foreach (var section in chapter.Items)
-            {
-                sb.AppendLine(CultureInfo.InvariantCulture, $"  - {section.Title} ({section.Href})");
-
-                foreach (var subsection in section.Items)
-                {
-                    sb.AppendLine(CultureInfo.InvariantCulture, $"    - {subsection.Title} ({subsection.Href})");
-                }
-            }
-
-            sb.AppendLine();
-        }
-
-        return sb.ToString();
-    }
-
-    [McpServerTool(Title = "Get Chapter Sections", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Get Chapter Sections", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false, UseStructuredContent = true),
      Description("Get all sections and subsections in a specific chapter of the Essential C# book, in reading order. Returns each section's heading, slug, anchor link, and indent level. Use the returned slugs with other tools like GetSectionContent or GetNavigationContext.")]
-    public string GetChapterSections(
-        [Description("The chapter number (e.g., 5 for Chapter 5).")] int chapter)
-    {
-        var sections = _SiteMappingService.SiteMappings
-            .Where(m => m.ChapterNumber == chapter)
-            .OrderBy(m => m.PageNumber)
-            .ThenBy(m => m.OrderOnPage)
-            .ToList();
+    public ChapterSectionsToolResult GetChapterSections(
+        [Description("The chapter number (e.g., 5 for Chapter 5).")] int chapter) =>
+        _bookToolQueryService.GetChapterSections(chapter);
 
-        if (sections.Count == 0)
-        {
-            return $"Chapter {chapter} not found. Use GetChapterList to see all available chapters.";
-        }
-
-        string chapterTitle = sections.First().ChapterTitle;
-        var sb = new StringBuilder();
-        sb.AppendLine(CultureInfo.InvariantCulture, $"# Chapter {chapter}: {chapterTitle} — Sections");
-        sb.AppendLine();
-
-        foreach (var m in sections)
-        {
-            string indent = new(' ', m.IndentLevel * 2);
-            string slug = m.Keys.FirstOrDefault() ?? m.PrimaryKey;
-            string anchor = m.AnchorId is not null ? $"#{m.AnchorId}" : "";
-            sb.AppendLine(CultureInfo.InvariantCulture, $"{indent}- {m.RawHeading}  (slug: `{slug}`, link: `/{slug}{anchor}`)");
-        }
-
-        return sb.ToString();
-    }
-
-    [McpServerTool(Title = "Get Direct Content URL", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
-     Description("Get the canonical deep-link URL for a specific book section or subsection. Returns a clickable URL that navigates directly to the section. Use this to include precise references in responses.")]
-    public string GetDirectContentUrl(
-        [Description("The section slug/key (e.g., 'hello-world'). Use GetChapterSections or GetChapterList to find valid slugs.")] string sectionKey)
-    {
-        if (string.IsNullOrWhiteSpace(sectionKey))
-        {
-            return "Section key must not be empty. Use GetChapterSections or GetChapterList to discover valid section slugs.";
-        }
-
-        SiteMapping? mapping = _SiteMappingService.SiteMappings.Find(sectionKey);
-        if (mapping is null)
-        {
-            return $"Section '{sectionKey}' not found. Use GetChapterSections or GetChapterList to find valid section slugs.";
-        }
-
-        string slug = mapping.Keys.FirstOrDefault() ?? mapping.PrimaryKey;
-        string anchor = mapping.AnchorId is not null ? $"#{mapping.AnchorId}" : "";
-        string url = $"{BookMetadata.SiteUrl}/{slug}{anchor}";
-
-        return $"**{mapping.RawHeading}**\n" +
-               $"Chapter {mapping.ChapterNumber}: {mapping.ChapterTitle}\n" +
-               $"URL: {url}";
-    }
+    [McpServerTool(Title = "Get Direct Content URL", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false, UseStructuredContent = true),
+     Description("Get the canonical deep-link URL and section metadata for a specific book section or subsection. Use this to include precise references in responses.")]
+    public BookSectionReferenceResult GetDirectContentUrl(
+        [Description("The section slug/key (e.g., 'hello-world'). Use GetChapterSections or GetChapterList to find valid slugs.")] string sectionKey) =>
+        _bookToolQueryService.GetDirectContentUrl(sectionKey);
 
     [McpServerTool(Title = "Lookup Concept", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
      Description("Find all sections in the Essential C# book that cover a specific C# concept. Combines section heading search with semantic vector search (when available) to give broad coverage. Returns section slugs, chapter numbers, and direct links.")]
@@ -195,54 +111,35 @@ public sealed class BookSearchTool
             .ThenBy(m => m.OrderOnPage)
             .ToList();
 
-        // Vector search results
-        var vectorMatches = new List<(int chapter, string heading, string chunkText)>();
+        List<SemanticBookContentMatchTextResult> semanticMatches = [];
         if (_SearchService is not null)
         {
             var results = await _SearchService.ExecuteVectorSearch(concept, top: maxResults, cancellationToken: cancellationToken);
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var r in results)
             {
-                vectorMatches.Add((r.Record.ChapterNumber ?? 0, r.Record.Heading ?? "", r.Record.ChunkText));
+                string heading = r.Record.Heading ?? "";
+                if (!seen.Add(heading))
+                {
+                    continue;
+                }
+
+                semanticMatches.Add(new SemanticBookContentMatchTextResult(
+                    r.Record.ChapterNumber ?? 0,
+                    heading,
+                    r.Record.ChunkText[..Math.Min(200, r.Record.ChunkText.Length)]));
             }
         }
 
-        var sb = new StringBuilder();
-        sb.AppendLine(CultureInfo.InvariantCulture, $"# Book Coverage: '{concept}'");
-        sb.AppendLine();
-
-        if (headingMatches.Count > 0)
-        {
-            sb.AppendLine("## Sections with matching headings");
-            foreach (var m in headingMatches)
-            {
-                string slug = m.Keys.FirstOrDefault() ?? m.PrimaryKey;
-                string anchor = m.AnchorId is not null ? $"#{m.AnchorId}" : "";
-                sb.AppendLine(CultureInfo.InvariantCulture,
-                    $"- **{m.RawHeading}** (Ch. {m.ChapterNumber}) — `/{slug}{anchor}`");
-            }
-            sb.AppendLine();
-        }
-
-        if (vectorMatches.Count > 0)
-        {
-            sb.AppendLine("## Related content (semantic search)");
-            // Deduplicate by heading
-            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var (ch, heading, text) in vectorMatches)
-            {
-                if (!seen.Add(heading)) continue;
-                sb.AppendLine(CultureInfo.InvariantCulture, $"- **{heading}** (Ch. {ch})");
-                sb.AppendLine(CultureInfo.InvariantCulture, $"  > {text[..Math.Min(200, text.Length)]}...");
-            }
-            sb.AppendLine();
-        }
-
-        if (headingMatches.Count == 0 && vectorMatches.Count == 0)
+        if (headingMatches.Count == 0 && semanticMatches.Count == 0)
         {
             return $"No book content found for '{concept}'. Try a different term or check the table of contents with GetChapterList.";
         }
 
-        return sb.ToString();
+        return new LookupConceptTextResult(
+            concept,
+            headingMatches.Select(ToSectionLink).ToList(),
+            semanticMatches).ToMcpString();
     }
 
     [McpServerTool(Title = "Check Topic Coverage", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
@@ -277,10 +174,6 @@ public sealed class BookSearchTool
             hasSemanticCoverage = results.Count > 0;
         }
 
-        var sb = new StringBuilder();
-        sb.AppendLine(CultureInfo.InvariantCulture, $"# Topic Coverage: '{topic}'");
-        sb.AppendLine();
-
         string assessment;
         if (hasHeadingCoverage)
         {
@@ -297,38 +190,37 @@ public sealed class BookSearchTool
                 : "**Not found in headings** — semantic search unavailable; topic may still be discussed in prose";
         }
 
-        sb.AppendLine(CultureInfo.InvariantCulture, $"**Assessment:** {assessment}");
-
-        if (headingMatches.Count > 0)
-        {
-            sb.AppendLine();
-            sb.AppendLine("**Relevant sections:**");
-            foreach (var m in headingMatches.Take(5))
-            {
-                string slug = m.Keys.FirstOrDefault() ?? m.PrimaryKey;
-                sb.AppendLine(CultureInfo.InvariantCulture, $"  - {m.RawHeading} (Ch. {m.ChapterNumber}) — `/{slug}#{m.AnchorId}`");
-            }
-        }
-
-        return sb.ToString();
+        return new TopicCoverageTextResult(
+            topic,
+            assessment,
+            headingMatches.Take(5).Select(ToSectionLink).ToList()).ToMcpString();
     }
 
-    [McpServerTool(Title = "Find Book Help For Diagnostic", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
+    [McpServerTool(
+        Title = "Find Book Help For Diagnostic",
+        ReadOnly = true,
+        Destructive = false,
+        Idempotent = true,
+        OpenWorld = false,
+        UseStructuredContent = true,
+        OutputSchemaType = typeof(DiagnosticHelpToolResult)),
      Description("Find Essential C# book sections, content, and coding guidelines that help explain a C# compiler error, warning, or runtime exception. Accepts a CS diagnostic code (e.g., 'CS8600') or a plain description (e.g., 'null reference exception', 'cannot implicitly convert'). Returns relevant sections, explanatory prose, and related guidelines.")]
-    public async Task<string> FindBookHelpForDiagnostic(
+    public async Task<CallToolResult> FindBookHelpForDiagnostic(
         [Description("A C# compiler diagnostic code (e.g., 'CS8600', 'CS0029') or a plain error description (e.g., 'null reference exception', 'async method lacks await').")] string diagnostic,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(diagnostic))
         {
-            return "Diagnostic must not be empty.";
-        }
-        if (diagnostic.Length > 500)
-        {
-            return "Diagnostic is too long (maximum 500 characters).";
+            return McpToolResultFactory.CreateError("Diagnostic must not be empty.");
         }
 
-        string searchTerm = MapDiagnosticToTopic(diagnostic);
+        string trimmedDiagnostic = diagnostic.Trim();
+        if (trimmedDiagnostic.Length > 500)
+        {
+            return McpToolResultFactory.CreateError("Diagnostic is too long (maximum 500 characters).");
+        }
+
+        string searchTerm = MapDiagnosticToTopic(trimmedDiagnostic);
 
         // Heading search
         var headingMatches = _SiteMappingService.SiteMappings
@@ -336,27 +228,16 @@ public sealed class BookSearchTool
             .Take(5)
             .ToList();
 
-        // Vector search (buffered so we can check for any results before writing header)
-        bool hasVectorResults = false;
-        var vectorSb = new StringBuilder();
+        List<BookContentExcerptResult> contentMatches = [];
         if (_SearchService is not null)
         {
             var vectorResults = await _SearchService.ExecuteVectorSearch(searchTerm, cancellationToken: cancellationToken);
-            if (vectorResults.Count > 0)
+            foreach (var r in vectorResults.Take(3))
             {
-                hasVectorResults = true;
-                vectorSb.AppendLine("## Relevant Book Content");
-                int count = 0;
-                foreach (var r in vectorResults)
-                {
-                    if (count++ >= 3) break;
-                    if (!string.IsNullOrEmpty(r.Record.Heading))
-                    {
-                        vectorSb.AppendLine(CultureInfo.InvariantCulture, $"**{r.Record.Heading}** (Ch. {r.Record.ChapterNumber})");
-                    }
-                    vectorSb.AppendLine(r.Record.ChunkText);
-                    vectorSb.AppendLine();
-                }
+                contentMatches.Add(new BookContentExcerptResult(
+                    r.Record.ChapterNumber,
+                    r.Record.Heading,
+                    r.Record.ChunkText));
             }
         }
 
@@ -367,50 +248,35 @@ public sealed class BookSearchTool
             .Take(3)
             .ToList();
 
-        if (headingMatches.Count == 0 && !hasVectorResults && guidelineMatches.Count == 0)
+        List<BookSectionReferenceResult> relevantSections = headingMatches.Select(ToSectionReference).ToList();
+        List<BookGuidelineSummaryResult> relatedGuidelines = guidelineMatches.Select(ToGuidelineSummary).ToList();
+        DiagnosticHelpToolResult structuredResult = new(
+            trimmedDiagnostic,
+            string.Equals(searchTerm, trimmedDiagnostic, StringComparison.OrdinalIgnoreCase) ? null : searchTerm,
+            relevantSections,
+            contentMatches,
+            relatedGuidelines,
+            _SearchService is not null);
+
+        if (headingMatches.Count == 0 && contentMatches.Count == 0 && guidelineMatches.Count == 0)
         {
             string semanticNote = _SearchService is null
                 ? " Semantic search is also unavailable in this environment."
                 : "";
-            return $"No book content or guidelines found for '{diagnostic}'.{semanticNote} Try a broader description or use GetChapterList to explore the table of contents.";
+
+            return McpToolResultFactory.CreateHybridResult(
+                $"No book content or guidelines found for '{trimmedDiagnostic}'.{semanticNote} Try a broader description or use GetChapterList to explore the table of contents.",
+                structuredResult);
         }
 
-        var sb = new StringBuilder();
-        sb.AppendLine(CultureInfo.InvariantCulture, $"# Book Help for: {diagnostic}");
-        if (!string.Equals(searchTerm, diagnostic, StringComparison.OrdinalIgnoreCase))
-        {
-            sb.AppendLine(CultureInfo.InvariantCulture, $"Searching for: '{searchTerm}'");
-        }
-        sb.AppendLine();
-
-        if (headingMatches.Count > 0)
-        {
-            sb.AppendLine("## Relevant Book Sections");
-            foreach (var m in headingMatches)
-            {
-                string slug = m.Keys.FirstOrDefault() ?? m.PrimaryKey;
-                sb.AppendLine(CultureInfo.InvariantCulture, $"- **{m.RawHeading}** (Ch. {m.ChapterNumber}) — `/{slug}#{m.AnchorId}`");
-            }
-            sb.AppendLine();
-        }
-
-        if (vectorSb.Length > 0)
-        {
-            sb.Append(vectorSb);
-        }
-
-        if (guidelineMatches.Count > 0)
-        {
-            sb.AppendLine("## Related Guidelines");
-            foreach (var g in guidelineMatches)
-            {
-                sb.AppendLine(CultureInfo.InvariantCulture, $"**[{g.Type.ToDisplayString()}]** {g.Guideline}");
-                sb.AppendLine(CultureInfo.InvariantCulture, $"  — Chapter {g.ChapterNumber}: {g.ChapterTitle} / {g.SanitizedSubsection}");
-                sb.AppendLine();
-            }
-        }
-
-        return sb.ToString();
+        return McpToolResultFactory.CreateHybridResult(
+            new DiagnosticHelpTextResult(
+                structuredResult.Diagnostic,
+                structuredResult.SearchTerm,
+                relevantSections.Select(ToTextResult).ToList(),
+                contentMatches.Select(ToTextResult).ToList(),
+                relatedGuidelines.Select(ToTextResult).ToList()).ToMcpString(),
+            structuredResult);
     }
 
     [McpServerTool(Title = "Find Related Sections", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
@@ -439,18 +305,13 @@ public sealed class BookSearchTool
         string query = $"{mapping.RawHeading} {mapping.ChapterTitle}";
         var results = await _SearchService.ExecuteVectorSearch(query, top: maxResults, cancellationToken: cancellationToken);
 
-        var sb = new StringBuilder();
-        sb.AppendLine(CultureInfo.InvariantCulture, $"# Sections Related to: {mapping.RawHeading}");
-        sb.AppendLine(CultureInfo.InvariantCulture, $"(Chapter {mapping.ChapterNumber}: {mapping.ChapterTitle})");
-        sb.AppendLine();
-
+        List<RelatedSectionMatchTextResult> relatedSections = [];
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { mapping.RawHeading };
-        int count = 0;
         foreach (var r in results)
         {
             string heading = r.Record.Heading ?? "";
             if (!seen.Add(heading)) continue;
-            if (count++ >= maxResults) break;
+            if (relatedSections.Count >= maxResults) break;
 
             // Find the SiteMapping for this heading to get the link
             SiteMapping? relatedMapping = _SiteMappingService.SiteMappings
@@ -461,18 +322,37 @@ public sealed class BookSearchTool
                 ? $"`/{relatedMapping.Keys.FirstOrDefault() ?? relatedMapping.PrimaryKey}#{relatedMapping.AnchorId}`"
                 : $"Ch. {r.Record.ChapterNumber}";
 
-            sb.AppendLine(CultureInfo.InvariantCulture, $"- **{heading}** ({link})");
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  > {r.Record.ChunkText[..Math.Min(200, r.Record.ChunkText.Length)]}...");
-            sb.AppendLine();
+            relatedSections.Add(new RelatedSectionMatchTextResult(
+                heading,
+                link,
+                r.Record.ChunkText[..Math.Min(200, r.Record.ChunkText.Length)]));
         }
 
-        if (count == 0)
-        {
-            sb.AppendLine("No related sections found.");
-        }
-
-        return sb.ToString();
+        return new RelatedSectionsTextResult(mapping.RawHeading, mapping.ChapterNumber, mapping.ChapterTitle, relatedSections)
+            .ToMcpString();
     }
+
+    private BookSectionReferenceResult ToSectionReference(SiteMapping mapping) =>
+        _bookToolQueryService.GetDirectContentUrl(mapping.Keys.FirstOrDefault() ?? mapping.PrimaryKey);
+
+    private BookSectionLinkTextResult ToSectionLink(SiteMapping mapping) => ToTextResult(ToSectionReference(mapping));
+
+    private static BookSectionLinkTextResult ToTextResult(BookSectionReferenceResult section) =>
+        new(section.Heading, section.ChapterNumber, section.Href);
+
+    private static DiagnosticBookContentMatchTextResult ToTextResult(BookContentExcerptResult match) =>
+        new(match.ChapterNumber, match.Heading, match.ChunkText);
+
+    private static TextGuidelineResult ToTextResult(BookGuidelineSummaryResult guideline) =>
+        new(guideline.Type, guideline.Guideline, guideline.ChapterNumber, guideline.ChapterTitle, guideline.Subsection);
+
+    private static BookGuidelineSummaryResult ToGuidelineSummary(GuidelineListing guideline) =>
+        new(
+            guideline.Type.ToDisplayString(),
+            guideline.Guideline,
+            guideline.ChapterNumber,
+            guideline.ChapterTitle ?? string.Empty,
+            guideline.SanitizedSubsection);
 
     private static readonly Dictionary<string, string> DiagnosticMap= new(StringComparer.OrdinalIgnoreCase)
     {

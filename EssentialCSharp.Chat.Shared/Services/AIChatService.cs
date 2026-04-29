@@ -239,7 +239,7 @@ public class AIChatService
         var inputItems = new List<ResponseItem>
         {
             functionCallItem, // The original function call
-            new FunctionCallOutputResponseItem(functionCallItem.CallId, string.Join("", toolResult.Content.Where(x => x.Type == "text").OfType<TextContentBlock>().Select(x => x.Text)))
+            new FunctionCallOutputResponseItem(functionCallItem.CallId, McpToolResultFormatter.GetModelInput(toolResult))
         };
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
@@ -375,7 +375,7 @@ public class AIChatService
                     responseItems.Add(functionCallItem);
                     responseItems.Add(new FunctionCallOutputResponseItem(
                         functionCallItem.CallId,
-                        string.Join("", toolResult.Content.Where(x => x.Type == "text").OfType<TextContentBlock>().Select(x => x.Text))));
+                        McpToolResultFormatter.GetModelInput(toolResult)));
                 }
                 continue;
             }

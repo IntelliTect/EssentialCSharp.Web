@@ -1,11 +1,9 @@
-﻿using System.ComponentModel;
-using System.Globalization;
-using System.Text;
+using System.ComponentModel;
 using System.Text.RegularExpressions;
 using EssentialCSharp.Chat.Common.Services;
 using EssentialCSharp.Web.Extensions;
+using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
-using HtmlAgilityPack;
 using ModelContextProtocol.Server;
 
 namespace EssentialCSharp.Web.Tools;
@@ -14,21 +12,21 @@ namespace EssentialCSharp.Web.Tools;
 public sealed partial class BookContentTool
 {
     private readonly ISiteMappingService _siteMappingService;
+    private readonly IBookToolQueryService _bookToolQueryService;
     private readonly IListingSourceCodeService _listingService;
-    private readonly IGuidelinesService _guidelinesService;
     private readonly IWebHostEnvironment _environment;
     private readonly AISearchService? _searchService;
 
     public BookContentTool(
         ISiteMappingService siteMappingService,
+        IBookToolQueryService bookToolQueryService,
         IListingSourceCodeService listingService,
-        IGuidelinesService guidelinesService,
         IWebHostEnvironment environment,
         IServiceProvider serviceProvider)
     {
         _siteMappingService = siteMappingService;
+        _bookToolQueryService = bookToolQueryService;
         _listingService = listingService;
-        _guidelinesService = guidelinesService;
         _environment = environment;
         _searchService = serviceProvider.GetService<AISearchService>();
     }
@@ -97,52 +95,8 @@ public sealed partial class BookContentTool
             return $"Failed to read chapter HTML for section '{sectionKey}'.";
         }
 
-        HtmlDocument doc = new();
-        doc.LoadHtml(htmlContent);
-
-        var sectionNode = doc.DocumentNode.SelectSingleNode(
-            $"//div[@id='{mapping.AnchorId}' and contains(@class,'section-heading')]");
-
-        if (sectionNode is null)
-        {
-            return $"Section heading element not found for anchor '{mapping.AnchorId}'.";
-        }
-
-        var parent = sectionNode.ParentNode;
-        var header = new StringBuilder();
-        header.AppendLine(CultureInfo.InvariantCulture, $"## {mapping.RawHeading}");
-        header.AppendLine(CultureInfo.InvariantCulture, $"Chapter {mapping.ChapterNumber}: {mapping.ChapterTitle}");
-        header.AppendLine();
-
-        var body = new StringBuilder();
-        bool collecting = false;
-        foreach (HtmlNode child in parent.ChildNodes)
-        {
-            if (!collecting)
-            {
-                if (child == sectionNode) collecting = true;
-                continue;
-            }
-
-            // Stop at the next section heading div with an id attribute
-            if (child.Name == "div" &&
-                child.HasAttributes &&
-                !string.IsNullOrEmpty(child.GetAttributeValue("id", "")) &&
-                child.GetAttributeValue("class", "").Contains("section-heading"))
-            {
-                break;
-            }
-
-            ExtractNodeContent(child, body);
-
-            if (body.Length >= maxChars)
-            {
-                body.Append("\n\n[Content truncated — use a larger maxChars value to see more.]");
-                break;
-            }
-        }
-
-        return body.Length == 0 ? $"No content found after section heading '{mapping.RawHeading}'." : header.Append(body).ToString();
+        SectionContentExtractionResult extraction = SectionContentExtractionResult.FromHtml(mapping, htmlContent, maxChars);
+        return extraction.ErrorMessage ?? extraction.Content!.ToMcpString();
     }
 
     [McpServerTool(Title = "Get Listing With Context", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
@@ -159,12 +113,7 @@ public sealed partial class BookContentTool
         }
 
         string langHint = response.FileExtension == "cs" ? "csharp" : response.FileExtension;
-        var sb = new StringBuilder();
-        sb.AppendLine(CultureInfo.InvariantCulture, $"## Listing {response.ChapterNumber}.{response.ListingNumber}");
-        sb.AppendLine(CultureInfo.InvariantCulture, $"```{langHint}");
-        sb.AppendLine(response.Content);
-        sb.AppendLine("```");
-        sb.AppendLine();
+        List<RelatedBookExplanationTextResult> explanations = [];
 
         if (_searchService is not null)
         {
@@ -172,264 +121,32 @@ public sealed partial class BookContentTool
             var contextResults = await _searchService.ExecuteVectorSearch(query, cancellationToken: cancellationToken);
             if (contextResults.Count > 0)
             {
-                sb.AppendLine("### Related Book Explanations");
-                sb.AppendLine();
-                int count = 0;
-                foreach (var result in contextResults)
+                foreach (var result in contextResults.Take(3))
                 {
-                    if (count++ >= 3) break;
-                    if (!string.IsNullOrEmpty(result.Record.Heading))
-                    {
-                        sb.AppendLine(CultureInfo.InvariantCulture, $"**{result.Record.Heading}** (Chapter {result.Record.ChapterNumber})");
-                    }
-                    sb.AppendLine(result.Record.ChunkText);
-                    sb.AppendLine();
+                    explanations.Add(new RelatedBookExplanationTextResult(
+                        result.Record.Heading,
+                        result.Record.ChapterNumber,
+                        result.Record.ChunkText));
                 }
             }
         }
 
-        return sb.ToString();
+        return new ListingWithContextTextResult(
+            new ListingSourceCodeTextResult(response.ChapterNumber, response.ListingNumber, langHint, response.Content),
+            explanations).ToMcpString();
     }
 
-    [McpServerTool(Title = "Get Navigation Context", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Get Navigation Context", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false, UseStructuredContent = true),
      Description("Get the navigation context for a book section: its breadcrumb path, the previous and next sections, its parent section, and its sibling sections. Useful for understanding where a section sits in the book's structure.")]
-    public string GetNavigationContext(
-        [Description("The section slug/key (e.g., 'hello-world'). Use GetChapterSections to get valid slugs.")] string sectionKey)
-    {
-        if (string.IsNullOrWhiteSpace(sectionKey))
-        {
-            return "Section key must not be empty. Use GetChapterSections to discover valid section slugs.";
-        }
+    public NavigationContextToolResult GetNavigationContext(
+        [Description("The section slug/key (e.g., 'hello-world'). Use GetChapterSections to get valid slugs.")] string sectionKey) =>
+        _bookToolQueryService.GetNavigationContext(sectionKey);
 
-        SiteMapping? mapping = _siteMappingService.SiteMappings.Find(sectionKey);
-        if (mapping is null)
-        {
-            return $"Section '{sectionKey}' not found. Use GetChapterSections to discover valid section slugs.";
-        }
-
-        var ordered = _siteMappingService.SiteMappings
-            .OrderBy(m => m.ChapterNumber)
-            .ThenBy(m => m.PageNumber)
-            .ThenBy(m => m.OrderOnPage)
-            .ToList();
-
-        int idx = ordered.FindIndex(m => ReferenceEquals(m, mapping));
-        if (idx < 0)
-        {
-            return $"Section '{sectionKey}' could not be located in the ordered mapping list.";
-        }
-
-        var sb = new StringBuilder();
-        sb.AppendLine(CultureInfo.InvariantCulture, $"## Navigation Context: {mapping.RawHeading}");
-        sb.AppendLine(CultureInfo.InvariantCulture, $"Chapter {mapping.ChapterNumber}: {mapping.ChapterTitle} | Indent level: {mapping.IndentLevel}");
-        sb.AppendLine();
-
-        // Breadcrumb: ancestors (same chapter, descending indent levels)
-        var breadcrumb = new List<SiteMapping>();
-        int targetIndent = mapping.IndentLevel;
-        for (int i = idx - 1; i >= 0 && targetIndent > 0; i--)
-        {
-            if (ordered[i].ChapterNumber != mapping.ChapterNumber) break;
-            if (ordered[i].IndentLevel < targetIndent)
-            {
-                breadcrumb.Insert(0, ordered[i]);
-                targetIndent = ordered[i].IndentLevel;
-            }
-        }
-        if (breadcrumb.Count > 0)
-        {
-            sb.Append("**Breadcrumb:** ");
-            sb.AppendJoin(" > ", breadcrumb.Select(m => m.RawHeading));
-            sb.AppendLine(CultureInfo.InvariantCulture, $" > {mapping.RawHeading}");
-            sb.AppendLine();
-        }
-
-        // Parent: nearest preceding mapping in same chapter with indent level - 1
-        SiteMapping? parent = null;
-        if (mapping.IndentLevel > 0)
-        {
-            for (int i = idx - 1; i >= 0; i--)
-            {
-                if (ordered[i].ChapterNumber != mapping.ChapterNumber) break;
-                if (ordered[i].IndentLevel == mapping.IndentLevel - 1)
-                {
-                    parent = ordered[i];
-                    break;
-                }
-            }
-        }
-        if (parent is not null)
-        {
-            sb.AppendLine(CultureInfo.InvariantCulture, $"**Parent:** {parent.RawHeading} (`/{parent.Keys.FirstOrDefault() ?? parent.PrimaryKey}#{parent.AnchorId}`)");
-            sb.AppendLine();
-        }
-
-        // Previous section at same indent level in the same chapter
-        SiteMapping? prev = null;
-        for (int i = idx - 1; i >= 0; i--)
-        {
-            if (ordered[i].ChapterNumber != mapping.ChapterNumber) break;
-            if (ordered[i].IndentLevel == mapping.IndentLevel)
-            {
-                prev = ordered[i];
-                break;
-            }
-        }
-        if (prev is not null)
-        {
-            sb.AppendLine(CultureInfo.InvariantCulture, $"**Previous:** {prev.RawHeading} (`/{prev.Keys.FirstOrDefault() ?? prev.PrimaryKey}#{prev.AnchorId}`)");
-        }
-
-        // Next section at same indent level in the same chapter
-        SiteMapping? next = null;
-        for (int i = idx + 1; i < ordered.Count; i++)
-        {
-            if (ordered[i].ChapterNumber != mapping.ChapterNumber) break;
-            if (ordered[i].IndentLevel < mapping.IndentLevel) break;
-            if (ordered[i].IndentLevel == mapping.IndentLevel)
-            {
-                next = ordered[i];
-                break;
-            }
-        }
-        if (next is not null)
-        {
-            sb.AppendLine(CultureInfo.InvariantCulture, $"**Next:** {next.RawHeading} (`/{next.Keys.FirstOrDefault() ?? next.PrimaryKey}#{next.AnchorId}`)");
-        }
-
-        // Siblings: all siblings sharing the same parent
-        if (parent is not null)
-        {
-            int parentIdx = ordered.FindIndex(m => ReferenceEquals(m, parent));
-            var siblings = new List<SiteMapping>();
-            for (int i = parentIdx + 1; i < ordered.Count; i++)
-            {
-                if (ordered[i].ChapterNumber != mapping.ChapterNumber) break;
-                if (ordered[i].IndentLevel < mapping.IndentLevel) break;
-                if (ordered[i].IndentLevel == mapping.IndentLevel && ordered[i] != mapping)
-                {
-                    siblings.Add(ordered[i]);
-                }
-            }
-            if (siblings.Count > 0)
-            {
-                sb.AppendLine();
-                sb.AppendLine("**Sibling sections:**");
-                foreach (var s in siblings)
-                {
-                    sb.AppendLine(CultureInfo.InvariantCulture, $"  - {s.RawHeading} (`/{s.Keys.FirstOrDefault() ?? s.PrimaryKey}#{s.AnchorId}`)");
-                }
-            }
-        }
-
-        return sb.ToString();
-    }
-
-    [McpServerTool(Title = "Get Chapter Summary", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Get Chapter Summary", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false, UseStructuredContent = true),
      Description("Get a structural overview of a book chapter: its top-level section headings in reading order, and the coding guidelines associated with that chapter. Useful for understanding what a chapter covers before diving in.")]
-    public string GetChapterSummary(
-        [Description("The chapter number (e.g., 5 for Chapter 5).")] int chapter)
-    {
-        var chapterMappings = _siteMappingService.SiteMappings
-            .Where(m => m.ChapterNumber == chapter)
-            .OrderBy(m => m.PageNumber)
-            .ThenBy(m => m.OrderOnPage)
-            .ToList();
-
-        if (chapterMappings.Count == 0)
-        {
-            return $"Chapter {chapter} not found in the book's table of contents.";
-        }
-
-        string chapterTitle = chapterMappings.First().ChapterTitle;
-
-        var sb = new StringBuilder();
-        sb.AppendLine(CultureInfo.InvariantCulture, $"# Chapter {chapter}: {chapterTitle}");
-        sb.AppendLine();
-        sb.AppendLine("## Sections");
-
-        foreach (var m in chapterMappings.Where(m => m.IndentLevel <= 1))
-        {
-            string indent = m.IndentLevel == 0 ? "" : "  ";
-            string link = $"`/{m.Keys.FirstOrDefault() ?? m.PrimaryKey}#{m.AnchorId}`";
-            sb.AppendLine(CultureInfo.InvariantCulture, $"{indent}- {m.RawHeading} ({link})");
-        }
-
-        var guidelines = _guidelinesService.Guidelines
-            .Where(g => g.ChapterNumber == chapter)
-            .ToList();
-
-        if (guidelines.Count > 0)
-        {
-            sb.AppendLine();
-            sb.AppendLine("## Guidelines in this Chapter");
-            foreach (var g in guidelines)
-            {
-                sb.AppendLine(CultureInfo.InvariantCulture, $"- **[{g.Type.ToDisplayString()}]** {g.Guideline}");
-            }
-        }
-
-        return sb.ToString();
-    }
-
-    private static void ExtractNodeContent(HtmlNode node, StringBuilder sb)
-    {
-        if (node.NodeType == HtmlNodeType.Text)
-        {
-            string text = HtmlEntity.DeEntitize(node.InnerText).Trim();
-            if (!string.IsNullOrEmpty(text))
-            {
-                sb.AppendLine(text);
-            }
-            return;
-        }
-
-        if (node.Name is not ("div" or "p" or "ul" or "ol" or "li" or "span")) return;
-
-        string nodeClass = node.GetAttributeValue("class", "");
-
-        // Code block: extract heading + code lines
-        if (nodeClass.Contains("code-block-section"))
-        {
-            var headingNode = node.SelectSingleNode(".//div[contains(@class,'code-block-heading')]");
-            if (headingNode is not null)
-            {
-                sb.AppendLine(CultureInfo.InvariantCulture, $"\n**{HtmlEntity.DeEntitize(headingNode.InnerText).Trim()}**");
-            }
-
-            sb.AppendLine("```csharp");
-            var codeLines = node.SelectNodes(".//div[contains(@class,'code-line')]");
-            if (codeLines is not null)
-            {
-                foreach (var lineClone in codeLines.Select(line => line.CloneNode(deep: true)))
-                {
-                    var lineNumberSpan = lineClone.SelectSingleNode(".//span[contains(@class,'code-line-number')]");
-                    lineNumberSpan?.Remove();
-                    sb.AppendLine(HtmlEntity.DeEntitize(lineClone.InnerText));
-                }
-            }
-            sb.AppendLine("```");
-            return;
-        }
-
-        // Paragraphs and other content
-        if (node.Name is "p" || nodeClass.Contains("paragraph"))
-        {
-            string text = HtmlEntity.DeEntitize(node.InnerText).Trim();
-            if (!string.IsNullOrEmpty(text))
-            {
-                sb.AppendLine(text);
-                sb.AppendLine();
-            }
-            return;
-        }
-
-        // Recurse into other divs (skill-topic-block, etc.)
-        foreach (HtmlNode child in node.ChildNodes)
-        {
-            ExtractNodeContent(child, sb);
-        }
-    }
+    public ChapterSummaryToolResult GetChapterSummary(
+        [Description("The chapter number (e.g., 5 for Chapter 5).")] int chapter) =>
+        _bookToolQueryService.GetChapterSummary(chapter);
 
     [GeneratedRegex(@"^[A-Za-z0-9_-]{1,128}$")]
     private static partial Regex AnchorIdRegex();

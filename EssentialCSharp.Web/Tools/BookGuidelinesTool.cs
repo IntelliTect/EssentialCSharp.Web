@@ -1,7 +1,6 @@
 ﻿using System.ComponentModel;
-using System.Globalization;
-using System.Text;
 using EssentialCSharp.Web.Extensions;
+using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using ModelContextProtocol.Server;
 
@@ -68,18 +67,16 @@ public sealed class BookGuidelinesTool
                 return $"No guidelines found related to '{topic}'.";
             }
 
-            var topicSb = new StringBuilder();
-            topicSb.AppendLine(CultureInfo.InvariantCulture, $"# Essential C# Guidelines — Topic: {topic} ({scored.Count} result{(scored.Count == 1 ? "" : "s")})");
-            topicSb.AppendLine();
+            List<TextGuidelineResult> topicResults = scored
+                .Select(x => new TextGuidelineResult(
+                    x.guideline.Type.ToDisplayString(),
+                    x.guideline.Guideline,
+                    x.guideline.ChapterNumber,
+                    x.guideline.ChapterTitle ?? string.Empty,
+                    x.guideline.SanitizedSubsection))
+                .ToList();
 
-            foreach (var (g, _) in scored)
-            {
-                topicSb.AppendLine(CultureInfo.InvariantCulture, $"**[{g.Type.ToDisplayString()}]** {g.Guideline}");
-                topicSb.AppendLine(CultureInfo.InvariantCulture, $"  — Chapter {g.ChapterNumber}: {g.ChapterTitle} / {g.SanitizedSubsection}");
-                topicSb.AppendLine();
-            }
-
-            return topicSb.ToString();
+            return new GuidelinesTextResult(topic, topicResults).ToMcpString();
         }
 
         var results = filtered.Take(maxResults).ToList();
@@ -89,18 +86,16 @@ public sealed class BookGuidelinesTool
             return "No guidelines found matching the specified filters.";
         }
 
-        var sb = new StringBuilder();
-        sb.AppendLine(CultureInfo.InvariantCulture, $"# Essential C# Guidelines ({results.Count} result{(results.Count == 1 ? "" : "s")})");
-        sb.AppendLine();
+        List<TextGuidelineResult> guidelineResults = results
+            .Select(g => new TextGuidelineResult(
+                g.Type.ToDisplayString(),
+                g.Guideline,
+                g.ChapterNumber,
+                g.ChapterTitle ?? string.Empty,
+                g.SanitizedSubsection))
+            .ToList();
 
-        foreach (var g in results)
-        {
-            sb.AppendLine(CultureInfo.InvariantCulture, $"**[{g.Type.ToDisplayString()}]** {g.Guideline}");
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  — Chapter {g.ChapterNumber}: {g.ChapterTitle} / {g.SanitizedSubsection}");
-            sb.AppendLine();
-        }
-
-        return sb.ToString();
+        return new GuidelinesTextResult(null, guidelineResults).ToMcpString();
     }
 
     private static GuidelineType? ParseGuidelineType(string? input)

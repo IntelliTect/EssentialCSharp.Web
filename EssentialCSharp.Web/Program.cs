@@ -23,6 +23,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Options;
 using OpenTelemetry;
 using OpenTelemetry.Instrumentation.AspNetCore;
 using OpenTelemetry.Metrics;
@@ -234,6 +235,7 @@ public partial class Program
             builder.Services.AddTransient<IEmailSender, EmailSender>();
         }
         builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration.GetSection(AuthMessageSenderOptions.AuthMessageSender));
+        builder.Services.Configure<SiteSettings>(builder.Configuration.GetSection(SiteSettings.SectionName));
 
         // Add services to the container.
         builder.Services.AddRazorPages();
@@ -241,6 +243,7 @@ public partial class Program
         builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
         builder.Services.AddSingleton<IRouteConfigurationService, RouteConfigurationService>();
         builder.Services.AddSingleton<IListingSourceCodeService, ListingSourceCodeService>();
+        builder.Services.AddSingleton<IBookToolQueryService, BookToolQueryService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
 
         // Add AI Chat services
@@ -508,7 +511,7 @@ public partial class Program
         var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
         // Extract base URL from configuration
-        var baseUrl = configuration.GetSection("SiteSettings")["BaseUrl"] ?? "https://essentialcsharp.com";
+        var baseUrl = app.Services.GetRequiredService<IOptions<SiteSettings>>().Value.BaseUrl;
 
         try
         {

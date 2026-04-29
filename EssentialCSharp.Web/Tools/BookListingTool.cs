@@ -1,7 +1,7 @@
-﻿using System.ComponentModel;
-using System.Globalization;
-using System.Text;
+using System.ComponentModel;
+using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 
 namespace EssentialCSharp.Web.Tools;
@@ -31,27 +31,38 @@ public sealed class BookListingTool
             return $"Listing {chapter}.{listing} not found. Verify that both the chapter and listing numbers are correct.";
         }
 
-        string langHint = response.FileExtension == "cs" ? "csharp" : response.FileExtension;
-        return $"## Listing {response.ChapterNumber}.{response.ListingNumber}\n\n```{langHint}\n{response.Content}\n```";
+        return ToTextResult(new ListingSourceCodeResult(
+                response.ChapterNumber,
+                response.ListingNumber,
+                ToLanguageHint(response.FileExtension),
+                response.Content))
+            .ToMcpString();
     }
 
-    [McpServerTool(Title = "Search Listings By Code", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
+    [McpServerTool(
+        Title = "Search Listings By Code",
+        ReadOnly = true,
+        Destructive = false,
+        Idempotent = true,
+        OpenWorld = false,
+        UseStructuredContent = true,
+        OutputSchemaType = typeof(ListingSearchToolResult)),
      Description("Search all code listings in the Essential C# book for a specific code pattern, keyword, or identifier. Searches actual C# source code (not prose). Useful for finding examples of Task.WhenAll, yield return, IDisposable, pattern matching, and similar code constructs.")]
-    public async Task<string> SearchListingsByCode(
+    public async Task<CallToolResult> SearchListingsByCode(
         [Description("The code pattern or keyword to search for in listing source code (case-insensitive substring match).")] string pattern,
         [Description("Maximum number of matching listings to return (1–20).")] int maxResults = 10,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(pattern))
         {
-            return "Pattern must not be empty.";
+            return McpToolResultFactory.CreateError("Pattern must not be empty.");
         }
 
         string trimmedPattern = pattern.Trim();
         bool isKnownOperator = trimmedPattern is "=>" or "??" or "?." or "::" or "??=" or "==" or "!=" or "<=" or ">=" or "&&" or "||";
         if (!isKnownOperator && trimmedPattern.Count(char.IsLetterOrDigit) < 2)
         {
-            return "Pattern must contain at least two letters or digits, or be a recognized C# operator (=>, ??, ?., ::, ??=, ==, !=, <=, >=, &&, ||).";
+            return McpToolResultFactory.CreateError("Pattern must contain at least two letters or digits, or be a recognized C# operator (=>, ??, ?., ::, ??=, ==, !=, <=, >=, &&, ||).");
         }
 
         maxResults = Math.Clamp(maxResults, 1, 20);
@@ -61,37 +72,43 @@ public sealed class BookListingTool
             .Distinct()
             .OrderBy(n => n);
 
-        var sb = new StringBuilder();
-        int found = 0;
+        List<ListingSourceCodeResult> matches = [];
 
         foreach (int chapterNumber in distinctChapters)
         {
-            if (found >= maxResults) break;
+            if (matches.Count >= maxResults) break;
             cancellationToken.ThrowIfCancellationRequested();
 
             var listings = await _listingService.GetListingsByChapterAsync(chapterNumber);
             foreach (var listing in listings)
             {
-                if (found >= maxResults) break;
+                if (matches.Count >= maxResults) break;
                 if (listing.Content.Contains(trimmedPattern, StringComparison.OrdinalIgnoreCase))
                 {
-                    string langHint = listing.FileExtension == "cs" ? "csharp" : listing.FileExtension;
-                    sb.AppendLine(CultureInfo.InvariantCulture, $"### Listing {listing.ChapterNumber}.{listing.ListingNumber}");
-                    sb.AppendLine(CultureInfo.InvariantCulture, $"```{langHint}");
-                    sb.AppendLine(listing.Content);
-                    sb.AppendLine("```");
-                    sb.AppendLine();
-                    found++;
+                    matches.Add(new ListingSourceCodeResult(
+                        listing.ChapterNumber,
+                        listing.ListingNumber,
+                        ToLanguageHint(listing.FileExtension),
+                        listing.Content));
                 }
             }
         }
 
-        if (found == 0)
+        ListingSearchToolResult structuredResult = new(trimmedPattern, matches);
+        if (matches.Count == 0)
         {
-            return $"No listings found containing '{pattern}'.";
+            return McpToolResultFactory.CreateHybridResult(
+                $"No listings found containing '{trimmedPattern}'.",
+                structuredResult);
         }
 
-        sb.Insert(0, $"# Listings Containing '{pattern}' ({found} result{(found == 1 ? "" : "s")})\n\n");
-        return sb.ToString();
+        return McpToolResultFactory.CreateHybridResult(
+            new ListingSearchTextResult(trimmedPattern, matches.Select(ToTextResult).ToList()).ToMcpString(),
+            structuredResult);
     }
+
+    private static string ToLanguageHint(string fileExtension) => fileExtension == "cs" ? "csharp" : fileExtension;
+
+    private static ListingSourceCodeTextResult ToTextResult(ListingSourceCodeResult listing) =>
+        new(listing.ChapterNumber, listing.ListingNumber, listing.LanguageHint, listing.Content);
 }
