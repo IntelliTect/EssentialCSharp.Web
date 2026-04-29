@@ -14,11 +14,11 @@ public class McpApiTokenService(EssentialCSharpWebContext db)
 
     public sealed record ResolvedMcpApiToken(Guid TokenId, string UserId);
 
-    public static DateOnly GetDefaultExpiryDate(DateTime? utcNow = null)
-        => DateOnly.FromDateTime(utcNow ?? DateTime.UtcNow).AddMonths(DefaultLifetimeMonths);
+    public static DateOnly GetDefaultExpiryDate(DateTime? utcNowOverride = null)
+        => DateOnly.FromDateTime(utcNowOverride ?? DateTime.UtcNow).AddMonths(DefaultLifetimeMonths);
 
-    public static DateTime GetDefaultExpirationUtc(DateTime? utcNow = null)
-        => GetDefaultExpiryDate(utcNow).ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
+    public static DateTime GetDefaultExpirationUtc(DateTime? utcNowOverride = null)
+        => GetDefaultExpiryDate(utcNowOverride).ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
 
     /// <summary>Returns SHA-256 hash of the raw token as a byte array (varbinary(32)).</summary>
     public static byte[] HashToken(string rawToken)
@@ -40,10 +40,7 @@ public class McpApiTokenService(EssentialCSharpWebContext db)
     {
         string raw = GenerateRawToken();
         DateTime createdAt = DateTime.UtcNow;
-        DateTime maxExpiration = GetDefaultExpirationUtc(createdAt);
-        DateTime effectiveExpiration = expiresAt ?? maxExpiration;
-        if (effectiveExpiration > maxExpiration)
-            throw new ArgumentOutOfRangeException(nameof(expiresAt), MaxExpiryValidationMessage);
+        DateTime effectiveExpiration = ResolveExpiration(expiresAt, createdAt);
 
         var entity = new McpApiToken
         {
@@ -56,6 +53,18 @@ public class McpApiTokenService(EssentialCSharpWebContext db)
         db.McpApiTokens.Add(entity);
         await db.SaveChangesAsync(cancellationToken);
         return (raw, entity);
+    }
+
+    private static DateTime ResolveExpiration(DateTime? requestedExpirationUtc, DateTime createdAtUtc)
+    {
+        DateTime maxExpiration = GetDefaultExpirationUtc(createdAtUtc);
+        if (requestedExpirationUtc is null)
+            return maxExpiration;
+
+        if (requestedExpirationUtc > maxExpiration)
+            throw new ArgumentOutOfRangeException(nameof(requestedExpirationUtc), MaxExpiryValidationMessage);
+
+        return requestedExpirationUtc.Value;
     }
 
     /// <summary>
