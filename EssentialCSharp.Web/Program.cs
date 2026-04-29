@@ -1,14 +1,19 @@
+using System.Security.Claims;
 using System.Threading.RateLimiting;
+using ModelContextProtocol.Protocol;
 using EssentialCSharp.Chat.Common.Extensions;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
+using EssentialCSharp.Web.Auth;
 using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Extensions;
 using EssentialCSharp.Web.Helpers;
 using EssentialCSharp.Web.Middleware;
 using EssentialCSharp.Web.Services;
 using EssentialCSharp.Web.Services.Referrals;
+using EssentialCSharp.Web.Tools;
 using Mailjet.Client;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -19,6 +24,8 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using OpenTelemetry;
 using OpenTelemetry.Instrumentation.AspNetCore;
 using OpenTelemetry.Metrics;
@@ -183,7 +190,8 @@ public partial class Program
             // redirect, eventually hitting the fallback controller and returning a 404.
             options.Events.OnRedirectToLogin = context =>
             {
-                if (context.Request.Path.StartsWithSegments("/api"))
+                if (context.Request.Path.StartsWithSegments("/api")
+                    || context.Request.Path.StartsWithSegments("/mcp"))
                     context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 else
                     context.Response.Redirect(context.RedirectUri);
@@ -191,7 +199,8 @@ public partial class Program
             };
             options.Events.OnRedirectToAccessDenied = context =>
             {
-                if (context.Request.Path.StartsWithSegments("/api"))
+                if (context.Request.Path.StartsWithSegments("/api")
+                    || context.Request.Path.StartsWithSegments("/mcp"))
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
                 else
                     context.Response.Redirect(context.RedirectUri);
@@ -230,6 +239,7 @@ public partial class Program
             builder.Services.AddTransient<IEmailSender, EmailSender>();
         }
         builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration.GetSection(AuthMessageSenderOptions.AuthMessageSender));
+        builder.Services.Configure<SiteSettings>(builder.Configuration.GetSection(SiteSettings.SectionName));
 
         // Add services to the container.
         builder.Services.AddRazorPages();
@@ -237,6 +247,7 @@ public partial class Program
         builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
         builder.Services.AddSingleton<IRouteConfigurationService, RouteConfigurationService>();
         builder.Services.AddSingleton<IListingSourceCodeService, ListingSourceCodeService>();
+        builder.Services.AddSingleton<IBookToolQueryService, BookToolQueryService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
 
         // Add AI Chat services
@@ -245,14 +256,52 @@ public partial class Program
             builder.Services.AddAzureOpenAIServices(configuration);
         }
 
+        // MCP server — always enabled, authenticated via opaque DB-backed tokens.
+        builder.Services.AddScoped<McpApiTokenService>();
+
+        builder.Services.AddAuthentication()
+            .AddScheme<AuthenticationSchemeOptions, McpApiKeyAuthenticationHandler>(
+                McpBearerAuthentication.Scheme, _ => { });
+
+        builder.Services.AddAuthorization(options =>
+            options.AddPolicy("McpPolicy", policy =>
+                policy.AddAuthenticationSchemes(McpBearerAuthentication.Scheme)
+                      .RequireAuthenticatedUser()));
+
+        builder.Services.AddCors(options =>
+            options.AddPolicy("McpInspectorCors", policy =>
+                policy.SetIsOriginAllowed(origin =>
+                    Uri.TryCreate(origin, UriKind.Absolute, out Uri? originUri)
+                    && originUri.IsLoopback
+                    && (originUri.Scheme == Uri.UriSchemeHttp || originUri.Scheme == Uri.UriSchemeHttps))
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .WithExposedHeaders("Mcp-Session-Id")));
+
+        builder.Services.AddSingleton<IGuidelinesService, GuidelinesService>();
+
+        builder.Services.AddMcpServer()
+            .WithHttpTransport(options => options.Stateless = true)
+            .WithTools<BookSearchTool>()
+            .WithTools<BookListingTool>()
+            .WithTools<BookGuidelinesTool>()
+            .WithTools<BookContentTool>();
+
         // Add Rate Limiting for API endpoints
         builder.Services.AddRateLimiter(options =>
         {
-            // Global rate limiter for authenticated users by username, anonymous by IP
+            // Global rate limiter for site requests by authenticated user ID or anonymous IP.
+            // MCP transport requests use a dedicated named policy attached to MapMcp("/mcp").
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
             {
+                if (httpContext.Request.Path.StartsWithSegments("/.well-known"))
+                    return RateLimitPartition.GetNoLimiter("well-known");
+
+                if (IsMcpTransportRequest(httpContext.Request))
+                    return RateLimitPartition.GetNoLimiter("mcp-transport");
+
                 var partitionKey = httpContext.User.Identity?.IsAuthenticated == true
-                    ? httpContext.User.Identity.Name ?? "unknown-user"
+                    ? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "unknown-user"
                     : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip";
 
                 return RateLimitPartition.GetFixedWindowLimiter(
@@ -288,47 +337,49 @@ public partial class Program
             // A scraper cycling through the full ~400-page book needs 2+ hours at minimum.
             // See Services/ContentRateLimiterPolicy.cs for implementation.
             options.AddPolicy<string>("content", new ContentRateLimiterPolicy());
+            options.AddPolicy<string>(McpRateLimiterPolicy.PolicyName, new McpRateLimiterPolicy());
 
             // Custom response when rate limit is exceeded
             options.OnRejected = async (context, cancellationToken) =>
             {
-                if (context.HttpContext.Request.Path.StartsWithSegments("/.well-known"))
-                {
-                    return;
-                }
                 context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-                context.HttpContext.Response.Headers.RetryAfter = "60";
+                int? retryAfterSeconds = RateLimitingResponseHelpers.ApplyRetryAfterHeader(
+                    context.HttpContext.Response,
+                    context.Lease);
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+
                 if (context.HttpContext.Request.Path.StartsWithSegments("/api/chat"))
                 {
                     // Custom rejection handling logic
                     context.HttpContext.Response.ContentType = "application/json";
 
-                    var errorResponse = new
+                    Dictionary<string, object> errorResponse = new()
                     {
-                        error = "Rate limit exceeded. Please wait before sending another message.",
-                        retryAfter = 60,
-                        requiresCaptcha = true,
-                        statusCode = 429
+                        ["error"] = "Rate limit exceeded. Please wait before sending another message.",
+                        ["requiresCaptcha"] = true,
+                        ["statusCode"] = 429
                     };
+                    if (retryAfterSeconds is int retryAfter)
+                        errorResponse["retryAfter"] = retryAfter;
 
                     await context.HttpContext.Response.WriteAsync(
                         System.Text.Json.JsonSerializer.Serialize(errorResponse),
                         cancellationToken);
 
                     // Optional logging
-                    initialLogger.LogWarning("Rate limit exceeded on {Path}. User: {User}, IP: {IpAddress}",
-                            context.HttpContext.Request.Path,
-                            context.HttpContext.User.Identity?.Name ?? "anonymous",
-                            context.HttpContext.Connection.RemoteIpAddress);
+                    logger.LogWarning("Rate limit exceeded on {Path}. User: {User}, IP: {IpAddress}",
+                        context.HttpContext.Request.Path,
+                        context.HttpContext.User.Identity?.Name ?? "anonymous",
+                        context.HttpContext.Connection.RemoteIpAddress);
                     return;
                 }
 
                 await context.HttpContext.Response.WriteAsync("Rate limit exceeded. Please try again later.", cancellationToken);
 
-                initialLogger.LogWarning("Rate limit exceeded on {Path}. User: {User}, IP: {IpAddress}",
-                        context.HttpContext.Request.Path,
-                        context.HttpContext.User.Identity?.Name ?? "anonymous",
-                        context.HttpContext.Connection.RemoteIpAddress);
+                logger.LogWarning("Rate limit exceeded on {Path}. User: {User}, IP: {IpAddress}",
+                    context.HttpContext.Request.Path,
+                    context.HttpContext.User.Identity?.Name ?? "anonymous",
+                    context.HttpContext.Connection.RemoteIpAddress);
             };
         });
 
@@ -377,7 +428,16 @@ public partial class Program
                     var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
                     logger.LogError(exceptionFeature?.Error, "Unhandled exception on {Path}", context.Request.Path);
 
-                    if (context.Request.Path.StartsWithSegments("/api"))
+                    if (context.Request.Path.StartsWithSegments("/mcp"))
+                    {
+                        await McpJsonRpcResponseWriter.WriteErrorAsync(
+                            context.Response,
+                            StatusCodes.Status500InternalServerError,
+                            -32603,
+                            "An unexpected error occurred while processing the MCP request.",
+                            context.RequestAborted);
+                    }
+                    else if (context.Request.Path.StartsWithSegments("/api"))
                     {
                         context.Response.StatusCode = 500;
                         context.Response.ContentType = "application/json";
@@ -444,15 +504,54 @@ public partial class Program
 
         app.UseRouting();
 
+        app.UseWhen(
+            context => context.Request.Path.StartsWithSegments("/mcp"),
+            branch => branch.UseCors("McpInspectorCors"));
+
         app.UseAuthentication();
-        app.UseAuthorization();
+
+        app.UseWhen(
+            context => context.Request.Path.StartsWithSegments("/mcp"),
+            branch => branch.Use(async (context, next) =>
+            {
+                // /mcp uses a named non-default scheme. Normalize the principal before
+                // rate limiting so valid MCP requests partition by MCP user while
+                // missing/invalid bearer requests fall back to the anonymous/IP bucket
+                // instead of inheriting the site's cookie principal.
+                McpApiTokenService.ResolvedMcpApiToken? resolvedToken = null;
+                if (McpBearerAuthentication.TryGetRawToken(context.Request, out string? rawToken))
+                {
+                    var tokenService = context.RequestServices.GetRequiredService<McpApiTokenService>();
+                    resolvedToken = await tokenService.ResolveValidTokenAsync(rawToken, context.RequestAborted);
+                    McpBearerAuthentication.StoreResolution(context, resolvedToken);
+                }
+
+                context.User = resolvedToken is not null
+                    ? McpBearerAuthentication.CreatePrincipal(resolvedToken.UserId)
+                    : new ClaimsPrincipal(new ClaimsIdentity());
+
+                await next(context);
+            }));
 
         app.UseRateLimiter();
+
+        app.UseAuthorization();
 
         app.UseMiddleware<ReferralMiddleware>();
 
         app.MapRazorPages();
         app.MapDefaultControllerRoute();
+
+        app.MapMethods("/mcp", [HttpMethods.Get], (HttpResponse response) =>
+        {
+            response.Headers.Append("Allow", HttpMethods.Post);
+            response.Headers.CacheControl = "no-store";
+            return Results.StatusCode(StatusCodes.Status405MethodNotAllowed);
+        });
+
+        app.MapMcp("/mcp")
+            .RequireAuthorization("McpPolicy")
+            .RequireRateLimiting(McpRateLimiterPolicy.PolicyName);
 
         app.MapFallbackToController("Index", "Home");
 
@@ -462,7 +561,7 @@ public partial class Program
         var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
         // Extract base URL from configuration
-        var baseUrl = configuration.GetSection("SiteSettings")["BaseUrl"] ?? "https://essentialcsharp.com";
+        var baseUrl = app.Services.GetRequiredService<IOptions<SiteSettings>>().Value.BaseUrl;
 
         try
         {
@@ -481,4 +580,7 @@ public partial class Program
 
         app.Run();
     }
+
+    private static bool IsMcpTransportRequest(HttpRequest request) =>
+        HttpMethods.IsPost(request.Method) && request.Path == "/mcp";
 }

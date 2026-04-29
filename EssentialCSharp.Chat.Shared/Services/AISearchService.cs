@@ -13,9 +13,13 @@ public class AISearchService(
 {
     // TODO: Implement Hybrid Search functionality, may need to switch db providers to support full text search?
 
+    public const int DefaultSearchTop = 5;
+    public const int MaxSearchTop = 10;
+
     public async Task<IReadOnlyList<VectorSearchResult<BookContentChunk>>> ExecuteVectorSearch(
-        string query, string? collectionName = null, CancellationToken cancellationToken = default)
+        string query, string? collectionName = null, int top = DefaultSearchTop, CancellationToken cancellationToken = default)
     {
+        top = Math.Clamp(top, 1, MaxSearchTop);
         collectionName ??= EmbeddingService.CollectionName;
 
         VectorStoreCollection<string, BookContentChunk> collection = vectorStore.GetCollection<string, BookContentChunk>(collectionName);
@@ -32,7 +36,7 @@ public class AISearchService(
             try
             {
                 var results = new List<VectorSearchResult<BookContentChunk>>();
-                await foreach (var result in collection.SearchAsync(searchVector, options: vectorSearchOptions, top: 3, cancellationToken: cancellationToken))
+                await foreach (var result in collection.SearchAsync(searchVector, options: vectorSearchOptions, top: top, cancellationToken: cancellationToken))
                 {
                     results.Add(result);
                 }

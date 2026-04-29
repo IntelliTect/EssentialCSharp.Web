@@ -1,0 +1,151 @@
+@page
+@model McpAccessModel
+@using EssentialCSharp.Web.Models
+@{
+    ViewData["Title"] = "MCP Access";
+    ViewData["ActivePage"] = ManageNavPages.McpAccess;
+}
+
+<h3>@ViewData["Title"]</h3>
+
+<partial name="_StatusMessage" for="StatusMessage" />
+
+<div>
+    <p>
+        The <strong>Model Context Protocol (MCP)</strong> lets AI tools like GitHub Copilot and Claude access
+        Essential C# book content directly. Create a named API token below and add it to your MCP client configuration.
+        <a href="/mcp-setup" class="ms-1">Setup guide &amp; FAQ →</a>
+    </p>
+
+    @if (Model.GeneratedToken is not null && Model.GeneratedTokenEntity is not null)
+    {
+        <div class="alert alert-success mt-3">
+            <h5 class="alert-heading">Token created: @Model.GeneratedTokenEntity.Name</h5>
+            <p class="mb-1"><strong>Copy this token now.</strong> It will not be shown again.</p>
+            <div class="input-group mb-2">
+                <input type="text" class="form-control font-monospace" id="mcpToken" value="@Model.GeneratedToken" readonly />
+                <button class="btn btn-outline-secondary" type="button" onclick="copyToken()">Copy</button>
+            </div>
+            @if (Model.GeneratedTokenEntity.ExpiresAt.HasValue)
+            {
+                <p class="mb-1 text-muted small">Expires: @Model.GeneratedTokenEntity.ExpiresAt.Value.ToString("MMMM d, yyyy")</p>
+            }
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">MCP Client Configuration</div>
+            <div class="card-body">
+                <p>Add this server entry inside your MCP client's <code>servers</code> or <code>mcpServers</code> section:</p>
+                <pre class="bg-light p-3 border rounded"><code>"essentialcsharp": {
+  "type": "http",
+  "url": "@(HttpContext.Request.Scheme)://@(HttpContext.Request.Host)/mcp",
+  "headers": {
+    "Authorization": "Bearer @Model.GeneratedToken"
+  }
+}</code></pre>
+                <p class="mt-2 small text-muted">This is the inner server entry only. See the <a href="/mcp-setup#setup">AI Tools setup guide</a> for the exact top-level wrapper each client expects.</p>
+            </div>
+        </div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header">Create New Token</div>
+        <div class="card-body">
+            <form method="post" asp-page-handler="Create">
+                <div class="mb-3">
+                    <label asp-for="TokenName" class="form-label">Token Name <span class="text-danger">*</span></label>
+                    <input asp-for="TokenName" class="form-control" placeholder="e.g. VS Code, Claude Desktop" maxlength="256" />
+                    <span asp-validation-for="TokenName" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="ExpiresOn" class="form-label">Expiry Date <span class="text-muted">(optional)</span></label>
+                    <input asp-for="ExpiresOn" type="date" class="form-control" />
+                    <span asp-validation-for="ExpiresOn" class="text-danger"></span>
+                    <div class="form-text">Leave blank for a non-expiring token. The token expires at end of day (23:59:59) UTC on the selected date.</div>
+                </div>
+                <button type="submit" class="btn btn-primary">Create Token</button>
+            </form>
+        </div>
+    </div>
+
+    @if (Model.UserTokens.Count > 0)
+    {
+        <div class="card">
+            <div class="card-header">Your Tokens</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Created</th>
+                            <th>Last Used</th>
+                            <th>Expires</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (McpApiToken token in Model.UserTokens)
+                        {
+                            bool isActive = token.RevokedAt is null
+                                && (token.ExpiresAt is null || token.ExpiresAt > DateTime.UtcNow);
+                            <tr class="@(isActive ? "" : "table-secondary text-muted")">
+                                <td>@token.Name</td>
+                                <td>@token.CreatedAt.ToString("MMM d, yyyy")</td>
+                                <td>@(token.LastUsedAt?.ToString("MMM d, yyyy") ?? "—")</td>
+                                <td>@(token.ExpiresAt?.ToString("MMM d, yyyy") ?? "Never")</td>
+                                <td>
+                                    @if (token.RevokedAt is not null)
+                                    {
+                                        <span class="badge bg-danger">Revoked</span>
+                                    }
+                                    else if (token.ExpiresAt <= DateTime.UtcNow)
+                                    {
+                                        <span class="badge bg-warning text-dark">Expired</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (isActive)
+                                    {
+                                        <form method="post" asp-page-handler="Revoke"
+                                              data-token-name="@token.Name">
+                                            <input type="hidden" name="tokenId" value="@token.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Revoke</button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function copyToken() {
+            const tokenInput = document.getElementById('mcpToken');
+            tokenInput.select();
+            tokenInput.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(tokenInput.value)
+                .then(() => alert('Token copied to clipboard!'))
+                .catch(() => {
+                    document.execCommand('copy');
+                    alert('Token copied to clipboard!');
+                });
+        }
+
+        document.querySelectorAll('form[data-token-name]').forEach(form => {
+            form.addEventListener('submit', e => {
+                if (!confirm(`Revoke token '${form.dataset.tokenName}'?`)) e.preventDefault();
+            });
+        });
+    </script>
+    <partial name="_ValidationScriptsPartial" />
+}
