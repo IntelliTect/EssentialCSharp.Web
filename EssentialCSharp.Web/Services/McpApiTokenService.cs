@@ -14,11 +14,11 @@ public class McpApiTokenService(EssentialCSharpWebContext db)
 
     public sealed record ResolvedMcpApiToken(Guid TokenId, string UserId);
 
-    public static DateOnly GetDefaultExpiryDate(DateTime? utcNowOverride = null)
-        => DateOnly.FromDateTime(utcNowOverride ?? DateTime.UtcNow).AddMonths(DefaultLifetimeMonths);
+    public static DateOnly GetDefaultExpiryDate(DateTime? referenceTimeUtc = null)
+        => DateOnly.FromDateTime(referenceTimeUtc ?? DateTime.UtcNow).AddMonths(DefaultLifetimeMonths);
 
-    public static DateTime GetDefaultExpirationUtc(DateTime? utcNowOverride = null)
-        => GetDefaultExpiryDate(utcNowOverride).ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
+    public static DateTime GetDefaultExpirationUtc(DateTime? referenceTimeUtc = null)
+        => GetDefaultExpiryDate(referenceTimeUtc).ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
 
     /// <summary>Returns SHA-256 hash of the raw token as a byte array (varbinary(32)).</summary>
     public static byte[] HashToken(string rawToken)

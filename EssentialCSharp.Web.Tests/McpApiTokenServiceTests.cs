@@ -24,6 +24,21 @@ public class McpApiTokenServiceTests(WebApplicationFactory factory)
     }
 
     [Test]
+    public async Task CreateTokenAsync_WithExpiryWithinSixMonths_UsesRequestedExpiry()
+    {
+        string userId = await McpTestHelper.CreateUserAsync(factory, "mcp-custom-expiry");
+
+        using var scope = factory.Services.CreateScope();
+        var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
+        DateTime requestedExpiry = DateTime.UtcNow.AddMonths(3);
+
+        (_, var entity) = await tokenService.CreateTokenAsync(userId, "custom-expiry", requestedExpiry);
+
+        await Assert.That(entity.ExpiresAt).IsNotNull();
+        await Assert.That(entity.ExpiresAt!.Value).IsEqualTo(requestedExpiry);
+    }
+
+    [Test]
     public async Task CreateTokenAsync_WithExpiryBeyondSixMonths_Throws()
     {
         string userId = await McpTestHelper.CreateUserAsync(factory, "mcp-max-expiry");

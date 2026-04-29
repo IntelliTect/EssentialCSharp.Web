@@ -33,7 +33,8 @@ public class McpAccessModel(
     public async Task<IActionResult> OnGetAsync()
     {
         DisableCaching();
-        InitializeExpiryDefaults();
+        InitializeExpiryBounds();
+        ApplyDefaultExpiryIfMissing();
         string? userId = userManager.GetUserId(User);
         if (userId is null) return Challenge();
         UserTokens = await tokenService.GetUserTokensAsync(userId);
@@ -43,7 +44,8 @@ public class McpAccessModel(
     public async Task<IActionResult> OnPostCreateAsync()
     {
         DisableCaching();
-        InitializeExpiryDefaults();
+        InitializeExpiryBounds();
+        ApplyDefaultExpiryIfMissing();
         string? userId = userManager.GetUserId(User);
         if (userId is null) return Challenge();
 
@@ -95,9 +97,13 @@ public class McpAccessModel(
         Response.Headers.Expires = "0";
     }
 
-    private void InitializeExpiryDefaults()
+    private void InitializeExpiryBounds()
     {
         MaxExpiresOn = McpApiTokenService.GetDefaultExpiryDate();
+    }
+
+    private void ApplyDefaultExpiryIfMissing()
+    {
         ExpiresOn ??= MaxExpiresOn;
     }
 }
