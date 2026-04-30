@@ -62,7 +62,7 @@
                     <label asp-for="ExpiresOn" class="form-label">Expiry Date</label>
                     <input asp-for="ExpiresOn" type="date" class="form-control" max="@Model.MaxExpiresOn.ToString("yyyy-MM-dd")" />
                     <span asp-validation-for="ExpiresOn" class="text-danger"></span>
-                    <div class="form-text">MCP tokens default to @McpApiTokenService.DefaultLifetimeMonths months and cannot exceed @McpApiTokenService.DefaultLifetimeMonths months from today. The token expires at end of day (UTC) on the selected date.</div>
+                    <div class="form-text">MCP tokens expire after @McpApiTokenService.DefaultLifetimeMonths months by default, with a maximum lifetime of @McpApiTokenService.DefaultLifetimeMonths months from today. The token expires at end of day (UTC) on the selected date.</div>
                 </div>
                 <button type="submit" class="btn btn-primary">Create Token</button>
             </form>
