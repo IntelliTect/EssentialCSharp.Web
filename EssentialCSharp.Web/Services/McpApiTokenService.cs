@@ -10,7 +10,7 @@ namespace EssentialCSharp.Web.Services;
 public class McpApiTokenService(EssentialCSharpWebContext db)
 {
     public const int DefaultLifetimeMonths = 6;
-    public const string MaxExpiryValidationMessage = "MCP tokens can expire at most 6 months from today.";
+    public static string MaxExpiryValidationMessage => $"MCP tokens can expire at most {DefaultLifetimeMonths} months from today.";
 
     public sealed record ResolvedMcpApiToken(Guid TokenId, string UserId);
 

@@ -33,7 +33,8 @@ public class McpAccessModel(
     public async Task<IActionResult> OnGetAsync()
     {
         DisableCaching();
-        InitializeExpiryBounds();
+        DateTime nowUtc = DateTime.UtcNow;
+        InitializeExpiryBounds(nowUtc);
         ApplyDefaultExpiryIfMissing();
         string? userId = userManager.GetUserId(User);
         if (userId is null) return Challenge();
@@ -44,7 +45,9 @@ public class McpAccessModel(
     public async Task<IActionResult> OnPostCreateAsync()
     {
         DisableCaching();
-        InitializeExpiryBounds();
+        DateTime nowUtc = DateTime.UtcNow;
+        DateOnly todayUtc = DateOnly.FromDateTime(nowUtc);
+        InitializeExpiryBounds(nowUtc);
         ApplyDefaultExpiryIfMissing();
         string? userId = userManager.GetUserId(User);
         if (userId is null) return Challenge();
@@ -54,7 +57,7 @@ public class McpAccessModel(
 
         if (ExpiresOn.HasValue)
         {
-            if (ExpiresOn.Value < DateOnly.FromDateTime(DateTime.UtcNow))
+            if (ExpiresOn.Value < todayUtc)
                 ModelState.AddModelError(nameof(ExpiresOn), "Expiry date must be today or in the future.");
             if (ExpiresOn.Value > MaxExpiresOn)
                 ModelState.AddModelError(nameof(ExpiresOn), McpApiTokenService.MaxExpiryValidationMessage);
@@ -97,9 +100,9 @@ public class McpAccessModel(
         Response.Headers.Expires = "0";
     }
 
-    private void InitializeExpiryBounds()
+    private void InitializeExpiryBounds(DateTime nowUtc)
     {
-        MaxExpiresOn = McpApiTokenService.GetDefaultExpiryDate();
+        MaxExpiresOn = McpApiTokenService.GetDefaultExpiryDate(nowUtc);
     }
 
     private void ApplyDefaultExpiryIfMissing()

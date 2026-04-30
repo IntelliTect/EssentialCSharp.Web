@@ -45,10 +45,10 @@ public class McpApiTokenServiceTests(WebApplicationFactory factory)
 
         using var scope = factory.Services.CreateScope();
         var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
-        DateTime requestedExpiry = McpApiTokenService.GetDefaultExpirationUtc(DateTime.UtcNow).AddDays(1);
+        DateTime requestedExpiry = McpApiTokenService.GetDefaultExpirationUtc(DateTime.UtcNow).AddDays(2);
 
         await Assert.That(() => tokenService.CreateTokenAsync(userId, "too-long", requestedExpiry))
             .Throws<ArgumentOutOfRangeException>()
-            .WithMessageContaining("6 months");
+            .WithMessageContaining(McpApiTokenService.MaxExpiryValidationMessage);
     }
 }
