@@ -9,7 +9,16 @@ namespace EssentialCSharp.Web.Services;
 
 public class McpApiTokenService(EssentialCSharpWebContext db)
 {
+    public const int DefaultLifetimeMonths = 6;
+    public const string MaxExpiryValidationMessage = "MCP tokens can expire at most 6 months from today.";
+
     public sealed record ResolvedMcpApiToken(Guid TokenId, string UserId);
+
+    public static DateOnly GetDefaultExpiryDate(DateTime? referenceTimeUtc = null)
+        => DateOnly.FromDateTime(referenceTimeUtc ?? DateTime.UtcNow).AddMonths(DefaultLifetimeMonths);
+
+    public static DateTime GetDefaultExpirationUtc(DateTime? referenceTimeUtc = null)
+        => GetDefaultExpiryDate(referenceTimeUtc).ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
 
     /// <summary>Returns SHA-256 hash of the raw token as a byte array (varbinary(32)).</summary>
     public static byte[] HashToken(string rawToken)
@@ -30,17 +39,32 @@ public class McpApiTokenService(EssentialCSharpWebContext db)
         CancellationToken cancellationToken = default)
     {
         string raw = GenerateRawToken();
+        DateTime createdAt = DateTime.UtcNow;
+        DateTime effectiveExpiration = ResolveExpiration(expiresAt, createdAt);
+
         var entity = new McpApiToken
         {
             UserId = userId,
             Name = name,
             TokenHash = HashToken(raw),
-            CreatedAt = DateTime.UtcNow,
-            ExpiresAt = expiresAt,
+            CreatedAt = createdAt,
+            ExpiresAt = effectiveExpiration,
         };
         db.McpApiTokens.Add(entity);
         await db.SaveChangesAsync(cancellationToken);
         return (raw, entity);
+    }
+
+    private static DateTime ResolveExpiration(DateTime? requestedExpirationUtc, DateTime createdAtUtc)
+    {
+        DateTime maxExpiration = GetDefaultExpirationUtc(createdAtUtc);
+        if (requestedExpirationUtc is null)
+            return maxExpiration;
+
+        if (requestedExpirationUtc > maxExpiration)
+            throw new ArgumentOutOfRangeException(nameof(requestedExpirationUtc), MaxExpiryValidationMessage);
+
+        return requestedExpirationUtc.Value;
     }
 
     /// <summary>

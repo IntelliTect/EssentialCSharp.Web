@@ -21,6 +21,8 @@ public class McpAccessModel(
 
     public List<McpApiToken> UserTokens { get; private set; } = [];
 
+    public DateOnly MaxExpiresOn { get; private set; }
+
     [BindProperty]
     [StringLength(256, ErrorMessage = "Token name must be 256 characters or fewer.")]
     public string TokenName { get; set; } = "My Token";
@@ -31,6 +33,8 @@ public class McpAccessModel(
     public async Task<IActionResult> OnGetAsync()
     {
         DisableCaching();
+        InitializeExpiryBounds();
+        ApplyDefaultExpiryIfMissing();
         string? userId = userManager.GetUserId(User);
         if (userId is null) return Challenge();
         UserTokens = await tokenService.GetUserTokensAsync(userId);
@@ -40,14 +44,21 @@ public class McpAccessModel(
     public async Task<IActionResult> OnPostCreateAsync()
     {
         DisableCaching();
+        InitializeExpiryBounds();
+        ApplyDefaultExpiryIfMissing();
         string? userId = userManager.GetUserId(User);
         if (userId is null) return Challenge();
 
         if (string.IsNullOrWhiteSpace(TokenName))
             ModelState.AddModelError(nameof(TokenName), "Token name is required.");
 
-        if (ExpiresOn.HasValue && ExpiresOn.Value < DateOnly.FromDateTime(DateTime.UtcNow))
-            ModelState.AddModelError(nameof(ExpiresOn), "Expiry date must be today or in the future.");
+        if (ExpiresOn.HasValue)
+        {
+            if (ExpiresOn.Value < DateOnly.FromDateTime(DateTime.UtcNow))
+                ModelState.AddModelError(nameof(ExpiresOn), "Expiry date must be today or in the future.");
+            if (ExpiresOn.Value > MaxExpiresOn)
+                ModelState.AddModelError(nameof(ExpiresOn), McpApiTokenService.MaxExpiryValidationMessage);
+        }
 
         if (!ModelState.IsValid)
         {
@@ -84,5 +95,15 @@ public class McpAccessModel(
         Response.Headers.CacheControl = "no-store, no-cache, max-age=0";
         Response.Headers.Pragma = "no-cache";
         Response.Headers.Expires = "0";
+    }
+
+    private void InitializeExpiryBounds()
+    {
+        MaxExpiresOn = McpApiTokenService.GetDefaultExpiryDate();
+    }
+
+    private void ApplyDefaultExpiryIfMissing()
+    {
+        ExpiresOn ??= MaxExpiresOn;
     }
 }
