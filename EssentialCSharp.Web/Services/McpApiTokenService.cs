@@ -36,10 +36,11 @@ public class McpApiTokenService(EssentialCSharpWebContext db)
         string userId,
         string name,
         DateTime? expiresAt = null,
+        DateTime? createdAtUtc = null,
         CancellationToken cancellationToken = default)
     {
         string raw = GenerateRawToken();
-        DateTime createdAt = DateTime.UtcNow;
+        DateTime createdAt = createdAtUtc ?? DateTime.UtcNow;
         DateTime effectiveExpiration = ResolveExpiration(expiresAt, createdAt);
 
         var entity = new McpApiToken

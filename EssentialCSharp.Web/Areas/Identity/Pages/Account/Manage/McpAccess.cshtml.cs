@@ -72,7 +72,11 @@ public class McpAccessModel(
         // Convert date-only boundary to end-of-day UTC instant before persisting
         DateTime? expiresAt = ExpiresOn?.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
 
-        var (rawToken, entity) = await tokenService.CreateTokenAsync(userId, TokenName.Trim(), expiresAt);
+        var (rawToken, entity) = await tokenService.CreateTokenAsync(
+            userId,
+            TokenName.Trim(),
+            expiresAt,
+            createdAtUtc: nowUtc);
         GeneratedToken = rawToken;
         GeneratedTokenEntity = entity;
         UserTokens = await tokenService.GetUserTokensAsync(userId);

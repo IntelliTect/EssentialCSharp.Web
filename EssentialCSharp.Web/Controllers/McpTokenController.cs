@@ -41,7 +41,11 @@ public class McpTokenController(McpApiTokenService tokenService) : ControllerBas
         }
 
         var (rawToken, entity) = await tokenService.CreateTokenAsync(
-            userId, name, expiresAt, cancellationToken);
+            userId,
+            name,
+            expiresAt,
+            createdAtUtc: nowUtc,
+            cancellationToken: cancellationToken);
 
         return Ok(new
         {
