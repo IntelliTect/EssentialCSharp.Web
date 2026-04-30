@@ -553,6 +553,18 @@ public partial class Program
             .RequireAuthorization("McpPolicy")
             .RequireRateLimiting(McpRateLimiterPolicy.PolicyName);
 
+        app.Map("/.well-known", (HttpResponse response) =>
+        {
+            response.Headers.CacheControl = "no-store";
+            return Results.NotFound();
+        }).DisableRateLimiting();
+
+        app.Map("/.well-known/{**path}", (HttpResponse response) =>
+        {
+            response.Headers.CacheControl = "no-store";
+            return Results.NotFound();
+        }).DisableRateLimiting();
+
         app.MapFallbackToController("Index", "Home");
 
         // Generate sitemap.xml at startup

@@ -28,7 +28,23 @@ public class McpTests(WebApplicationFactory factory)
         using var request = McpTestHelper.CreateInitializeRequest("/mcp");
         using HttpResponseMessage response = await client.SendAsync(request);
 
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
+        await AssertUnauthorizedMcpChallengeAsync(response);
+    }
+
+    [Test]
+    public async Task McpEndpoint_WithSiteCookieButWithoutBearer_Returns401()
+    {
+        string cookieUserId = await McpTestHelper.CreateUserAsync(factory, "mcp-cookie-only");
+        (string cookieName, string cookieValue) =
+            await McpTestHelper.CreateIdentityApplicationCookieAsync(factory, cookieUserId);
+
+        HttpClient client = McpTestHelper.CreateClient(factory);
+        using var request = McpTestHelper.CreateInitializeRequest("/mcp");
+        McpTestHelper.AddCookie(request, cookieName, cookieValue);
+
+        using HttpResponseMessage response = await client.SendAsync(request);
+
+        await AssertUnauthorizedMcpChallengeAsync(response);
     }
 
     [Test]
@@ -96,7 +112,7 @@ public class McpTests(WebApplicationFactory factory)
         using var request = McpTestHelper.CreateInitializeRequest("/mcp");
         McpTestHelper.AddBearerToken(request, "mcp_invalid_token_that_does_not_exist");
         using HttpResponseMessage response = await client.SendAsync(request);
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
+        await AssertUnauthorizedMcpChallengeAsync(response);
     }
 
     [Test]
@@ -115,7 +131,7 @@ public class McpTests(WebApplicationFactory factory)
         using var request = McpTestHelper.CreateInitializeRequest("/mcp");
         McpTestHelper.AddBearerToken(request, rawToken);
         using HttpResponseMessage response = await client.SendAsync(request);
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
+        await AssertUnauthorizedMcpChallengeAsync(response);
     }
 
     [Test]
@@ -131,7 +147,25 @@ public class McpTests(WebApplicationFactory factory)
         using var request = McpTestHelper.CreateInitializeRequest("/mcp");
         McpTestHelper.AddBearerToken(request, rawToken);
         using HttpResponseMessage response = await client.SendAsync(request);
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
+        await AssertUnauthorizedMcpChallengeAsync(response);
+    }
+
+    [Test]
+    public async Task WellKnownOAuthProtectedResource_AllMethodsReturn404WithoutRedirectAndNoStore()
+    {
+        HttpClient client = McpTestHelper.CreateClient(factory);
+
+        foreach (HttpMethod method in new[] { HttpMethod.Get, HttpMethod.Post, HttpMethod.Options })
+        {
+            using var request = new HttpRequestMessage(method, "/.well-known/oauth-protected-resource");
+            using HttpResponseMessage response = await client.SendAsync(request);
+
+            await Assert.That(response.StatusCode)
+                .IsEqualTo(HttpStatusCode.NotFound)
+                .Because($"/.well-known should short-circuit for {method} requests");
+            await Assert.That(response.Headers.Location).IsNull();
+            await Assert.That(response.Headers.CacheControl?.NoStore ?? false).IsTrue();
+        }
     }
 
     [Test]
@@ -168,5 +202,13 @@ public class McpTests(WebApplicationFactory factory)
         await Assert.That(response.Headers.Location).IsNull();
         await Assert.That(response.Headers.TryGetValues("Access-Control-Allow-Origin", out IEnumerable<string>? origins)).IsTrue();
         await Assert.That(origins?.SingleOrDefault()).IsEqualTo("http://localhost:6274");
+    }
+
+    private static async Task AssertUnauthorizedMcpChallengeAsync(HttpResponseMessage response)
+    {
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
+        await Assert.That(response.Headers.Location).IsNull();
+        await Assert.That(response.Headers.TryGetValues("WWW-Authenticate", out IEnumerable<string>? values)).IsTrue();
+        await Assert.That(values?.Any(value => value.Contains("Bearer", StringComparison.OrdinalIgnoreCase)) ?? false).IsTrue();
     }
 }

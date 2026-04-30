@@ -212,3 +212,34 @@ public class McpGlobalBypassRateLimitingTests(WebApplicationFactory factory)
         await Assert.That(rateLimitedGetResponse.StatusCode).IsEqualTo(HttpStatusCode.TooManyRequests);
     }
 }
+
+[NotInParallel("McpTests")]
+[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
+public class McpWellKnownIsolationRateLimitingTests(WebApplicationFactory factory)
+{
+    [Test]
+    public async Task WellKnownRequests_DoNotConsumeContentLimiterBudget()
+    {
+        HttpClient client = McpTestHelper.CreateClient(factory);
+
+        for (int i = 0; i < 10; i++)
+        {
+            using HttpResponseMessage wellKnownResponse =
+                await client.GetAsync("/.well-known/oauth-protected-resource");
+            await Assert.That(wellKnownResponse.StatusCode)
+                .IsEqualTo(HttpStatusCode.NotFound)
+                .Because($"well-known request {i + 1} should short-circuit with 404");
+        }
+
+        for (int i = 0; i < 10; i++)
+        {
+            using HttpResponseMessage contentResponse = await client.GetAsync("/hello-world");
+            await Assert.That(contentResponse.StatusCode)
+                .IsNotEqualTo(HttpStatusCode.TooManyRequests)
+                .Because($"content request {i + 1} should still have its full limiter budget");
+        }
+
+        using HttpResponseMessage rateLimitedResponse = await client.GetAsync("/hello-world");
+        await Assert.That(rateLimitedResponse.StatusCode).IsEqualTo(HttpStatusCode.TooManyRequests);
+    }
+}

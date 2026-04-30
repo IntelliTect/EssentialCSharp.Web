@@ -18,6 +18,17 @@ public class McpApiKeyAuthenticationHandler(
     McpApiTokenService tokenService)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
+    protected override Task HandleChallengeAsync(AuthenticationProperties properties)
+    {
+        Response.StatusCode = StatusCodes.Status401Unauthorized;
+        if (!Response.Headers.ContainsKey("WWW-Authenticate"))
+        {
+            Response.Headers.Append("WWW-Authenticate", "Bearer");
+        }
+
+        return Task.CompletedTask;
+    }
+
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         if (!McpBearerAuthentication.TryGetRawToken(Request, out string? rawToken))
