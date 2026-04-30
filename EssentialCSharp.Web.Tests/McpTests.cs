@@ -208,7 +208,10 @@ public class McpTests(WebApplicationFactory factory)
     {
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
         await Assert.That(response.Headers.Location).IsNull();
-        await Assert.That(response.Headers.TryGetValues("WWW-Authenticate", out IEnumerable<string>? values)).IsTrue();
-        await Assert.That(values?.Any(value => value.Contains("Bearer", StringComparison.OrdinalIgnoreCase)) ?? false).IsTrue();
+        // WWW-Authenticate: Bearer must NOT be present. Emitting a Bearer challenge triggers the
+        // MCP 2025 spec's OAuth 2.0 Protected Resource Metadata discovery flow in compliant
+        // clients (e.g. GitHub Copilot CLI), causing them to prompt the user for OAuth credentials
+        // even though this server uses opaque API tokens, not OAuth.
+        await Assert.That(response.Headers.Contains("WWW-Authenticate")).IsFalse();
     }
 }

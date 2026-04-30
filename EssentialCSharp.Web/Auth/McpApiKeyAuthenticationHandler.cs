@@ -21,11 +21,13 @@ public class McpApiKeyAuthenticationHandler(
     protected override Task HandleChallengeAsync(AuthenticationProperties properties)
     {
         Response.StatusCode = StatusCodes.Status401Unauthorized;
-        if (!Response.Headers.ContainsKey("WWW-Authenticate"))
-        {
-            Response.Headers.Append("WWW-Authenticate", "Bearer");
-        }
-
+        // Intentionally omit WWW-Authenticate: Bearer.
+        // RFC 6750 "Bearer" challenges trigger the MCP 2025 spec's mandatory OAuth 2.0
+        // Protected Resource Metadata discovery flow in compliant clients (e.g. GitHub
+        // Copilot CLI). This server uses opaque mcp_... API tokens — not OAuth — so
+        // advertising a Bearer challenge would cause clients to attempt OAuth discovery,
+        // fail to find authorization server metadata, and prompt the user for OAuth
+        // credentials they don't have.
         return Task.CompletedTask;
     }
 
