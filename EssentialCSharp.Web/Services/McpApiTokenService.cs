@@ -10,7 +10,7 @@ namespace EssentialCSharp.Web.Services;
 public class McpApiTokenService(EssentialCSharpWebContext db)
 {
     public const int DefaultLifetimeMonths = 6;
-    public const string MaxExpiryValidationMessage = "MCP tokens can expire at most 6 months from today.";
+    public static readonly string MaxExpiryValidationMessage = $"MCP tokens can expire at most {DefaultLifetimeMonths} months from today.";
 
     public sealed record ResolvedMcpApiToken(Guid TokenId, string UserId);
 
@@ -36,10 +36,11 @@ public class McpApiTokenService(EssentialCSharpWebContext db)
         string userId,
         string name,
         DateTime? expiresAt = null,
+        DateTime? createdAtUtc = null,
         CancellationToken cancellationToken = default)
     {
         string raw = GenerateRawToken();
-        DateTime createdAt = DateTime.UtcNow;
+        DateTime createdAt = createdAtUtc ?? DateTime.UtcNow;
         DateTime effectiveExpiration = ResolveExpiration(expiresAt, createdAt);
 
         var entity = new McpApiToken

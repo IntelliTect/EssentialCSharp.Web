@@ -45,10 +45,30 @@ public class McpApiTokenServiceTests(WebApplicationFactory factory)
 
         using var scope = factory.Services.CreateScope();
         var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
-        DateTime requestedExpiry = McpApiTokenService.GetDefaultExpirationUtc(DateTime.UtcNow).AddDays(1);
+        DateTime requestedExpiry = McpApiTokenService.GetDefaultExpirationUtc(DateTime.UtcNow).AddDays(2);
 
         await Assert.That(() => tokenService.CreateTokenAsync(userId, "too-long", requestedExpiry))
             .Throws<ArgumentOutOfRangeException>()
-            .WithMessageContaining("6 months");
+            .WithMessageContaining(McpApiTokenService.MaxExpiryValidationMessage);
+    }
+
+    [Test]
+    public async Task CreateTokenAsync_WithExplicitCreatedAt_UsesReferenceTimeForDefaultExpiry()
+    {
+        string userId = await McpTestHelper.CreateUserAsync(factory, "mcp-explicit-created-at");
+
+        using var scope = factory.Services.CreateScope();
+        var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
+        DateTime createdAtUtc = new(2026, 4, 30, 23, 59, 59, DateTimeKind.Utc);
+
+        (_, var entity) = await tokenService.CreateTokenAsync(
+            userId,
+            "explicit-created-at",
+            createdAtUtc: createdAtUtc);
+
+        await Assert.That(entity.CreatedAt).IsEqualTo(createdAtUtc);
+        await Assert.That(entity.ExpiresAt).IsNotNull();
+        await Assert.That(entity.ExpiresAt!.Value)
+            .IsEqualTo(McpApiTokenService.GetDefaultExpirationUtc(createdAtUtc));
     }
 }
