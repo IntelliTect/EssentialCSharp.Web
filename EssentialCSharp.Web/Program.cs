@@ -490,11 +490,11 @@ public partial class Program
             app.UseForwardedHeaders();
         }
 
-        app.MapHealthChecks("/health");
+        app.MapHealthChecks("/health").DisableRateLimiting();
         app.MapHealthChecks("/alive", new HealthCheckOptions
         {
             Predicate = r => r.Tags.Contains("live")
-        });
+        }).DisableRateLimiting();
 
         if (app.Environment.IsDevelopment())
         {
