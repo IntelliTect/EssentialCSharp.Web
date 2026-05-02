@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
-public class LoginWith2faModel(
+public partial class LoginWith2faModel(
     SignInManager<EssentialCSharpWebUser> signInManager,
     UserManager<EssentialCSharpWebUser> userManager,
     ILogger<LoginWith2faModel> logger) : PageModel
@@ -68,19 +68,28 @@ public class LoginWith2faModel(
 
         if (result.Succeeded)
         {
-            logger.LogInformation("User with ID '{UserId}' logged in with 2fa.", user.Id);
+            LogUserLoggedInWith2fa(logger, user.Id);
             return LocalRedirect(returnUrl);
         }
         else if (result.IsLockedOut)
         {
-            logger.LogWarning("User with ID '{UserId}' account locked out.", user.Id);
+            LogUserAccountLockedOut2fa(logger, user.Id);
             return RedirectToPage("./Lockout");
         }
         else
         {
-            logger.LogWarning("Invalid authenticator code entered for user with ID '{UserId}'.", user.Id);
+            LogInvalidAuthenticatorCode(logger, user.Id);
             ModelState.AddModelError(string.Empty, "Invalid authenticator code.");
             return Page();
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "User with ID '{UserId}' logged in with 2fa.")]
+    private static partial void LogUserLoggedInWith2fa(ILogger<LoginWith2faModel> logger, string userId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "User with ID '{UserId}' account locked out.")]
+    private static partial void LogUserAccountLockedOut2fa(ILogger<LoginWith2faModel> logger, string userId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Invalid authenticator code entered for user with ID '{UserId}'.")]
+    private static partial void LogInvalidAuthenticatorCode(ILogger<LoginWith2faModel> logger, string userId);
 }

@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Services;
 
-public class EmailSender(IMailjetClient mailjetClient, IOptions<AuthMessageSenderOptions> options,
+public partial class EmailSender(IMailjetClient mailjetClient, IOptions<AuthMessageSenderOptions> options,
                    ILogger<EmailSender> logger) : IEmailSender
 {
     private readonly ILogger _Logger = logger;
@@ -38,14 +38,23 @@ public class EmailSender(IMailjetClient mailjetClient, IOptions<AuthMessageSende
         switch (response.Messages.Length)
         {
             case 0:
-                _Logger.LogError("Unexpectedly no messages returned in the mailer response");
+                LogNoMessagesReturned(_Logger);
                 break;
             case 1 when response.Messages.First().Status == "success":
-                _Logger.LogInformation("Email to queued successfully!");
+                LogEmailQueued(_Logger);
                 break;
             default:
-                _Logger.LogError("Failure To Send Email");
+                LogEmailSendFailure(_Logger);
                 break;
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Unexpectedly no messages returned in the mailer response")]
+    private static partial void LogNoMessagesReturned(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Email to queued successfully!")]
+    private static partial void LogEmailQueued(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failure To Send Email")]
+    private static partial void LogEmailSendFailure(ILogger logger);
 }

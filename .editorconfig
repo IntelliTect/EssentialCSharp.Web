@@ -155,8 +155,6 @@ csharp_style_prefer_top_level_statements = true:silent
 csharp_style_expression_bodied_lambdas = true:silent
 csharp_style_expression_bodied_local_functions = false:silent
 
-# CA1848: Use the LoggerMessage delegates
-dotnet_diagnostic.CA1848.severity = suggestion
 # Test files - allow underscore-separated test method names (CA1707)
 [{EssentialCSharp.Web.Tests,EssentialCSharp.Chat.Tests}/**]
 dotnet_diagnostic.CA1707.severity = none

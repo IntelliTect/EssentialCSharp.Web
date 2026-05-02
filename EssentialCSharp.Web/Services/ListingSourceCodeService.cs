@@ -22,7 +22,7 @@ public partial class ListingSourceCodeService : IListingSourceCodeService, IDisp
             _FileProvider = new PhysicalFileProvider(listingSourceCodePath);
             _OwnsFileProvider = true;
             _ChapterDirectoryPrefix = "src";
-            _Logger.LogInformation("Using listing source code from: {Path}", listingSourceCodePath);
+            LogUsingListingSourceCodeFrom(_Logger, listingSourceCodePath);
         }
         else
         {
@@ -45,7 +45,7 @@ public partial class ListingSourceCodeService : IListingSourceCodeService, IDisp
 
         if (!directoryContents.Exists)
         {
-            _Logger.LogWarning("Chapter directory not found: {ChapterDirectory}", chapterDirectory);
+            LogChapterDirectoryNotFound(_Logger, chapterDirectory);
             return null;
         }
 
@@ -56,7 +56,7 @@ public partial class ListingSourceCodeService : IListingSourceCodeService, IDisp
 
         if (matchingFile == null)
         {
-            _Logger.LogWarning("Listing file not found: {Pattern} in {ChapterDirectory}", pattern, chapterDirectory);
+            LogListingFileNotFound(_Logger, pattern, chapterDirectory);
             return null;
         }
 
@@ -78,7 +78,7 @@ public partial class ListingSourceCodeService : IListingSourceCodeService, IDisp
 
         if (!directoryContents.Exists)
         {
-            _Logger.LogWarning("Chapter directory not found: {ChapterDirectory}", chapterDirectory);
+            LogChapterDirectoryNotFound(_Logger, chapterDirectory);
             return Array.Empty<ListingSourceCodeResponse>();
         }
 
@@ -131,4 +131,13 @@ public partial class ListingSourceCodeService : IListingSourceCodeService, IDisp
 
     [GeneratedRegex(@"^(\d{2})\.(\d{2})\.(\w+)$")]
     private static partial Regex ListingFilePattern();
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Using listing source code from: {Path}")]
+    private static partial void LogUsingListingSourceCodeFrom(ILogger<ListingSourceCodeService> logger, string path);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Chapter directory not found: {ChapterDirectory}")]
+    private static partial void LogChapterDirectoryNotFound(ILogger<ListingSourceCodeService> logger, string chapterDirectory);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Listing file not found: {Pattern} in {ChapterDirectory}")]
+    private static partial void LogListingFileNotFound(ILogger<ListingSourceCodeService> logger, string pattern, string chapterDirectory);
 }

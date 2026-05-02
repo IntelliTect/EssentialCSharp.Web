@@ -26,7 +26,7 @@ public partial class MarkdownChunkingService(
         // Validate input parameters
         if (!directory.Exists)
         {
-            logger.LogError("Error: Directory {DirectoryName} does not exist.", directory.FullName);
+            LogDirectoryDoesNotExist(logger, directory.FullName);
             throw new InvalidOperationException($"Error: Directory '{directory.FullName}' does not exist.");
         }
 
@@ -177,4 +177,7 @@ public partial class MarkdownChunkingService(
 
     [GeneratedRegex(@"^(#{1,6}) +(.+)$")]
     private static partial Regex HeadingRegex();
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Directory {directoryName} does not exist.")]
+    private static partial void LogDirectoryDoesNotExist(ILogger<MarkdownChunkingService> logger, string directoryName);
 }

@@ -367,7 +367,8 @@ public partial class Program
                         cancellationToken);
 
                     // Optional logging
-                    logger.LogWarning("Rate limit exceeded on {Path}. User: {User}, IP: {IpAddress}",
+                    LogRateLimitExceeded(
+                        logger,
                         context.HttpContext.Request.Path,
                         context.HttpContext.User.Identity?.Name ?? "anonymous",
                         context.HttpContext.Connection.RemoteIpAddress);
@@ -376,7 +377,8 @@ public partial class Program
 
                 await context.HttpContext.Response.WriteAsync("Rate limit exceeded. Please try again later.", cancellationToken);
 
-                logger.LogWarning("Rate limit exceeded on {Path}. User: {User}, IP: {IpAddress}",
+                LogRateLimitExceeded(
+                    logger,
                     context.HttpContext.Request.Path,
                     context.HttpContext.User.Identity?.Name ?? "anonymous",
                     context.HttpContext.Connection.RemoteIpAddress);
@@ -426,7 +428,7 @@ public partial class Program
                 {
                     var exceptionFeature = context.Features.Get<IExceptionHandlerFeature>();
                     var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-                    logger.LogError(exceptionFeature?.Error, "Unhandled exception on {Path}", context.Request.Path);
+                    LogUnhandledException(logger, exceptionFeature?.Error, context.Request.Path);
 
                     if (context.Request.Path.StartsWithSegments("/mcp"))
                     {
@@ -462,7 +464,7 @@ public partial class Program
                 }
                 else
                 {
-                    app.Logger.LogWarning("Ignoring invalid TryDotNet origin in CSP: {Origin}", tryDotNetOrigin);
+                    LogIgnoringInvalidTryDotNetOrigin(app.Logger, tryDotNetOrigin);
                 }
             }
 
@@ -582,11 +584,11 @@ public partial class Program
 
             SitemapXmlHelpers.EnsureSitemapHealthy(siteMappingService.SiteMappings.ToList());
             SitemapXmlHelpers.GenerateAndSerializeSitemapXml(wwwrootDirectory, siteMappingService.SiteMappings.ToList(), initialLogger, routeConfigurationService, baseUrl);
-            logger.LogInformation("Sitemap.xml generation completed successfully during application startup");
+            LogSitemapGenerationSucceeded(logger);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to generate sitemap.xml during application startup");
+            LogSitemapGenerationFailed(logger, ex);
             // Continue startup even if sitemap generation fails
         }
 
@@ -595,4 +597,19 @@ public partial class Program
 
     private static bool IsMcpTransportRequest(HttpRequest request) =>
         HttpMethods.IsPost(request.Method) && request.Path == "/mcp";
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Rate limit exceeded on {Path}. User: {User}, IP: {IpAddress}")]
+    private static partial void LogRateLimitExceeded(ILogger<Program> logger, PathString path, string user, System.Net.IPAddress? ipAddress);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Unhandled exception on {Path}")]
+    private static partial void LogUnhandledException(ILogger<Program> logger, Exception? exception, PathString path);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Sitemap.xml generation completed successfully during application startup")]
+    private static partial void LogSitemapGenerationSucceeded(ILogger<Program> logger);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to generate sitemap.xml during application startup")]
+    private static partial void LogSitemapGenerationFailed(ILogger<Program> logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Ignoring invalid TryDotNet origin in CSP: {Origin}")]
+    private static partial void LogIgnoringInvalidTryDotNetOrigin(ILogger logger, string origin);
 }

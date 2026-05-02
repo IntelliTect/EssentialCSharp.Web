@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage;
 
-public class Disable2faModel(
+public partial class Disable2faModel(
     UserManager<EssentialCSharpWebUser> userManager,
     ILogger<Disable2faModel> logger) : PageModel
 {
@@ -42,8 +42,11 @@ public class Disable2faModel(
             throw new InvalidOperationException($"Unexpected error occurred disabling 2FA.");
         }
 
-        logger.LogInformation("User with ID '{UserId}' has disabled 2fa.", userManager.GetUserId(User));
+        LogUserDisabled2fa(logger, userManager.GetUserId(User));
         StatusMessage = "2fa has been disabled. You can reenable 2fa when you setup an authenticator app";
         return RedirectToPage("./TwoFactorAuthentication");
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "User with ID '{UserId}' has disabled 2fa.")]
+    private static partial void LogUserDisabled2fa(ILogger<Disable2faModel> logger, string? userId);
 }

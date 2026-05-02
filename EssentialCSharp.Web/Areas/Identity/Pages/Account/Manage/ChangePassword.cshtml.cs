@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage;
 
-public class ChangePasswordModel(
+public partial class ChangePasswordModel(
     UserManager<EssentialCSharpWebUser> userManager,
     SignInManager<EssentialCSharpWebUser> signInManager,
     ILogger<ChangePasswordModel> logger) : PageModel
@@ -106,9 +106,12 @@ public class ChangePasswordModel(
         }
 
         await signInManager.RefreshSignInAsync(user);
-        logger.LogInformation("User changed their password successfully.");
+        LogUserChangedPassword(logger);
         StatusMessage = "Your password has been changed.";
 
         return RedirectToPage();
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "User changed their password successfully.")]
+    private static partial void LogUserChangedPassword(ILogger<ChangePasswordModel> logger);
 }

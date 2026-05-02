@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage;
 
-public class DownloadPersonalDataModel(
+public partial class DownloadPersonalDataModel(
     UserManager<EssentialCSharpWebUser> userManager,
     ILogger<DownloadPersonalDataModel> logger) : PageModel
 {
@@ -23,7 +23,7 @@ public class DownloadPersonalDataModel(
             return NotFound($"Unable to load user with ID '{userManager.GetUserId(User)}'.");
         }
 
-        logger.LogInformation("User with ID '{UserId}' asked for their personal data.", userManager.GetUserId(User));
+        LogUserAskedForPersonalData(logger, userManager.GetUserId(User));
 
         // Only include personal data for download
         var personalData = new Dictionary<string, string>();
@@ -48,4 +48,7 @@ public class DownloadPersonalDataModel(
         Response.Headers.Append("Content-Disposition", "attachment; filename=PersonalData.json");
         return new FileContentResult(JsonSerializer.SerializeToUtf8Bytes(personalData), "application/json");
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "User with ID '{UserId}' asked for their personal data.")]
+    private static partial void LogUserAskedForPersonalData(ILogger<DownloadPersonalDataModel> logger, string? userId);
 }
