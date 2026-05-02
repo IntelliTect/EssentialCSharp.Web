@@ -16,6 +16,16 @@ const shell = inject("shell");
                 ( or use the <i class="fa-solid fa-square-caret-left" /> key)
             </span>
         </div>
+        <div v-if="shell.isContentPage" class="turn-page-tooltip">
+            <button id="share-btn" class="arrow-btn" aria-label="Share this page" @click="shell.shareCurrentPage()">
+                <i class="fa-solid fa-share-from-square arrow-icon" />
+            </button>
+            <span class="turn-page-tooltip-text tooltip-center">
+                <b>Share Page</b>
+                <br />
+                Copies a link to this page
+            </span>
+        </div>
         <div class="turn-page-tooltip">
             <a v-if="shell.nextPageUrl" id="next-btn" :href="shell.nextPageUrl" class="arrow-btn">
                 <i class="fa fa-solid fa-arrow-right icon-light arrow-icon" />
