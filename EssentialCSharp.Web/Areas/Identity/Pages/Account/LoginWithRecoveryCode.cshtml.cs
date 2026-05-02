@@ -7,7 +7,6 @@ namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
 public partial class LoginWithRecoveryCodeModel(
     SignInManager<EssentialCSharpWebUser> signInManager,
-    UserManager<EssentialCSharpWebUser> userManager,
     ILogger<LoginWithRecoveryCodeModel> logger) : PageModel
 {
     private InputModel? _Input;
@@ -55,8 +54,6 @@ public partial class LoginWithRecoveryCodeModel(
 
         Microsoft.AspNetCore.Identity.SignInResult result = await signInManager.TwoFactorRecoveryCodeSignInAsync(recoveryCode);
 
-        string userId = await userManager.GetUserIdAsync(user);
-
         if (result.Succeeded)
         {
             LogUserLoggedInWithRecoveryCode(logger, user.Id);
@@ -81,6 +78,6 @@ public partial class LoginWithRecoveryCodeModel(
     [LoggerMessage(Level = LogLevel.Warning, Message = "User account locked out.")]
     private static partial void LogUserAccountLockedOutRecovery(ILogger<LoginWithRecoveryCodeModel> logger);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Invalid recovery code entered for user with ID '{UserId}' ")]
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Invalid recovery code entered for user with ID '{UserId}'.")]
     private static partial void LogInvalidRecoveryCode(ILogger<LoginWithRecoveryCodeModel> logger, string userId);
 }

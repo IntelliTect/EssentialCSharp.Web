@@ -178,6 +178,6 @@ public partial class MarkdownChunkingService(
     [GeneratedRegex(@"^(#{1,6}) +(.+)$")]
     private static partial Regex HeadingRegex();
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Directory {directoryName} does not exist.")]
+    [LoggerMessage(Level = LogLevel.Error, Message = "Directory {DirectoryName} does not exist.")]
     private static partial void LogDirectoryDoesNotExist(ILogger<MarkdownChunkingService> logger, string directoryName);
 }

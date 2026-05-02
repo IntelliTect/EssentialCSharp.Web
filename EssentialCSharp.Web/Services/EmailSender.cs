@@ -52,9 +52,9 @@ public partial class EmailSender(IMailjetClient mailjetClient, IOptions<AuthMess
     [LoggerMessage(Level = LogLevel.Error, Message = "Unexpectedly no messages returned in the mailer response")]
     private static partial void LogNoMessagesReturned(ILogger logger);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Email to queued successfully!")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "Email queued successfully.")]
     private static partial void LogEmailQueued(ILogger logger);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Failure To Send Email")]
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to send email.")]
     private static partial void LogEmailSendFailure(ILogger logger);
 }

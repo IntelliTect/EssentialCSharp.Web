@@ -11,9 +11,9 @@ public partial class LogoutModel(SignInManager<EssentialCSharpWebUser> signInMan
     {
         await signInManager.SignOutAsync();
         LogUserLoggedOut(logger);
-            // This needs to be a redirect so that the browser performs a new
-            // request and the identity for the user gets updated.
-            return returnUrl is not null ? LocalRedirect(returnUrl) : RedirectToPage();
+        // This needs to be a redirect so that the browser performs a new
+        // request and the identity for the user gets updated.
+        return returnUrl is not null ? LocalRedirect(returnUrl) : RedirectToPage();
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "User logged out.")]
