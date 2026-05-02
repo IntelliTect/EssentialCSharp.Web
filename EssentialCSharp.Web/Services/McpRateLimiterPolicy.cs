@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace EssentialCSharp.Web.Services;
 
-internal sealed class McpRateLimiterPolicy : IRateLimiterPolicy<string>
+internal sealed partial class McpRateLimiterPolicy : IRateLimiterPolicy<string>
 {
     internal const string PolicyName = "mcp";
     internal const int AuthenticatedTokenLimit = 45;
@@ -61,10 +61,13 @@ internal sealed class McpRateLimiterPolicy : IRateLimiterPolicy<string>
             cancellationToken);
 
         var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<McpRateLimiterPolicy>>();
-        logger.LogWarning(
-            "MCP rate limit exceeded on {Path}. User: {User}, IP: {IpAddress}",
+        LogMcpRateLimitExceeded(
+            logger,
             context.HttpContext.Request.Path,
             context.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
             context.HttpContext.Connection.RemoteIpAddress);
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "MCP rate limit exceeded on {Path}. User: {User}, IP: {IpAddress}")]
+    private static partial void LogMcpRateLimitExceeded(ILogger<McpRateLimiterPolicy> logger, PathString path, string user, System.Net.IPAddress? ipAddress);
 }

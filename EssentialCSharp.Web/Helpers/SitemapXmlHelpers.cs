@@ -4,7 +4,7 @@ using EssentialCSharp.Web.Services;
 
 namespace EssentialCSharp.Web.Helpers;
 
-public static class SitemapXmlHelpers
+public static partial class SitemapXmlHelpers
 {
     public static void EnsureSitemapHealthy(List<SiteMapping> siteMappings)
     {
@@ -25,7 +25,7 @@ public static class SitemapXmlHelpers
         XmlSerializer sitemapProvider = new();
         var xmlPath = Path.Join(wwwrootDirectory.FullName, "sitemap.xml");
         sitemapProvider.Serialize(new SitemapModel(nodes), xmlPath, true);
-        logger.LogInformation("sitemap.xml successfully written to {XmlPath}", xmlPath);
+        LogSitemapWritten(logger, xmlPath);
     }
 
     public static void GenerateSitemapXml(DirectoryInfo wwwrootDirectory, List<SiteMapping> siteMappings, IRouteConfigurationService routeConfigurationService, string baseUrl, out List<SitemapNode> nodes)
@@ -97,4 +97,7 @@ public static class SitemapXmlHelpers
             _ => 0.5M
         };
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "sitemap.xml successfully written to {XmlPath}")]
+    private static partial void LogSitemapWritten(ILogger logger, string xmlPath);
 }

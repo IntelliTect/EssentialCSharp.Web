@@ -6,7 +6,7 @@ using Npgsql;
 
 namespace EssentialCSharp.Chat.Common.Services;
 
-public class AISearchService(
+public partial class AISearchService(
     VectorStore vectorStore,
     EmbeddingService embeddingService,
     ILogger<AISearchService> logger)
@@ -49,10 +49,13 @@ public class AISearchService(
                 // needed (clearing would evict all healthy connections, hurting concurrent users).
                 // The retry opens a fresh physical connection, which calls UsePasswordProvider
                 // and gets a new token from DefaultAzureCredential.
-                logger.LogWarning(ex, "Entra ID token expired on pooled connection (SqlState 28000); retrying once.");
+                LogEntraIdTokenExpired(logger, ex);
             }
         }
 
         throw new UnreachableException("Retry loop exited without returning or throwing.");
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Entra ID token expired on pooled connection (SqlState 28000); retrying once.")]
+    private static partial void LogEntraIdTokenExpired(ILogger<AISearchService> logger, Exception exception);
 }

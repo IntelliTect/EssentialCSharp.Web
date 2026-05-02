@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.WebUtilities;
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
 [AllowAnonymous]
-public class ExternalLoginModel(
+public partial class ExternalLoginModel(
     SignInManager<EssentialCSharpWebUser> signInManager,
     UserManager<EssentialCSharpWebUser> userManager,
     IUserStore<EssentialCSharpWebUser> userStore,
@@ -78,7 +78,7 @@ public class ExternalLoginModel(
         Microsoft.AspNetCore.Identity.SignInResult result = await signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
         if (result.Succeeded)
         {
-            logger.LogInformation("{Name} logged in with {LoginProvider} provider.", info.Principal.Identity?.Name, info.LoginProvider);
+            LogUserLoggedInWithProvider(logger, info.Principal.Identity?.Name, info.LoginProvider);
             // Ensure referral ID is set for the user
             var user = await userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
             if (user != null)
@@ -140,7 +140,7 @@ public class ExternalLoginModel(
                     result = await userManager.AddLoginAsync(user, info);
                     if (result.Succeeded)
                     {
-                        logger.LogInformation("User created an account using {Name} provider.", info.LoginProvider);
+                        LogUserCreatedWithProvider(logger, info.LoginProvider);
                         return await SendConfirmationEmail(returnUrl, info, user);
                     }
                 }
@@ -214,4 +214,10 @@ public class ExternalLoginModel(
                 $"override the external login page in /Areas/Identity/Pages/Account/ExternalLogin.cshtml", innerException);
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "{Name} logged in with {LoginProvider} provider.")]
+    private static partial void LogUserLoggedInWithProvider(ILogger<ExternalLoginModel> logger, string? name, string loginProvider);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "User created an account using {Name} provider.")]
+    private static partial void LogUserCreatedWithProvider(ILogger<ExternalLoginModel> logger, string name);
 }

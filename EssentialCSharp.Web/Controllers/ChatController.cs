@@ -10,7 +10,7 @@ namespace EssentialCSharp.Web.Controllers;
 [Route("api/[controller]")]
 [Authorize]
 [EnableRateLimiting("ChatEndpoint")]
-public class ChatController : ControllerBase
+public partial class ChatController : ControllerBase
 {
     private readonly AIChatService _AiChatService;
     private readonly ILogger<ChatController> _Logger;
@@ -93,18 +93,18 @@ public class ChatController : ControllerBase
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
         {
-            _Logger.LogDebug("Chat stream cancelled for user {User}", User.Identity?.Name);
+            LogChatStreamCancelled(_Logger, User.Identity?.Name);
         }
         catch (Exception ex) when (!Response.HasStarted)
         {
-            _Logger.LogError(ex, "Chat streaming error before response started for user {User}", User.Identity?.Name);
+            LogChatStreamErrorBeforeResponseStarted(_Logger, ex, User.Identity?.Name);
             Response.StatusCode = 500;
             Response.ContentType = "application/json";
             await Response.WriteAsJsonAsync(new { error = "Chat service unavailable" }, CancellationToken.None);
         }
         catch (Exception ex)
         {
-            _Logger.LogError(ex, "Chat streaming error mid-stream for user {User}", User.Identity?.Name);
+            LogChatStreamErrorMidStream(_Logger, ex, User.Identity?.Name);
             try
             {
                 await Response.WriteAsync("data: {\"type\":\"error\",\"message\":\"Stream interrupted\"}\n\n", CancellationToken.None);
@@ -113,4 +113,13 @@ public class ChatController : ControllerBase
             catch { /* client already disconnected */ }
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Chat stream cancelled for user {User}")]
+    private static partial void LogChatStreamCancelled(ILogger<ChatController> logger, string? user);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Chat streaming error before response started for user {User}")]
+    private static partial void LogChatStreamErrorBeforeResponseStarted(ILogger<ChatController> logger, Exception exception, string? user);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Chat streaming error mid-stream for user {User}")]
+    private static partial void LogChatStreamErrorMidStream(ILogger<ChatController> logger, Exception exception, string? user);
 }

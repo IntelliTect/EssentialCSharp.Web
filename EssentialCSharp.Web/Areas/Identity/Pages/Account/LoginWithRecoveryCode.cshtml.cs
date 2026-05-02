@@ -5,9 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
-public class LoginWithRecoveryCodeModel(
+public partial class LoginWithRecoveryCodeModel(
     SignInManager<EssentialCSharpWebUser> signInManager,
-    UserManager<EssentialCSharpWebUser> userManager,
     ILogger<LoginWithRecoveryCodeModel> logger) : PageModel
 {
     private InputModel? _Input;
@@ -55,23 +54,30 @@ public class LoginWithRecoveryCodeModel(
 
         Microsoft.AspNetCore.Identity.SignInResult result = await signInManager.TwoFactorRecoveryCodeSignInAsync(recoveryCode);
 
-        string userId = await userManager.GetUserIdAsync(user);
-
         if (result.Succeeded)
         {
-            logger.LogInformation("User with ID '{UserId}' logged in with a recovery code.", user.Id);
+            LogUserLoggedInWithRecoveryCode(logger, user.Id);
             return LocalRedirect(returnUrl ?? Url.Content("~/"));
         }
         if (result.IsLockedOut)
         {
-            logger.LogWarning("User account locked out.");
+            LogUserAccountLockedOutRecovery(logger);
             return RedirectToPage("./Lockout");
         }
         else
         {
-            logger.LogWarning("Invalid recovery code entered for user with ID '{UserId}' ", user.Id);
+            LogInvalidRecoveryCode(logger, user.Id);
             ModelState.AddModelError(string.Empty, "Invalid recovery code entered.");
             return Page();
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "User with ID '{UserId}' logged in with a recovery code.")]
+    private static partial void LogUserLoggedInWithRecoveryCode(ILogger<LoginWithRecoveryCodeModel> logger, string userId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "User account locked out.")]
+    private static partial void LogUserAccountLockedOutRecovery(ILogger<LoginWithRecoveryCodeModel> logger);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Invalid recovery code entered for user with ID '{UserId}'.")]
+    private static partial void LogInvalidRecoveryCode(ILogger<LoginWithRecoveryCodeModel> logger, string userId);
 }

@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage;
 
-public class GenerateRecoveryCodesModel(
+public partial class GenerateRecoveryCodesModel(
     UserManager<EssentialCSharpWebUser> userManager,
     ILogger<GenerateRecoveryCodesModel> logger) : PageModel
 {
@@ -50,8 +50,11 @@ public class GenerateRecoveryCodesModel(
         IEnumerable<string>? recoveryCodes = await userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
         RecoveryCodes = recoveryCodes?.ToArray();
 
-        logger.LogInformation("User with ID '{UserId}' has generated new 2FA recovery codes.", userId);
+        LogUserGeneratedRecoveryCodes(logger, userId);
         StatusMessage = "You have generated new recovery codes.";
         return RedirectToPage("./ShowRecoveryCodes");
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "User with ID '{UserId}' has generated new 2FA recovery codes.")]
+    private static partial void LogUserGeneratedRecoveryCodes(ILogger<GenerateRecoveryCodesModel> logger, string userId);
 }

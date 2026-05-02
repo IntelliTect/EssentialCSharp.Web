@@ -8,7 +8,7 @@ namespace EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
 /// Validates that the password has not appeared in a known data breach using the
 /// HaveIBeenPwned Pwned Passwords k-anonymity range API.
 /// </summary>
-public class PwnedPasswordValidator<TUser>(IHttpClientFactory httpClientFactory, ILogger<PwnedPasswordValidator<TUser>> logger)
+public partial class PwnedPasswordValidator<TUser>(IHttpClientFactory httpClientFactory, ILogger<PwnedPasswordValidator<TUser>> logger)
     : IPasswordValidator<TUser>
     where TUser : class
 {
@@ -61,7 +61,7 @@ public class PwnedPasswordValidator<TUser>(IHttpClientFactory httpClientFactory,
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Failed to check password against HaveIBeenPwned. Failing open.");
+            LogFailedToCheckPwnedPassword(logger, ex);
         }
 
         return IdentityResult.Success;
@@ -77,4 +77,7 @@ public class PwnedPasswordValidator<TUser>(IHttpClientFactory httpClientFactory,
 #pragma warning restore CA5350
         return Convert.ToHexString(hashBytes);
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to check password against HaveIBeenPwned. Failing open.")]
+    private static partial void LogFailedToCheckPwnedPassword(ILogger<PwnedPasswordValidator<TUser>> logger, Exception exception);
 }

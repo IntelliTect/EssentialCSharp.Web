@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage;
 
-public class DeletePersonalDataModel(
+public partial class DeletePersonalDataModel(
     UserManager<EssentialCSharpWebUser> userManager,
     SignInManager<EssentialCSharpWebUser> signInManager,
     ILogger<DeletePersonalDataModel> logger) : PageModel
@@ -79,8 +79,11 @@ public class DeletePersonalDataModel(
 
         await signInManager.SignOutAsync();
 
-        logger.LogInformation("User with ID '{UserId}' deleted themselves.", userId);
+        LogUserDeletedThemselves(logger, userId);
 
         return Redirect("~/");
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "User with ID '{UserId}' deleted themselves.")]
+    private static partial void LogUserDeletedThemselves(ILogger<DeletePersonalDataModel> logger, string userId);
 }
