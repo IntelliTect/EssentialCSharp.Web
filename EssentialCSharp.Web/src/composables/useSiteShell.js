@@ -89,28 +89,21 @@ export function useSiteShell() {
         return urlObject.toString();
     }
 
-    function copyToClipboard(copyText) {
-        let url;
-
-        if (copyText.includes("#")) {
-            url = `${window.location.origin}/${copyText}`;
-        }
-        else {
-            const currentUrl = window.location.href.split("#")[0];
-            url = `${currentUrl}#${copyText}`;
-        }
-
+    function addReferralIdToUrl(url) {
         const referralId = window.REFERRAL_ID;
         if (typeof referralId === "string" && referralId.trim().length > 0) {
-            url = addQueryParam(url, "rid", referralId);
+            return addQueryParam(url, "rid", referralId);
         }
+        return url;
+    }
 
+    function writeToClipboard(url, successMessage = "Copied to clipboard!") {
         navigator.clipboard
             .writeText(url)
             .then(
                 () => {
                     snackbarColor.value = "white";
-                    snackbarMessage.value = "Copied url to clipboard!";
+                    snackbarMessage.value = successMessage;
                 },
                 (error) => {
                     console.error("Could not copy text to clipboard: ", error);
@@ -127,6 +120,25 @@ export function useSiteShell() {
         snackbarTimeoutId = setTimeout(() => {
             snackbarMessage.value = null;
         }, 3000);
+    }
+
+    function copyToClipboard(copyText) {
+        let url;
+
+        if (copyText.includes("#")) {
+            url = `${window.location.origin}/${copyText}`;
+        }
+        else {
+            const currentUrl = window.location.href.split("#")[0];
+            url = `${currentUrl}#${copyText}`;
+        }
+
+        writeToClipboard(addReferralIdToUrl(url), "Copied url to clipboard!");
+    }
+
+    function shareCurrentPage() {
+        const url = window.location.href.split("#")[0];
+        writeToClipboard(addReferralIdToUrl(url), "Copied page url to clipboard!");
     }
 
     function goToPrevious() {
@@ -276,6 +288,7 @@ export function useSiteShell() {
         isContentPage,
         filteredTocData,
         copyToClipboard,
+        shareCurrentPage,
         goToPrevious,
         goToNext,
         openSearch,
