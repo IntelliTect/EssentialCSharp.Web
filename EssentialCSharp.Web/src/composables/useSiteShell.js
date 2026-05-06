@@ -2,6 +2,7 @@ import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from
 import { useWindowSize } from "./useWindowSize.js";
 
 const SMALL_SCREEN_SIZE = 768;
+const NON_CONTENT_PERCENT_COMPLETE_VALUES = [null, "0.00"];
 
 /**
  * Find the path of TOC entries that lead to the current page.
@@ -71,7 +72,7 @@ export function useSiteShell() {
     const smallScreen = computed(() => (windowWidth.value || 0) < SMALL_SCREEN_SIZE);
     const currentPage = findCurrentPage([], tocData) ?? [];
     const chapterParentPage = currentPage.find((parent) => parent.level === 0) ?? null;
-    const isContentPage = computed(() => percentComplete.value !== null);
+    const isContentPage = computed(() => !NON_CONTENT_PERCENT_COMPLETE_VALUES.includes(percentComplete.value));
 
     for (const item of currentPage) {
         expandedTocs.add(item.key);

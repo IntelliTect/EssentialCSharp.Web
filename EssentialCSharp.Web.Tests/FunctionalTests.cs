@@ -45,6 +45,19 @@ public class FunctionalTests(WebApplicationFactory factory)
     }
 
     [Test]
+    [Arguments("/guidelines", "window.PERCENT_COMPLETE = null;")]
+    public async Task WhenNonContentPageIsRendered_LayoutIncludesNullPercentComplete(string relativeUrl, string expectedSnippet)
+    {
+        HttpClient client = factory.CreateClient();
+        using HttpResponseMessage response = await client.GetAsync(relativeUrl);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+
+        string content = await response.Content.ReadAsStringAsync();
+        await Assert.That(content).Contains(expectedSnippet);
+    }
+
+    [Test]
     public async Task WhenTheApplicationStarts_NonExistingPage_GivesCorrectStatusCode()
     {
         HttpClient client = factory.CreateClient();
