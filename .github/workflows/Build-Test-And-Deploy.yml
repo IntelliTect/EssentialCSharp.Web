@@ -68,14 +68,12 @@ jobs:
         env:
           NUGET_AUTH_TOKEN: ${{ secrets.AZURE_DEVOPS_PAT }}
         run: |
+          # Credentials-only config — sources and packageSourceMapping remain in nuget.config.
+          # NuGet merges packageSourceCredentials from ~/.nuget/config/*.config independently
+          # of packageSources, so <clear /> in nuget.config does not affect credentials.
           cat > /tmp/nuget-auth.config << EOF
           <?xml version="1.0" encoding="utf-8"?>
           <configuration>
-            <packageSources>
-              <clear />
-              <add key="nuget" value="https://api.nuget.org/v3/index.json" />
-              <add key="EssentialCSharp" value="https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json" />
-            </packageSources>
             <packageSourceCredentials>
               <EssentialCSharp>
                 <add key="Username" value="docker" />
