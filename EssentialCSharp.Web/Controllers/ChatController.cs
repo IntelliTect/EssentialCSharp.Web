@@ -10,6 +10,7 @@ namespace EssentialCSharp.Web.Controllers;
 [Route("api/[controller]")]
 [Authorize]
 [EnableRateLimiting("ChatEndpoint")]
+[IgnoreAntiforgeryToken]
 public partial class ChatController : ControllerBase
 {
     private readonly AIChatService _AiChatService;

@@ -9,6 +9,7 @@ namespace EssentialCSharp.Web.Controllers;
 [Route("api/[controller]")]
 [Authorize]
 [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
+[IgnoreAntiforgeryToken]
 public class McpTokenController(McpApiTokenService tokenService) : ControllerBase
 {
     public record CreateTokenRequest(string? Name, DateOnly? ExpiresOn = null);
