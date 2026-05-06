@@ -2,38 +2,86 @@
 
 This guide will help you set up your local development environment for working on the Essential C# Web project.
 
-## What You Will Need
+## Prerequisites
 
 - [Visual Studio](https://visualstudio.microsoft.com/) (or your preferred IDE)
-- [.NET 10.0 SDK](https://dotnet.microsoft.com/download)
-  - If you already have .NET installed you can check the version by typing `dotnet --info` into cmd to make sure you have the right version
+- [.NET 10.0 SDK](https://dotnet.microsoft.com/download) — verify with `dotnet --info`
 
-## Startup Steps
+## Minimal Local Setup
 
-To get the site that is seen at [essentialcsharp.com](https://essentialcsharp.com/):
+For basic browsing and UI development, no secrets are needed. The database connection and HCaptcha test keys are already configured in `appsettings.Development.json`.
 
-1. Clone Repository locally.
-2. Set any needed secrets
-3. If you have do not have access to the private nuget feed, change the line `<AccessToNugetFeed>true</AccessToNugetFeed>` to `<AccessToNugetFeed>false</AccessToNugetFeed>` in [Directory.Packages.props](https://github.com/IntelliTect/EssentialCSharp.Web/blob/main/Directory.Packages.props).
+1. Clone the repository.
+2. If you have access to the private NuGet feed, set `<AccessToNugetFeed>true</AccessToNugetFeed>` in [Directory.Packages.props](../Directory.Packages.props).
+3. Run the project.
 
-## Environment Prerequisites
+> **Tip:** Use the [dotnet secret manager](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets#set-a-secret) for any secrets below:
+> `dotnet user-secrets set "<Key>" "<Value>" --project EssentialCSharp.Web`
 
-Make sure the following secrets are set:
-In local development this ideally should be done using the dotnet secret manager. Additional information can be found at the [documentation](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets#set-a-secret)
+## Optional Features
 
-AuthMessageSender:SendFromName = "Hello World Team"
-AuthMessageSender:SendFromEmail = "no-reply@email.com"
-AuthMessageSender:SecretKey = alongstringofsecretsauce
-AuthMessageSender:APIKey = anapikey
-Authentication:Microsoft:ClientSecret = anotherimportantsecret
-Authentication:Microsoft:ClientId = anotherimportantclient
-Authentication:github:clientSecret = anotherimportantclientsecret
-Authentication:github:clientId = anotherimportantclientid
-HCaptcha:SiteKey = captchaSiteKey
-HCaptcha:SecretKey = captchaSecretKey
-APPLICATIONINSIGHTS_CONNECTION_STRING = "InstrumentationKey=your-instrumentation-key-here;IngestionEndpoint=https://region.in.applicationinsights.azure.com/;LiveEndpoint=https://region.livediagnostics.monitor.azure.com/"
+These features are disabled or use safe defaults in Development unless explicitly configured.
 
-### Testing Secret Values
+### AI Chat
 
-Some Value Secrets for Testing/Development Purposes:
-HCaptcha: https://docs.hcaptcha.com/#integration-testing-test-keys
+Required to enable the chat widget. Skipped entirely in Development if not configured.
+
+```
+AIOptions:Endpoint = https://<your-azure-openai-resource>.openai.azure.com/
+AIOptions:VectorGenerationDeploymentName = text-embedding-3-large-v1
+AIOptions:ChatDeploymentName = gpt-4o
+ConnectionStrings:PostgresVectorStore = <postgres-connection-string>
+```
+
+### MCP Server
+
+The MCP endpoint (`/mcp`) is always running. To generate tokens via the Account > MCP Access page, no additional config is needed — tokens are stored in the local database.
+
+### TryDotNet Integration
+
+```
+TryDotNet:Origin = https://<trydotnet-origin>
+```
+
+### Telemetry
+
+Use one of these — not both simultaneously (they conflict).
+
+```
+# Azure Monitor (Application Insights):
+APPLICATIONINSIGHTS_CONNECTION_STRING = InstrumentationKey=...
+
+# Local Aspire dashboard (OTLP):
+OTEL_EXPORTER_OTLP_ENDPOINT = http://localhost:4317
+```
+
+## Production / Staging Secrets
+
+These are only required outside of Development. The app throws at startup if they are missing in non-Development environments.
+
+### Email Sending
+
+```
+AuthMessageSender:SendFromName = Hello World Team
+AuthMessageSender:SendFromEmail = no-reply@email.com
+AuthMessageSender:SecretKey = <mailjet-secret-key>
+AuthMessageSender:APIKey = <mailjet-api-key>
+```
+
+### Social Login
+
+```
+Authentication:Microsoft:ClientId = <client-id>
+Authentication:Microsoft:ClientSecret = <client-secret>
+Authentication:github:clientId = <client-id>
+Authentication:github:clientSecret = <client-secret>
+```
+
+### HCaptcha
+
+Development uses [hCaptcha test keys](https://docs.hcaptcha.com/#integration-testing-test-keys) by default. Override for production:
+
+```
+HCaptcha:SiteKey = <site-key>
+HCaptcha:SecretKey = <secret-key>
+```
