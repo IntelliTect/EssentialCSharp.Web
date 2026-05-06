@@ -232,7 +232,10 @@ public partial class Program
             throw new NotSupportedException("The default UI requires a user store with password support.");
         });
 
-        //TODO: Implement the anti-forgery token with every POST/PUT request: https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery
+        builder.Services.AddControllersWithViews(options =>
+        {
+            options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
+        });
 
         if (!builder.Environment.IsDevelopment())
         {
