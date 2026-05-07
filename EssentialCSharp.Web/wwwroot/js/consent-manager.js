@@ -42,8 +42,7 @@ class ConsentManager {
         // Ensure gtag infrastructure exists — the actual 'consent default' is set inline
         // in _Layout.cshtml before gtag.js loads (required by Google Consent Mode v2).
         window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        window.gtag = window.gtag || gtag;
+        window.gtag = window.gtag || function(){window.dataLayer.push(arguments);};
     }
 
     loadConsentPreferences() {
@@ -255,7 +254,7 @@ class ConsentManager {
     updateConsentMode() {
         if (window.gtag) {
             try {
-                gtag('consent', 'update', this.consentState);
+                window.gtag('consent', 'update', this.consentState);
             } catch (error) {
                 console.warn('Failed to update Google Consent Mode:', error);
             }
@@ -266,7 +265,7 @@ class ConsentManager {
         // Send consent signal to Microsoft Clarity using Consent API v2
         if (window.clarity) {
             try {
-                clarity('consentv2', {
+                window.clarity('consentv2', {
                     ad_storage: this.consentState.ad_storage,
                     analytics_storage: this.consentState.analytics_storage
                 });
