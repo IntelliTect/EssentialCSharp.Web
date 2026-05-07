@@ -1,4 +1,4 @@
-#syntax=docker/dockerfile:1.2
+# syntax=docker/dockerfile:1.4
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled AS base
 WORKDIR /app
@@ -19,6 +19,7 @@ WORKDIR /src
 COPY . .
 COPY --from=frontend-build /frontend/EssentialCSharp.Web/wwwroot/dist ./EssentialCSharp.Web/wwwroot/dist
 RUN --mount=type=secret,id=nuget_pat,required=false \
+    cp nuget.config nuget.config.bak && \
     if [ "$ACCESS_TO_NUGET_FEED" = "true" ] && [ -f /run/secrets/nuget_pat ]; then \
       dotnet nuget update source EssentialCSharp \
         --username az \
@@ -27,7 +28,8 @@ RUN --mount=type=secret,id=nuget_pat,required=false \
     fi && \
     dotnet restore "EssentialCSharp.Web.slnx" -p:AccessToNugetFeed=$ACCESS_TO_NUGET_FEED && \
     dotnet build "EssentialCSharp.Web.slnx" -c Release --no-restore -p:AccessToNugetFeed=$ACCESS_TO_NUGET_FEED -p:ReleaseDateAttribute=True -p:SkipFrontendBuild=true && \
-    dotnet publish "EssentialCSharp.Web.slnx" -c Release -p:PublishDir=/app/publish -p:UseAppHost=false -p:SkipFrontendBuild=true --no-build
+    dotnet publish "EssentialCSharp.Web.slnx" -c Release -p:PublishDir=/app/publish -p:UseAppHost=false -p:SkipFrontendBuild=true --no-build && \
+    mv nuget.config.bak nuget.config
 
 FROM base AS final
 WORKDIR /app

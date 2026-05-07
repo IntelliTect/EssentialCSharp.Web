@@ -4,13 +4,6 @@
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
     <ToolingPackagesVersion>1.1.1.19025</ToolingPackagesVersion>
     <AccessToNugetFeed Condition="'$(AccessToNugetFeed)' == ''">false</AccessToNugetFeed>
-    <RestoreSources>
-      https://api.nuget.org/v3/index.json;
-    </RestoreSources>
-    <RestoreSources Condition="$(AccessToNugetFeed)">
-      $(RestoreSources);
-      https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json;
-    </RestoreSources>
   </PropertyGroup>
   <PropertyGroup>
     <SemanticKernelVersion>1.72.0</SemanticKernelVersion>
