@@ -9,7 +9,6 @@ class ConsentManager {
         this.COOKIE_NAME = 'essential-csharp-consent';
         this.COOKIE_DURATION = 365; // days
         this.CONSENT_VERSION = '2'; // Bump this to re-prompt all users when consent terms change
-        this.GOOGLE_ANALYTICS_ID = options.googleAnalyticsId || 'G-761B4BMK2R';
         this.consentState = {
             analytics_storage: 'denied',
             ad_storage: 'denied',
@@ -43,13 +42,12 @@ class ConsentManager {
     }
 
     dispatchInitializationEvent() {
-        const event = new CustomEvent('consentManagerReady', {
+        document.dispatchEvent(new CustomEvent('consentManagerReady', {
             detail: {
                 hasAnalyticsConsent: this.hasAnalyticsConsent(),
                 hasAdvertisingConsent: this.hasAdvertisingConsent()
             }
-        });
-        document.dispatchEvent(event);
+        }));
     }
 
     initGoogleConsentMode() {
@@ -90,7 +88,9 @@ class ConsentManager {
                 this.consentState = { ...this.consentState, ...validatedPreferences };
                 this.updateConsentMode();
             } catch (e) {
+                // Malformed cookie — delete it so the banner is shown again
                 console.warn('Failed to parse consent preferences', e);
+                this.deleteCookie(this.COOKIE_NAME);
             }
         }
     }
@@ -262,14 +262,6 @@ class ConsentManager {
         
         // Remove banner
         this.removeConsentBanner();
-
-        // Notify layout scripts so they can fire gtag('config') on interactive consent
-        document.dispatchEvent(new CustomEvent('consentUpdated', {
-            detail: {
-                hasAnalyticsConsent: this.hasAnalyticsConsent(),
-                hasAdvertisingConsent: this.hasAdvertisingConsent()
-            }
-        }));
     }
 
     updateConsentMode() {
@@ -461,14 +453,19 @@ class ConsentManager {
         // Clear common tracking cookies (Google Analytics and Microsoft Clarity)
         const trackingCookies = ['_ga', '_gid', '_gat', '_clck', '_clsk', 'CLID', 'ANONCHK', 'MR', 'MUID', 'SM'];
         const expired = 'expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        // GA and Clarity cookies are often set on the root domain, so attempt deletion on both the
-        // exact hostname and the parent domain (e.g. .essentialcsharp.com)
         const hostname = window.location.hostname;
-        const rootDomain = '.' + hostname.split('.').slice(-2).join('.');
+        // Build candidate domains: exact host plus progressively shorter parent domains.
+        // This handles multi-part TLDs (e.g. .co.uk) by trying all suffixes.
+        const parts = hostname.split('.');
+        const domains = [hostname];
+        for (let i = 1; i < parts.length - 1; i++) {
+            domains.push('.' + parts.slice(i).join('.'));
+        }
         trackingCookies.forEach(cookieName => {
             document.cookie = `${cookieName}=;${expired};path=/`;
-            document.cookie = `${cookieName}=;${expired};path=/;domain=${hostname}`;
-            document.cookie = `${cookieName}=;${expired};path=/;domain=${rootDomain}`;
+            domains.forEach(domain => {
+                document.cookie = `${cookieName}=;${expired};path=/;domain=${domain}`;
+            });
         });
     }
 }
