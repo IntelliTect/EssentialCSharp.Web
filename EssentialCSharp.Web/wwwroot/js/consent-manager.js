@@ -5,7 +5,7 @@
  */
 
 class ConsentManager {
-    constructor(options = {}) {
+    constructor() {
         this.COOKIE_NAME = 'essential-csharp-consent';
         this.COOKIE_DURATION = 365; // days
         this.CONSENT_VERSION = '2'; // Bump this to re-prompt all users when consent terms change
@@ -449,7 +449,15 @@ class ConsentManager {
         for (let i = 0; i < parts.length - 1; i++) {
             domains.push('.' + parts.slice(i).join('.'));
         }
-        trackingCookies.forEach(cookieName => {
+
+        // Also collect GA4 measurement-ID cookies (_ga_XXXXXXXX) from document.cookie
+        // since their suffix changes per-property and can't be hardcoded.
+        const ga4Cookies = document.cookie.split(';')
+            .map(c => c.trim().split('=')[0])
+            .filter(name => name.startsWith('_ga_'));
+        const allCookies = [...new Set([...trackingCookies, ...ga4Cookies])];
+
+        allCookies.forEach(cookieName => {
             document.cookie = `${cookieName}=;${expired};path=/`;
             domains.forEach(domain => {
                 document.cookie = `${cookieName}=;${expired};path=/;domain=${domain}`;
@@ -460,11 +468,7 @@ class ConsentManager {
 
 // Initialize consent manager when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    // Check for configuration from script tag data attributes
-    const configScript = document.querySelector('script[data-consent-config]');
-    const config = configScript ? JSON.parse(configScript.dataset.consentConfig) : {};
-    
-    window.consentManager = new ConsentManager(config);
+    window.consentManager = new ConsentManager();
 });
 
 // Global function for opening consent preferences
