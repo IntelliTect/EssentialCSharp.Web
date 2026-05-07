@@ -1,4 +1,3 @@
-using System.IO;
 using System.Globalization;
 using DotnetSitemapGenerator;
 using EssentialCSharp.Web.Helpers;
@@ -70,14 +69,12 @@ public class SitemapXmlHelpersTests
     public async Task GenerateSitemapXml_DoesNotIncludeIdentityRoutes()
     {
         // Arrange
-        var tempDir = Directory.CreateTempSubdirectory("SitemapTest_");
         var siteMappings = new List<SiteMapping> { CreateSiteMapping(1, 1, true) };
         var baseUrl = "https://test.example.com/";
 
         // Act & Assert
         var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
-            tempDir,
             siteMappings,
             routeConfigurationService,
             baseUrl,
@@ -98,14 +95,12 @@ public class SitemapXmlHelpersTests
     public async Task GenerateSitemapXml_IncludesBaseUrl()
     {
         // Arrange
-        var tempDir = Directory.CreateTempSubdirectory("SitemapTest_");
         var siteMappings = new List<SiteMapping>();
         var baseUrl = "https://test.example.com/";
 
         // Act & Assert
         var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
-            tempDir,
             siteMappings,
             routeConfigurationService,
             baseUrl,
@@ -126,7 +121,6 @@ public class SitemapXmlHelpersTests
     public async Task GenerateSitemapXml_IncludesSiteMappingsMarkedForXml()
     {
         // Arrange
-        var tempDir = Directory.CreateTempSubdirectory("SitemapTest_");
         var baseUrl = "https://test.example.com/";
 
         var siteMappings = new List<SiteMapping>
@@ -139,7 +133,6 @@ public class SitemapXmlHelpersTests
         // Act & Assert
         var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
-            tempDir,
             siteMappings,
             routeConfigurationService,
             baseUrl,
@@ -156,14 +149,12 @@ public class SitemapXmlHelpersTests
     public async Task GenerateSitemapXml_DoesNotIncludeIndexRoutes()
     {
         // Arrange
-        var tempDir = Directory.CreateTempSubdirectory("SitemapTest_");
         var siteMappings = new List<SiteMapping>();
         var baseUrl = "https://test.example.com/";
 
         // Act & Assert
         var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
-            tempDir,
             siteMappings,
             routeConfigurationService,
             baseUrl,
@@ -179,14 +170,12 @@ public class SitemapXmlHelpersTests
     public async Task GenerateSitemapXml_DoesNotIncludeErrorRoutes()
     {
         // Arrange
-        var tempDir = Directory.CreateTempSubdirectory("SitemapTest_");
         var siteMappings = new List<SiteMapping>();
         var baseUrl = "https://test.example.com/";
 
         // Act & Assert
         var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
-            tempDir,
             siteMappings,
             routeConfigurationService,
             baseUrl,
@@ -202,7 +191,6 @@ public class SitemapXmlHelpersTests
     public async Task GenerateSitemapXml_UsesLastModifiedDateFromSiteMapping()
     {
         // Arrange
-        var tempDir = Directory.CreateTempSubdirectory("SitemapTest_");
         var baseUrl = "https://test.example.com/";
         var specificLastModified = new DateTime(2023, 5, 15, 10, 30, 0, DateTimeKind.Utc);
 
@@ -214,7 +202,6 @@ public class SitemapXmlHelpersTests
         // Act
         var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
-            tempDir,
             siteMappings,
             routeConfigurationService,
             baseUrl,
