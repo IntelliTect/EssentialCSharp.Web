@@ -18,15 +18,19 @@ ENV ACCESS_TO_NUGET_FEED=$ACCESS_TO_NUGET_FEED
 WORKDIR /src
 COPY . .
 COPY --from=frontend-build /frontend/EssentialCSharp.Web/wwwroot/dist ./EssentialCSharp.Web/wwwroot/dist
-RUN --mount=type=secret,id=nugetconfig,required=false \
-    if [ "$ACCESS_TO_NUGET_FEED" = "true" ] && [ -f /run/secrets/nugetconfig ]; then \
-      mkdir -p ~/.nuget/config && \
-      cp /run/secrets/nugetconfig ~/.nuget/config/credentials.config; \
+RUN --mount=type=secret,id=nuget_pat,required=false \
+    if [ "$ACCESS_TO_NUGET_FEED" = "true" ] && [ -f /run/secrets/nuget_pat ]; then \
+      cp nuget.config nuget.config.bak && \
+      dotnet nuget update source EssentialCSharp \
+        --username docker \
+        --password "$(cat /run/secrets/nuget_pat)" \
+        --store-password-in-clear-text \
+        --configfile nuget.config; \
     fi && \
     dotnet restore "EssentialCSharp.Web.slnx" -p:AccessToNugetFeed=$ACCESS_TO_NUGET_FEED && \
     dotnet build "EssentialCSharp.Web.slnx" -c Release --no-restore -p:AccessToNugetFeed=$ACCESS_TO_NUGET_FEED -p:ReleaseDateAttribute=True -p:SkipFrontendBuild=true && \
     dotnet publish "EssentialCSharp.Web.slnx" -c Release -p:PublishDir=/app/publish -p:UseAppHost=false -p:SkipFrontendBuild=true --no-build && \
-    rm -f ~/.nuget/config/credentials.config
+    if [ -f nuget.config.bak ]; then mv nuget.config.bak nuget.config; fi
 
 FROM base AS final
 WORKDIR /app
