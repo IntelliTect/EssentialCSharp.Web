@@ -25,11 +25,10 @@ public static class SitemapXmlHelpers
         // Routes should end up with leading slash
         baseUrl = baseUrl.TrimEnd('/');
 
-        // Start with the root URL
+        // Start with the root URL — no LastModificationDate: it doesn't change per-request
         nodes = new() {
             new($"{baseUrl}/")
             {
-                LastModificationDate = newDateTime,
                 ChangeFrequency = ChangeFrequency.Daily,
                 Priority = 1.0M
             }

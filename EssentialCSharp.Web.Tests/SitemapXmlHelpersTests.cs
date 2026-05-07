@@ -188,6 +188,27 @@ public class SitemapXmlHelpersTests
     }
 
     [Test]
+    public async Task GenerateSitemapXml_DoesNotIncludeSitemapRoute()
+    {
+        // Arrange
+        var siteMappings = new List<SiteMapping>();
+        var baseUrl = "https://test.example.com/";
+
+        // Act
+        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        SitemapXmlHelpers.GenerateSitemapXml(
+            siteMappings,
+            routeConfigurationService,
+            baseUrl,
+            out var nodes);
+
+        var allUrls = nodes.Select(n => n.Url).ToList();
+
+        // /sitemap.xml should not list itself
+        await Assert.That(allUrls).DoesNotContain(url => url.Contains("sitemap", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Test]
     public async Task GenerateSitemapXml_UsesLastModifiedDateFromSiteMapping()
     {
         // Arrange
