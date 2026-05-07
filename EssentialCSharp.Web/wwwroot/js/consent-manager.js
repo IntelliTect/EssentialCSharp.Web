@@ -1,13 +1,14 @@
 /**
  * Cookie Consent Manager for Essential C#
  * Implements Google Consent Mode v2 for Microsoft Clarity and Google Analytics
- * Compliant with GDPR requirements for EEA, UK, and Switzerland
+ * Shown to all visitors — ensures GDPR compliance globally without fragile region detection.
  */
 
 class ConsentManager {
     constructor(options = {}) {
         this.COOKIE_NAME = 'essential-csharp-consent';
         this.COOKIE_DURATION = 365; // days
+        this.CONSENT_VERSION = '2'; // Bump this to re-prompt all users when consent terms change
         this.GOOGLE_ANALYTICS_ID = options.googleAnalyticsId || 'G-761B4BMK2R';
         this.consentState = {
             analytics_storage: 'denied',
@@ -19,20 +20,20 @@ class ConsentManager {
             personalization_storage: 'denied'
         };
         
-        // Check if user is in EEA/UK/Switzerland region
-        this.requiresConsent = this.checkRegionRequiresConsent();
-        
         this.init();
     }
 
     init() {
-        // Initialize Google Consent Mode
         this.initGoogleConsentMode();
         
-        // Load saved consent preferences
+        // Load saved consent preferences (signals Clarity/GA if already consented)
         this.loadConsentPreferences();
+
+        // Always send Clarity the current consent state (denied by default for new visitors).
+        // Clarity's polyfill queues this call and delivers it when the script loads.
+        this.updateClarityConsent();
         
-        // Show banner if consent required and not yet given
+        // Show banner if no valid consent stored
         if (this.shouldShowConsentBanner()) {
             this.showConsentBanner();
         }
@@ -42,64 +43,21 @@ class ConsentManager {
     }
 
     dispatchInitializationEvent() {
-        // Create and dispatch custom event to signal consent manager is ready
         const event = new CustomEvent('consentManagerReady', {
             detail: {
                 hasAnalyticsConsent: this.hasAnalyticsConsent(),
-                hasAdvertisingConsent: this.hasAdvertisingConsent(),
-                requiresConsent: this.requiresConsent
+                hasAdvertisingConsent: this.hasAdvertisingConsent()
             }
         });
         document.dispatchEvent(event);
     }
 
     initGoogleConsentMode() {
-        // Initialize gtag if not already loaded
+        // Ensure gtag infrastructure exists — the actual 'consent default' is set inline
+        // in _Layout.cshtml before gtag.js loads (required by Google Consent Mode v2).
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         window.gtag = window.gtag || gtag;
-        
-        // Set default consent state - denial for all except essential
-        gtag('consent', 'default', this.consentState);
-    }
-
-    checkRegionRequiresConsent() {
-        // Check for forced testing via URL parameter
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('testConsent') === 'true') {
-            return true;
-        }
-        
-        // Timezone-based region detection for GDPR compliance
-        // Users can change timezones, but this provides reasonable detection for most cases
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        
-        // EEA countries, UK, and Switzerland timezones
-        const requiresConsentTimezones = [
-            // Western Europe
-            'Europe/London', 'Europe/Dublin', 'Europe/Lisbon', 'Europe/Madrid', 
-            'Europe/Paris', 'Europe/Amsterdam', 'Europe/Brussels', 'Europe/Luxembourg',
-            'Europe/Zurich', 'Europe/Vienna', 'Europe/Rome', 'Europe/Vatican',
-            'Europe/San_Marino', 'Europe/Malta', 'Europe/Monaco',
-            
-            // Central Europe  
-            'Europe/Berlin', 'Europe/Prague', 'Europe/Budapest', 'Europe/Warsaw',
-            'Europe/Bratislava', 'Europe/Ljubljana', 'Europe/Zagreb', 'Europe/Belgrade',
-            'Europe/Sarajevo', 'Europe/Podgorica', 'Europe/Skopje', 'Europe/Tirane',
-            
-            // Northern Europe
-            'Europe/Stockholm', 'Europe/Oslo', 'Europe/Copenhagen', 'Europe/Helsinki',
-            'Europe/Tallinn', 'Europe/Riga', 'Europe/Vilnius', 'Europe/Reykjavik',
-            
-            // Eastern Europe
-            'Europe/Bucharest', 'Europe/Sofia', 'Europe/Athens', 'Europe/Nicosia',
-            
-            // Additional EEA territories
-            'Atlantic/Canary', 'Atlantic/Madeira', 'Atlantic/Azores',
-            'Europe/Gibraltar', 'Africa/Ceuta'
-        ];
-        
-        return requiresConsentTimezones.includes(timezone);
     }
 
     loadConsentPreferences() {
@@ -107,12 +65,18 @@ class ConsentManager {
         if (saved) {
             try {
                 const preferences = JSON.parse(saved);
+
+                // Invalidate stale consent if the version has changed — treat user as new visitor
+                if (preferences._version !== this.CONSENT_VERSION) {
+                    this.deleteCookie(this.COOKIE_NAME);
+                    return;
+                }
                 
-                // Validate and only apply known consent properties for security
+                // Validate and only apply known consent properties for security.
+                // Exclude functionality_storage and security_storage — always essential, never user-overrideable.
                 const validConsentKeys = [
                     'analytics_storage', 'ad_storage', 'ad_user_data', 
-                    'ad_personalization', 'functionality_storage', 
-                    'security_storage', 'personalization_storage'
+                    'ad_personalization', 'personalization_storage'
                 ];
                 
                 const validatedPreferences = {};
@@ -132,8 +96,11 @@ class ConsentManager {
     }
 
     shouldShowConsentBanner() {
-        // Show banner if in EEA/UK/Switzerland and no consent stored
-        return this.requiresConsent && !this.getCookie(this.COOKIE_NAME);
+        // Allow forcing the banner via URL param (useful for testing)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('testConsent') === 'true') return true;
+        // Show to all visitors who haven't given valid consent yet
+        return !this.getCookie(this.COOKIE_NAME);
     }
 
     showConsentBanner() {
@@ -154,7 +121,7 @@ class ConsentManager {
             <div class="consent-banner-content">
                 <div class="consent-banner-text">
                     <h3>Cookie Preferences</h3>
-                    <p>We use cookies to improve your experience and analyze website usage. You can manage your preferences below.</p>
+                    <p>We use cookies to improve your experience and analyze website usage. See our <a href="https://intellitect.com/about/privacy-policy/" target="_blank" rel="noopener noreferrer">Privacy Policy</a> for details.</p>
                 </div>
                 <div class="consent-banner-actions">
                     <button id="consent-reject-all" class="btn btn-outline-secondary me-2">Reject All</button>
@@ -272,15 +239,20 @@ class ConsentManager {
             ad_storage: advertisingChecked ? 'granted' : 'denied',
             ad_user_data: advertisingChecked ? 'granted' : 'denied',
             ad_personalization: advertisingChecked ? 'granted' : 'denied',
-            personalization_storage: analyticsChecked ? 'granted' : 'denied'
+            personalization_storage: advertisingChecked ? 'granted' : 'denied'
         };
         
         this.saveConsentAndClose();
     }
 
     saveConsentAndClose() {
-        // Save consent to cookie
-        this.setCookie(this.COOKIE_NAME, JSON.stringify(this.consentState), this.COOKIE_DURATION);
+        // Save consent with audit metadata
+        const payload = {
+            ...this.consentState,
+            _timestamp: new Date().toISOString(),
+            _version: this.CONSENT_VERSION
+        };
+        this.setCookie(this.COOKIE_NAME, JSON.stringify(payload), this.COOKIE_DURATION);
         
         // Update consent mode
         this.updateConsentMode();
@@ -290,17 +262,20 @@ class ConsentManager {
         
         // Remove banner
         this.removeConsentBanner();
+
+        // Notify layout scripts so they can fire gtag('config') on interactive consent
+        document.dispatchEvent(new CustomEvent('consentUpdated', {
+            detail: {
+                hasAnalyticsConsent: this.hasAnalyticsConsent(),
+                hasAdvertisingConsent: this.hasAdvertisingConsent()
+            }
+        }));
     }
 
     updateConsentMode() {
         if (window.gtag) {
             try {
                 gtag('consent', 'update', this.consentState);
-                
-                // Configure Google Analytics if analytics consent is granted
-                if (this.consentState.analytics_storage === 'granted') {
-                    gtag('config', 'G-761B4BMK2R');
-                }
             } catch (error) {
                 console.warn('Failed to update Google Consent Mode:', error);
             }
@@ -439,7 +414,13 @@ class ConsentManager {
     setCookie(name, value, days) {
         const expires = new Date();
         expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-        document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+        const secure = window.location.protocol === 'https:' ? ';Secure' : '';
+        document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax${secure}`;
+    }
+
+    deleteCookie(name) {
+        const secure = window.location.protocol === 'https:' ? ';Secure' : '';
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;SameSite=Lax${secure}`;
     }
 
     getCookie(name) {
@@ -456,12 +437,7 @@ class ConsentManager {
     // Public API for consent preference management
     openConsentPreferences() {
         this.showConsentBanner();
-        // If banner already exists, show customize options
-        setTimeout(() => {
-            if (document.getElementById('consent-banner')) {
-                this.showCustomizeOptions();
-            }
-        }, 100);
+        this.showCustomizeOptions();
     }
 
     // Check current consent status
@@ -478,17 +454,21 @@ class ConsentManager {
         this.rejectAllConsent();
         // Also clear any existing tracking cookies
         this.clearTrackingCookies();
-        // Erase Clarity cookies according to documentation
-        if (window.clarity) {
-            clarity('consent', false);
-        }
+        // Note: Clarity consent signal is sent via updateClarityConsent() inside rejectAllConsent() → saveConsentAndClose()
     }
 
     clearTrackingCookies() {
         // Clear common tracking cookies (Google Analytics and Microsoft Clarity)
         const trackingCookies = ['_ga', '_gid', '_gat', '_clck', '_clsk', 'CLID', 'ANONCHK', 'MR', 'MUID', 'SM'];
+        const expired = 'expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        // GA and Clarity cookies are often set on the root domain, so attempt deletion on both the
+        // exact hostname and the parent domain (e.g. .essentialcsharp.com)
+        const hostname = window.location.hostname;
+        const rootDomain = '.' + hostname.split('.').slice(-2).join('.');
         trackingCookies.forEach(cookieName => {
-            document.cookie = `${cookieName}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+            document.cookie = `${cookieName}=;${expired};path=/`;
+            document.cookie = `${cookieName}=;${expired};path=/;domain=${hostname}`;
+            document.cookie = `${cookieName}=;${expired};path=/;domain=${rootDomain}`;
         });
     }
 }
