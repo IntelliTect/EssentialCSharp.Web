@@ -571,7 +571,7 @@ public partial class Program
 
         app.MapFallbackToController("Index", "Home");
 
-        // Validate sitemap data at startup to fail fast on bad content
+        // Validate sitemap data at startup — logs errors but allows startup to continue
         var siteMappingService = app.Services.GetRequiredService<ISiteMappingService>();
         var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
