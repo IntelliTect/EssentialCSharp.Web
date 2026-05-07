@@ -43,10 +43,11 @@ public class EmbeddingService(
     ///   1. Create a staging collection ({collectionName}_staging).
     ///   2. Embed all chunks in batches of <see cref="EmbeddingBatchSize"/> (Azure OpenAI limit).
     ///   3. Batch-upsert all chunks into staging.
-    ///   4. Atomically swap staging → live via three SQL RENAMEs in a single transaction.
-    ///      PostgreSQL ALTER TABLE acquires AccessExclusiveLock automatically; no explicit
-    ///      LOCK TABLE is needed. The transaction ensures no reader sees an intermediate state.
-    ///   5. Drop the old live backup table.
+    ///   4. Atomically swap tables in a single transaction using two SQL RENAME operations
+    ///      (live → old, staging → live). PostgreSQL ALTER TABLE acquires
+    ///      AccessExclusiveLock automatically; no explicit LOCK TABLE is needed. The
+    ///      transaction ensures no reader sees an intermediate state.
+    ///   5. Drop the old live backup table with DROP TABLE.
     ///
     /// If an error occurs before the swap, only the staging table is affected — the live
     /// collection is untouched.
@@ -102,14 +103,21 @@ public class EmbeddingService(
         {
             // Best-effort cleanup: drop the partially-populated staging table so the
             // next run starts clean. Do not let this secondary failure mask the original.
-            try { await staging.EnsureCollectionDeletedAsync(cancellationToken); } catch { }
+            try
+            {
+                await staging.EnsureCollectionDeletedAsync(cancellationToken);
+            }
+            catch (Exception cleanupEx) when (cleanupEx is not OperationCanceledException)
+            {
+                Console.Error.WriteLine($"Warning: failed to clean up staging collection '{stagingName}' after upsert failure: {cleanupEx.Message}");
+            }
             throw;
         }
 
         // ── Step 4: Atomic swap — staging → live ──────────────────────────────────────
-        // Three ALTER TABLE RENAME statements in one transaction.
+        // Two ALTER TABLE RENAME operations in one transaction (live → old, staging → live).
         // Each RENAME auto-acquires AccessExclusiveLock on its table; the transaction
-        // guarantees all three renames are visible atomically to other sessions.
+        // guarantees both renames are visible atomically to other sessions.
         await using var conn = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var tx = await conn.BeginTransactionAsync(cancellationToken);
 
