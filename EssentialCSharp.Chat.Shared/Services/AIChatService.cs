@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 using OpenAI.Responses;
+using System.Collections.Frozen;
 
 namespace EssentialCSharp.Chat.Common.Services;
 
@@ -19,12 +20,14 @@ public partial class AIChatService
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     private readonly AISearchService _SearchService;
     private readonly ILogger<AIChatService> _Logger;
+    private readonly FrozenSet<string> _AllowedMcpTools;
 
     public AIChatService(IOptions<AIOptions> options, AISearchService searchService, AzureOpenAIClient azureClient, ILogger<AIChatService> logger)
     {
         _Options = options.Value;
         _SearchService = searchService;
         _Logger = logger;
+        _AllowedMcpTools = _Options.AllowedMcpTools.ToFrozenSet(StringComparer.Ordinal);
 
         // Initialize Azure OpenAI client and get the Response Client from it
         _AzureClient = azureClient;
@@ -43,7 +46,8 @@ public partial class AIChatService
     /// <param name="tools">Optional tools for the AI to use</param>
     /// <param name="reasoningEffortLevel">Optional reasoning effort level for reasoning models</param>
     /// <param name="enableContextualSearch">Enable vector search for contextual information</param>
-    /// <param name="endUserId">Identifier of the authenticated end-user, forwarded to Azure OpenAI for abuse monitoring</param>
+    /// <param name="endUserId">Authenticated end-user identifier. Currently reserved for forwarding
+    /// to Azure OpenAI for abuse monitoring once the SDK exposes <c>ResponseCreationOptions.User</c>.</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The AI response text and response ID for conversation continuity</returns>
     public async Task<(string response, string responseId)> GetChatCompletion(
@@ -73,7 +77,8 @@ public partial class AIChatService
     /// <param name="tools">Optional tools for the AI to use</param>
     /// <param name="reasoningEffortLevel">Optional reasoning effort level for reasoning models</param>
     /// <param name="enableContextualSearch">Enable vector search for contextual information</param>
-    /// <param name="endUserId">Identifier of the authenticated end-user, forwarded to Azure OpenAI for abuse monitoring</param>
+    /// <param name="endUserId">Authenticated end-user identifier. Currently reserved for forwarding
+    /// to Azure OpenAI for abuse monitoring once the SDK exposes <c>ResponseCreationOptions.User</c>.</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>An async enumerable of response text chunks and final response ID</returns>
     public async IAsyncEnumerable<(string text, string? responseId)> GetChatCompletionStream(
@@ -135,14 +140,19 @@ public partial class AIChatService
 
         foreach (var result in searchResults)
         {
-            contextualInfo.AppendLine(System.Globalization.CultureInfo.InvariantCulture, $"**From: {result.Record.Heading}**");
-            // Truncate individual chunks to limit attack surface from future data poisoning
+            // Replace XML angle brackets to prevent retrieval content from escaping the sandbox.
+            // Use typographic alternatives (‹›) to preserve readability of C# generics in headings.
+            var heading = SanitizeForXmlContext(result.Record.Heading);
+            contextualInfo.AppendLine(System.Globalization.CultureInfo.InvariantCulture, $"**From: {heading}**");
+
+            // Truncate individual chunks to limit attack surface from future data poisoning,
+            // then sanitize any XML bracket characters.
             var chunkText = result.Record.ChunkText;
             if (chunkText?.Length > 2000)
             {
                 chunkText = chunkText[..2000];
             }
-            contextualInfo.AppendLine(chunkText);
+            contextualInfo.AppendLine(SanitizeForXmlContext(chunkText));
             contextualInfo.AppendLine();
         }
 
@@ -153,6 +163,13 @@ public partial class AIChatService
 
         return contextualInfo.ToString();
     }
+
+    /// <summary>
+    /// Replaces XML angle bracket characters in retrieval content to prevent boundary escapes.
+    /// Uses typographic alternatives (‹›) rather than stripping to preserve code readability.
+    /// </summary>
+    private static string SanitizeForXmlContext(string? input) =>
+        input?.Replace("<", "\u2039").Replace(">", "\u203A") ?? string.Empty;
 
     /// <summary>
     /// Processes streaming updates from the OpenAI Responses API, handling both regular responses and function calls
@@ -219,10 +236,27 @@ public partial class AIChatService
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         // Defense-in-depth: validate tool name against static allowlist before executing.
-        var allowedTools = _Options.AllowedMcpTools;
-        if (allowedTools.Count > 0 && !allowedTools.Contains(functionCallItem.FunctionName))
+        if (!IsMcpToolAllowed(functionCallItem.FunctionName))
         {
             LogMcpToolCallRejected(_Logger, functionCallItem.FunctionName);
+            // Feed a benign error back to the model so it can recover gracefully,
+            // mirroring what GetChatCompletionCore does on the non-streaming path.
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+            var errorItems = new List<ResponseItem>
+            {
+                functionCallItem,
+                new FunctionCallOutputResponseItem(
+                    functionCallItem.CallId,
+                    $"Tool '{functionCallItem.FunctionName}' is not available.")
+            };
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+            var recoveryStream = _ResponseClient.CreateResponseStreamingAsync(
+                errorItems, responseOptions, cancellationToken);
+            await foreach (var result in ProcessStreamingUpdatesAsync(
+                recoveryStream, responseOptions, mcpClient, toolCallDepth, cancellationToken))
+            {
+                yield return result;
+            }
             yield break;
         }
 
@@ -324,13 +358,11 @@ public partial class AIChatService
         if (mcpClient is not null)
         {
             var mcpTools = await mcpClient.ListToolsAsync(cancellationToken: cancellationToken);
-            var allowedTools = _Options.AllowedMcpTools;
 
             foreach (McpClientTool tool in mcpTools)
             {
                 // Outer gate: skip tools not on the static config-driven allowlist.
-                // When the allowlist is empty (development default), all tools are allowed.
-                if (allowedTools.Count > 0 && !allowedTools.Contains(tool.Name))
+                if (!IsMcpToolAllowed(tool.Name))
                 {
                     LogMcpToolSkippedNotAllowed(_Logger, tool.Name);
                     continue;
@@ -396,8 +428,7 @@ public partial class AIChatService
                 {
                     // Defense-in-depth: validate tool name against static allowlist before executing.
                     // This catches cases where the model hallucinates a tool name not on the list.
-                    var allowedTools = _Options.AllowedMcpTools;
-                    if (allowedTools.Count > 0 && !allowedTools.Contains(functionCallItem.FunctionName))
+                    if (!IsMcpToolAllowed(functionCallItem.FunctionName))
                     {
                         LogMcpToolCallRejected(_Logger, functionCallItem.FunctionName);
                         // Return a benign error to the model so it can respond gracefully
@@ -452,6 +483,17 @@ public partial class AIChatService
         }
 
         throw new InvalidOperationException("Maximum tool call iterations exceeded.");
+    }
+
+    /// <summary>
+    /// Returns <c>true</c> when the named MCP tool is permitted to execute.
+    /// Respects <see cref="AIOptions.AllowAllMcpTools"/> and the <see cref="AIOptions.AllowedMcpTools"/> allowlist.
+    /// Fails secure: an empty allowlist with <see cref="AIOptions.AllowAllMcpTools"/> = false denies all tools.
+    /// </summary>
+    private bool IsMcpToolAllowed(string toolName)
+    {
+        if (_Options.AllowAllMcpTools) return true;
+        return _AllowedMcpTools.Contains(toolName);
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "AI tool call invoked: tool={ToolName} iteration={Iteration}")]

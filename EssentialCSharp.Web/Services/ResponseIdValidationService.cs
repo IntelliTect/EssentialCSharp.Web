@@ -14,7 +14,9 @@ namespace EssentialCSharp.Web.Services;
 /// </remarks>
 public sealed class ResponseIdValidationService(IMemoryCache cache)
 {
-    private static readonly MemoryCacheEntryOptions _CacheOptions =
+    private const int MaxTrackedIdsPerUser = 500;
+
+    private static MemoryCacheEntryOptions MakeCacheOptions() =>
         new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(2));
 
     /// <summary>
@@ -28,13 +30,26 @@ public sealed class ResponseIdValidationService(IMemoryCache cache)
         }
 
         var key = CacheKey(userId);
-        var ids = cache.GetOrCreate(key, _ => new HashSet<string>(StringComparer.Ordinal))!;
+        // Set the sliding expiry inside the factory so there is no window between
+        // GetOrCreate and a separate Set call where the entry could be evicted and
+        // recreated as a different HashSet instance.
+        var ids = cache.GetOrCreate(key, entry =>
+        {
+            entry.SetSlidingExpiration(TimeSpan.FromHours(2));
+            return new HashSet<string>(StringComparer.Ordinal);
+        })!;
+
         lock (ids)
         {
             ids.Add(responseId);
+            // Cap the set to prevent unbounded memory growth for users with many requests.
+            if (ids.Count > MaxTrackedIdsPerUser)
+            {
+                // Remove an arbitrary element; we only need the most recent IDs
+                // to be present — older ones falling off is acceptable.
+                ids.Remove(ids.First());
+            }
         }
-        // Re-set to refresh the sliding expiry
-        cache.Set(key, ids, _CacheOptions);
     }
 
     /// <summary>
