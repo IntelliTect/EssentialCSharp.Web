@@ -569,27 +569,19 @@ public partial class Program
 
         app.MapFallbackToController("Index", "Home");
 
-        // Generate sitemap.xml at startup
-        var wwwrootDirectory = new DirectoryInfo(app.Environment.WebRootPath);
+        // Validate sitemap data at startup to fail fast on bad content
         var siteMappingService = app.Services.GetRequiredService<ISiteMappingService>();
         var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
-        // Extract base URL from configuration
-        var baseUrl = app.Services.GetRequiredService<IOptions<SiteSettings>>().Value.BaseUrl;
-
         try
         {
-            // Create a scope to resolve scoped services
-            var routeConfigurationService = app.Services.GetRequiredService<IRouteConfigurationService>();
-
             SitemapXmlHelpers.EnsureSitemapHealthy(siteMappingService.SiteMappings.ToList());
-            SitemapXmlHelpers.GenerateAndSerializeSitemapXml(wwwrootDirectory, siteMappingService.SiteMappings.ToList(), initialLogger, routeConfigurationService, baseUrl);
             LogSitemapGenerationSucceeded(logger);
         }
         catch (Exception ex)
         {
             LogSitemapGenerationFailed(logger, ex);
-            // Continue startup even if sitemap generation fails
+            // Continue startup even if sitemap validation fails
         }
 
         app.Run();

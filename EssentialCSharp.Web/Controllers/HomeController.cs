@@ -1,14 +1,17 @@
+using DotnetSitemapGenerator;
 using EssentialCSharp.Web.Extensions;
+using EssentialCSharp.Web.Helpers;
 using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using HtmlAgilityPack;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.CodeAnalysis;
+using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Controllers;
 
-public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment hostingEnvironment, ISiteMappingService siteMappingService, IHttpContextAccessor httpContextAccessor, IRouteConfigurationService routeConfigurationService) : BaseController(routeConfigurationService, httpContextAccessor)
+public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment hostingEnvironment, ISiteMappingService siteMappingService, IHttpContextAccessor httpContextAccessor, IRouteConfigurationService routeConfigurationService, IOptions<SiteSettings> siteSettings) : BaseController(routeConfigurationService, httpContextAccessor)
 {
     [EnableRateLimiting("content")]
     public IActionResult Index()
@@ -84,6 +87,14 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
         ViewBag.Guidelines = fileInfo.ReadGuidelineJsonFromInputDirectory(logger);
         ViewBag.GuidelinesUrl = Request.Path.Value;
         return View();
+    }
+
+    [Route("/sitemap.xml")]
+    [ResponseCache(Duration = 3600)]
+    public IActionResult SitemapXml([FromServices] IRouteConfigurationService sitemapRouteConfig)
+    {
+        SitemapXmlHelpers.GenerateSitemapXml(siteMappingService.SiteMappings.ToList(), sitemapRouteConfig, siteSettings.Value.BaseUrl, out var nodes);
+        return new SitemapProvider().CreateSitemap(new SitemapModel(nodes));
     }
 
     private string FlipPage(int currentChapter, int currentPage, bool next)
