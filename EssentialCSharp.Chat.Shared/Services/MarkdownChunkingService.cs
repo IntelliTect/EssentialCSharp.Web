@@ -61,15 +61,24 @@ public partial class MarkdownChunkingService(
     public FileChunkingResult ProcessSingleMarkdownFile(
         string[] fileContent, string fileName, string filePath)
     {
-        // Remove all multiple empty lines so there is no more than one empty line between paragraphs
-        string[] lines = [.. fileContent
-            .Select(line => line.Trim())
-            .Where(line => !string.IsNullOrWhiteSpace(line))];
-
+        // Collapse consecutive blank lines to at most one blank line. Single blank lines must
+        // be preserved because TextChunker.SplitMarkdownParagraphs uses them as paragraph
+        // separators — stripping all blanks defeats paragraph-aware chunking.
+        var normalizedLines = new List<string>(fileContent.Length);
+        bool lastWasBlank = false;
+        foreach (var raw in fileContent)
+        {
+            var line = raw.Trim();
+            var isBlank = string.IsNullOrWhiteSpace(line);
+            if (!isBlank || !lastWasBlank)
+                normalizedLines.Add(line);
+            lastWasBlank = isBlank;
+        }
+        string[] lines = [.. normalizedLines];
         string content = string.Join(Environment.NewLine, lines);
 
         var sections = MarkdownContentToHeadersAndSection(content);
-        var allChunks = new List<string>();
+        var allChunks = new List<MarkdownChunk>();
         int totalChunkCharacters = 0;
         int chunkCount = 0;
 
@@ -83,7 +92,7 @@ public partial class MarkdownChunkingService(
                 chunkHeader: Header + " - "
                 );
 #pragma warning restore SKEXP0050
-            allChunks.AddRange(chunks);
+            allChunks.AddRange(chunks.Select(c => new MarkdownChunk(Header, c)));
             chunkCount += chunks.Count;
             totalChunkCharacters += chunks.Sum(c => c.Length);
         }
@@ -155,18 +164,24 @@ public partial class MarkdownChunkingService(
             }
             i++;
 
-            // Collect content until next header
+            // Collect content until next header, preserving blank lines as paragraph separators
+            // for TextChunker.SplitMarkdownParagraphs.
             var contentLines = new List<string>();
             while (i < lines.Length && !headerRegex.IsMatch(lines[i]))
             {
-                if (!string.IsNullOrWhiteSpace(lines[i]))
-                    contentLines.Add(lines[i]);
+                contentLines.Add(lines[i]);
                 i++;
             }
 
+            // Strip leading and trailing blank lines; keep internal blanks for paragraph detection.
+            while (contentLines.Count > 0 && string.IsNullOrWhiteSpace(contentLines[0]))
+                contentLines.RemoveAt(0);
+            while (contentLines.Count > 0 && string.IsNullOrWhiteSpace(contentLines[^1]))
+                contentLines.RemoveAt(contentLines.Count - 1);
+
             // Compose full header context
             var fullHeader = string.Join(": ", headerStack.Select(h => h.Text));
-            if (contentLines.Count > 0)
+            if (contentLines.Any(l => !string.IsNullOrWhiteSpace(l)))
                 sections.Add((fullHeader, contentLines));
         }
         return sections;

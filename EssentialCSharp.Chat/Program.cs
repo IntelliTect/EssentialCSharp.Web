@@ -293,13 +293,13 @@ public class Program
                 void WriteChunkingResult(FileChunkingResult result, TextWriter writer)
                 {
                     // lets build up some stats over the chunking
-                    var chunkAverage = result.Chunks.Average(chunk => chunk.Length);
-                    var chunkMedian = result.Chunks.OrderBy(chunk => chunk.Length).ElementAt(result.Chunks.Count / 2).Length;
-                    var chunkMax = result.Chunks.Max(chunk => chunk.Length);
-                    var chunkMin = result.Chunks.Min(chunk => chunk.Length);
-                    var chunkTotal = result.Chunks.Sum(chunk => chunk.Length);
-                    var chunkStandardDeviation = Math.Sqrt(result.Chunks.Average(chunk => Math.Pow(chunk.Length - chunkAverage, 2)));
-                    var numberOfOutliers = result.Chunks.Count(chunk => chunk.Length > chunkAverage + chunkStandardDeviation);
+                    var chunkAverage = result.Chunks.Average(chunk => chunk.ChunkText.Length);
+                    var chunkMedian = result.Chunks.OrderBy(chunk => chunk.ChunkText.Length).ElementAt(result.Chunks.Count / 2).ChunkText.Length;
+                    var chunkMax = result.Chunks.Max(chunk => chunk.ChunkText.Length);
+                    var chunkMin = result.Chunks.Min(chunk => chunk.ChunkText.Length);
+                    var chunkTotal = result.Chunks.Sum(chunk => chunk.ChunkText.Length);
+                    var chunkStandardDeviation = Math.Sqrt(result.Chunks.Average(chunk => Math.Pow(chunk.ChunkText.Length - chunkAverage, 2)));
+                    var numberOfOutliers = result.Chunks.Count(chunk => chunk.ChunkText.Length > chunkAverage + chunkStandardDeviation);
 
                     if (chunkMax > maxChunkLength) maxChunkLength = chunkMax;
                     if (chunkMin < minChunkLength || minChunkLength == 0) minChunkLength = chunkMin;
@@ -318,7 +318,8 @@ public class Program
                     foreach (var chunk in result.Chunks)
                     {
                         writer.WriteLine();
-                        writer.WriteLine(chunk);
+                        writer.WriteLine($"[{chunk.Heading}]");
+                        writer.WriteLine(chunk.ChunkText);
                     }
                 }
 
