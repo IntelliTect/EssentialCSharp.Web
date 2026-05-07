@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using EssentialCSharp.Chat.Common.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.VectorData;

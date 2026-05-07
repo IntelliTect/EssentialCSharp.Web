@@ -6,6 +6,14 @@ namespace EssentialCSharp.Chat.Common.Services;
 
 public static partial class ChunkingResultExtensions
 {
+    /// <summary>
+    /// Converts a <see cref="FileChunkingResult"/> into a list of <see cref="BookContentChunk"/> records
+    /// ready for embedding and vector store upload.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="BookContentChunk.ChapterNumber"/> is set to null for files that do not match
+    /// the <c>ChapterNN</c> naming pattern (e.g. appendix or non-chapter markdown files).
+    /// </remarks>
     public static List<BookContentChunk> ToBookContentChunks(this FileChunkingResult result)
     {
         int? chapterNumber = ExtractChapterNumber(result.FileName);

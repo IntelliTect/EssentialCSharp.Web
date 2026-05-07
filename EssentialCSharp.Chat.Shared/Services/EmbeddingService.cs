@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using EssentialCSharp.Chat.Common.Models;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.VectorData;
@@ -12,9 +13,17 @@ namespace EssentialCSharp.Chat.Common.Services;
 public class EmbeddingService(
     VectorStore vectorStore,
     IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
-    NpgsqlDataSource? dataSource = null)
+    NpgsqlDataSource dataSource)
 {
     public static string CollectionName { get; } = "markdown_chunks";
+
+    /// <summary>
+    /// Maximum number of inputs per Azure OpenAI embedding batch call.
+    /// </summary>
+    private const int EmbeddingBatchSize = 2048;
+
+    // Only allow simple identifiers: letters, digits, and underscores, starting with a letter or underscore.
+    private static readonly Regex _safeIdentifierRegex = new(@"^[a-zA-Z_][a-zA-Z0-9_]*$", RegexOptions.Compiled);
 
     /// <summary>
     /// Generate an embedding for the given text.
@@ -26,13 +35,13 @@ public class EmbeddingService(
     }
 
     /// <summary>
-    /// Generate embeddings for all chunks in a single batch call and upload them to the vector
-    /// store using a staging-then-atomic-swap pattern so the live collection stays queryable
+    /// Generate embeddings for all chunks in batches and upload them to the vector store
+    /// using a staging-then-atomic-swap pattern so the live collection stays queryable
     /// throughout the rebuild.
     ///
     /// Steps:
     ///   1. Create a staging collection ({collectionName}_staging).
-    ///   2. Embed all chunks in one batch API call (Azure OpenAI supports up to 2048 inputs).
+    ///   2. Embed all chunks in batches of <see cref="EmbeddingBatchSize"/> (Azure OpenAI limit).
     ///   3. Batch-upsert all chunks into staging.
     ///   4. Atomically swap staging → live via three SQL RENAMEs in a single transaction.
     ///      PostgreSQL ALTER TABLE acquires AccessExclusiveLock automatically; no explicit
@@ -48,39 +57,54 @@ public class EmbeddingService(
         string? collectionName = null)
     {
         collectionName ??= CollectionName;
+
+        if (!_safeIdentifierRegex.IsMatch(collectionName))
+            throw new ArgumentException(
+                $"Collection name '{collectionName}' contains unsafe characters. Use only letters, digits, and underscores.",
+                nameof(collectionName));
+
         string stagingName = $"{collectionName}_staging";
         string oldName = $"{collectionName}_old";
-
-        if (dataSource is null)
-            throw new InvalidOperationException("NpgsqlDataSource is required for the staging swap. Ensure it is registered in DI.");
 
         // ── Step 1: Prepare staging collection ────────────────────────────────────────
         var staging = vectorStore.GetCollection<string, BookContentChunk>(stagingName);
         await staging.EnsureCollectionDeletedAsync(cancellationToken);
         await staging.EnsureCollectionExistsAsync(cancellationToken);
 
-        // ── Step 2: Batch-embed all chunks in a single API call ───────────────────────
-        // IEmbeddingGenerator.GenerateAsync natively accepts IEnumerable<string>.
-        // The single-string overload used previously is a convenience extension method
-        // that wraps one item and calls this same method.
+        // ── Step 2: Batch-embed all chunks ────────────────────────────────────────────
+        // Azure OpenAI supports at most EmbeddingBatchSize inputs per GenerateAsync call.
         var chunkList = bookContents.ToList();
         var texts = chunkList.Select(c => c.ChunkText).ToList();
 
-        GeneratedEmbeddings<Embedding<float>> embeddings =
-            await embeddingGenerator.GenerateAsync(texts, cancellationToken: cancellationToken);
+        var allEmbeddings = new List<Embedding<float>>(chunkList.Count);
+        foreach (var batch in texts.Chunk(EmbeddingBatchSize))
+        {
+            var batchEmbeddings = await embeddingGenerator.GenerateAsync(batch, cancellationToken: cancellationToken);
+            allEmbeddings.AddRange(batchEmbeddings);
+        }
 
-        if (embeddings.Count != chunkList.Count)
+        if (allEmbeddings.Count != chunkList.Count)
             throw new InvalidOperationException(
-                $"Embedding count mismatch: expected {chunkList.Count}, got {embeddings.Count}.");
+                $"Embedding count mismatch: expected {chunkList.Count}, got {allEmbeddings.Count}.");
 
         for (int i = 0; i < chunkList.Count; i++)
         {
-            chunkList[i].TextEmbedding = embeddings[i].Vector;
+            chunkList[i].TextEmbedding = allEmbeddings[i].Vector;
         }
 
         // ── Step 3: Batch-upsert all chunks into staging ──────────────────────────────
-        await staging.UpsertAsync(chunkList, cancellationToken);
-        Console.WriteLine($"Uploaded {chunkList.Count} chunks to staging collection '{stagingName}'.");
+        try
+        {
+            await staging.UpsertAsync(chunkList, cancellationToken);
+            Console.WriteLine($"Uploaded {chunkList.Count} chunks to staging collection '{stagingName}'.");
+        }
+        catch
+        {
+            // Best-effort cleanup: drop the partially-populated staging table so the
+            // next run starts clean. Do not let this secondary failure mask the original.
+            try { await staging.EnsureCollectionDeletedAsync(cancellationToken); } catch { }
+            throw;
+        }
 
         // ── Step 4: Atomic swap — staging → live ──────────────────────────────────────
         // Three ALTER TABLE RENAME statements in one transaction.
@@ -98,7 +122,6 @@ public class EmbeddingService(
             await cmd.ExecuteNonQueryAsync(cancellationToken);
 
             // Rename live → old. IF EXISTS is a no-op on first run when no live table exists.
-            // Using ALTER TABLE IF EXISTS avoids PL/pgSQL string interpolation entirely.
             cmd.CommandText = $"ALTER TABLE IF EXISTS \"{collectionName}\" RENAME TO \"{oldName}\"";
             await cmd.ExecuteNonQueryAsync(cancellationToken);
 

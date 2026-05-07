@@ -32,7 +32,8 @@ public sealed class BookContentChunk
     public string ChunkText { get; set; } = string.Empty;
 
     /// <summary>
-    /// Chapter number extracted from filename (e.g., "Chapter01.md" -> 1)
+    /// Chapter number extracted from filename (e.g., "Chapter01.md" -> 1).
+    /// Null for files that do not follow the ChapterNN naming pattern.
     /// </summary>
     [VectorStoreData]
     public int? ChapterNumber { get; set; }
