@@ -1,5 +1,7 @@
+using System.Security.Claims;
 using System.Text.Json;
 using EssentialCSharp.Chat.Common.Services;
+using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -13,11 +15,13 @@ namespace EssentialCSharp.Web.Controllers;
 public partial class ChatController : ControllerBase
 {
     private readonly AIChatService _AiChatService;
+    private readonly ResponseIdValidationService _ResponseIdValidationService;
     private readonly ILogger<ChatController> _Logger;
 
-    public ChatController(ILogger<ChatController> logger, AIChatService aiChatService)
+    public ChatController(ILogger<ChatController> logger, AIChatService aiChatService, ResponseIdValidationService responseIdValidationService)
     {
         _AiChatService = aiChatService;
+        _ResponseIdValidationService = responseIdValidationService;
         _Logger = logger;
     }
 
@@ -28,15 +32,23 @@ public partial class ChatController : ControllerBase
         if (string.IsNullOrEmpty(request.Message))
             return BadRequest(new { error = "Message cannot be empty." });
 
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
         var previousResponseId = string.IsNullOrWhiteSpace(request.PreviousResponseId)
             ? null
             : request.PreviousResponseId.Trim();
+
+        if (!_ResponseIdValidationService.ValidateResponseId(userId, previousResponseId))
+            return BadRequest(new { error = "Invalid conversation context." });
 
         var (response, responseId) = await _AiChatService.GetChatCompletion(
             prompt: request.Message,
             previousResponseId: previousResponseId,
             enableContextualSearch: request.EnableContextualSearch,
+            endUserId: userId,
             cancellationToken: cancellationToken);
+
+        _ResponseIdValidationService.RecordResponseId(userId, responseId);
 
         return Ok(new ChatMessageResponse
         {
@@ -57,9 +69,18 @@ public partial class ChatController : ControllerBase
             return;
         }
 
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
         var previousResponseId = string.IsNullOrWhiteSpace(request.PreviousResponseId)
             ? null
             : request.PreviousResponseId.Trim();
+
+        if (!_ResponseIdValidationService.ValidateResponseId(userId, previousResponseId))
+        {
+            Response.StatusCode = 400;
+            await Response.WriteAsJsonAsync(new { error = "Invalid conversation context." }, CancellationToken.None);
+            return;
+        }
 
         Response.ContentType = "text/event-stream";
         Response.Headers.CacheControl = "no-cache";
@@ -67,10 +88,13 @@ public partial class ChatController : ControllerBase
 
         try
         {
+            string? finalResponseId = null;
+
             await foreach (var (text, responseId) in _AiChatService.GetChatCompletionStream(
                 prompt: request.Message,
                 previousResponseId: previousResponseId,
                 enableContextualSearch: request.EnableContextualSearch,
+                endUserId: userId,
                 cancellationToken: cancellationToken))
             {
                 if (!string.IsNullOrEmpty(text))
@@ -82,10 +106,16 @@ public partial class ChatController : ControllerBase
 
                 if (!string.IsNullOrEmpty(responseId))
                 {
+                    finalResponseId = responseId;
                     var eventData = JsonSerializer.Serialize(new { type = "responseId", data = responseId });
                     await Response.WriteAsync($"data: {eventData}\n\n", cancellationToken);
                     await Response.Body.FlushAsync(cancellationToken);
                 }
+            }
+
+            if (finalResponseId is not null)
+            {
+                _ResponseIdValidationService.RecordResponseId(userId, finalResponseId);
             }
 
             await Response.WriteAsync("data: [DONE]\n\n", cancellationToken);

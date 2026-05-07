@@ -259,6 +259,9 @@ public partial class Program
         // MCP server — always enabled, authenticated via opaque DB-backed tokens.
         builder.Services.AddScoped<McpApiTokenService>();
 
+        builder.Services.AddMemoryCache();
+        builder.Services.AddScoped<ResponseIdValidationService>();
+
         builder.Services.AddAuthentication()
             .AddScheme<AuthenticationSchemeOptions, McpApiKeyAuthenticationHandler>(
                 McpBearerAuthentication.Scheme, _ => { });

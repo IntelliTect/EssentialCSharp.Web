@@ -10,6 +10,7 @@ namespace EssentialCSharp.Web.Services;
 public class McpApiTokenService(EssentialCSharpWebContext db)
 {
     public const int DefaultLifetimeMonths = 6;
+    public const int MaxTokensPerUser = 10;
     public static readonly string MaxExpiryValidationMessage = $"MCP tokens can expire at most {DefaultLifetimeMonths} months from today.";
 
     public sealed record ResolvedMcpApiToken(Guid TokenId, string UserId);
@@ -81,6 +82,19 @@ public class McpApiTokenService(EssentialCSharpWebContext db)
             .Where(t => t.Id == tokenId && t.UserId == userId && t.RevokedAt == null)
             .ExecuteUpdateAsync(s => s.SetProperty(t => t.RevokedAt, DateTime.UtcNow), cancellationToken);
         return rows > 0;
+    }
+
+    /// <summary>Returns the count of active (non-revoked, non-expired) tokens for the specified user.</summary>
+    public Task<int> GetActiveTokenCountAsync(
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        DateTime now = DateTime.UtcNow;
+        return db.McpApiTokens
+            .Where(t => t.UserId == userId
+                     && t.RevokedAt == null
+                     && (t.ExpiresAt == null || t.ExpiresAt > now))
+            .CountAsync(cancellationToken);
     }
 
     /// <summary>Returns all tokens for the user (metadata only — no raw values).</summary>

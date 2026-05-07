@@ -22,9 +22,16 @@ export function useChatWidget() {
             const saved = localStorage.getItem('aiChatHistory');
             if (saved) {
                 const data = JSON.parse(saved);
-                chatMessages.value = data.messages || [];
-                lastResponseId.value = data.lastResponseId || null;
+                // Reject history older than 2 hours to align with server-side response ID cache window
+                const twoHoursMs = 2 * 60 * 60 * 1000;
+                if (data.timestamp && (Date.now() - data.timestamp) < twoHoursMs) {
+                    chatMessages.value = data.messages || [];
+                } else {
+                    localStorage.removeItem('aiChatHistory');
+                }
             }
+            // lastResponseId is kept in sessionStorage (clears on tab close) to limit persistent exposure
+            lastResponseId.value = sessionStorage.getItem('aiChatLastResponseId') || null;
         } catch (error) {
             console.warn('Failed to load chat history:', error);
         }
@@ -39,10 +46,15 @@ export function useChatWidget() {
             
             const data = {
                 messages: messagesToSave,
-                lastResponseId: lastResponseId.value,
                 timestamp: Date.now()
             };
             localStorage.setItem('aiChatHistory', JSON.stringify(data));
+            // Store lastResponseId in sessionStorage — it clears on tab close, reducing persistent exposure
+            if (lastResponseId.value) {
+                sessionStorage.setItem('aiChatLastResponseId', lastResponseId.value);
+            } else {
+                sessionStorage.removeItem('aiChatLastResponseId');
+            }
         } catch (error) {
             console.warn('Failed to save chat history:', error);
             // If localStorage is full, try clearing and saving only recent messages
@@ -50,7 +62,6 @@ export function useChatWidget() {
                 const recentMessages = chatMessages.value.slice(-20);
                 const fallbackData = {
                     messages: recentMessages,
-                    lastResponseId: lastResponseId.value,
                     timestamp: Date.now()
                 };
                 localStorage.setItem('aiChatHistory', JSON.stringify(fallbackData));
@@ -98,7 +109,8 @@ export function useChatWidget() {
     function clearChatHistory() {
         chatMessages.value = [];
         lastResponseId.value = null;
-        saveChatHistory();
+        localStorage.removeItem('aiChatHistory');
+        sessionStorage.removeItem('aiChatLastResponseId');
         
         // Force a scroll to top to make it obvious the messages are gone
         nextTick(() => {
@@ -375,6 +387,7 @@ export function useChatWidget() {
                 
                 if (data.timestamp && data.timestamp < sevenDaysAgo) {
                     localStorage.removeItem('aiChatHistory');
+                    sessionStorage.removeItem('aiChatLastResponseId');
                     chatMessages.value = [];
                     lastResponseId.value = null;
                 }

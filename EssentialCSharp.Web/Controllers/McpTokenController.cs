@@ -22,6 +22,10 @@ public class McpTokenController(McpApiTokenService tokenService) : ControllerBas
         if (string.IsNullOrEmpty(userId))
             return Unauthorized(new { Error = "User must be logged in to generate an MCP token." });
 
+        int activeCount = await tokenService.GetActiveTokenCountAsync(userId, cancellationToken);
+        if (activeCount >= McpApiTokenService.MaxTokensPerUser)
+            return BadRequest(new { Error = $"You have reached the maximum of {McpApiTokenService.MaxTokensPerUser} active MCP tokens. Revoke an existing token before creating a new one." });
+
         string name = string.IsNullOrWhiteSpace(request?.Name) ? "default" : request.Name.Trim();
         if (name.Length > 256)
             return BadRequest(new { Error = "Token name must be 256 characters or fewer." });
