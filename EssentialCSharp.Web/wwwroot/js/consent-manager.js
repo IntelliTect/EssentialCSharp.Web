@@ -143,7 +143,7 @@ class ConsentManager {
                         <span class="consent-slider"></span>
                         <div class="consent-info">
                             <strong>Google Signals</strong>
-                            <p>Consent signals passed to Google to support analytics modeling and measurement. No advertisements are served on this site.</p>
+                            <p>Allows Google to associate your visit with your Google account for analytics modeling and cross-site measurement. No advertisements are served on this site, but Google may use this data across its services.</p>
                         </div>
                     </label>
                 </div>
@@ -457,9 +457,10 @@ class ConsentManager {
         const allCookies = [...new Set([...trackingCookies, ...ga4Cookies])];
 
         allCookies.forEach(cookieName => {
-            document.cookie = `${cookieName}=;${expired};path=/`;
+            const secure = window.location.protocol === 'https:' ? ';Secure' : '';
+            document.cookie = `${cookieName}=;${expired};path=/${secure}`;
             domains.forEach(domain => {
-                document.cookie = `${cookieName}=;${expired};path=/;domain=${domain}`;
+                document.cookie = `${cookieName}=;${expired};path=/;domain=${domain}${secure}`;
             });
         });
     }
