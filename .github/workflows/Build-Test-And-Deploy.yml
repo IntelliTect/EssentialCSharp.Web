@@ -63,23 +63,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      - name: Generate NuGet auth config for Docker build
-        if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
-        env:
-          NUGET_AUTH_TOKEN: ${{ secrets.AZURE_DEVOPS_PAT }}
-        run: |
-          cat > /tmp/nuget-auth.config << EOF
-          <?xml version="1.0" encoding="utf-8"?>
-          <configuration>
-            <packageSourceCredentials>
-              <EssentialCSharp>
-                <add key="Username" value="docker" />
-                <add key="ClearTextPassword" value="${NUGET_AUTH_TOKEN}" />
-              </EssentialCSharp>
-            </packageSourceCredentials>
-          </configuration>
-          EOF
-
 # Build but no push with a PR
       - name: Docker build (no push)
         if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
@@ -99,7 +82,7 @@ jobs:
           file: ./EssentialCSharp.Web/Dockerfile
           context: .
           secrets: |
-            "id=nugetconfig,src=/tmp/nuget-auth.config"
+            "nuget_pat=${{ secrets.AZURE_DEVOPS_PAT }}"
           outputs: type=docker,dest=${{ github.workspace }}/essentialcsharpwebimage.tar
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -108,10 +91,6 @@ jobs:
         with:
           name: essentialcsharpwebimage
           path: ${{ github.workspace }}/essentialcsharpwebimage.tar
-
-      - name: Clean up NuGet auth config
-        if: always()
-        run: rm -f /tmp/nuget-auth.config
 
   deploy-development:
     if: github.event_name != 'pull_request_target' && github.event_name != 'pull_request'
