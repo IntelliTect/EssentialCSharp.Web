@@ -158,6 +158,10 @@ public partial class AIChatService
 
         contextualInfo.AppendLine("</retrieved_context>");
         contextualInfo.AppendLine("<user_question>");
+        // The user's prompt is intentionally NOT passed through SanitizeForXmlContext:
+        // the user controls their own question (including C# generics like List<T>), and
+        // replacing '<'/'>' would corrupt code syntax in their query. The retrieved_context
+        // boundary above is protected; this tag is informational only.
         contextualInfo.AppendLine(prompt);
         contextualInfo.AppendLine("</user_question>");
 

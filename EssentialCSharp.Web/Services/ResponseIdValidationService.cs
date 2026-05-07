@@ -16,9 +16,6 @@ public sealed class ResponseIdValidationService(IMemoryCache cache)
 {
     private const int MaxTrackedIdsPerUser = 500;
 
-    private static MemoryCacheEntryOptions MakeCacheOptions() =>
-        new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(2));
-
     /// <summary>
     /// Records a newly issued response ID as belonging to the specified user.
     /// </summary>
