@@ -16,6 +16,8 @@ public abstract class BaseController : Controller
         _HttpContextAccessor = httpContextAccessor;
     }
 
+    protected IRouteConfigurationService RouteConfigurationService => _RouteConfigurationService;
+
     public override void OnActionExecuting(ActionExecutingContext context)
     {
         // Automatically add static routes to all views
