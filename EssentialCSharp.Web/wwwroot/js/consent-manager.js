@@ -25,7 +25,7 @@ class ConsentManager {
     init() {
         this.initGoogleConsentMode();
         
-        // Load saved consent preferences (signals Clarity/GA if already consented)
+        // Load saved consent preferences (signals GA if already consented)
         this.loadConsentPreferences();
 
         // Always send Clarity the current consent state (denied by default for new visitors).
@@ -36,18 +36,6 @@ class ConsentManager {
         if (this.shouldShowConsentBanner()) {
             this.showConsentBanner();
         }
-        
-        // Dispatch initialization event for other scripts to listen to
-        this.dispatchInitializationEvent();
-    }
-
-    dispatchInitializationEvent() {
-        document.dispatchEvent(new CustomEvent('consentManagerReady', {
-            detail: {
-                hasAnalyticsConsent: this.hasAnalyticsConsent(),
-                hasAdvertisingConsent: this.hasAdvertisingConsent()
-            }
-        }));
     }
 
     initGoogleConsentMode() {
@@ -155,8 +143,8 @@ class ConsentManager {
                         <input type="checkbox" id="consent-advertising">
                         <span class="consent-slider"></span>
                         <div class="consent-info">
-                            <strong>Advertising Cookies</strong>
-                            <p>Used to deliver relevant advertisements and measure their effectiveness.</p>
+                            <strong>Google Signals</strong>
+                            <p>Consent signals passed to Google to support analytics modeling and measurement. No advertisements are served on this site.</p>
                         </div>
                     </label>
                 </div>
@@ -458,7 +446,7 @@ class ConsentManager {
         // This handles multi-part TLDs (e.g. .co.uk) by trying all suffixes.
         const parts = hostname.split('.');
         const domains = [hostname];
-        for (let i = 1; i < parts.length - 1; i++) {
+        for (let i = 0; i < parts.length - 1; i++) {
             domains.push('.' + parts.slice(i).join('.'));
         }
         trackingCookies.forEach(cookieName => {
