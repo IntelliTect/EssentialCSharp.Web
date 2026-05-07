@@ -5,6 +5,7 @@ using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using HtmlAgilityPack;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Options;
@@ -90,10 +91,11 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
     }
 
     [Route("/sitemap.xml")]
-    [ResponseCache(Duration = 3600)]
-    public IActionResult SitemapXml([FromServices] IRouteConfigurationService sitemapRouteConfig)
+    [OutputCache(Duration = 3600)]
+    [EnableRateLimiting("content")]
+    public IActionResult SitemapXml()
     {
-        SitemapXmlHelpers.GenerateSitemapXml(siteMappingService.SiteMappings.ToList(), sitemapRouteConfig, siteSettings.Value.BaseUrl, out var nodes);
+        SitemapXmlHelpers.GenerateSitemapXml(siteMappingService.SiteMappings, RouteConfigurationService, siteSettings.Value.BaseUrl, out var nodes);
         return new SitemapProvider().CreateSitemap(new SitemapModel(nodes));
     }
 

@@ -18,7 +18,7 @@ public static class SitemapXmlHelpers
         }
     }
 
-    public static void GenerateSitemapXml(List<SiteMapping> siteMappings, IRouteConfigurationService routeConfigurationService, string baseUrl, out List<SitemapNode> nodes)
+    public static void GenerateSitemapXml(IEnumerable<SiteMapping> siteMappings, IRouteConfigurationService routeConfigurationService, string baseUrl, out List<SitemapNode> nodes)
     {
         DateTime newDateTime = DateTime.UtcNow;
 
@@ -38,18 +38,17 @@ public static class SitemapXmlHelpers
         // Add routes dynamically discovered from controllers
         var allRoutes = routeConfigurationService.GetStaticRoutes();
         var controllerRoutes = allRoutes
-            .Where(route => !route.Contains("error", StringComparison.OrdinalIgnoreCase)) // Skip Error actions for sitemap
-            .Where(route => !route.Contains("index", StringComparison.OrdinalIgnoreCase)) // Skip Index actions for sitemap
-            .Where(route => !route.Contains("identity", StringComparison.OrdinalIgnoreCase)) // Skip Identity actions for sitemap
-        // All routes should have leading slash
-            .Select(route => $"/{route}") // Add leading slash for sitemap URLs
+            .Where(route => !route.Contains("error", StringComparison.OrdinalIgnoreCase))
+            .Where(route => !route.Contains("index", StringComparison.OrdinalIgnoreCase))
+            .Where(route => !route.Contains("identity", StringComparison.OrdinalIgnoreCase))
+            .Where(route => !route.Contains("sitemap", StringComparison.OrdinalIgnoreCase))
+            .Select(route => $"/{route}")
             .ToList();
 
         foreach (var route in controllerRoutes)
         {
             nodes.Add(new($"{baseUrl}{route}")
             {
-                LastModificationDate = newDateTime,
                 ChangeFrequency = GetChangeFrequencyForRoute(route),
                 Priority = GetPriorityForRoute(route)
             });

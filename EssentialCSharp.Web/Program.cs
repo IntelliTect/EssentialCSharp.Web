@@ -243,6 +243,7 @@ public partial class Program
 
         // Add services to the container.
         builder.Services.AddRazorPages();
+        builder.Services.AddOutputCache();
         builder.Services.AddCaptchaService(builder.Configuration.GetSection(CaptchaOptions.CaptchaSender));
         builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
         builder.Services.AddSingleton<IRouteConfigurationService, RouteConfigurationService>();
@@ -505,6 +506,7 @@ public partial class Program
         app.UseStaticFiles();
 
         app.UseRouting();
+        app.UseOutputCache();
 
         app.UseWhen(
             context => context.Request.Path.StartsWithSegments("/mcp"),
@@ -596,10 +598,10 @@ public partial class Program
     [LoggerMessage(Level = LogLevel.Error, Message = "Unhandled exception on {Path}")]
     private static partial void LogUnhandledException(ILogger<Program> logger, Exception? exception, PathString path);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Sitemap.xml generation completed successfully during application startup")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "Sitemap validation completed successfully during application startup")]
     private static partial void LogSitemapGenerationSucceeded(ILogger<Program> logger);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to generate sitemap.xml during application startup")]
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to validate sitemap during application startup")]
     private static partial void LogSitemapGenerationFailed(ILogger<Program> logger, Exception exception);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Ignoring invalid TryDotNet origin in CSP: {Origin}")]
