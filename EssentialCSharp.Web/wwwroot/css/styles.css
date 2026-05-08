@@ -206,6 +206,30 @@ a:hover {
   display: flex;
   justify-content: flex-start;
   align-items: center;
+  min-width: 0;
+}
+
+.header-brand {
+  font-size: 1.25rem;
+  font-weight: 400;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+#header-status-host {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+@media (min-width: 992px) {
+  #header-status-host {
+    flex: 1 1 0;
+  }
+}
+
+.banner ul.nav {
+  flex-wrap: nowrap;
+  max-height: var(--toolbar-height);
 }
 
 .menu-btn {

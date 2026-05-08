@@ -1,0 +1,224 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - button "" [ref=e5] [cursor=pointer]:
+          - generic [ref=e6]: 
+        - list [ref=e8]:
+          - listitem [ref=e9]:
+            - link "Essential C#" [ref=e10] [cursor=pointer]:
+              - /url: /home
+          - listitem [ref=e11]:
+            - link "About" [ref=e12] [cursor=pointer]:
+              - /url: /about
+          - listitem [ref=e13]:
+            - link "Guidelines" [ref=e14] [cursor=pointer]:
+              - /url: /guidelines
+          - listitem [ref=e15]:
+            - link "Announcements" [ref=e16] [cursor=pointer]:
+              - /url: /announcements
+          - listitem [ref=e17]:
+            - link "AI Tools" [ref=e18] [cursor=pointer]:
+              - /url: /mcp-setup
+      - generic [ref=e19]:
+        - link " Feedback" [ref=e21] [cursor=pointer]:
+          - /url: https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas
+          - generic [ref=e22]: 
+          - text: Feedback
+        - text: 
+        - link " Login" [ref=e25] [cursor=pointer]:
+          - /url: /Identity/Account/Login
+          - generic [ref=e26]: 
+          - text: Login
+  - main [ref=e27]:
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - button "Search" [ref=e32] [cursor=pointer]:
+          - generic [ref=e33]:
+            - img [ref=e34]
+            - generic [ref=e36]: Search
+          - generic [ref=e37]:
+            - img [ref=e39]
+            - generic [ref=e41]: K
+        - text:    
+        - generic [ref=e42]:
+          - heading "Contents" [level=5] [ref=e43]
+          - generic [ref=e44]: 
+      - list [ref=e46]:
+        - listitem [ref=e47]:
+          - group [ref=e48]:
+            - 'generic " Chapter 1: Introducing C#" [ref=e49] [cursor=pointer]'
+            - text:       
+        - listitem [ref=e50]:
+          - group [ref=e51]:
+            - 'generic " Chapter 2: Data Types" [ref=e52] [cursor=pointer]'
+            - text:     
+        - listitem [ref=e53]:
+          - group [ref=e54]:
+            - 'generic " Chapter 3: More with Data Types" [ref=e55] [cursor=pointer]'
+            - text:   
+        - listitem [ref=e56]:
+          - group [ref=e57]:
+            - 'generic " Chapter 4: Operators and Control Flow" [ref=e58] [cursor=pointer]'
+            - text:          
+        - listitem [ref=e59]:
+          - group [ref=e60]:
+            - 'generic " Chapter 5: Parameters and Methods" [ref=e61] [cursor=pointer]'
+            - text:      
+        - listitem [ref=e62]:
+          - group [ref=e63]:
+            - 'generic " Chapter 6: Classes" [ref=e64] [cursor=pointer]'
+            - text:        
+        - listitem [ref=e65]:
+          - group [ref=e66]:
+            - 'generic " Chapter 7: Inheritance" [ref=e67] [cursor=pointer]'
+            - text:    
+        - listitem [ref=e68]:
+          - group [ref=e69]:
+            - 'generic " Chapter 8: Interfaces" [ref=e70] [cursor=pointer]'
+            - text:  
+        - listitem [ref=e71]:
+          - group [ref=e72]:
+            - 'generic " Chapter 9: Introducing Structs and Records" [ref=e73] [cursor=pointer]'
+            - text:    
+        - listitem [ref=e74]:
+          - group [ref=e75]:
+            - 'generic " Chapter 10: Well-Formed Types" [ref=e76] [cursor=pointer]'
+            - text:      
+        - listitem [ref=e77]:
+          - group [ref=e78]:
+            - 'generic " Chapter 11: Exception Handling" [ref=e79] [cursor=pointer]'
+        - listitem [ref=e80]:
+          - group [ref=e81]:
+            - 'generic " Chapter 12: Generics" [ref=e82] [cursor=pointer]'
+            - text:    
+        - listitem [ref=e83]:
+          - group [ref=e84]:
+            - 'generic " Chapter 13: Delegates and Lambda Expressions" [ref=e85] [cursor=pointer]'
+            - text:   
+        - listitem [ref=e86]:
+          - group [ref=e87]:
+            - 'generic " Chapter 14: Events" [ref=e88] [cursor=pointer]'
+            - text:   
+        - listitem [ref=e89]:
+          - group [ref=e90]:
+            - 'generic " Chapter 15: Collection Interfaces with Standard Query Operators" [ref=e91] [cursor=pointer]'
+            - text:    
+        - listitem [ref=e92]:
+          - group [ref=e93]:
+            - 'generic " Chapter 16: LINQ with Query Expressions" [ref=e94] [cursor=pointer]'
+            - text: 
+        - listitem [ref=e95]:
+          - group [ref=e96]:
+            - 'generic " Chapter 17: Building Custom Collections" [ref=e97] [cursor=pointer]'
+            - text:   
+        - listitem [ref=e98]:
+          - group [ref=e99]:
+            - 'generic " Chapter 18: Reflection, Attributes, and Dynamic Programming" [ref=e100] [cursor=pointer]'
+            - text:      
+        - listitem [ref=e101]:
+          - group [ref=e102]:
+            - 'generic " Chapter 19: Introducing Multithreading" [ref=e103] [cursor=pointer]'
+            - text:  
+        - listitem [ref=e104]:
+          - group [ref=e105]:
+            - 'generic " Chapter 20: Programming the Task-Based Asynchronous Pattern" [ref=e106] [cursor=pointer]'
+        - listitem [ref=e107]:
+          - group [ref=e108]:
+            - 'generic " Chapter 21: Iterating in Parallel" [ref=e109] [cursor=pointer]'
+            - text:  
+        - listitem [ref=e110]:
+          - group [ref=e111]:
+            - 'generic " Chapter 22: Thread Synchronization" [ref=e112] [cursor=pointer]'
+            - text:    
+        - listitem [ref=e113]:
+          - group [ref=e114]:
+            - 'generic " Chapter 23: Platform Interoperability and Unsafe Code" [ref=e115] [cursor=pointer]'
+            - text:   
+        - listitem [ref=e116]:
+          - group [ref=e117]:
+            - 'generic " Chapter 24: The Common Language Infrastructure" [ref=e118] [cursor=pointer]'
+            - text:  
+      - generic [ref=e120]: "Build: 7 May, 2026 5:40:07 PM"
+    - generic [ref=e121]:
+      - generic:
+        - navigation
+      - generic [ref=e122]:
+        - heading "Welcome to Essential C#" [level=1] [ref=e124]
+        - separator [ref=e125]
+        - generic [ref=e127]:
+          - heading "The Comprehensive, Expert Guide to C# Language Programming" [level=3] [ref=e128]
+          - generic [ref=e129]: Written by Mark Michaelis and Benjamin Michaelis with Eric Lippert & Kevin Bost
+          - paragraph [ref=e130]: Essential C# is a well-organized, no-fluff guide to C# for programmers at all levels of experience. Reflecting the most important C# features from 3.0 through 12.0 and including modern programming patterns, it will help you write code that’s simple, powerful, robust, secure, and maintainable.
+          - paragraph [ref=e131]: World-class C# expert Mark Michaelis and Benjamin Michaelis present a complete tutorial and reference for the entire language, including expert coverage of key C# enhancements, C#’s use with .NET Core/.NET Standard, and cross-platform compilation. They illustrates key C# constructs with succinct examples, and presents best-practice coding guidelines.
+        - separator [ref=e132]
+        - generic [ref=e133]:
+          - link "Essential C Sharp Book" [ref=e136] [cursor=pointer]:
+            - /url: https://a.co/d/95wxhTg
+            - img "Essential C Sharp Book" [ref=e137]
+          - generic [ref=e138]:
+            - heading "Essential C# Book" [level=3] [ref=e139]
+            - paragraph [ref=e140]: Check out the interactive and comprehensive guide to the C# coding language to expand your development knowledge and enhance your skill set at your own pace. The site includes everything developers need to master C# and is an excellent tool for beginners to experts.
+            - link "Get the Book" [ref=e142] [cursor=pointer]:
+              - /url: https://a.co/d/95wxhTg
+            - generic [ref=e143]:
+              - generic [ref=e144]:
+                - generic [ref=e146]: 
+                - generic [ref=e147]: Welcome to one of the most venerable and trusted franchises you could dream of in the world of C# books—and probably far beyond!
+              - generic [ref=e148]:
+                - strong [ref=e149]: From the Foreword by Mads Torgersen
+                - text: C# Lead Designer, Microsoft
+        - separator [ref=e150]
+        - generic [ref=e151]:
+          - heading "Web Features Coming Soon" [level=3] [ref=e153]
+          - generic [ref=e156]:
+            - heading "Hyperlinking" [level=5] [ref=e157]
+            - paragraph [ref=e158]: Easily navigate to interesting and relevant sites as well as related sections in Essential C#.
+        - generic [ref=e159]:
+          - heading "Content Coming Soon" [level=3] [ref=e161]
+          - generic [ref=e164]:
+            - heading "Experimental attribute" [level=5] [ref=e165]
+            - paragraph [ref=e166]: New feature from C# 12.0.
+          - generic [ref=e169]:
+            - heading "Source Generators" [level=5] [ref=e170]
+            - paragraph [ref=e171]: A newer .NET feature.
+          - generic [ref=e174]:
+            - heading "C# 13.0 Features" [level=5] [ref=e175]
+            - paragraph [ref=e176]: Various new features coming in C# 13.0.
+        - generic [ref=e177]:
+          - heading "Recently Completed" [level=3] [ref=e179]
+          - generic [ref=e182]:
+            - heading "AI Chat Assistant" [level=5] [ref=e183]
+            - paragraph [ref=e184]: Chat with an AI assistant that has access to Essential C# book content from a floating widget available on every page. Supports streaming responses, markdown rendering, and saved conversation history. Requires sign-in.
+          - generic [ref=e187]:
+            - heading "Client-side Compiler" [level=5] [ref=e188]
+            - paragraph [ref=e189]: Write, compile, and run C# code snippets right from your browser using the integrated Try .NET editor.
+          - generic [ref=e192]:
+            - heading "Interactive Code Listings" [level=5] [ref=e193]
+            - paragraph [ref=e194]: Edit, compile, and run the code listings found throughout Essential C#. Runnable listings show a Run button that opens an interactive editor.
+        - link "View All Announcements" [ref=e197] [cursor=pointer]:
+          - /url: /Announcements
+    - button "Login required for AI Chat" [ref=e199] [cursor=pointer]:
+      - generic [ref=e200]: 󰚩
+      - generic [ref=e201]: AI Chat
+  - contentinfo [ref=e202]:
+    - generic [ref=e203]:
+      - generic [ref=e204]: © IntelliTect 2005-2026
+      - link "Privacy" [ref=e206] [cursor=pointer]:
+        - /url: https://intellitect.com/about/privacy-policy/
+      - link "Cookie Preferences" [ref=e208] [cursor=pointer]:
+        - /url: javascript:void(0)
+      - link "Terms Of Service" [ref=e210] [cursor=pointer]:
+        - /url: /TermsOfService
+  - generic [ref=e212]:
+    - generic [ref=e213]:
+      - heading "Cookie Preferences" [level=3] [ref=e214]
+      - paragraph [ref=e215]:
+        - text: We use cookies to improve your experience and analyze website usage. See our
+        - link "Privacy Policy" [ref=e216] [cursor=pointer]:
+          - /url: https://intellitect.com/about/privacy-policy/
+        - text: for details.
+    - generic [ref=e217]:
+      - button "Reject All" [ref=e218] [cursor=pointer]
+      - button "Accept All" [ref=e219] [cursor=pointer]
+      - button "Customize" [ref=e220] [cursor=pointer]
