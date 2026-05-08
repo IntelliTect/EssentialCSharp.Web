@@ -379,29 +379,6 @@ export function useChatWidget() {
         }
     }
 
-    // Clean up old chat sessions (keep only last 7 days)
-    function cleanupOldSessions() {
-        try {
-            const saved = localStorage.getItem('aiChatHistory');
-            if (saved) {
-                const data = JSON.parse(saved);
-                const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-                
-                if (data.timestamp && data.timestamp < sevenDaysAgo) {
-                    localStorage.removeItem('aiChatHistory');
-                    sessionStorage.removeItem('aiChatLastResponseId');
-                    chatMessages.value = [];
-                    lastResponseId.value = null;
-                }
-            }
-        } catch (error) {
-            console.warn('Failed to cleanup old sessions:', error);
-        }
-    }
-
-    // Run cleanup on initialization
-    cleanupOldSessions();
-
     return {
         // State
         isAuthenticated,
