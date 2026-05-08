@@ -217,7 +217,7 @@ a:hover {
 }
 
 #header-status-host {
-  flex: 0 1 auto;
+  flex: 0 0 0%;
   min-width: 0;
 }
 
@@ -230,9 +230,12 @@ a:hover {
 .banner ul.nav {
   flex-wrap: nowrap;
   max-height: var(--toolbar-height);
+  overflow: hidden;
+  align-items: center;
 }
 
 .menu-btn {
+  position: relative;
   margin: 0 5px 0 5px;
   display: inline-block;
   outline: none;
@@ -319,11 +322,14 @@ a:hover {
 
 .has-tooltip .sidebar-tooltip-text {
   width: 90px;
-  position: relative;
-  left: 5rem;
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 4px);
+  transform: translateY(-50%);
   border-radius: 10px;
   padding: 10px;
   white-space: normal;
+  z-index: 10;
 }
 
 .has-tooltip .sidebar-tooltip-text:after {
