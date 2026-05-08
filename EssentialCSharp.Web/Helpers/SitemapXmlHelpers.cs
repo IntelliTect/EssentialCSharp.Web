@@ -70,7 +70,7 @@ public static class SitemapXmlHelpers
     }
 
     private static bool IsSitemapRoute(string route) =>
-        route.Trim().TrimStart('/').Equals("sitemap.xml", StringComparison.OrdinalIgnoreCase);
+        route.TrimStart('/').Equals("sitemap.xml", StringComparison.OrdinalIgnoreCase);
 
     private static ChangeFrequency GetChangeFrequencyForRoute(string route)
     {
