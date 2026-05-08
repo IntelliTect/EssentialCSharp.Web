@@ -104,22 +104,25 @@ export function useSiteShell() {
                 () => {
                     snackbarColor.value = "white";
                     snackbarMessage.value = successMessage;
+                    if (snackbarTimeoutId !== null) {
+                        clearTimeout(snackbarTimeoutId);
+                    }
+                    snackbarTimeoutId = setTimeout(() => {
+                        snackbarMessage.value = null;
+                    }, 3000);
                 },
                 (error) => {
                     console.error("Could not copy text to clipboard: ", error);
                     snackbarColor.value = "red";
                     snackbarMessage.value = `Error: Could not copy text to clipboard: ${error}`;
+                    if (snackbarTimeoutId !== null) {
+                        clearTimeout(snackbarTimeoutId);
+                    }
+                    snackbarTimeoutId = setTimeout(() => {
+                        snackbarMessage.value = null;
+                    }, 3000);
                 }
             );
-
-        if (snackbarTimeoutId !== null) {
-            clearTimeout(snackbarTimeoutId);
-            snackbarMessage.value = null;
-        }
-
-        snackbarTimeoutId = setTimeout(() => {
-            snackbarMessage.value = null;
-        }, 3000);
     }
 
     function copyToClipboard(copyText) {
