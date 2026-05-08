@@ -260,7 +260,7 @@ public partial class Program
         builder.Services.AddScoped<McpApiTokenService>();
 
         builder.Services.AddMemoryCache();
-        builder.Services.AddScoped<ResponseIdValidationService>();
+        builder.Services.AddSingleton<ResponseIdValidationService>();
 
         builder.Services.AddAuthentication()
             .AddScheme<AuthenticationSchemeOptions, McpApiKeyAuthenticationHandler>(

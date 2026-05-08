@@ -59,9 +59,9 @@ public class McpTokenController(McpApiTokenService tokenService) : ControllerBas
                 Usage = "Add to your MCP client config: { \"url\": \"<site-url>/mcp\", \"headers\": { \"Authorization\": \"Bearer <token>\" } }"
             });
         }
-        catch (InvalidOperationException ex)
+        catch (TokenLimitExceededException ex)
         {
-            return BadRequest(new { Error = ex.Message + $" Revoke an existing token before creating a new one." });
+            return BadRequest(new { Error = ex.Message + " Revoke an existing token before creating a new one." });
         }
     }
 

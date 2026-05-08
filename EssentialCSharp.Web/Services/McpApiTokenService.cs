@@ -48,9 +48,9 @@ public class McpApiTokenService(EssentialCSharpWebContext db)
         int activeCount = await GetActiveTokenCountAsync(userId, cancellationToken);
         if (activeCount >= MaxTokensPerUser)
         {
-            await tx.RollbackAsync(cancellationToken);
-            throw new InvalidOperationException(
-                $"You have reached the maximum of {MaxTokensPerUser} active MCP tokens.");
+            // Explicit rollback not needed — `using var tx` disposes and rolls back automatically
+            // when CommitAsync is never called, but we throw here immediately.
+            throw new TokenLimitExceededException(MaxTokensPerUser);
         }
 
         string raw = GenerateRawToken();

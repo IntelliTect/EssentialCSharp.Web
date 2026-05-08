@@ -1,3 +1,4 @@
+using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -141,7 +142,7 @@ public class McpApiTokenServiceTests(WebApplicationFactory factory)
     }
 
     [Test]
-    public async Task CreateTokenAsync_AtMaxLimit_ThrowsInvalidOperationException()
+    public async Task CreateTokenAsync_AtMaxLimit_ThrowsTokenLimitExceededException()
     {
         string userId = await McpTestHelper.CreateUserAsync(factory, "mcp-at-limit");
 
@@ -154,6 +155,31 @@ public class McpApiTokenServiceTests(WebApplicationFactory factory)
         }
 
         await Assert.That(() => tokenService.CreateTokenAsync(userId, "one-too-many"))
-            .Throws<InvalidOperationException>();
+            .Throws<TokenLimitExceededException>();
+    }
+
+    [Test]
+    public async Task CreateTokenAsync_AfterRevokingAtLimit_AllowsNewToken()
+    {
+        string userId = await McpTestHelper.CreateUserAsync(factory, "mcp-revoke-then-create");
+
+        using var scope = factory.Services.CreateScope();
+        var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
+
+        // Fill up to limit
+        McpApiToken? lastEntity = null;
+        for (int i = 0; i < McpApiTokenService.MaxTokensPerUser; i++)
+        {
+            (_, lastEntity) = await tokenService.CreateTokenAsync(userId, $"token-{i}");
+        }
+
+        // Revoke one
+        await tokenService.RevokeTokenAsync(lastEntity!.Id, userId);
+
+        // Should now succeed — active count dropped below max
+        (_, var newEntity) = await tokenService.CreateTokenAsync(userId, "replacement");
+        await Assert.That(newEntity).IsNotNull();
+        int activeCount = await tokenService.GetActiveTokenCountAsync(userId);
+        await Assert.That(activeCount).IsEqualTo(McpApiTokenService.MaxTokensPerUser);
     }
 }
