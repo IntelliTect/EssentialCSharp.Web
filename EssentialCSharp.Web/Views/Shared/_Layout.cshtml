@@ -64,23 +64,26 @@
     </script>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
-    <!-- Google tag (gtag.js) - Will be activated based on consent -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-761B4BMK2R"></script>
+    <!-- Google tag (gtag.js) - Consent defaults MUST be set before gtag.js loads (Google Consent Mode v2 requirement) -->
     <script>
         window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
-        
-        // Initialize gtag but don't configure until consent is given
-        gtag('js', new Date());
-        
-        // Configuration will be handled by consent manager
-        // Listen for consent manager initialization event
-        document.addEventListener('consentManagerReady', function(event) {
-            if (event.detail.hasAnalyticsConsent || !event.detail.requiresConsent) {
-                gtag('config', 'G-761B4BMK2R');
-            }
+        function gtag(){dataLayer.push(arguments);}
+        gtag('consent', 'default', {
+            analytics_storage: 'denied',
+            ad_storage: 'denied',
+            ad_user_data: 'denied',
+            ad_personalization: 'denied',
+            functionality_storage: 'granted',
+            security_storage: 'granted',
+            personalization_storage: 'denied',
+            wait_for_update: 500  // ms to hold GA pings while consent banner loads
         });
+        gtag('js', new Date());
+        // Fire unconditionally — Consent Mode v2 handles denied state with cookieless modeled pings.
+        // Cookies are only set after gtag('consent', 'update', { granted }) is called by consent-manager.js.
+        gtag('config', 'G-761B4BMK2R');
     </script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-761B4BMK2R"></script>
     <script src="~/js/hcaptcha-form.js" asp-append-version="true"></script>
     <!-- hCaptcha Script -->
     <script src="https://js.hcaptcha.com/1/api.js?render=explicit&onload=ecsOnHcaptchaLoad" async defer></script>
