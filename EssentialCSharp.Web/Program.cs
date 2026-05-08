@@ -506,7 +506,6 @@ public partial class Program
         app.UseStaticFiles();
 
         app.UseRouting();
-        app.UseOutputCache();
 
         app.UseWhen(
             context => context.Request.Path.StartsWithSegments("/mcp"),
@@ -540,6 +539,7 @@ public partial class Program
         app.UseRateLimiter();
 
         app.UseAuthorization();
+        app.UseOutputCache();
 
         app.UseMiddleware<ReferralMiddleware>();
 
@@ -578,11 +578,11 @@ public partial class Program
         try
         {
             SitemapXmlHelpers.EnsureSitemapHealthy(siteMappingService.SiteMappings.ToList());
-            LogSitemapGenerationSucceeded(logger);
+            LogSitemapValidationSucceeded(logger);
         }
         catch (Exception ex)
         {
-            LogSitemapGenerationFailed(logger, ex);
+            LogSitemapValidationFailed(logger, ex);
             // Continue startup even if sitemap validation fails
         }
 
@@ -599,10 +599,10 @@ public partial class Program
     private static partial void LogUnhandledException(ILogger<Program> logger, Exception? exception, PathString path);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Sitemap validation completed successfully during application startup")]
-    private static partial void LogSitemapGenerationSucceeded(ILogger<Program> logger);
+    private static partial void LogSitemapValidationSucceeded(ILogger<Program> logger);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Failed to validate sitemap during application startup")]
-    private static partial void LogSitemapGenerationFailed(ILogger<Program> logger, Exception exception);
+    private static partial void LogSitemapValidationFailed(ILogger<Program> logger, Exception exception);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Ignoring invalid TryDotNet origin in CSP: {Origin}")]
     private static partial void LogIgnoringInvalidTryDotNetOrigin(ILogger logger, string origin);

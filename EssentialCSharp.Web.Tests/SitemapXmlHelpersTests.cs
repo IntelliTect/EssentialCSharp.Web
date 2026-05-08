@@ -205,7 +205,7 @@ public class SitemapXmlHelpersTests
         var allUrls = nodes.Select(n => n.Url).ToList();
 
         // /sitemap.xml should not list itself
-        await Assert.That(allUrls).DoesNotContain(url => url.Contains("sitemap", StringComparison.OrdinalIgnoreCase));
+        await Assert.That(allUrls).DoesNotContain(url => url.EndsWith("/sitemap.xml", StringComparison.OrdinalIgnoreCase));
     }
 
     [Test]
@@ -231,6 +231,29 @@ public class SitemapXmlHelpersTests
         // Assert
         var siteMappingNode = nodes.First(node => node.Url.Contains("test-page-1"));
         await Assert.That(siteMappingNode.LastModificationDate).IsEqualTo(specificLastModified);
+    }
+
+    [Test]
+    public async Task GenerateSitemapXml_DoesNotSetLastModifiedDateWhenSiteMappingDateIsMissing()
+    {
+        // Arrange
+        var baseUrl = "https://test.example.com/";
+        var siteMappings = new List<SiteMapping>
+        {
+            CreateSiteMapping(1, 1, true, "test-page-1")
+        };
+
+        // Act
+        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        SitemapXmlHelpers.GenerateSitemapXml(
+            siteMappings,
+            routeConfigurationService,
+            baseUrl,
+            out var nodes);
+
+        // Assert
+        var siteMappingNode = nodes.First(node => node.Url.Contains("test-page-1"));
+        await Assert.That(siteMappingNode.LastModificationDate).IsNull();
     }
 
     private static SiteMapping CreateSiteMapping(
