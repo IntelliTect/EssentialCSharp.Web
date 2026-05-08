@@ -22,10 +22,6 @@ public class McpTokenController(McpApiTokenService tokenService) : ControllerBas
         if (string.IsNullOrEmpty(userId))
             return Unauthorized(new { Error = "User must be logged in to generate an MCP token." });
 
-        int activeCount = await tokenService.GetActiveTokenCountAsync(userId, cancellationToken);
-        if (activeCount >= McpApiTokenService.MaxTokensPerUser)
-            return BadRequest(new { Error = $"You have reached the maximum of {McpApiTokenService.MaxTokensPerUser} active MCP tokens. Revoke an existing token before creating a new one." });
-
         string name = string.IsNullOrWhiteSpace(request?.Name) ? "default" : request.Name.Trim();
         if (name.Length > 256)
             return BadRequest(new { Error = "Token name must be 256 characters or fewer." });
@@ -44,22 +40,29 @@ public class McpTokenController(McpApiTokenService tokenService) : ControllerBas
             expiresAt = expiresOn.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
         }
 
-        var (rawToken, entity) = await tokenService.CreateTokenAsync(
-            userId,
-            name,
-            expiresAt,
-            createdAtUtc: nowUtc,
-            cancellationToken: cancellationToken);
-
-        return Ok(new
+        try
         {
-            TokenId = entity.Id,
-            Token = rawToken,
-            Name = entity.Name,
-            ExpiresAt = entity.ExpiresAt,
-            CreatedAt = entity.CreatedAt,
-            Usage = "Add to your MCP client config: { \"url\": \"<site-url>/mcp\", \"headers\": { \"Authorization\": \"Bearer <token>\" } }"
-        });
+            var (rawToken, entity) = await tokenService.CreateTokenAsync(
+                userId,
+                name,
+                expiresAt,
+                createdAtUtc: nowUtc,
+                cancellationToken: cancellationToken);
+
+            return Ok(new
+            {
+                TokenId = entity.Id,
+                Token = rawToken,
+                Name = entity.Name,
+                ExpiresAt = entity.ExpiresAt,
+                CreatedAt = entity.CreatedAt,
+                Usage = "Add to your MCP client config: { \"url\": \"<site-url>/mcp\", \"headers\": { \"Authorization\": \"Bearer <token>\" } }"
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { Error = ex.Message + $" Revoke an existing token before creating a new one." });
+        }
     }
 
     [HttpDelete("{id:guid}")]

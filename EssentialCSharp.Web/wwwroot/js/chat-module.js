@@ -28,6 +28,8 @@ export function useChatWidget() {
                     chatMessages.value = data.messages || [];
                 } else {
                     localStorage.removeItem('aiChatHistory');
+                    // Clear the stale response ID too — it belongs to the expired session
+                    sessionStorage.removeItem('aiChatLastResponseId');
                 }
             }
             // lastResponseId is kept in sessionStorage (clears on tab close) to limit persistent exposure

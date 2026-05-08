@@ -264,7 +264,7 @@ public partial class AIChatService
             yield break;
         }
 
-        LogMcpToolCallInvoked(_Logger, functionCallItem.FunctionName, toolCallDepth);
+        LogMcpToolCallInvokedStream(_Logger, functionCallItem.FunctionName, toolCallDepth);
         // A dictionary of arguments to pass to the tool. Each key represents a parameter name, and its associated value represents the argument value.
         Dictionary<string, object?> arguments = [];
         // example JsonResponse:
@@ -343,12 +343,12 @@ public partial class AIChatService
             options.PreviousResponseId = previousResponseId;
         }
 
-        // Forward the authenticated end-user's identifier to Azure OpenAI.
-        // This enables Microsoft Defender for Cloud's prompt-shield and abuse detection.
+        // endUserId is reserved for forwarding to Azure OpenAI for end-user attribution
+        // (Microsoft Defender prompt-shield correlation). OpenAI .NET SDK v2.7.0 does not
+        // expose ResponseCreationOptions.User; this parameter is intentionally discarded
+        // until SDK support is available.
         // See: https://learn.microsoft.com/en-us/azure/defender-for-cloud/gain-end-user-context-ai
-        // NOTE: The OpenAI .NET SDK (v2.7.0) does not currently expose a User property on ResponseCreationOptions.
-        // When the SDK adds support, set: options.User = endUserId;
-        _ = endUserId; // Suppress unused-variable warning until SDK support is available
+        _ = endUserId;
 
         // Add tools if provided
         if (tools != null)
@@ -502,6 +502,9 @@ public partial class AIChatService
 
     [LoggerMessage(Level = LogLevel.Information, Message = "AI tool call invoked: tool={ToolName} iteration={Iteration}")]
     private static partial void LogMcpToolCallInvoked(ILogger logger, string toolName, int iteration);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "AI tool call invoked (streaming): tool={ToolName} depth={Depth}")]
+    private static partial void LogMcpToolCallInvokedStream(ILogger logger, string toolName, int depth);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "AI tool call rejected — not on allowlist: tool={ToolName}")]
     private static partial void LogMcpToolCallRejected(ILogger logger, string toolName);

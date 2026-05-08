@@ -32,6 +32,8 @@ public class McpApiTokenService(EssentialCSharpWebContext db)
     /// <summary>
     /// Creates a new named API token for the specified user.
     /// Returns the raw token (shown once — never stored).
+    /// Throws <see cref="InvalidOperationException"/> if the user is already at <see cref="MaxTokensPerUser"/>.
+    /// The limit check and insert are wrapped in a serializable transaction to prevent races.
     /// </summary>
     public async Task<(string RawToken, McpApiToken Entity)> CreateTokenAsync(
         string userId,
@@ -40,6 +42,17 @@ public class McpApiTokenService(EssentialCSharpWebContext db)
         DateTime? createdAtUtc = null,
         CancellationToken cancellationToken = default)
     {
+        using var tx = await db.Database.BeginTransactionAsync(
+            System.Data.IsolationLevel.Serializable, cancellationToken);
+
+        int activeCount = await GetActiveTokenCountAsync(userId, cancellationToken);
+        if (activeCount >= MaxTokensPerUser)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            throw new InvalidOperationException(
+                $"You have reached the maximum of {MaxTokensPerUser} active MCP tokens.");
+        }
+
         string raw = GenerateRawToken();
         DateTime createdAt = createdAtUtc ?? DateTime.UtcNow;
         DateTime effectiveExpiration = ResolveExpiration(expiresAt, createdAt);
@@ -54,6 +67,7 @@ public class McpApiTokenService(EssentialCSharpWebContext db)
         };
         db.McpApiTokens.Add(entity);
         await db.SaveChangesAsync(cancellationToken);
+        await tx.CommitAsync(cancellationToken);
         return (raw, entity);
     }
 
