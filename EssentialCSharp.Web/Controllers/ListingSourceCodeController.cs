@@ -5,7 +5,6 @@ namespace EssentialCSharp.Web.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[IgnoreAntiforgeryToken]
 public class ListingSourceCodeController : ControllerBase
 {
     private readonly IListingSourceCodeService _ListingSourceCodeService;
