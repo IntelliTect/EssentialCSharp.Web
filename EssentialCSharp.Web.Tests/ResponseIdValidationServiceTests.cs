@@ -9,41 +9,25 @@ public class ResponseIdValidationServiceTests
         => new(new MemoryCache(new MemoryCacheOptions()));
 
     [Test]
-    public async Task ValidateResponseId_NullResponseId_AllowsNewConversation()
+    [Arguments(null)]
+    [Arguments("")]
+    public async Task ValidateResponseId_BlankResponseId_AllowsNewConversation(string? responseId)
     {
         var service = CreateService();
 
-        bool result = service.ValidateResponseId("user1", null);
+        bool result = service.ValidateResponseId("user1", responseId);
 
         await Assert.That(result).IsTrue();
     }
 
     [Test]
-    public async Task ValidateResponseId_EmptyResponseId_AllowsNewConversation()
+    [Arguments(null)]
+    [Arguments("")]
+    public async Task ValidateResponseId_BlankUserId_Rejects(string? userId)
     {
         var service = CreateService();
 
-        bool result = service.ValidateResponseId("user1", "");
-
-        await Assert.That(result).IsTrue();
-    }
-
-    [Test]
-    public async Task ValidateResponseId_NullUserId_Rejects()
-    {
-        var service = CreateService();
-
-        bool result = service.ValidateResponseId(null, "resp_123");
-
-        await Assert.That(result).IsFalse();
-    }
-
-    [Test]
-    public async Task ValidateResponseId_EmptyUserId_Rejects()
-    {
-        var service = CreateService();
-
-        bool result = service.ValidateResponseId("", "resp_123");
+        bool result = service.ValidateResponseId(userId, "resp_123");
 
         await Assert.That(result).IsFalse();
     }

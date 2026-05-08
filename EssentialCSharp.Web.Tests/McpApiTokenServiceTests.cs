@@ -9,13 +9,29 @@ namespace EssentialCSharp.Web.Tests;
 [ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
 public class McpApiTokenServiceTests(WebApplicationFactory factory)
 {
+    private async Task<(string UserId, McpApiTokenService TokenService)> ArrangeAsync(string prefix)
+    {
+        string userId = await McpTestHelper.CreateUserAsync(factory, prefix);
+        var tokenService = factory.Services.CreateScope().ServiceProvider
+            .GetRequiredService<McpApiTokenService>();
+        return (userId, tokenService);
+    }
+
+    private async Task<McpApiTokenService> FillToLimitAsync(string userId)
+    {
+        var tokenService = factory.Services.CreateScope().ServiceProvider
+            .GetRequiredService<McpApiTokenService>();
+        for (int i = 0; i < McpApiTokenService.MaxTokensPerUser; i++)
+        {
+            await tokenService.CreateTokenAsync(userId, $"token-{i}");
+        }
+        return tokenService;
+    }
+
     [Test]
     public async Task CreateTokenAsync_WithoutExpiry_UsesSixMonthDefault()
     {
-        string userId = await McpTestHelper.CreateUserAsync(factory, "mcp-default-expiry");
-
-        using var scope = factory.Services.CreateScope();
-        var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
+        var (userId, tokenService) = await ArrangeAsync("mcp-default-expiry");
 
         (_, var entity) = await tokenService.CreateTokenAsync(userId, "default-expiry");
 
@@ -27,10 +43,7 @@ public class McpApiTokenServiceTests(WebApplicationFactory factory)
     [Test]
     public async Task CreateTokenAsync_WithExpiryWithinSixMonths_UsesRequestedExpiry()
     {
-        string userId = await McpTestHelper.CreateUserAsync(factory, "mcp-custom-expiry");
-
-        using var scope = factory.Services.CreateScope();
-        var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
+        var (userId, tokenService) = await ArrangeAsync("mcp-custom-expiry");
         DateTime requestedExpiry = DateTime.UtcNow.AddMonths(3);
 
         (_, var entity) = await tokenService.CreateTokenAsync(userId, "custom-expiry", requestedExpiry);
@@ -42,10 +55,7 @@ public class McpApiTokenServiceTests(WebApplicationFactory factory)
     [Test]
     public async Task CreateTokenAsync_WithExpiryBeyondSixMonths_Throws()
     {
-        string userId = await McpTestHelper.CreateUserAsync(factory, "mcp-max-expiry");
-
-        using var scope = factory.Services.CreateScope();
-        var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
+        var (userId, tokenService) = await ArrangeAsync("mcp-max-expiry");
         DateTime requestedExpiry = McpApiTokenService.GetDefaultExpirationUtc(DateTime.UtcNow).AddDays(2);
 
         await Assert.That(() => tokenService.CreateTokenAsync(userId, "too-long", requestedExpiry))
@@ -56,16 +66,11 @@ public class McpApiTokenServiceTests(WebApplicationFactory factory)
     [Test]
     public async Task CreateTokenAsync_WithExplicitCreatedAt_UsesReferenceTimeForDefaultExpiry()
     {
-        string userId = await McpTestHelper.CreateUserAsync(factory, "mcp-explicit-created-at");
-
-        using var scope = factory.Services.CreateScope();
-        var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
+        var (userId, tokenService) = await ArrangeAsync("mcp-explicit-created-at");
         DateTime createdAtUtc = new(2026, 4, 30, 23, 59, 59, DateTimeKind.Utc);
 
         (_, var entity) = await tokenService.CreateTokenAsync(
-            userId,
-            "explicit-created-at",
-            createdAtUtc: createdAtUtc);
+            userId, "explicit-created-at", createdAtUtc: createdAtUtc);
 
         await Assert.That(entity.CreatedAt).IsEqualTo(createdAtUtc);
         await Assert.That(entity.ExpiresAt).IsNotNull();
@@ -76,10 +81,7 @@ public class McpApiTokenServiceTests(WebApplicationFactory factory)
     [Test]
     public async Task GetActiveTokenCountAsync_NoTokens_ReturnsZero()
     {
-        string userId = await McpTestHelper.CreateUserAsync(factory, "mcp-count-zero");
-
-        using var scope = factory.Services.CreateScope();
-        var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
+        var (userId, tokenService) = await ArrangeAsync("mcp-count-zero");
 
         int count = await tokenService.GetActiveTokenCountAsync(userId);
 
@@ -89,10 +91,7 @@ public class McpApiTokenServiceTests(WebApplicationFactory factory)
     [Test]
     public async Task GetActiveTokenCountAsync_ActiveTokens_CountsAll()
     {
-        string userId = await McpTestHelper.CreateUserAsync(factory, "mcp-count-active");
-
-        using var scope = factory.Services.CreateScope();
-        var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
+        var (userId, tokenService) = await ArrangeAsync("mcp-count-active");
 
         await tokenService.CreateTokenAsync(userId, "token-1");
         await tokenService.CreateTokenAsync(userId, "token-2");
@@ -106,10 +105,7 @@ public class McpApiTokenServiceTests(WebApplicationFactory factory)
     [Test]
     public async Task GetActiveTokenCountAsync_RevokedToken_ExcludedFromCount()
     {
-        string userId = await McpTestHelper.CreateUserAsync(factory, "mcp-count-revoked");
-
-        using var scope = factory.Services.CreateScope();
-        var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
+        var (userId, tokenService) = await ArrangeAsync("mcp-count-revoked");
 
         await tokenService.CreateTokenAsync(userId, "active-token");
         (_, var revokedEntity) = await tokenService.CreateTokenAsync(userId, "revoked-token");
@@ -123,12 +119,8 @@ public class McpApiTokenServiceTests(WebApplicationFactory factory)
     [Test]
     public async Task GetActiveTokenCountAsync_ExpiredToken_ExcludedFromCount()
     {
-        string userId = await McpTestHelper.CreateUserAsync(factory, "mcp-count-expired");
+        var (userId, tokenService) = await ArrangeAsync("mcp-count-expired");
 
-        using var scope = factory.Services.CreateScope();
-        var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
-
-        // Create a token that has already expired:
         // createdAt 7 months ago → max expiry = 1 month ago; use 2 months ago as expiresAt
         DateTime createdAt = DateTime.UtcNow.AddMonths(-7);
         DateTime pastExpiry = DateTime.UtcNow.AddMonths(-2);
@@ -144,15 +136,8 @@ public class McpApiTokenServiceTests(WebApplicationFactory factory)
     [Test]
     public async Task CreateTokenAsync_AtMaxLimit_ThrowsTokenLimitExceededException()
     {
-        string userId = await McpTestHelper.CreateUserAsync(factory, "mcp-at-limit");
-
-        using var scope = factory.Services.CreateScope();
-        var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
-
-        for (int i = 0; i < McpApiTokenService.MaxTokensPerUser; i++)
-        {
-            await tokenService.CreateTokenAsync(userId, $"token-{i}");
-        }
+        var (userId, _) = await ArrangeAsync("mcp-at-limit");
+        var tokenService = await FillToLimitAsync(userId);
 
         await Assert.That(() => tokenService.CreateTokenAsync(userId, "one-too-many"))
             .Throws<TokenLimitExceededException>();
@@ -161,20 +146,12 @@ public class McpApiTokenServiceTests(WebApplicationFactory factory)
     [Test]
     public async Task CreateTokenAsync_AfterRevokingAtLimit_AllowsNewToken()
     {
-        string userId = await McpTestHelper.CreateUserAsync(factory, "mcp-revoke-then-create");
+        var (userId, _) = await ArrangeAsync("mcp-revoke-then-create");
+        var tokenService = await FillToLimitAsync(userId);
 
-        using var scope = factory.Services.CreateScope();
-        var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
-
-        // Fill up to limit
-        McpApiToken? lastEntity = null;
-        for (int i = 0; i < McpApiTokenService.MaxTokensPerUser; i++)
-        {
-            (_, lastEntity) = await tokenService.CreateTokenAsync(userId, $"token-{i}");
-        }
-
-        // Revoke one
-        await tokenService.RevokeTokenAsync(lastEntity!.Id, userId);
+        // Revoke the last token to free a slot
+        var tokens = await tokenService.GetUserTokensAsync(userId);
+        await tokenService.RevokeTokenAsync(tokens[0].Id, userId);
 
         // Should now succeed — active count dropped below max
         (_, var newEntity) = await tokenService.CreateTokenAsync(userId, "replacement");
