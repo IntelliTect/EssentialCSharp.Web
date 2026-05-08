@@ -20,9 +20,6 @@ namespace EssentialCSharp.Web.Services;
 /// </remarks>
 public sealed class ResponseIdValidationService(IMemoryCache cache)
 {
-    private static readonly MemoryCacheEntryOptions _EntryOptions =
-        new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(2));
-
     /// <summary>
     /// Records a newly issued response ID as belonging to the specified user.
     /// </summary>
@@ -33,7 +30,11 @@ public sealed class ResponseIdValidationService(IMemoryCache cache)
             return;
         }
 
-        cache.Set(ResponseKey(responseId), userId, _EntryOptions);
+        // Create a fresh options instance per call — MemoryCacheEntryOptions has mutable
+        // list properties (ExpirationTokens, PostEvictionCallbacks) and sharing a static
+        // instance would cause future additions to affect all entries.
+        var entryOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(2));
+        cache.Set(ResponseKey(responseId), userId, entryOptions);
     }
 
     /// <summary>
