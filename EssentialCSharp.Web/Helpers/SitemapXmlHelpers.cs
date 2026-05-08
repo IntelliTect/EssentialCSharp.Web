@@ -20,8 +20,6 @@ public static class SitemapXmlHelpers
 
     public static void GenerateSitemapXml(IEnumerable<SiteMapping> siteMappings, IRouteConfigurationService routeConfigurationService, string baseUrl, out List<SitemapNode> nodes)
     {
-        DateTime newDateTime = DateTime.UtcNow;
-
         // Routes should end up with leading slash
         baseUrl = baseUrl.TrimEnd('/');
 
@@ -40,7 +38,7 @@ public static class SitemapXmlHelpers
             .Where(route => !route.Contains("error", StringComparison.OrdinalIgnoreCase))
             .Where(route => !route.Contains("index", StringComparison.OrdinalIgnoreCase))
             .Where(route => !route.Contains("identity", StringComparison.OrdinalIgnoreCase))
-            .Where(route => !route.Contains("sitemap", StringComparison.OrdinalIgnoreCase))
+            .Where(route => !IsSitemapRoute(route))
             .Select(route => $"/{route}")
             .ToList();
 
@@ -54,13 +52,25 @@ public static class SitemapXmlHelpers
         }
 
         // Add site mappings from content
-        nodes.AddRange(siteMappings.Where(item => item.IncludeInSitemapXml).Select<SiteMapping, SitemapNode>(siteMapping => new($"{baseUrl.TrimEnd('/')}/{siteMapping.Keys.First()}")
+        nodes.AddRange(siteMappings.Where(item => item.IncludeInSitemapXml).Select(siteMapping =>
         {
-            LastModificationDate = siteMapping.LastModified ?? newDateTime,
-            ChangeFrequency = ChangeFrequency.Daily,
-            Priority = 0.8M
+            SitemapNode node = new($"{baseUrl.TrimEnd('/')}/{siteMapping.Keys.First()}")
+            {
+                ChangeFrequency = ChangeFrequency.Daily,
+                Priority = 0.8M
+            };
+
+            if (siteMapping.LastModified is DateTime lastModified)
+            {
+                node.LastModificationDate = lastModified;
+            }
+
+            return node;
         }));
     }
+
+    private static bool IsSitemapRoute(string route) =>
+        route.TrimStart('/').Equals("sitemap.xml", StringComparison.OrdinalIgnoreCase);
 
     private static ChangeFrequency GetChangeFrequencyForRoute(string route)
     {
