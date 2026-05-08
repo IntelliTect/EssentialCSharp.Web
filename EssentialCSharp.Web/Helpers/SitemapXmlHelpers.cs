@@ -1,10 +1,9 @@
 using DotnetSitemapGenerator;
-using DotnetSitemapGenerator.Serialization;
 using EssentialCSharp.Web.Services;
 
 namespace EssentialCSharp.Web.Helpers;
 
-public static partial class SitemapXmlHelpers
+public static class SitemapXmlHelpers
 {
     public static void EnsureSitemapHealthy(List<SiteMapping> siteMappings)
     {
@@ -19,27 +18,17 @@ public static partial class SitemapXmlHelpers
         }
     }
 
-    public static void GenerateAndSerializeSitemapXml(DirectoryInfo wwwrootDirectory, List<SiteMapping> siteMappings, ILogger logger, IRouteConfigurationService routeConfigurationService, string baseUrl)
-    {
-        GenerateSitemapXml(wwwrootDirectory, siteMappings, routeConfigurationService, baseUrl, out List<SitemapNode> nodes);
-        XmlSerializer sitemapProvider = new();
-        var xmlPath = Path.Join(wwwrootDirectory.FullName, "sitemap.xml");
-        sitemapProvider.Serialize(new SitemapModel(nodes), xmlPath, true);
-        LogSitemapWritten(logger, xmlPath);
-    }
-
-    public static void GenerateSitemapXml(DirectoryInfo wwwrootDirectory, List<SiteMapping> siteMappings, IRouteConfigurationService routeConfigurationService, string baseUrl, out List<SitemapNode> nodes)
+    public static void GenerateSitemapXml(IEnumerable<SiteMapping> siteMappings, IRouteConfigurationService routeConfigurationService, string baseUrl, out List<SitemapNode> nodes)
     {
         DateTime newDateTime = DateTime.UtcNow;
 
         // Routes should end up with leading slash
         baseUrl = baseUrl.TrimEnd('/');
 
-        // Start with the root URL
+        // Start with the root URL — no LastModificationDate: it doesn't change per-request
         nodes = new() {
             new($"{baseUrl}/")
             {
-                LastModificationDate = newDateTime,
                 ChangeFrequency = ChangeFrequency.Daily,
                 Priority = 1.0M
             }
@@ -48,18 +37,17 @@ public static partial class SitemapXmlHelpers
         // Add routes dynamically discovered from controllers
         var allRoutes = routeConfigurationService.GetStaticRoutes();
         var controllerRoutes = allRoutes
-            .Where(route => !route.Contains("error", StringComparison.OrdinalIgnoreCase)) // Skip Error actions for sitemap
-            .Where(route => !route.Contains("index", StringComparison.OrdinalIgnoreCase)) // Skip Index actions for sitemap
-            .Where(route => !route.Contains("identity", StringComparison.OrdinalIgnoreCase)) // Skip Identity actions for sitemap
-        // All routes should have leading slash
-            .Select(route => $"/{route}") // Add leading slash for sitemap URLs
+            .Where(route => !route.Contains("error", StringComparison.OrdinalIgnoreCase))
+            .Where(route => !route.Contains("index", StringComparison.OrdinalIgnoreCase))
+            .Where(route => !route.Contains("identity", StringComparison.OrdinalIgnoreCase))
+            .Where(route => !route.Contains("sitemap", StringComparison.OrdinalIgnoreCase))
+            .Select(route => $"/{route}")
             .ToList();
 
         foreach (var route in controllerRoutes)
         {
             nodes.Add(new($"{baseUrl}{route}")
             {
-                LastModificationDate = newDateTime,
                 ChangeFrequency = GetChangeFrequencyForRoute(route),
                 Priority = GetPriorityForRoute(route)
             });
@@ -98,6 +86,4 @@ public static partial class SitemapXmlHelpers
         };
     }
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "sitemap.xml successfully written to {XmlPath}")]
-    private static partial void LogSitemapWritten(ILogger logger, string xmlPath);
 }

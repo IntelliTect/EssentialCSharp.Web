@@ -4,13 +4,10 @@
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
     <ToolingPackagesVersion>1.1.1.19025</ToolingPackagesVersion>
     <AccessToNugetFeed Condition="'$(AccessToNugetFeed)' == ''">false</AccessToNugetFeed>
-    <RestoreSources>
-      https://api.nuget.org/v3/index.json;
-    </RestoreSources>
-    <RestoreSources Condition="$(AccessToNugetFeed)">
-      $(RestoreSources);
-      https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json;
-    </RestoreSources>
+    <!-- Disable NuGet vulnerability audit when the private feed is unavailable (e.g. CI without credentials).
+         NuGet audit queries all sources in nuget.config regardless of RestoreSources, causing NU1900 which is
+         escalated to an error by TreatWarningsAsErrors. -->
+    <NuGetAudit Condition="'$(AccessToNugetFeed)' != 'true'">false</NuGetAudit>
   </PropertyGroup>
   <PropertyGroup>
     <SemanticKernelVersion>1.72.0</SemanticKernelVersion>
