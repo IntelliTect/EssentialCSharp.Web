@@ -9,18 +9,30 @@ namespace EssentialCSharp.Web.Tests;
 [ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
 public class McpApiTokenServiceTests(WebApplicationFactory factory)
 {
+    private readonly List<IServiceScope> _scopes = [];
+
+    [After(Test)]
+    public void DisposeScopes()
+    {
+        foreach (var scope in _scopes)
+            scope.Dispose();
+        _scopes.Clear();
+    }
+
     private async Task<(string UserId, McpApiTokenService TokenService)> ArrangeAsync(string prefix)
     {
         string userId = await McpTestHelper.CreateUserAsync(factory, prefix);
-        var tokenService = factory.Services.CreateScope().ServiceProvider
-            .GetRequiredService<McpApiTokenService>();
+        var scope = factory.Services.CreateScope();
+        _scopes.Add(scope);
+        var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
         return (userId, tokenService);
     }
 
     private async Task<McpApiTokenService> FillToLimitAsync(string userId)
     {
-        var tokenService = factory.Services.CreateScope().ServiceProvider
-            .GetRequiredService<McpApiTokenService>();
+        var scope = factory.Services.CreateScope();
+        _scopes.Add(scope);
+        var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
         for (int i = 0; i < McpApiTokenService.MaxTokensPerUser; i++)
         {
             await tokenService.CreateTokenAsync(userId, $"token-{i}");

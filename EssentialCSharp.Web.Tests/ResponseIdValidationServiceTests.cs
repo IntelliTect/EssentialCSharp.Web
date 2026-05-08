@@ -5,15 +5,15 @@ namespace EssentialCSharp.Web.Tests;
 
 public class ResponseIdValidationServiceTests
 {
-    private static ResponseIdValidationService CreateService()
-        => new(new MemoryCache(new MemoryCacheOptions()));
+    private static ResponseIdValidationService CreateService(MemoryCache cache) => new(cache);
 
     [Test]
     [Arguments(null)]
     [Arguments("")]
     public async Task ValidateResponseId_BlankResponseId_AllowsNewConversation(string? responseId)
     {
-        var service = CreateService();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = CreateService(cache);
 
         bool result = service.ValidateResponseId("user1", responseId);
 
@@ -25,7 +25,8 @@ public class ResponseIdValidationServiceTests
     [Arguments("")]
     public async Task ValidateResponseId_BlankUserId_Rejects(string? userId)
     {
-        var service = CreateService();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = CreateService(cache);
 
         bool result = service.ValidateResponseId(userId, "resp_123");
 
@@ -35,7 +36,8 @@ public class ResponseIdValidationServiceTests
     [Test]
     public async Task ValidateResponseId_CacheMiss_AllowsGracefulDegradation()
     {
-        var service = CreateService();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = CreateService(cache);
         // No RecordResponseId call — simulate server restart / different instance
 
         bool result = service.ValidateResponseId("user1", "resp_unknown");
@@ -46,7 +48,8 @@ public class ResponseIdValidationServiceTests
     [Test]
     public async Task ValidateResponseId_RecordedByOwner_Validates()
     {
-        var service = CreateService();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = CreateService(cache);
         service.RecordResponseId("user1", "resp_abc");
 
         bool result = service.ValidateResponseId("user1", "resp_abc");
@@ -57,7 +60,8 @@ public class ResponseIdValidationServiceTests
     [Test]
     public async Task ValidateResponseId_RecordedByDifferentUser_Rejects()
     {
-        var service = CreateService();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = CreateService(cache);
         service.RecordResponseId("user1", "resp_abc");
 
         bool result = service.ValidateResponseId("user2", "resp_abc");
@@ -68,7 +72,8 @@ public class ResponseIdValidationServiceTests
     [Test]
     public async Task RecordResponseId_NullInputs_DoesNotThrow()
     {
-        var service = CreateService();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = CreateService(cache);
 
         service.RecordResponseId(null, "resp_abc");
         service.RecordResponseId("user1", null);
@@ -82,7 +87,8 @@ public class ResponseIdValidationServiceTests
     [Test]
     public async Task ValidateResponseId_MultipleResponseIds_EachValidatedIndependently()
     {
-        var service = CreateService();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = CreateService(cache);
         service.RecordResponseId("user1", "resp_001");
         service.RecordResponseId("user1", "resp_002");
 
@@ -95,7 +101,8 @@ public class ResponseIdValidationServiceTests
     [Test]
     public async Task ValidateResponseId_TwoUsers_IsolatedFromEachOther()
     {
-        var service = CreateService();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = CreateService(cache);
         service.RecordResponseId("user1", "resp_A");
         service.RecordResponseId("user2", "resp_B");
 

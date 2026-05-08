@@ -88,7 +88,7 @@ public partial class ChatController : ControllerBase
 
         try
         {
-            string? finalResponseId = null;
+            bool responseIdRecorded = false;
 
             await foreach (var (text, responseId) in _AiChatService.GetChatCompletionStream(
                 prompt: request.Message,
@@ -106,16 +106,17 @@ public partial class ChatController : ControllerBase
 
                 if (!string.IsNullOrEmpty(responseId))
                 {
-                    finalResponseId = responseId;
+                    // Record ownership as soon as the response ID is first observed —
+                    // if the client disconnects mid-stream the ownership is still cached.
+                    if (!responseIdRecorded)
+                    {
+                        _ResponseIdValidationService.RecordResponseId(userId, responseId);
+                        responseIdRecorded = true;
+                    }
                     var eventData = JsonSerializer.Serialize(new { type = "responseId", data = responseId });
                     await Response.WriteAsync($"data: {eventData}\n\n", cancellationToken);
                     await Response.Body.FlushAsync(cancellationToken);
                 }
-            }
-
-            if (finalResponseId is not null)
-            {
-                _ResponseIdValidationService.RecordResponseId(userId, finalResponseId);
             }
 
             await Response.WriteAsync("data: [DONE]\n\n", cancellationToken);

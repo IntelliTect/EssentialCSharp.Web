@@ -33,7 +33,10 @@ public sealed class ResponseIdValidationService(IMemoryCache cache)
         // Create a fresh options instance per call — MemoryCacheEntryOptions has mutable
         // list properties (ExpirationTokens, PostEvictionCallbacks) and sharing a static
         // instance would cause future additions to affect all entries.
-        var entryOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(2));
+        // Size = 1 unit per entry is required when AddMemoryCache sets a SizeLimit.
+        var entryOptions = new MemoryCacheEntryOptions()
+            .SetSlidingExpiration(TimeSpan.FromHours(2))
+            .SetSize(1);
         cache.Set(ResponseKey(responseId), userId, entryOptions);
     }
 

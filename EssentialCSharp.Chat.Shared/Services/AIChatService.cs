@@ -65,7 +65,7 @@ public partial class AIChatService
     {
         var responseOptions = await CreateResponseOptionsAsync(previousResponseId, tools, reasoningEffortLevel, mcpClient: mcpClient, endUserId: endUserId, cancellationToken: cancellationToken);
         var enrichedPrompt = await EnrichPromptWithContext(prompt, enableContextualSearch, cancellationToken);
-        return await GetChatCompletionCore(enrichedPrompt, responseOptions, systemPrompt, mcpClient, cancellationToken);
+        return await GetChatCompletionCore(enrichedPrompt, responseOptions, systemPrompt, mcpClient, endUserId, cancellationToken);
     }
 
     /// <summary>
@@ -111,7 +111,7 @@ public partial class AIChatService
             options: responseOptions,
             cancellationToken: cancellationToken);
 
-        await foreach (var result in ProcessStreamingUpdatesAsync(streamingUpdates, responseOptions, mcpClient, toolCallDepth: 0, cancellationToken))
+        await foreach (var result in ProcessStreamingUpdatesAsync(streamingUpdates, responseOptions, mcpClient, toolCallDepth: 0, endUserId: endUserId, cancellationToken: cancellationToken))
         {
             yield return result;
         }
@@ -185,6 +185,7 @@ public partial class AIChatService
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         McpClient? mcpClient,
         int toolCallDepth = 0,
+        string? endUserId = null,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await foreach (var update in streamingUpdates.WithCancellation(cancellationToken))
@@ -193,8 +194,10 @@ public partial class AIChatService
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
             if (update is StreamingResponseCreatedUpdate created)
             {
-                // Remember the response ID for later function calls
+                // Emit the response ID early so the controller can record ownership
+                // before the stream completes — handles client disconnects mid-stream.
                 responseId = created.Response.Id;
+                yield return (string.Empty, responseId: responseId);
             }
             else if (update is StreamingResponseOutputItemDoneUpdate itemDone)
             {
@@ -205,7 +208,7 @@ public partial class AIChatService
                         throw new InvalidOperationException("Maximum tool call depth exceeded.");
 
                     // Execute the function call and stream its response
-                    await foreach (var functionResult in ExecuteFunctionCallAsync(functionCallItem, responseOptions, mcpClient, toolCallDepth + 1, cancellationToken))
+                    await foreach (var functionResult in ExecuteFunctionCallAsync(functionCallItem, responseOptions, mcpClient, toolCallDepth + 1, endUserId, cancellationToken))
                     {
                         if (functionResult.responseId != null)
                         {
@@ -237,12 +240,13 @@ public partial class AIChatService
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         McpClient mcpClient,
         int toolCallDepth,
+        string? endUserId = null,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         // Defense-in-depth: validate tool name against static allowlist before executing.
         if (!IsMcpToolAllowed(functionCallItem.FunctionName))
         {
-            LogMcpToolCallRejected(_Logger, functionCallItem.FunctionName);
+            LogMcpToolCallRejected(_Logger, functionCallItem.FunctionName, endUserId);
             // Feed a benign error back to the model so it can recover gracefully,
             // mirroring what GetChatCompletionCore does on the non-streaming path.
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
@@ -257,14 +261,14 @@ public partial class AIChatService
             var recoveryStream = _ResponseClient.CreateResponseStreamingAsync(
                 errorItems, responseOptions, cancellationToken);
             await foreach (var result in ProcessStreamingUpdatesAsync(
-                recoveryStream, responseOptions, mcpClient, toolCallDepth, cancellationToken))
+                recoveryStream, responseOptions, mcpClient, toolCallDepth, endUserId, cancellationToken))
             {
                 yield return result;
             }
             yield break;
         }
 
-        LogMcpToolCallInvokedStream(_Logger, functionCallItem.FunctionName, toolCallDepth);
+        LogMcpToolCallInvokedStream(_Logger, functionCallItem.FunctionName, toolCallDepth, endUserId);
         // A dictionary of arguments to pass to the tool. Each key represents a parameter name, and its associated value represents the argument value.
         Dictionary<string, object?> arguments = [];
         // example JsonResponse:
@@ -315,7 +319,7 @@ public partial class AIChatService
             responseOptions,
             cancellationToken);
 
-        await foreach (var result in ProcessStreamingUpdatesAsync(functionResponseStream, responseOptions, mcpClient, toolCallDepth, cancellationToken))
+        await foreach (var result in ProcessStreamingUpdatesAsync(functionResponseStream, responseOptions, mcpClient, toolCallDepth, endUserId, cancellationToken))
         {
             yield return result;
         }
@@ -402,6 +406,7 @@ public partial class AIChatService
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         string? systemPrompt = null,
         McpClient? mcpClient = null,
+        string? endUserId = null,
         CancellationToken cancellationToken = default)
     {
         // Construct the user input with system context if provided
@@ -434,7 +439,7 @@ public partial class AIChatService
                     // This catches cases where the model hallucinates a tool name not on the list.
                     if (!IsMcpToolAllowed(functionCallItem.FunctionName))
                     {
-                        LogMcpToolCallRejected(_Logger, functionCallItem.FunctionName);
+                        LogMcpToolCallRejected(_Logger, functionCallItem.FunctionName, endUserId);
                         // Return a benign error to the model so it can respond gracefully
                         responseItems.Add(functionCallItem);
                         responseItems.Add(new FunctionCallOutputResponseItem(
@@ -443,7 +448,7 @@ public partial class AIChatService
                         continue;
                     }
 
-                    LogMcpToolCallInvoked(_Logger, functionCallItem.FunctionName, iteration);
+                    LogMcpToolCallInvoked(_Logger, functionCallItem.FunctionName, iteration, endUserId);
                     var jsonResponse = functionCallItem.FunctionArguments.ToString();
                     var jsonArguments = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(jsonResponse) ?? new Dictionary<string, object?>();
 
@@ -500,14 +505,14 @@ public partial class AIChatService
         return _AllowedMcpTools.Contains(toolName);
     }
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "AI tool call invoked: tool={ToolName} iteration={Iteration}")]
-    private static partial void LogMcpToolCallInvoked(ILogger logger, string toolName, int iteration);
+    [LoggerMessage(Level = LogLevel.Information, Message = "AI tool call invoked: tool={ToolName} iteration={Iteration} user={EndUserId}")]
+    private static partial void LogMcpToolCallInvoked(ILogger logger, string toolName, int iteration, string? endUserId);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "AI tool call invoked (streaming): tool={ToolName} depth={Depth}")]
-    private static partial void LogMcpToolCallInvokedStream(ILogger logger, string toolName, int depth);
+    [LoggerMessage(Level = LogLevel.Information, Message = "AI tool call invoked (streaming): tool={ToolName} depth={Depth} user={EndUserId}")]
+    private static partial void LogMcpToolCallInvokedStream(ILogger logger, string toolName, int depth, string? endUserId);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "AI tool call rejected — not on allowlist: tool={ToolName}")]
-    private static partial void LogMcpToolCallRejected(ILogger logger, string toolName);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "AI tool call rejected — not on allowlist: tool={ToolName} user={EndUserId}")]
+    private static partial void LogMcpToolCallRejected(ILogger logger, string toolName, string? endUserId);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "MCP tool skipped during option setup — not on allowlist: tool={ToolName}")]
     private static partial void LogMcpToolSkippedNotAllowed(ILogger logger, string toolName);
