@@ -190,14 +190,12 @@ public partial class AIChatService
     {
         await foreach (var update in streamingUpdates.WithCancellation(cancellationToken))
         {
-            string? responseId;
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
             if (update is StreamingResponseCreatedUpdate created)
             {
                 // Emit the response ID early so the controller can record ownership
                 // before the stream completes — handles client disconnects mid-stream.
-                responseId = created.Response.Id;
-                yield return (string.Empty, responseId: responseId);
+                yield return (string.Empty, responseId: created.Response.Id);
             }
             else if (update is StreamingResponseOutputItemDoneUpdate itemDone)
             {
@@ -207,13 +205,11 @@ public partial class AIChatService
                     if (toolCallDepth >= 10)
                         throw new InvalidOperationException("Maximum tool call depth exceeded.");
 
-                    // Execute the function call and stream its response
+                    // Execute the function call and stream its response.
+                    // Each nested ProcessStreamingUpdatesAsync emits its own StreamingResponseCreatedUpdate
+                    // (which already yields its responseId early), so no extra tracking is needed here.
                     await foreach (var functionResult in ExecuteFunctionCallAsync(functionCallItem, responseOptions, mcpClient, toolCallDepth + 1, endUserId, cancellationToken))
                     {
-                        if (functionResult.responseId != null)
-                        {
-                            responseId = functionResult.responseId;
-                        }
                         yield return functionResult;
                     }
                 }
@@ -222,9 +218,10 @@ public partial class AIChatService
             {
                 yield return (deltaUpdate.Delta.ToString(), null);
             }
-            else if (update is StreamingResponseCompletedUpdate completedUpdate)
+            else if (update is StreamingResponseCompletedUpdate)
             {
-                yield return (string.Empty, responseId: completedUpdate.Response.Id); // Signal completion with response ID
+                // ResponseId was already emitted from StreamingResponseCreatedUpdate at the start
+                // of this response leg — no need to emit again from the completion event.
             }
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         }

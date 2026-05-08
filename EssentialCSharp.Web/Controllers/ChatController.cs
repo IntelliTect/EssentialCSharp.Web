@@ -33,6 +33,8 @@ public partial class ChatController : ControllerBase
             return BadRequest(new { error = "Message cannot be empty." });
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized();
 
         var previousResponseId = string.IsNullOrWhiteSpace(request.PreviousResponseId)
             ? null
@@ -70,6 +72,12 @@ public partial class ChatController : ControllerBase
         }
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            Response.StatusCode = 401;
+            await Response.WriteAsJsonAsync(new { error = "Unauthorized." }, CancellationToken.None);
+            return;
+        }
 
         var previousResponseId = string.IsNullOrWhiteSpace(request.PreviousResponseId)
             ? null
@@ -88,8 +96,6 @@ public partial class ChatController : ControllerBase
 
         try
         {
-            bool responseIdRecorded = false;
-
             await foreach (var (text, responseId) in _AiChatService.GetChatCompletionStream(
                 prompt: request.Message,
                 previousResponseId: previousResponseId,
@@ -106,13 +112,10 @@ public partial class ChatController : ControllerBase
 
                 if (!string.IsNullOrEmpty(responseId))
                 {
-                    // Record ownership as soon as the response ID is first observed —
-                    // if the client disconnects mid-stream the ownership is still cached.
-                    if (!responseIdRecorded)
-                    {
-                        _ResponseIdValidationService.RecordResponseId(userId, responseId);
-                        responseIdRecorded = true;
-                    }
+                    // Record ownership for every responseId emitted — one per API call leg
+                    // (initial request + each tool-call continuation). This ensures all leg IDs
+                    // are bound to the authenticated user before being forwarded to the client.
+                    _ResponseIdValidationService.RecordResponseId(userId, responseId);
                     var eventData = JsonSerializer.Serialize(new { type = "responseId", data = responseId });
                     await Response.WriteAsync($"data: {eventData}\n\n", cancellationToken);
                     await Response.Body.FlushAsync(cancellationToken);
