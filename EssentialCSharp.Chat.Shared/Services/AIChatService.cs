@@ -54,9 +54,9 @@ public class AIChatService
         bool enableContextualSearch = false,
         CancellationToken cancellationToken = default)
     {
-        var responseOptions = await CreateResponseOptionsAsync(previousResponseId, tools, reasoningEffortLevel, mcpClient: mcpClient, cancellationToken: cancellationToken);
+        var responseOptions = await CreateResponseOptionsAsync(systemPrompt, previousResponseId, tools, reasoningEffortLevel, mcpClient: mcpClient, cancellationToken: cancellationToken);
         var enrichedPrompt = await EnrichPromptWithContext(prompt, enableContextualSearch, cancellationToken);
-        return await GetChatCompletionCore(enrichedPrompt, responseOptions, systemPrompt, cancellationToken);
+        return await GetChatCompletionCore(enrichedPrompt, responseOptions, cancellationToken);
     }
 
     /// <summary>
@@ -82,17 +82,12 @@ public class AIChatService
         bool enableContextualSearch = false,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var responseOptions = await CreateResponseOptionsAsync(previousResponseId, tools, reasoningEffortLevel, mcpClient: mcpClient, cancellationToken: cancellationToken);
+        var responseOptions = await CreateResponseOptionsAsync(systemPrompt, previousResponseId, tools, reasoningEffortLevel, mcpClient: mcpClient, cancellationToken: cancellationToken);
         var enrichedPrompt = await EnrichPromptWithContext(prompt, enableContextualSearch, cancellationToken);
-
-        // Construct the user input with system context if provided
-        var systemContext = !string.IsNullOrWhiteSpace(systemPrompt) ? systemPrompt : _Options.SystemPrompt;
 
         // Create the streaming response using the Responses API
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        List<ResponseItem> responseItems = systemContext is not null
-            ? [ResponseItem.CreateSystemMessageItem(systemContext), ResponseItem.CreateUserMessageItem(enrichedPrompt)]
-            : [ResponseItem.CreateUserMessageItem(enrichedPrompt)];
+        List<ResponseItem> responseItems = [ResponseItem.CreateUserMessageItem(enrichedPrompt)];
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         var streamingUpdates = _ResponseClient.CreateResponseStreamingAsync(
             responseItems,
@@ -254,7 +249,8 @@ public class AIChatService
     /// Creates response options with optional features
     /// </summary>
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-    private static async Task<ResponseCreationOptions> CreateResponseOptionsAsync(
+    private async Task<ResponseCreationOptions> CreateResponseOptionsAsync(
+        string? systemPrompt = null,
         string? previousResponseId = null,
         IEnumerable<ResponseTool>? tools = null,
         ResponseReasoningEffortLevel? reasoningEffortLevel = null,
@@ -264,6 +260,14 @@ public class AIChatService
     {
         var options = new ResponseCreationOptions();
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
+        // Set the system prompt via Instructions — this is stateless across turns when using previous_response_id,
+        // preventing accumulation of system messages in the conversation context.
+        var resolvedSystemPrompt = !string.IsNullOrWhiteSpace(systemPrompt) ? systemPrompt : _Options.SystemPrompt;
+        if (resolvedSystemPrompt is not null)
+        {
+            options.Instructions = resolvedSystemPrompt;
+        }
 
         // Add conversation context if available
         if (!string.IsNullOrEmpty(previousResponseId))
@@ -312,20 +316,13 @@ public class AIChatService
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         ResponseCreationOptions responseOptions,
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        string? systemPrompt = null,
         CancellationToken cancellationToken = default)
     {
-        // Construct the user input with system context if provided
-        var systemContext = !string.IsNullOrWhiteSpace(systemPrompt) ? systemPrompt : _Options.SystemPrompt;
-
-        // Create the streaming response using the Responses API
+        // Create the response using the Responses API
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        List<ResponseItem> responseItems = systemContext is not null
-            ? [ResponseItem.CreateSystemMessageItem(systemContext), ResponseItem.CreateUserMessageItem(prompt)]
-            : [ResponseItem.CreateUserMessageItem(prompt)];
+        List<ResponseItem> responseItems = [ResponseItem.CreateUserMessageItem(prompt)];
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
-        // Create the response using the Responses API
         var response = await _ResponseClient.CreateResponseAsync(
             responseItems,
             options: responseOptions,
