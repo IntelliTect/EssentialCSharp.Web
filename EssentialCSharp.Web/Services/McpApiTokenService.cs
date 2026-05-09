@@ -10,6 +10,7 @@ namespace EssentialCSharp.Web.Services;
 public class McpApiTokenService(EssentialCSharpWebContext db)
 {
     public const int DefaultLifetimeMonths = 6;
+    public const int MaxTokensPerUser = 10;
     public static readonly string MaxExpiryValidationMessage = $"MCP tokens can expire at most {DefaultLifetimeMonths} months from today.";
 
     public sealed record ResolvedMcpApiToken(Guid TokenId, string UserId);
@@ -31,6 +32,8 @@ public class McpApiTokenService(EssentialCSharpWebContext db)
     /// <summary>
     /// Creates a new named API token for the specified user.
     /// Returns the raw token (shown once — never stored).
+    /// Throws <see cref="TokenLimitExceededException"/> if the user is already at <see cref="MaxTokensPerUser"/>.
+    /// The limit check and insert are wrapped in a serializable transaction to prevent races.
     /// </summary>
     public async Task<(string RawToken, McpApiToken Entity)> CreateTokenAsync(
         string userId,
@@ -39,6 +42,17 @@ public class McpApiTokenService(EssentialCSharpWebContext db)
         DateTime? createdAtUtc = null,
         CancellationToken cancellationToken = default)
     {
+        using var tx = await db.Database.BeginTransactionAsync(
+            System.Data.IsolationLevel.Serializable, cancellationToken);
+
+        int activeCount = await GetActiveTokenCountAsync(userId, cancellationToken);
+        if (activeCount >= MaxTokensPerUser)
+        {
+            // Explicit rollback not needed — `using var tx` disposes and rolls back automatically
+            // when CommitAsync is never called, but we throw here immediately.
+            throw new TokenLimitExceededException(MaxTokensPerUser);
+        }
+
         string raw = GenerateRawToken();
         DateTime createdAt = createdAtUtc ?? DateTime.UtcNow;
         DateTime effectiveExpiration = ResolveExpiration(expiresAt, createdAt);
@@ -53,6 +67,7 @@ public class McpApiTokenService(EssentialCSharpWebContext db)
         };
         db.McpApiTokens.Add(entity);
         await db.SaveChangesAsync(cancellationToken);
+        await tx.CommitAsync(cancellationToken);
         return (raw, entity);
     }
 
@@ -81,6 +96,19 @@ public class McpApiTokenService(EssentialCSharpWebContext db)
             .Where(t => t.Id == tokenId && t.UserId == userId && t.RevokedAt == null)
             .ExecuteUpdateAsync(s => s.SetProperty(t => t.RevokedAt, DateTime.UtcNow), cancellationToken);
         return rows > 0;
+    }
+
+    /// <summary>Returns the count of active (non-revoked, non-expired) tokens for the specified user.</summary>
+    public Task<int> GetActiveTokenCountAsync(
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        DateTime now = DateTime.UtcNow;
+        return db.McpApiTokens
+            .Where(t => t.UserId == userId
+                     && t.RevokedAt == null
+                     && (t.ExpiresAt == null || t.ExpiresAt > now))
+            .CountAsync(cancellationToken);
     }
 
     /// <summary>Returns all tokens for the user (metadata only — no raw values).</summary>

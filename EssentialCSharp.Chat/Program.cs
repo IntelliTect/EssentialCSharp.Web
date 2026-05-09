@@ -218,7 +218,7 @@ public class Program
                         var fullResponse = new System.Text.StringBuilder();
 
                         await foreach (var (text, responseId) in aiChatService.GetChatCompletionStream(
-                            prompt: userInput/*, mcpClient: mcpClient*/, previousResponseId: previousResponseId, systemPrompt: customSystemPrompt, cancellationToken: cancellationToken))
+                            prompt: userInput/*, mcpClient: mcpClient*/, previousResponseId: previousResponseId, systemPrompt: customSystemPrompt, endUserId: "console-local", cancellationToken: cancellationToken))
                         {
                             if (!string.IsNullOrEmpty(text))
                             {
@@ -238,7 +238,7 @@ public class Program
                     {
                         // Non-streaming response with optional tools and conversation context
                         var (response, responseId) = await aiChatService.GetChatCompletion(
-                           prompt: userInput, previousResponseId: previousResponseId, systemPrompt: customSystemPrompt, cancellationToken: cancellationToken);
+                           prompt: userInput, previousResponseId: previousResponseId, systemPrompt: customSystemPrompt, endUserId: "console-local", cancellationToken: cancellationToken);
 
                         Console.WriteLine(response);
                         conversationHistory.Add(("Assistant", response));
