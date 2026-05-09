@@ -264,7 +264,7 @@ public class AIChatService
         // Set the system prompt via Instructions — this is stateless across turns when using previous_response_id,
         // preventing accumulation of system messages in the conversation context.
         var resolvedSystemPrompt = !string.IsNullOrWhiteSpace(systemPrompt) ? systemPrompt : _Options.SystemPrompt;
-        if (resolvedSystemPrompt is not null)
+        if (!string.IsNullOrWhiteSpace(resolvedSystemPrompt))
         {
             options.Instructions = resolvedSystemPrompt;
         }
