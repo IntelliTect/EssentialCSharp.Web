@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage;
 
-public class EnableAuthenticatorModel(
+public partial class EnableAuthenticatorModel(
     UserManager<EssentialCSharpWebUser> userManager,
     ILogger<EnableAuthenticatorModel> logger,
     UrlEncoder urlEncoder) : PageModel
@@ -90,7 +90,7 @@ public class EnableAuthenticatorModel(
 
         await userManager.SetTwoFactorEnabledAsync(user, true);
         string userId = await userManager.GetUserIdAsync(user);
-        logger.LogInformation("User with ID '{UserId}' has enabled 2FA with an authenticator app.", userId);
+        LogUserEnabled2fa(logger, userId);
 
         StatusMessage = "Your authenticator app has been verified.";
 
@@ -159,4 +159,7 @@ public class EnableAuthenticatorModel(
             urlEncoder.Encode(email),
             unformattedKey);
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "User with ID '{UserId}' has enabled 2FA with an authenticator app.")]
+    private static partial void LogUserEnabled2fa(ILogger<EnableAuthenticatorModel> logger, string userId);
 }

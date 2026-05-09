@@ -6,16 +6,20 @@ using Npgsql;
 
 namespace EssentialCSharp.Chat.Common.Services;
 
-public class AISearchService(
+public partial class AISearchService(
     VectorStore vectorStore,
     EmbeddingService embeddingService,
     ILogger<AISearchService> logger)
 {
     // TODO: Implement Hybrid Search functionality, may need to switch db providers to support full text search?
 
+    public const int DefaultSearchTop = 5;
+    public const int MaxSearchTop = 10;
+
     public async Task<IReadOnlyList<VectorSearchResult<BookContentChunk>>> ExecuteVectorSearch(
-        string query, string? collectionName = null, CancellationToken cancellationToken = default)
+        string query, string? collectionName = null, int top = DefaultSearchTop, CancellationToken cancellationToken = default)
     {
+        top = Math.Clamp(top, 1, MaxSearchTop);
         collectionName ??= EmbeddingService.CollectionName;
 
         VectorStoreCollection<string, BookContentChunk> collection = vectorStore.GetCollection<string, BookContentChunk>(collectionName);
@@ -32,7 +36,7 @@ public class AISearchService(
             try
             {
                 var results = new List<VectorSearchResult<BookContentChunk>>();
-                await foreach (var result in collection.SearchAsync(searchVector, options: vectorSearchOptions, top: 3, cancellationToken: cancellationToken))
+                await foreach (var result in collection.SearchAsync(searchVector, options: vectorSearchOptions, top: top, cancellationToken: cancellationToken))
                 {
                     results.Add(result);
                 }
@@ -45,10 +49,13 @@ public class AISearchService(
                 // needed (clearing would evict all healthy connections, hurting concurrent users).
                 // The retry opens a fresh physical connection, which calls UsePasswordProvider
                 // and gets a new token from DefaultAzureCredential.
-                logger.LogWarning(ex, "Entra ID token expired on pooled connection (SqlState 28000); retrying once.");
+                LogEntraIdTokenExpired(logger, ex);
             }
         }
 
         throw new UnreachableException("Retry loop exited without returning or throwing.");
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Entra ID token expired on pooled connection (SqlState 28000); retrying once.")]
+    private static partial void LogEntraIdTokenExpired(ILogger<AISearchService> logger, Exception exception);
 }

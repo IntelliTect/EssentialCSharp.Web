@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
-public class LoginModel(SignInManager<EssentialCSharpWebUser> signInManager, UserManager<EssentialCSharpWebUser> userManager, ILogger<LoginModel> logger, IReferralService referralService, ICaptchaService captchaService, IOptions<CaptchaOptions> optionsAccessor) : PageModel
+public partial class LoginModel(SignInManager<EssentialCSharpWebUser> signInManager, UserManager<EssentialCSharpWebUser> userManager, ILogger<LoginModel> logger, IReferralService referralService, ICaptchaService captchaService, IOptions<CaptchaOptions> optionsAccessor) : PageModel
 {
     private InputModel? _Input;
     [BindProperty]
@@ -102,7 +102,7 @@ public class LoginModel(SignInManager<EssentialCSharpWebUser> signInManager, Use
             }
             if (result.Succeeded)
             {
-                logger.LogInformation("User logged in.");
+                LogUserLoggedIn(logger);
                 return LocalRedirect(returnUrl);
             }
             if (result.RequiresTwoFactor)
@@ -111,7 +111,7 @@ public class LoginModel(SignInManager<EssentialCSharpWebUser> signInManager, Use
             }
             if (result.IsLockedOut)
             {
-                logger.LogWarning("User account locked out.");
+                LogUserAccountLockedOut(logger);
                 return RedirectToPage("./Lockout");
             }
             else
@@ -124,4 +124,10 @@ public class LoginModel(SignInManager<EssentialCSharpWebUser> signInManager, Use
         // If we got this far, something failed, redisplay form
         return Page();
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "User logged in.")]
+    private static partial void LogUserLoggedIn(ILogger<LoginModel> logger);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "User account locked out.")]
+    private static partial void LogUserAccountLockedOut(ILogger<LoginModel> logger);
 }

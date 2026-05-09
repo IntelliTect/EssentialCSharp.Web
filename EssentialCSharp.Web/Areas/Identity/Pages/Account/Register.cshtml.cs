@@ -14,7 +14,7 @@ using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
-public class RegisterModel(
+public partial class RegisterModel(
     UserManager<EssentialCSharpWebUser> userManager,
     IUserStore<EssentialCSharpWebUser> userStore,
     SignInManager<EssentialCSharpWebUser> signInManager,
@@ -114,7 +114,7 @@ public class RegisterModel(
             await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
             if (Input.Password is null)
             {
-                logger.LogInformation("Error: Password null; please enter in a password");
+                LogPasswordNull(logger);
                 ModelState.AddModelError(string.Empty, "Error: Password null; please enter in a password");
                 return Page();
             }
@@ -122,7 +122,7 @@ public class RegisterModel(
 
             if (result.Succeeded)
             {
-                logger.LogInformation("User created a new account with password.");
+                LogUserCreatedWithPassword(logger);
 
                 string userId = await userManager.GetUserIdAsync(user);
                 string code = await userManager.GenerateEmailConfirmationTokenAsync(user);
@@ -166,18 +166,18 @@ public class RegisterModel(
             switch (response.ErrorCodes?.Length)
             {
                 case 0:
-                    logger.LogError("HCaptcha determined the passcode is not valid with zero error codes");
+                    LogHCaptchaNoErrorCodes(logger);
                     ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
                     break;
                 case > 1:
-                    logger.LogError("HCaptcha returned multiple error codes: {ErrorCodes}", string.Join(", ", response.ErrorCodes));
+                    LogHCaptchaMultipleErrorCodes(logger, string.Join(", ", response.ErrorCodes));
                     ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
                     break;
                 default:
                     {
                         if (response.ErrorCodes is null)
                         {
-                            logger.LogError("HCaptcha returned null error codes with Success=false");
+                            LogHCaptchaNullErrorCodes(logger);
                             ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
                             break;
                         }
@@ -189,28 +189,28 @@ public class RegisterModel(
                                 case HCaptchaErrorDetails.InvalidInputResponse:
                                 case HCaptchaErrorDetails.InvalidOrAlreadySeenResponse:
                                     ModelState.AddModelError(string.Empty, details.FriendlyDescription);
-                                    logger.LogInformation("HCaptcha returned error code: {ErrorDetails}", details.ToString());
+                                    LogHCaptchaErrorCode(logger, details.ToString());
                                     break;
                                 case HCaptchaErrorDetails.BadRequest:
                                     ModelState.AddModelError(string.Empty, details.FriendlyDescription);
-                                    logger.LogInformation("HCaptcha returned error code: {ErrorDetails}", details.ToString());
+                                    LogHCaptchaErrorCode(logger, details.ToString());
                                     break;
                                 case HCaptchaErrorDetails.MissingInputSecret:
                                 case HCaptchaErrorDetails.InvalidInputSecret:
                                 case HCaptchaErrorDetails.NotUsingDummyPasscode:
                                 case HCaptchaErrorDetails.SitekeySecretMismatch:
-                                    logger.LogCritical("HCaptcha returned error code: {ErrorDetails}", details.ToString());
+                                    LogHCaptchaCriticalErrorCode(logger, details.ToString());
                                     ModelState.AddModelError(string.Empty, "Captcha verification is temporarily unavailable. Please try again later.");
                                     break;
                                 default:
-                                    logger.LogError("HCaptcha returned unknown error code: {ErrorCode}", details?.ErrorCode);
+                                    LogHCaptchaUnknownErrorCode(logger, details?.ErrorCode);
                                     ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
                                     break;
                             }
                         }
                         else
                         {
-                            logger.LogError("HCaptcha returned unrecognized error code: {ErrorCode}", response.ErrorCodes.Single());
+                            LogHCaptchaUnrecognizedErrorCode(logger, response.ErrorCodes.Single());
                             ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
                         }
 
@@ -237,4 +237,31 @@ public class RegisterModel(
                 $"override the register page in /Areas/Identity/Pages/Account/Register.cshtml");
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Password null; please enter in a password")]
+    private static partial void LogPasswordNull(ILogger<RegisterModel> logger);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "User created a new account with password.")]
+    private static partial void LogUserCreatedWithPassword(ILogger<RegisterModel> logger);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "HCaptcha determined the passcode is not valid with zero error codes")]
+    private static partial void LogHCaptchaNoErrorCodes(ILogger<RegisterModel> logger);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "HCaptcha returned multiple error codes: {ErrorCodes}")]
+    private static partial void LogHCaptchaMultipleErrorCodes(ILogger<RegisterModel> logger, string errorCodes);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "HCaptcha returned null error codes with Success=false")]
+    private static partial void LogHCaptchaNullErrorCodes(ILogger<RegisterModel> logger);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "HCaptcha returned error code: {ErrorDetails}")]
+    private static partial void LogHCaptchaErrorCode(ILogger<RegisterModel> logger, string errorDetails);
+
+    [LoggerMessage(Level = LogLevel.Critical, Message = "HCaptcha returned error code: {ErrorDetails}")]
+    private static partial void LogHCaptchaCriticalErrorCode(ILogger<RegisterModel> logger, string errorDetails);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "HCaptcha returned unknown error code: {ErrorCode}")]
+    private static partial void LogHCaptchaUnknownErrorCode(ILogger<RegisterModel> logger, string? errorCode);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "HCaptcha returned unrecognized error code: {ErrorCode}")]
+    private static partial void LogHCaptchaUnrecognizedErrorCode(ILogger<RegisterModel> logger, string errorCode);
 }

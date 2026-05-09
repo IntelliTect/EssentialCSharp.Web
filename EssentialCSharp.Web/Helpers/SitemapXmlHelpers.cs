@@ -1,5 +1,4 @@
 using DotnetSitemapGenerator;
-using DotnetSitemapGenerator.Serialization;
 using EssentialCSharp.Web.Services;
 
 namespace EssentialCSharp.Web.Helpers;
@@ -19,27 +18,15 @@ public static class SitemapXmlHelpers
         }
     }
 
-    public static void GenerateAndSerializeSitemapXml(DirectoryInfo wwwrootDirectory, List<SiteMapping> siteMappings, ILogger logger, IRouteConfigurationService routeConfigurationService, string baseUrl)
+    public static void GenerateSitemapXml(IEnumerable<SiteMapping> siteMappings, IRouteConfigurationService routeConfigurationService, string baseUrl, out List<SitemapNode> nodes)
     {
-        GenerateSitemapXml(wwwrootDirectory, siteMappings, routeConfigurationService, baseUrl, out List<SitemapNode> nodes);
-        XmlSerializer sitemapProvider = new();
-        var xmlPath = Path.Join(wwwrootDirectory.FullName, "sitemap.xml");
-        sitemapProvider.Serialize(new SitemapModel(nodes), xmlPath, true);
-        logger.LogInformation("sitemap.xml successfully written to {XmlPath}", xmlPath);
-    }
-
-    public static void GenerateSitemapXml(DirectoryInfo wwwrootDirectory, List<SiteMapping> siteMappings, IRouteConfigurationService routeConfigurationService, string baseUrl, out List<SitemapNode> nodes)
-    {
-        DateTime newDateTime = DateTime.UtcNow;
-
         // Routes should end up with leading slash
         baseUrl = baseUrl.TrimEnd('/');
 
-        // Start with the root URL
+        // Start with the root URL — no LastModificationDate: it doesn't change per-request
         nodes = new() {
             new($"{baseUrl}/")
             {
-                LastModificationDate = newDateTime,
                 ChangeFrequency = ChangeFrequency.Daily,
                 Priority = 1.0M
             }
@@ -48,31 +35,42 @@ public static class SitemapXmlHelpers
         // Add routes dynamically discovered from controllers
         var allRoutes = routeConfigurationService.GetStaticRoutes();
         var controllerRoutes = allRoutes
-            .Where(route => !route.Contains("error", StringComparison.OrdinalIgnoreCase)) // Skip Error actions for sitemap
-            .Where(route => !route.Contains("index", StringComparison.OrdinalIgnoreCase)) // Skip Index actions for sitemap
-            .Where(route => !route.Contains("identity", StringComparison.OrdinalIgnoreCase)) // Skip Identity actions for sitemap
-        // All routes should have leading slash
-            .Select(route => $"/{route}") // Add leading slash for sitemap URLs
+            .Where(route => !route.Contains("error", StringComparison.OrdinalIgnoreCase))
+            .Where(route => !route.Contains("index", StringComparison.OrdinalIgnoreCase))
+            .Where(route => !route.Contains("identity", StringComparison.OrdinalIgnoreCase))
+            .Where(route => !IsSitemapRoute(route))
+            .Select(route => $"/{route}")
             .ToList();
 
         foreach (var route in controllerRoutes)
         {
             nodes.Add(new($"{baseUrl}{route}")
             {
-                LastModificationDate = newDateTime,
                 ChangeFrequency = GetChangeFrequencyForRoute(route),
                 Priority = GetPriorityForRoute(route)
             });
         }
 
         // Add site mappings from content
-        nodes.AddRange(siteMappings.Where(item => item.IncludeInSitemapXml).Select<SiteMapping, SitemapNode>(siteMapping => new($"{baseUrl.TrimEnd('/')}/{siteMapping.Keys.First()}")
+        nodes.AddRange(siteMappings.Where(item => item.IncludeInSitemapXml).Select(siteMapping =>
         {
-            LastModificationDate = siteMapping.LastModified ?? newDateTime,
-            ChangeFrequency = ChangeFrequency.Daily,
-            Priority = 0.8M
+            SitemapNode node = new($"{baseUrl.TrimEnd('/')}/{siteMapping.Keys.First()}")
+            {
+                ChangeFrequency = ChangeFrequency.Daily,
+                Priority = 0.8M
+            };
+
+            if (siteMapping.LastModified is DateTime lastModified)
+            {
+                node.LastModificationDate = lastModified;
+            }
+
+            return node;
         }));
     }
+
+    private static bool IsSitemapRoute(string route) =>
+        route.TrimStart('/').Equals("sitemap.xml", StringComparison.OrdinalIgnoreCase);
 
     private static ChangeFrequency GetChangeFrequencyForRoute(string route)
     {
@@ -97,4 +95,5 @@ public static class SitemapXmlHelpers
             _ => 0.5M
         };
     }
+
 }

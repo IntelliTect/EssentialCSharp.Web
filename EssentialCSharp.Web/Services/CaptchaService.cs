@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Services;
 
-public class CaptchaService(IHttpClientFactory clientFactory, IOptions<CaptchaOptions> optionsAccessor, ILogger<CaptchaService> logger) : ICaptchaService
+public partial class CaptchaService(IHttpClientFactory clientFactory, IOptions<CaptchaOptions> optionsAccessor, ILogger<CaptchaService> logger) : ICaptchaService
 {
     private IHttpClientFactory ClientFactory { get; } = clientFactory;
     private CaptchaOptions Options { get; } = optionsAccessor.Value;
@@ -53,7 +53,7 @@ public class CaptchaService(IHttpClientFactory clientFactory, IOptions<CaptchaOp
         {
             if (!string.Equals(result.Hostname, expectedHostname, StringComparison.OrdinalIgnoreCase))
             {
-                logger.LogWarning("hCaptcha hostname mismatch: expected {Expected}, got {Actual}", expectedHostname, result.Hostname);
+                LogHostnameMismatch(logger, expectedHostname, result.Hostname);
                 result.Success = false;
             }
         }
@@ -76,8 +76,14 @@ public class CaptchaService(IHttpClientFactory clientFactory, IOptions<CaptchaOp
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
         {
-            logger.LogError(ex, "hCaptcha siteverify request failed");
+            LogSiteverifyFailed(logger, ex);
             return null;
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "hCaptcha hostname mismatch: expected {Expected}, got {Actual}")]
+    private static partial void LogHostnameMismatch(ILogger<CaptchaService> logger, string expected, string? actual);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "hCaptcha siteverify request failed")]
+    private static partial void LogSiteverifyFailed(ILogger<CaptchaService> logger, Exception exception);
 }

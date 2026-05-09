@@ -26,6 +26,8 @@ public static class ManageNavPages
 
     public static string Referrals => "Referrals";
 
+    public static string McpAccess => "McpAccess";
+
     public static string? IndexNavClass(ViewContext viewContext) => PageNavClass(viewContext, Index);
 
     public static string? EmailNavClass(ViewContext viewContext) => PageNavClass(viewContext, Email);
@@ -43,6 +45,8 @@ public static class ManageNavPages
     public static string? TwoFactorAuthenticationNavClass(ViewContext viewContext) => PageNavClass(viewContext, TwoFactorAuthentication);
 
     public static string? ReferralsNavClass(ViewContext viewContext) => PageNavClass(viewContext, Referrals);
+
+    public static string? McpAccessNavClass(ViewContext viewContext) => PageNavClass(viewContext, McpAccess);
 
     public static string? PageNavClass(ViewContext viewContext, string page)
     {

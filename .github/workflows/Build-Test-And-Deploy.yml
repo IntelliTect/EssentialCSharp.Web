@@ -71,6 +71,8 @@ jobs:
           push: false
           tags: temp-pr-validation
           file: ./EssentialCSharp.Web/Dockerfile
+          context: .
+          build-args: ACCESS_TO_NUGET_FEED=false
 
       - name: Build Container Image
         if: github.event_name != 'pull_request_target' && github.event_name != 'pull_request'
@@ -80,7 +82,7 @@ jobs:
           file: ./EssentialCSharp.Web/Dockerfile
           context: .
           secrets: |
-            "nuget_auth_token=${{ secrets.AZURE_DEVOPS_PAT }}"
+            "nuget_pat=${{ secrets.AZURE_DEVOPS_PAT }}"
           outputs: type=docker,dest=${{ github.workspace }}/essentialcsharpwebimage.tar
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -172,7 +174,7 @@ jobs:
               AIOptions__Endpoint=secretref:ai-endpoint AIOptions__VectorGenerationDeploymentName=secretref:ai-vectordeployment AIOptions__ChatDeploymentName=secretref:ai-chatdeployment \
               AIOptions__SystemPrompt=secretref:ai-systemprompt ConnectionStrings__PostgresVectorStore=secretref:postgres-vectorstore-connectionstring \
               TryDotNet__Origin=$TRYDOTNET_ORIGIN DataProtection__AzureKeyVaultKeyUri=$KEYVAULTURI/keys/dataprotection \
-              HCaptcha__ExpectedHostname=staging.essentialcsharp.com
+              HCaptcha__ExpectedHostname=essentialcsharp.com
       - name: Logout of Azure CLI
         if: always()
         uses: azure/CLI@v3

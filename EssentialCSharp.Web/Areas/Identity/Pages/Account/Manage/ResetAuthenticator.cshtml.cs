@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage;
 
-public class ResetAuthenticatorModel(
+public partial class ResetAuthenticatorModel(
     UserManager<EssentialCSharpWebUser> userManager,
     SignInManager<EssentialCSharpWebUser> signInManager,
     ILogger<ResetAuthenticatorModel> logger) : PageModel
@@ -35,11 +35,14 @@ public class ResetAuthenticatorModel(
         await userManager.SetTwoFactorEnabledAsync(user, false);
         await userManager.ResetAuthenticatorKeyAsync(user);
         _ = await userManager.GetUserIdAsync(user);
-        logger.LogInformation("User with ID '{UserId}' has reset their authentication app key.", user.Id);
+        LogUserResetAuthenticatorKey(logger, user.Id);
 
         await signInManager.RefreshSignInAsync(user);
         StatusMessage = "Your authenticator app key has been reset, you will need to configure your authenticator app using the new key.";
 
         return RedirectToPage("./EnableAuthenticator");
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "User with ID '{UserId}' has reset their authentication app key.")]
+    private static partial void LogUserResetAuthenticatorKey(ILogger<ResetAuthenticatorModel> logger, string userId);
 }

@@ -17,7 +17,7 @@ namespace EssentialCSharp.Web.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.6")
+                .HasAnnotation("ProductVersion", "10.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -94,6 +94,51 @@ namespace EssentialCSharp.Web.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("EssentialCSharp.Web.Models.McpApiToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varbinary(32)");
+
+                    b.Property<long>("UsageCount")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("McpApiTokens");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
@@ -250,6 +295,17 @@ namespace EssentialCSharp.Web.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("EssentialCSharp.Web.Models.McpApiToken", b =>
+                {
+                    b.HasOne("EssentialCSharp.Web.Areas.Identity.Data.EssentialCSharpWebUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

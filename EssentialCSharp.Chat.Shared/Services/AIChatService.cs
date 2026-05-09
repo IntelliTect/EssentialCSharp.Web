@@ -46,7 +46,7 @@ public class AIChatService
         string prompt,
         string? systemPrompt = null,
         string? previousResponseId = null,
-        IMcpClient? mcpClient = null,
+        McpClient? mcpClient = null,
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         IEnumerable<ResponseTool>? tools = null,
         ResponseReasoningEffortLevel? reasoningEffortLevel = null,
@@ -56,7 +56,7 @@ public class AIChatService
     {
         var responseOptions = await CreateResponseOptionsAsync(systemPrompt, previousResponseId, tools, reasoningEffortLevel, mcpClient: mcpClient, cancellationToken: cancellationToken);
         var enrichedPrompt = await EnrichPromptWithContext(prompt, enableContextualSearch, cancellationToken);
-        return await GetChatCompletionCore(enrichedPrompt, responseOptions, cancellationToken);
+        return await GetChatCompletionCore(enrichedPrompt, responseOptions, mcpClient, cancellationToken);
     }
 
     /// <summary>
@@ -74,7 +74,7 @@ public class AIChatService
         string prompt,
         string? systemPrompt = null,
         string? previousResponseId = null,
-        IMcpClient? mcpClient = null,
+        McpClient? mcpClient = null,
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         IEnumerable<ResponseTool>? tools = null,
         ResponseReasoningEffortLevel? reasoningEffortLevel = null,
@@ -94,7 +94,7 @@ public class AIChatService
             options: responseOptions,
             cancellationToken: cancellationToken);
 
-        await foreach (var result in ProcessStreamingUpdatesAsync(streamingUpdates, responseOptions, mcpClient, cancellationToken))
+        await foreach (var result in ProcessStreamingUpdatesAsync(streamingUpdates, responseOptions, mcpClient, toolCallDepth: 0, cancellationToken))
         {
             yield return result;
         }
@@ -138,7 +138,8 @@ public class AIChatService
         IAsyncEnumerable<StreamingResponseUpdate> streamingUpdates,
         ResponseCreationOptions responseOptions,
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        IMcpClient? mcpClient,
+        McpClient? mcpClient,
+        int toolCallDepth = 0,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await foreach (var update in streamingUpdates.WithCancellation(cancellationToken))
@@ -155,8 +156,11 @@ public class AIChatService
                 // Check if this is a function call that needs to be executed
                 if (itemDone.Item is FunctionCallResponseItem functionCallItem && mcpClient != null)
                 {
+                    if (toolCallDepth >= 10)
+                        throw new InvalidOperationException("Maximum tool call depth exceeded.");
+
                     // Execute the function call and stream its response
-                    await foreach (var functionResult in ExecuteFunctionCallAsync(functionCallItem, responseOptions, mcpClient, cancellationToken))
+                    await foreach (var functionResult in ExecuteFunctionCallAsync(functionCallItem, responseOptions, mcpClient, toolCallDepth + 1, cancellationToken))
                     {
                         if (functionResult.responseId != null)
                         {
@@ -186,7 +190,8 @@ public class AIChatService
         FunctionCallResponseItem functionCallItem,
         ResponseCreationOptions responseOptions,
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        IMcpClient mcpClient,
+        McpClient mcpClient,
+        int toolCallDepth,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         // A dictionary of arguments to pass to the tool. Each key represents a parameter name, and its associated value represents the argument value.
@@ -229,7 +234,7 @@ public class AIChatService
         var inputItems = new List<ResponseItem>
         {
             functionCallItem, // The original function call
-            new FunctionCallOutputResponseItem(functionCallItem.CallId, string.Join("", toolResult.Content.Where(x => x.Type == "text").OfType<TextContentBlock>().Select(x => x.Text)))
+            new FunctionCallOutputResponseItem(functionCallItem.CallId, McpToolResultFormatter.GetModelInput(toolResult))
         };
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
@@ -239,7 +244,7 @@ public class AIChatService
             responseOptions,
             cancellationToken);
 
-        await foreach (var result in ProcessStreamingUpdatesAsync(functionResponseStream, responseOptions, mcpClient, cancellationToken))
+        await foreach (var result in ProcessStreamingUpdatesAsync(functionResponseStream, responseOptions, mcpClient, toolCallDepth, cancellationToken))
         {
             yield return result;
         }
@@ -254,7 +259,7 @@ public class AIChatService
         string? previousResponseId = null,
         IEnumerable<ResponseTool>? tools = null,
         ResponseReasoningEffortLevel? reasoningEffortLevel = null,
-        IMcpClient? mcpClient = null,
+        McpClient? mcpClient = null,
         CancellationToken cancellationToken = default
         )
     {
@@ -286,7 +291,8 @@ public class AIChatService
 
         if (mcpClient is not null)
         {
-            await foreach (McpClientTool tool in mcpClient.EnumerateToolsAsync(cancellationToken: cancellationToken))
+            var mcpTools = await mcpClient.ListToolsAsync(cancellationToken: cancellationToken);
+            foreach (McpClientTool tool in mcpTools)
             {
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
                 options.Tools.Add(ResponseTool.CreateFunctionTool(tool.Name, functionDescription: tool.Description, strictModeEnabled: true, functionParameters: BinaryData.FromString(tool.JsonSchema.GetRawText())));
@@ -316,6 +322,7 @@ public class AIChatService
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         ResponseCreationOptions responseOptions,
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        McpClient? mcpClient = null,
         CancellationToken cancellationToken = default)
     {
         // Create the response using the Responses API
@@ -323,28 +330,66 @@ public class AIChatService
         List<ResponseItem> responseItems = [ResponseItem.CreateUserMessageItem(prompt)];
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
-        var response = await _ResponseClient.CreateResponseAsync(
-            responseItems,
-            options: responseOptions,
-            cancellationToken: cancellationToken);
+        const int MaxToolCallIterations = 10;
+        for (int iteration = 0; iteration < MaxToolCallIterations; iteration++)
+        {
+            var response = await _ResponseClient.CreateResponseAsync(
+                responseItems,
+                options: responseOptions,
+                cancellationToken: cancellationToken);
 
-        // Extract the message content and response ID
-        string responseText = string.Empty;
-        string responseId = response.Value.Id;
+            string responseId = response.Value.Id;
 
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        var assistantMessage = response.Value.OutputItems
-            .OfType<MessageResponseItem>()
-            .FirstOrDefault(m => m.Role == MessageRole.Assistant &&
-                                 !string.IsNullOrEmpty(m.Content?.FirstOrDefault()?.Text));
+            var functionCalls = response.Value.OutputItems.OfType<FunctionCallResponseItem>().ToList();
 
-        if (assistantMessage is not null)
-        {
-            responseText = assistantMessage.Content?.FirstOrDefault()?.Text ?? string.Empty;
-        }
+            if (functionCalls.Count > 0 && mcpClient != null)
+            {
+                foreach (var functionCallItem in functionCalls)
+                {
+                    var jsonResponse = functionCallItem.FunctionArguments.ToString();
+                    var jsonArguments = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(jsonResponse) ?? new Dictionary<string, object?>();
+
+                    Dictionary<string, object?> arguments = [];
+                    foreach (var kvp in jsonArguments)
+                    {
+                        arguments[kvp.Key] = kvp.Value is System.Text.Json.JsonElement jsonElement
+                            ? jsonElement.ValueKind switch
+                            {
+                                System.Text.Json.JsonValueKind.String => jsonElement.GetString(),
+                                System.Text.Json.JsonValueKind.Number => jsonElement.GetDecimal(),
+                                System.Text.Json.JsonValueKind.True => true,
+                                System.Text.Json.JsonValueKind.False => false,
+                                System.Text.Json.JsonValueKind.Null => null,
+                                _ => (object?)jsonElement.ToString()
+                            }
+                            : kvp.Value;
+                    }
+
+                    var toolResult = await mcpClient.CallToolAsync(
+                        functionCallItem.FunctionName,
+                        arguments: arguments,
+                        cancellationToken: cancellationToken);
+
+                    responseItems.Add(functionCallItem);
+                    responseItems.Add(new FunctionCallOutputResponseItem(
+                        functionCallItem.CallId,
+                        McpToolResultFormatter.GetModelInput(toolResult)));
+                }
+                continue;
+            }
+
+            var assistantMessage = response.Value.OutputItems
+                .OfType<MessageResponseItem>()
+                .FirstOrDefault(m => m.Role == MessageRole.Assistant &&
+                                     !string.IsNullOrEmpty(m.Content?.FirstOrDefault()?.Text));
+
+            string responseText = assistantMessage?.Content?.FirstOrDefault()?.Text ?? string.Empty;
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+            return (responseText, responseId);
+        }
 
-        return (responseText, responseId);
+        throw new InvalidOperationException("Maximum tool call iterations exceeded.");
     }
 
     // TODO: Look into using UserSecurityContext (https://learn.microsoft.com/en-us/azure/defender-for-cloud/gain-end-user-context-ai)
