@@ -10,6 +10,7 @@ TestResults/
 ~$*.do[ct]x
 ~*.tmp
 ~$*.dotm
+.playwright-mcp/
 
 # Files to keep (primarily book content)
 !.gitignore

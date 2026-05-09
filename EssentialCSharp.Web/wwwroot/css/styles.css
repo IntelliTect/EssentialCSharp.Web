@@ -206,9 +206,36 @@ a:hover {
   display: flex;
   justify-content: flex-start;
   align-items: center;
+  min-width: 0;
+}
+
+.header-brand {
+  font-size: 1.25rem;
+  font-weight: 400;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+#header-status-host {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+@media (min-width: 992px) {
+  #header-status-host {
+    flex: 1 1 0;
+  }
+}
+
+.banner ul.nav {
+  flex-wrap: nowrap;
+  max-height: var(--toolbar-height);
+  overflow: clip;
+  align-items: center;
 }
 
 .menu-btn {
+  position: relative;
   margin: 0 5px 0 5px;
   display: inline-block;
   outline: none;
@@ -295,11 +322,15 @@ a:hover {
 
 .has-tooltip .sidebar-tooltip-text {
   width: 90px;
-  position: relative;
-  left: 5rem;
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 4px);
+  margin-left: 0;
+  transform: translateY(-50%);
   border-radius: 10px;
   padding: 10px;
   white-space: normal;
+  z-index: 10;
 }
 
 .has-tooltip .sidebar-tooltip-text:after {
@@ -435,6 +466,17 @@ a:hover {
 
 .turn-page-tooltip .tooltip-left {
   right: 3rem;
+}
+
+.turn-page-tooltip .tooltip-center {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Share button reset */
+.turn-page button.arrow-btn {
+  border: none;
+  padding: 0;
 }
 
 /* Chapter Navigation Sidebar Styles */

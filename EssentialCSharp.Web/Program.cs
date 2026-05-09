@@ -232,7 +232,10 @@ public partial class Program
             throw new NotSupportedException("The default UI requires a user store with password support.");
         });
 
-        //TODO: Implement the anti-forgery token with every POST/PUT request: https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery
+        builder.Services.AddControllersWithViews(options =>
+        {
+            options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
+        });
 
         if (!builder.Environment.IsDevelopment())
         {
@@ -243,6 +246,7 @@ public partial class Program
 
         // Add services to the container.
         builder.Services.AddRazorPages();
+        builder.Services.AddOutputCache();
         builder.Services.AddCaptchaService(builder.Configuration.GetSection(CaptchaOptions.CaptchaSender));
         builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
         builder.Services.AddSingleton<IRouteConfigurationService, RouteConfigurationService>();
@@ -541,6 +545,7 @@ public partial class Program
         app.UseRateLimiter();
 
         app.UseAuthorization();
+        app.UseOutputCache();
 
         app.UseMiddleware<ReferralMiddleware>();
 
@@ -572,27 +577,19 @@ public partial class Program
 
         app.MapFallbackToController("Index", "Home");
 
-        // Generate sitemap.xml at startup
-        var wwwrootDirectory = new DirectoryInfo(app.Environment.WebRootPath);
+        // Validate sitemap data at startup — logs errors but allows startup to continue
         var siteMappingService = app.Services.GetRequiredService<ISiteMappingService>();
         var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
-        // Extract base URL from configuration
-        var baseUrl = app.Services.GetRequiredService<IOptions<SiteSettings>>().Value.BaseUrl;
-
         try
         {
-            // Create a scope to resolve scoped services
-            var routeConfigurationService = app.Services.GetRequiredService<IRouteConfigurationService>();
-
             SitemapXmlHelpers.EnsureSitemapHealthy(siteMappingService.SiteMappings.ToList());
-            SitemapXmlHelpers.GenerateAndSerializeSitemapXml(wwwrootDirectory, siteMappingService.SiteMappings.ToList(), initialLogger, routeConfigurationService, baseUrl);
-            LogSitemapGenerationSucceeded(logger);
+            LogSitemapValidationSucceeded(logger);
         }
         catch (Exception ex)
         {
-            LogSitemapGenerationFailed(logger, ex);
-            // Continue startup even if sitemap generation fails
+            LogSitemapValidationFailed(logger, ex);
+            // Continue startup even if sitemap validation fails
         }
 
         app.Run();
@@ -607,11 +604,11 @@ public partial class Program
     [LoggerMessage(Level = LogLevel.Error, Message = "Unhandled exception on {Path}")]
     private static partial void LogUnhandledException(ILogger<Program> logger, Exception? exception, PathString path);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Sitemap.xml generation completed successfully during application startup")]
-    private static partial void LogSitemapGenerationSucceeded(ILogger<Program> logger);
+    [LoggerMessage(Level = LogLevel.Information, Message = "Sitemap validation completed successfully during application startup")]
+    private static partial void LogSitemapValidationSucceeded(ILogger<Program> logger);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to generate sitemap.xml during application startup")]
-    private static partial void LogSitemapGenerationFailed(ILogger<Program> logger, Exception exception);
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to validate sitemap during application startup")]
+    private static partial void LogSitemapValidationFailed(ILogger<Program> logger, Exception exception);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Ignoring invalid TryDotNet origin in CSP: {Origin}")]
     private static partial void LogIgnoringInvalidTryDotNetOrigin(ILogger logger, string origin);
