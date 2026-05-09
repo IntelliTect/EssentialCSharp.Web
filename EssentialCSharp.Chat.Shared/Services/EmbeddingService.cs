@@ -78,23 +78,19 @@ public class EmbeddingService(
 
         // ── Step 2: Batch-embed all chunks ────────────────────────────────────────────
         // Azure OpenAI supports at most EmbeddingBatchSize inputs per GenerateAsync call.
+        // Assign embeddings inline per batch to avoid holding all embeddings in memory at once.
         var chunkList = bookContents.ToList();
-        var texts = chunkList.Select(c => c.ChunkText).ToList();
-
-        var allEmbeddings = new List<Embedding<float>>(chunkList.Count);
-        foreach (var batch in texts.Chunk(EmbeddingBatchSize))
+        foreach (var batch in chunkList.Chunk(EmbeddingBatchSize))
         {
-            var batchEmbeddings = await embeddingGenerator.GenerateAsync(batch, cancellationToken: cancellationToken);
-            allEmbeddings.AddRange(batchEmbeddings);
-        }
+            var batchEmbeddings = await embeddingGenerator.GenerateAsync(
+                batch.Select(c => c.ChunkText), cancellationToken: cancellationToken);
 
-        if (allEmbeddings.Count != chunkList.Count)
-            throw new InvalidOperationException(
-                $"Embedding count mismatch: expected {chunkList.Count}, got {allEmbeddings.Count}.");
+            if (batchEmbeddings.Count != batch.Length)
+                throw new InvalidOperationException(
+                    $"Embedding count mismatch: expected {batch.Length} for batch, got {batchEmbeddings.Count}.");
 
-        for (int i = 0; i < chunkList.Count; i++)
-        {
-            chunkList[i].TextEmbedding = allEmbeddings[i].Vector;
+            for (int i = 0; i < batch.Length; i++)
+                batch[i].TextEmbedding = batchEmbeddings[i].Vector;
         }
 
         // ── Step 3: Batch-upsert all chunks into staging ──────────────────────────────

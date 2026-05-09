@@ -292,6 +292,16 @@ public class Program
 
                 void WriteChunkingResult(FileChunkingResult result, TextWriter writer)
                 {
+                    writer.WriteLine($"File: {result.FileName}");
+                    writer.WriteLine($"Number of Chunks: {result.ChunkCount}");
+
+                    if (result.Chunks.Count == 0)
+                    {
+                        writer.WriteLine($"Original Character Count: {result.OriginalCharCount}");
+                        writer.WriteLine($"New Character Count: {result.TotalChunkCharacters}");
+                        return;
+                    }
+
                     // lets build up some stats over the chunking
                     var chunkAverage = result.Chunks.Average(chunk => chunk.ChunkText.Length);
                     var chunkMedian = result.Chunks.OrderBy(chunk => chunk.ChunkText.Length).ElementAt(result.Chunks.Count / 2).ChunkText.Length;
@@ -304,8 +314,6 @@ public class Program
                     if (chunkMax > maxChunkLength) maxChunkLength = chunkMax;
                     if (chunkMin < minChunkLength || minChunkLength == 0) minChunkLength = chunkMin;
 
-                    writer.WriteLine($"File: {result.FileName}");
-                    writer.WriteLine($"Number of Chunks: {result.ChunkCount}");
                     writer.WriteLine($"Average Chunk Length: {chunkAverage}");
                     writer.WriteLine($"Median Chunk Length: {chunkMedian}");
                     writer.WriteLine($"Max Chunk Length: {chunkMax}");
