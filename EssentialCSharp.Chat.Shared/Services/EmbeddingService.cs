@@ -13,7 +13,7 @@ namespace EssentialCSharp.Chat.Common.Services;
 public class EmbeddingService(
     VectorStore vectorStore,
     IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
-    NpgsqlDataSource dataSource)
+    NpgsqlDataSource? dataSource = null)
 {
     public static string CollectionName { get; } = "markdown_chunks";
 
@@ -58,6 +58,10 @@ public class EmbeddingService(
         string? collectionName = null)
     {
         collectionName ??= CollectionName;
+
+        if (dataSource is null)
+            throw new InvalidOperationException(
+                $"{nameof(NpgsqlDataSource)} must be provided to upload embeddings. Ensure it is registered in DI.");
 
         if (!_safeIdentifierRegex.IsMatch(collectionName))
             throw new ArgumentException(

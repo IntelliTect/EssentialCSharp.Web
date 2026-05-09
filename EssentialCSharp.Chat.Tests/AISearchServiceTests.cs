@@ -33,8 +33,9 @@ public class AISearchServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GeneratedEmbeddings<Embedding<float>>([new Embedding<float>(new float[1536])]));
 
-        var dataSourceMock = new Mock<NpgsqlDataSource>();
-        var embeddingService = new EmbeddingService(vectorStoreMock.Object, embGenMock.Object, dataSourceMock.Object);
+        // NpgsqlDataSource has no default constructor so Moq cannot proxy it.
+        // The upload path is not exercised by these tests, so pass null.
+        var embeddingService = new EmbeddingService(vectorStoreMock.Object, embGenMock.Object);
         var loggerMock = new Mock<ILogger<AISearchService>>();
 
         return (new AISearchService(vectorStoreMock.Object, embeddingService, loggerMock.Object), collectionMock);
