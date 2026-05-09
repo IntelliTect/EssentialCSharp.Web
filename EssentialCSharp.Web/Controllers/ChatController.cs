@@ -143,9 +143,9 @@ public partial class ChatController : ControllerBase
             Response.ContentType = "application/json";
             await Response.WriteAsJsonAsync(new { error = "This conversation has grown too long. Please start a new one.", errorCode = "context_limit_exceeded" }, CancellationToken.None);
         }
-        catch (ConversationContextLimitExceededException)
+        catch (ConversationContextLimitExceededException ex)
         {
-            LogChatStreamErrorMidStream(_Logger, new InvalidOperationException("Context limit exceeded mid-stream"), User.Identity?.Name);
+            LogChatStreamErrorMidStream(_Logger, ex, User.Identity?.Name);
             try
             {
                 await Response.WriteAsync("data: {\"type\":\"error\",\"message\":\"This conversation has grown too long. Please start a new one.\",\"errorCode\":\"context_limit_exceeded\"}\n\n", CancellationToken.None);

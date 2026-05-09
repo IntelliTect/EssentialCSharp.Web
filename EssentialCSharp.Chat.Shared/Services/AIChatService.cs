@@ -232,6 +232,13 @@ public partial class AIChatService
         // GetChatCompletionCore and avoids conversation branching.
         if (pendingFunctionCalls is { Count: > 0 } && mcpClient != null)
         {
+            // Guard: if the API never sent StreamingResponseCreatedUpdate, currentLegResponseId
+            // is null. Continuing would send FunctionCallOutputResponseItems referencing CallIds
+            // the server has no record of (PreviousResponseId = null), causing a 400.
+            if (currentLegResponseId is null)
+                throw new InvalidOperationException(
+                    "Cannot continue tool-call chain: the streaming leg completed with tool calls but emitted no response ID.");
+
             var continuationOptions = CloneOptionsWithPreviousResponseId(responseOptions, currentLegResponseId);
             var outputItems = new List<ResponseItem>(pendingFunctionCalls.Count);
 
@@ -387,7 +394,11 @@ public partial class AIChatService
                 }
 
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-                options.Tools.Add(ResponseTool.CreateFunctionTool(tool.Name, functionDescription: tool.Description, strictModeEnabled: true, functionParameters: BinaryData.FromString(tool.JsonSchema.GetRawText())));
+                // strictModeEnabled: false — MCP tool schemas come from external servers and are not
+                // guaranteed to satisfy OpenAI strict-mode constraints (all properties required,
+                // additionalProperties: false everywhere). A single non-conforming schema with
+                // strict mode enabled would cause a 400 at registration time for ALL tools.
+                options.Tools.Add(ResponseTool.CreateFunctionTool(tool.Name, functionDescription: tool.Description, strictModeEnabled: false, functionParameters: BinaryData.FromString(tool.JsonSchema.GetRawText())));
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
             }
         }
@@ -466,7 +477,20 @@ public partial class AIChatService
                     }
 
                     LogMcpToolCallInvoked(_Logger, functionCallItem.FunctionName, iteration, endUserId);
-                    var arguments = ParseToolArguments(functionCallItem.FunctionArguments);
+
+                    Dictionary<string, object?> arguments;
+                    try
+                    {
+                        arguments = ParseToolArguments(functionCallItem.FunctionArguments);
+                    }
+                    catch (Exception ex)
+                    {
+                        LogMcpToolArgumentParseError(_Logger, functionCallItem.FunctionName, ex, endUserId);
+                        responseItems.Add(new FunctionCallOutputResponseItem(
+                            functionCallItem.CallId,
+                            $"Error parsing arguments for '{functionCallItem.FunctionName}': invalid JSON."));
+                        continue;
+                    }
 
                     var toolResult = await mcpClient.CallToolAsync(
                         functionCallItem.FunctionName,
