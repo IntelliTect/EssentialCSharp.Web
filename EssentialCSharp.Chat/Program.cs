@@ -326,7 +326,6 @@ public class Program
                     foreach (var chunk in result.Chunks)
                     {
                         writer.WriteLine();
-                        writer.WriteLine($"[{chunk.Heading}]");
                         writer.WriteLine(chunk.ChunkText);
                     }
                 }

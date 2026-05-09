@@ -41,13 +41,13 @@ public class EmbeddingService(
     ///
     /// Steps:
     ///   1. Create a staging collection ({collectionName}_staging).
-    ///   2. Embed all chunks in batches of <see cref="EmbeddingBatchSize"/> (Azure OpenAI limit).
-    ///   3. Batch-upsert all chunks into staging.
-    ///   4. Atomically swap tables in a single transaction using two SQL RENAME operations
+    ///   2. For each batch of <see cref="EmbeddingBatchSize"/> chunks: embed the batch
+    ///      and immediately upsert it into staging, keeping peak memory bounded.
+    ///   3. Atomically swap tables in a single transaction using two SQL RENAME operations
     ///      (live → old, staging → live). PostgreSQL ALTER TABLE acquires
     ///      AccessExclusiveLock automatically; no explicit LOCK TABLE is needed. The
     ///      transaction ensures no reader sees an intermediate state.
-    ///   5. Drop the old live backup table with DROP TABLE.
+    ///   4. Drop the old live backup table with DROP TABLE.
     ///
     /// If an error occurs before the swap, only the staging table is affected — the live
     /// collection is untouched.
@@ -76,27 +76,29 @@ public class EmbeddingService(
         await staging.EnsureCollectionDeletedAsync(cancellationToken);
         await staging.EnsureCollectionExistsAsync(cancellationToken);
 
-        // ── Step 2: Batch-embed all chunks ────────────────────────────────────────────
+        // ── Step 2 & 3: Batch-embed and immediately upsert each batch ─────────────────
         // Azure OpenAI supports at most EmbeddingBatchSize inputs per GenerateAsync call.
-        // Assign embeddings inline per batch to avoid holding all embeddings in memory at once.
+        // Upserting per-batch keeps peak memory bounded to one batch of embeddings at a
+        // time rather than the full dataset. The staging-swap (Step 4) is safe because
+        // only complete, successfully upserted data ends up in staging.
         var chunkList = bookContents.ToList();
-        foreach (var batch in chunkList.Chunk(EmbeddingBatchSize))
-        {
-            var batchEmbeddings = await embeddingGenerator.GenerateAsync(
-                batch.Select(c => c.ChunkText), cancellationToken: cancellationToken);
-
-            if (batchEmbeddings.Count != batch.Length)
-                throw new InvalidOperationException(
-                    $"Embedding count mismatch: expected {batch.Length} for batch, got {batchEmbeddings.Count}.");
-
-            for (int i = 0; i < batch.Length; i++)
-                batch[i].TextEmbedding = batchEmbeddings[i].Vector;
-        }
-
-        // ── Step 3: Batch-upsert all chunks into staging ──────────────────────────────
         try
         {
-            await staging.UpsertAsync(chunkList, cancellationToken);
+            foreach (var batch in chunkList.Chunk(EmbeddingBatchSize))
+            {
+                var batchEmbeddings = await embeddingGenerator.GenerateAsync(
+                    batch.Select(c => c.ChunkText), cancellationToken: cancellationToken);
+
+                if (batchEmbeddings.Count != batch.Length)
+                    throw new InvalidOperationException(
+                        $"Embedding count mismatch: expected {batch.Length} for batch, got {batchEmbeddings.Count}.");
+
+                for (int i = 0; i < batch.Length; i++)
+                    batch[i].TextEmbedding = batchEmbeddings[i].Vector;
+
+                await staging.UpsertAsync(batch, cancellationToken);
+            }
+
             Console.WriteLine($"Uploaded {chunkList.Count} chunks to staging collection '{stagingName}'.");
         }
         catch
@@ -114,7 +116,7 @@ public class EmbeddingService(
             throw;
         }
 
-        // ── Step 4: Atomic swap — staging → live ──────────────────────────────────────
+        // ── Step 3: Atomic swap — staging → live ──────────────────────────────────────
         // Two ALTER TABLE RENAME operations in one transaction (live → old, staging → live).
         // Each RENAME auto-acquires AccessExclusiveLock on its table; the transaction
         // guarantees both renames are visible atomically to other sessions.
@@ -141,7 +143,7 @@ public class EmbeddingService(
         await tx.CommitAsync(cancellationToken);
         Console.WriteLine($"Swapped '{stagingName}' → '{collectionName}' atomically.");
 
-        // ── Step 5: Drop the old backup ───────────────────────────────────────────────
+        // ── Step 4: Drop the old backup ───────────────────────────────────────────────
         await using (var cmd = conn.CreateCommand())
         {
             cmd.CommandText = $"DROP TABLE IF EXISTS \"{oldName}\"";
