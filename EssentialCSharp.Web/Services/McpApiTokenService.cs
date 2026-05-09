@@ -32,7 +32,7 @@ public class McpApiTokenService(EssentialCSharpWebContext db)
     /// <summary>
     /// Creates a new named API token for the specified user.
     /// Returns the raw token (shown once — never stored).
-    /// Throws <see cref="InvalidOperationException"/> if the user is already at <see cref="MaxTokensPerUser"/>.
+    /// Throws <see cref="TokenLimitExceededException"/> if the user is already at <see cref="MaxTokensPerUser"/>.
     /// The limit check and insert are wrapped in a serializable transaction to prevent races.
     /// </summary>
     public async Task<(string RawToken, McpApiToken Entity)> CreateTokenAsync(
