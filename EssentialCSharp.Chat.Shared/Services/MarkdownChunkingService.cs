@@ -66,9 +66,8 @@ public partial class MarkdownChunkingService(
         // separators — stripping all blanks defeats paragraph-aware chunking.
         var normalizedLines = new List<string>(fileContent.Length);
         bool lastWasBlank = false;
-        foreach (var raw in fileContent)
+        foreach (var line in fileContent.Select(raw => raw.Trim()))
         {
-            var line = raw.Trim();
             var isBlank = string.IsNullOrWhiteSpace(line);
             if (!isBlank || !lastWasBlank)
                 normalizedLines.Add(line);
