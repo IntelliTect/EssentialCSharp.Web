@@ -78,30 +78,43 @@ public class EmbeddingService(
 
         // ── Step 2 & 3: Batch-embed and immediately upsert each batch ─────────────────
         // Azure OpenAI supports at most EmbeddingBatchSize inputs per GenerateAsync call.
-        // All chunks are materialized upfront (bookContents.ToList()) so Chunk() can
-        // slice them by index. Embedding vectors are generated and upserted one batch at
-        // a time, keeping peak vector memory bounded to a single batch rather than the
-        // full dataset. The staging-swap (Step 4) is safe because it only runs after all
-        // batches have been successfully upserted.
-        var chunkList = bookContents.ToList();
+        // bookContents is streamed in fixed-size batches without full upfront materialization,
+        // keeping peak memory bounded to one batch of chunk objects and their embeddings at a time.
+        // The staging-swap (Step 3) is safe because it only runs after all batches have
+        // been successfully upserted.
+        var buffer = new List<BookContentChunk>(EmbeddingBatchSize);
+        int totalCount = 0;
+
+        async Task EmbedAndUpsertBatchAsync()
+        {
+            var batchEmbeddings = await embeddingGenerator.GenerateAsync(
+                buffer.Select(c => c.ChunkText), cancellationToken: cancellationToken);
+
+            if (batchEmbeddings.Count != buffer.Count)
+                throw new InvalidOperationException(
+                    $"Embedding count mismatch: expected {buffer.Count}, got {batchEmbeddings.Count}.");
+
+            for (int i = 0; i < buffer.Count; i++)
+                buffer[i].TextEmbedding = batchEmbeddings[i].Vector;
+
+            await staging.UpsertAsync(buffer, cancellationToken);
+            totalCount += buffer.Count;
+            buffer.Clear();
+        }
+
         try
         {
-            foreach (var batch in chunkList.Chunk(EmbeddingBatchSize))
+            foreach (var chunk in bookContents)
             {
-                var batchEmbeddings = await embeddingGenerator.GenerateAsync(
-                    batch.Select(c => c.ChunkText), cancellationToken: cancellationToken);
-
-                if (batchEmbeddings.Count != batch.Length)
-                    throw new InvalidOperationException(
-                        $"Embedding count mismatch: expected {batch.Length} for batch, got {batchEmbeddings.Count}.");
-
-                for (int i = 0; i < batch.Length; i++)
-                    batch[i].TextEmbedding = batchEmbeddings[i].Vector;
-
-                await staging.UpsertAsync(batch, cancellationToken);
+                buffer.Add(chunk);
+                if (buffer.Count == EmbeddingBatchSize)
+                    await EmbedAndUpsertBatchAsync();
             }
 
-            Console.WriteLine($"Uploaded {chunkList.Count} chunks to staging collection '{stagingName}'.");
+            if (buffer.Count > 0)
+                await EmbedAndUpsertBatchAsync();
+
+            Console.WriteLine($"Uploaded {totalCount} chunks to staging collection '{stagingName}'.");
         }
         catch
         {
@@ -152,6 +165,6 @@ public class EmbeddingService(
             await cmd.ExecuteNonQueryAsync(cancellationToken);
         }
 
-        Console.WriteLine($"Successfully generated embeddings and uploaded {chunkList.Count} chunks to collection '{collectionName}'.");
+        Console.WriteLine($"Successfully generated embeddings and uploaded {totalCount} chunks to collection '{collectionName}'.");
     }
 }

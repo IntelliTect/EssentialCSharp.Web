@@ -42,6 +42,11 @@ public sealed class BookContentChunk
     /// Zero-based ordinal of this chunk within its source file.
     /// Together with FileName, forms the basis for the deterministic Id.
     /// </summary>
+    /// <remarks>
+    /// This column was added as part of the bulk-embedding refactor. Existing vector-store
+    /// collections created before this change must be rebuilt (via the staging-swap upload
+    /// command) before reads against the live table will succeed with this schema.
+    /// </remarks>
     [VectorStoreData]
     public int ChunkIndex { get; set; }
 
