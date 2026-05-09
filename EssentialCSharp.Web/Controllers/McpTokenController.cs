@@ -9,6 +9,7 @@ namespace EssentialCSharp.Web.Controllers;
 [Route("api/[controller]")]
 [Authorize]
 [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
+[IgnoreAntiforgeryToken]
 public class McpTokenController(McpApiTokenService tokenService) : ControllerBase
 {
     public record CreateTokenRequest(string? Name, DateOnly? ExpiresOn = null);
@@ -40,22 +41,29 @@ public class McpTokenController(McpApiTokenService tokenService) : ControllerBas
             expiresAt = expiresOn.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
         }
 
-        var (rawToken, entity) = await tokenService.CreateTokenAsync(
-            userId,
-            name,
-            expiresAt,
-            createdAtUtc: nowUtc,
-            cancellationToken: cancellationToken);
-
-        return Ok(new
+        try
         {
-            TokenId = entity.Id,
-            Token = rawToken,
-            Name = entity.Name,
-            ExpiresAt = entity.ExpiresAt,
-            CreatedAt = entity.CreatedAt,
-            Usage = "Add to your MCP client config: { \"url\": \"<site-url>/mcp\", \"headers\": { \"Authorization\": \"Bearer <token>\" } }"
-        });
+            var (rawToken, entity) = await tokenService.CreateTokenAsync(
+                userId,
+                name,
+                expiresAt,
+                createdAtUtc: nowUtc,
+                cancellationToken: cancellationToken);
+
+            return Ok(new
+            {
+                TokenId = entity.Id,
+                Token = rawToken,
+                Name = entity.Name,
+                ExpiresAt = entity.ExpiresAt,
+                CreatedAt = entity.CreatedAt,
+                Usage = "Add to your MCP client config: { \"url\": \"<site-url>/mcp\", \"headers\": { \"Authorization\": \"Bearer <token>\" } }"
+            });
+        }
+        catch (TokenLimitExceededException ex)
+        {
+            return BadRequest(new { Error = ex.Message + " Revoke an existing token before creating a new one." });
+        }
     }
 
     [HttpDelete("{id:guid}")]

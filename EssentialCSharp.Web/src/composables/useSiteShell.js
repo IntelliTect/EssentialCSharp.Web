@@ -89,6 +89,42 @@ export function useSiteShell() {
         return urlObject.toString();
     }
 
+    function addReferralIdToUrl(url) {
+        const referralId = window.REFERRAL_ID;
+        if (typeof referralId === "string" && referralId.trim().length > 0) {
+            return addQueryParam(url, "rid", referralId);
+        }
+        return url;
+    }
+
+    function writeToClipboard(url, successMessage = "Copied to clipboard!") {
+        navigator.clipboard
+            .writeText(url)
+            .then(
+                () => {
+                    snackbarColor.value = "white";
+                    snackbarMessage.value = successMessage;
+                    if (snackbarTimeoutId !== null) {
+                        clearTimeout(snackbarTimeoutId);
+                    }
+                    snackbarTimeoutId = setTimeout(() => {
+                        snackbarMessage.value = null;
+                    }, 3000);
+                },
+                (error) => {
+                    console.error("Could not copy text to clipboard: ", error);
+                    snackbarColor.value = "red";
+                    snackbarMessage.value = `Error: Could not copy text to clipboard: ${error}`;
+                    if (snackbarTimeoutId !== null) {
+                        clearTimeout(snackbarTimeoutId);
+                    }
+                    snackbarTimeoutId = setTimeout(() => {
+                        snackbarMessage.value = null;
+                    }, 3000);
+                }
+            );
+    }
+
     function copyToClipboard(copyText) {
         let url;
 
@@ -100,33 +136,12 @@ export function useSiteShell() {
             url = `${currentUrl}#${copyText}`;
         }
 
-        const referralId = window.REFERRAL_ID;
-        if (typeof referralId === "string" && referralId.trim().length > 0) {
-            url = addQueryParam(url, "rid", referralId);
-        }
+        writeToClipboard(addReferralIdToUrl(url), "Copied url to clipboard!");
+    }
 
-        navigator.clipboard
-            .writeText(url)
-            .then(
-                () => {
-                    snackbarColor.value = "white";
-                    snackbarMessage.value = "Copied url to clipboard!";
-                },
-                (error) => {
-                    console.error("Could not copy text to clipboard: ", error);
-                    snackbarColor.value = "red";
-                    snackbarMessage.value = `Error: Could not copy text to clipboard: ${error}`;
-                }
-            );
-
-        if (snackbarTimeoutId !== null) {
-            clearTimeout(snackbarTimeoutId);
-            snackbarMessage.value = null;
-        }
-
-        snackbarTimeoutId = setTimeout(() => {
-            snackbarMessage.value = null;
-        }, 3000);
+    function shareCurrentPage() {
+        const url = window.location.href.split("#")[0];
+        writeToClipboard(addReferralIdToUrl(url), "Copied page url to clipboard!");
     }
 
     function goToPrevious() {
@@ -276,6 +291,7 @@ export function useSiteShell() {
         isContentPage,
         filteredTocData,
         copyToClipboard,
+        shareCurrentPage,
         goToPrevious,
         goToNext,
         openSearch,
