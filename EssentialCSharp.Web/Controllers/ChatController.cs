@@ -151,7 +151,13 @@ public partial class ChatController : ControllerBase
                 await Response.WriteAsync("data: {\"type\":\"error\",\"message\":\"This conversation has grown too long. Please start a new one.\",\"errorCode\":\"context_limit_exceeded\"}\n\n", CancellationToken.None);
                 await Response.Body.FlushAsync(CancellationToken.None);
             }
-            catch { /* client already disconnected */ }
+            catch (Exception)
+            {
+                // Best-effort write to an already-streaming response. Kestrel can throw
+                // IOException (connection reset), OperationCanceledException, or
+                // ObjectDisposedException on abrupt client disconnect — swallow all to
+                // avoid masking the original exception.
+            }
         }
         catch (Exception ex) when (!Response.HasStarted)
         {
@@ -168,7 +174,13 @@ public partial class ChatController : ControllerBase
                 await Response.WriteAsync("data: {\"type\":\"error\",\"message\":\"Stream interrupted\"}\n\n", CancellationToken.None);
                 await Response.Body.FlushAsync(CancellationToken.None);
             }
-            catch { /* client already disconnected */ }
+            catch (Exception)
+            {
+                // Best-effort write to an already-streaming response. Kestrel can throw
+                // IOException (connection reset), OperationCanceledException, or
+                // ObjectDisposedException on abrupt client disconnect — swallow all to
+                // avoid masking the original exception.
+            }
         }
     }
 

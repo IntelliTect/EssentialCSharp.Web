@@ -648,7 +648,12 @@ public partial class AIChatService
                 error.TryGetProperty("code", out var code))
                 return code.GetString();
         }
-        catch { /* best-effort — don't let error parsing crash the error handler */ }
+        catch (Exception)
+        {
+            // Best-effort extraction inside an error handler — catch all to guarantee we never
+            // throw from error-parsing logic. The Azure SDK response internals are outside our
+            // control and the exception surface can change across SDK versions.
+        }
         return null;
     }
 }
