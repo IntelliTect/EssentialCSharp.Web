@@ -44,21 +44,28 @@ public partial class ChatController : ControllerBase
         if (!_ResponseIdValidationService.ValidateResponseId(userId, previousResponseId))
             return BadRequest(new { error = "Invalid conversation context." });
 
-        var (response, responseId) = await _AiChatService.GetChatCompletion(
-            prompt: request.Message,
-            previousResponseId: previousResponseId,
-            enableContextualSearch: request.EnableContextualSearch,
-            endUserId: userId,
-            cancellationToken: cancellationToken);
-
-        _ResponseIdValidationService.RecordResponseId(userId, responseId);
-
-        return Ok(new ChatMessageResponse
+        try
         {
-            Response = response,
-            ResponseId = responseId,
-            Timestamp = DateTime.UtcNow
-        });
+            var (response, responseId) = await _AiChatService.GetChatCompletion(
+                prompt: request.Message,
+                previousResponseId: previousResponseId,
+                enableContextualSearch: request.EnableContextualSearch,
+                endUserId: userId,
+                cancellationToken: cancellationToken);
+
+            _ResponseIdValidationService.RecordResponseId(userId, responseId);
+
+            return Ok(new ChatMessageResponse
+            {
+                Response = response,
+                ResponseId = responseId,
+                Timestamp = DateTime.UtcNow
+            });
+        }
+        catch (ConversationContextLimitExceededException)
+        {
+            return BadRequest(new { error = "This conversation has grown too long. Please start a new one.", errorCode = "context_limit_exceeded" });
+        }
     }
 
     [HttpPost("stream")]
@@ -130,6 +137,28 @@ public partial class ChatController : ControllerBase
         {
             LogChatStreamCancelled(_Logger, User.Identity?.Name);
         }
+        catch (ConversationContextLimitExceededException) when (!Response.HasStarted)
+        {
+            Response.StatusCode = 400;
+            Response.ContentType = "application/json";
+            await Response.WriteAsJsonAsync(new { error = "This conversation has grown too long. Please start a new one.", errorCode = "context_limit_exceeded" }, CancellationToken.None);
+        }
+        catch (ConversationContextLimitExceededException ex)
+        {
+            LogChatStreamErrorMidStream(_Logger, ex, User.Identity?.Name);
+            try
+            {
+                await Response.WriteAsync("data: {\"type\":\"error\",\"message\":\"This conversation has grown too long. Please start a new one.\",\"errorCode\":\"context_limit_exceeded\"}\n\n", CancellationToken.None);
+                await Response.Body.FlushAsync(CancellationToken.None);
+            }
+            catch (Exception)
+            {
+                // Best-effort write to an already-streaming response. Kestrel can throw
+                // IOException (connection reset), OperationCanceledException, or
+                // ObjectDisposedException on abrupt client disconnect — swallow all to
+                // avoid masking the original exception.
+            }
+        }
         catch (Exception ex) when (!Response.HasStarted)
         {
             LogChatStreamErrorBeforeResponseStarted(_Logger, ex, User.Identity?.Name);
@@ -145,7 +174,13 @@ public partial class ChatController : ControllerBase
                 await Response.WriteAsync("data: {\"type\":\"error\",\"message\":\"Stream interrupted\"}\n\n", CancellationToken.None);
                 await Response.Body.FlushAsync(CancellationToken.None);
             }
-            catch { /* client already disconnected */ }
+            catch (Exception)
+            {
+                // Best-effort write to an already-streaming response. Kestrel can throw
+                // IOException (connection reset), OperationCanceledException, or
+                // ObjectDisposedException on abrupt client disconnect — swallow all to
+                // avoid masking the original exception.
+            }
         }
     }
 

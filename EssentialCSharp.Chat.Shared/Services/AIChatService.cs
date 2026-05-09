@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 using OpenAI.Responses;
+using System.ClientModel;
 using System.Collections.Frozen;
 
 namespace EssentialCSharp.Chat.Common.Services;
@@ -171,7 +172,11 @@ public partial class AIChatService
         input?.Replace("<", "\u2039").Replace(">", "\u203A") ?? string.Empty;
 
     /// <summary>
-    /// Processes streaming updates from the OpenAI Responses API, handling both regular responses and function calls
+    /// Processes streaming updates from the OpenAI Responses API.
+    /// Buffers all function call items before executing them — this is critical for correctness:
+    /// if the model emits multiple parallel tool calls, firing a separate continuation per call
+    /// creates forked conversation branches. Collecting all calls and submitting all outputs
+    /// in a single continuation matches the non-streaming behavior.
     /// </summary>
     private async IAsyncEnumerable<(string text, string? responseId)> ProcessStreamingUpdatesAsync(
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
@@ -183,139 +188,151 @@ public partial class AIChatService
         string? endUserId = null,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        await foreach (var update in streamingUpdates.WithCancellation(cancellationToken))
-        {
+        // Track this leg's response ID so tool-call continuations chain from it,
+        // ensuring the model's context includes the user's message + reasoning.
+        string? currentLegResponseId = null;
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        List<FunctionCallResponseItem>? pendingFunctionCalls = null;
+
+        // Wrap the raw stream to convert context-length API errors to our domain exception.
+        // C# does not allow yield inside a try/catch, so error remapping is done in a
+        // separate helper that puts try/catch only around MoveNextAsync.
+        await foreach (var update in RethrowContextLengthErrors(streamingUpdates, responseOptions.PreviousResponseId, cancellationToken))
+        {
             if (update is StreamingResponseCreatedUpdate created)
             {
                 // Emit the response ID early so the controller can record ownership
                 // before the stream completes — handles client disconnects mid-stream.
-                yield return (string.Empty, responseId: created.Response.Id);
+                currentLegResponseId = created.Response.Id;
+                yield return (string.Empty, responseId: currentLegResponseId);
             }
             else if (update is StreamingResponseOutputItemDoneUpdate itemDone)
             {
-                // Check if this is a function call that needs to be executed
                 if (itemDone.Item is FunctionCallResponseItem functionCallItem && mcpClient != null)
                 {
                     if (toolCallDepth >= 10)
                         throw new InvalidOperationException("Maximum tool call depth exceeded.");
 
-                    // Execute the function call and stream its response.
-                    // Each nested ProcessStreamingUpdatesAsync emits its own StreamingResponseCreatedUpdate
-                    // (which already yields its responseId early), so no extra tracking is needed here.
-                    await foreach (var functionResult in ExecuteFunctionCallAsync(functionCallItem, responseOptions, mcpClient, toolCallDepth + 1, endUserId, cancellationToken))
-                    {
-                        yield return functionResult;
-                    }
+                    // Buffer all function calls — do NOT fire continuations inline.
+                    // Sending one continuation per call would create N forked conversation
+                    // branches, each missing the other N-1 tool results.
+                    pendingFunctionCalls ??= [];
+                    pendingFunctionCalls.Add(functionCallItem);
                 }
             }
             else if (update is StreamingResponseOutputTextDeltaUpdate deltaUpdate)
             {
                 yield return (deltaUpdate.Delta.ToString(), null);
             }
-            else if (update is StreamingResponseCompletedUpdate)
+            // StreamingResponseCompletedUpdate: ResponseId already emitted above — no-op.
+        }
+
+        // After the stream completes, execute all buffered tool calls and send ALL outputs
+        // in a single continuation request. This mirrors the non-streaming loop in
+        // GetChatCompletionCore and avoids conversation branching.
+        if (pendingFunctionCalls is { Count: > 0 } && mcpClient != null)
+        {
+            // Guard: if the API never sent StreamingResponseCreatedUpdate, currentLegResponseId
+            // is null. Continuing would send FunctionCallOutputResponseItems referencing CallIds
+            // the server has no record of (PreviousResponseId = null), causing a 400.
+            if (currentLegResponseId is null)
+                throw new InvalidOperationException(
+                    "Cannot continue tool-call chain: the streaming leg completed with tool calls but emitted no response ID.");
+
+            var continuationOptions = CloneOptionsWithPreviousResponseId(responseOptions, currentLegResponseId);
+            var outputItems = new List<ResponseItem>(pendingFunctionCalls.Count);
+
+            foreach (var functionCallItem in pendingFunctionCalls)
             {
-                // ResponseId was already emitted from StreamingResponseCreatedUpdate at the start
-                // of this response leg — no need to emit again from the completion event.
+                outputItems.Add(await ExecuteSingleToolCallAsync(functionCallItem, toolCallDepth, endUserId, mcpClient, cancellationToken));
             }
+
+            var continuationStream = _ResponseClient.CreateResponseStreamingAsync(outputItems, continuationOptions, cancellationToken);
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
+            await foreach (var result in ProcessStreamingUpdatesAsync(continuationStream, continuationOptions, mcpClient, toolCallDepth + 1, endUserId, cancellationToken))
+            {
+                yield return result;
+            }
         }
     }
 
     /// <summary>
-    /// Executes a function call and streams the response
+    /// Wraps a streaming response enumerable to remap <see cref="ClientResultException"/>
+    /// context-length errors to <see cref="ConversationContextLimitExceededException"/>.
+    /// <para>
+    /// C# prohibits <c>yield return</c> inside a <c>try</c> block with a <c>catch</c> clause
+    /// (CS1626). By putting the <c>try/catch</c> only around <c>MoveNextAsync</c> and the
+    /// <c>yield return</c> outside, we satisfy the compiler while still remapping exceptions.
+    /// </para>
     /// </summary>
-    private async IAsyncEnumerable<(string text, string? responseId)> ExecuteFunctionCallAsync(
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        FunctionCallResponseItem functionCallItem,
-        ResponseCreationOptions responseOptions,
-#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        McpClient mcpClient,
-        int toolCallDepth,
-        string? endUserId = null,
+    private static async IAsyncEnumerable<StreamingResponseUpdate> RethrowContextLengthErrors(
+        IAsyncEnumerable<StreamingResponseUpdate> source,
+        string? previousResponseId,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        await using var enumerator = source.GetAsyncEnumerator(cancellationToken);
+        while (true)
+        {
+            bool hasNext;
+            try { hasNext = await enumerator.MoveNextAsync(); }
+            catch (ClientResultException ex) when (IsContextLengthError(ex))
+            { throw new ConversationContextLimitExceededException(previousResponseId, ex); }
+
+            if (!hasNext) break;
+            yield return enumerator.Current; // yield return is outside try/catch — valid
+        }
+    }
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
+    /// <summary>
+    /// Executes a single MCP tool call and returns the output item to include in the
+    /// continuation request. Handles allowlist validation and argument-parsing errors
+    /// so a single bad tool never aborts the entire continuation.
+    /// </summary>
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+    private async Task<ResponseItem> ExecuteSingleToolCallAsync(
+        FunctionCallResponseItem functionCallItem,
+        int toolCallDepth,
+        string? endUserId,
+        McpClient mcpClient,
+        CancellationToken cancellationToken)
     {
         // Defense-in-depth: validate tool name against static allowlist before executing.
         if (!IsMcpToolAllowed(functionCallItem.FunctionName))
         {
             LogMcpToolCallRejected(_Logger, functionCallItem.FunctionName, endUserId);
-            // Feed a benign error back to the model so it can recover gracefully,
-            // mirroring what GetChatCompletionCore does on the non-streaming path.
-#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-            var errorItems = new List<ResponseItem>
-            {
-                functionCallItem,
-                new FunctionCallOutputResponseItem(
-                    functionCallItem.CallId,
-                    $"Tool '{functionCallItem.FunctionName}' is not available.")
-            };
-#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-            var recoveryStream = _ResponseClient.CreateResponseStreamingAsync(
-                errorItems, responseOptions, cancellationToken);
-            await foreach (var result in ProcessStreamingUpdatesAsync(
-                recoveryStream, responseOptions, mcpClient, toolCallDepth, endUserId, cancellationToken))
-            {
-                yield return result;
-            }
-            yield break;
+            return new FunctionCallOutputResponseItem(
+                functionCallItem.CallId,
+                $"Tool '{functionCallItem.FunctionName}' is not available.");
         }
 
         LogMcpToolCallInvokedStream(_Logger, functionCallItem.FunctionName, toolCallDepth, endUserId);
-        // A dictionary of arguments to pass to the tool. Each key represents a parameter name, and its associated value represents the argument value.
-        Dictionary<string, object?> arguments = [];
-        // example JsonResponse:
-        // "{\"question\":\"Azure OpenAI Responses API (Preview)\"}"
-        var jsonResponse = functionCallItem.FunctionArguments.ToString();
-        var jsonArguments = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(jsonResponse) ?? new Dictionary<string, object?>();
 
-        // Convert JsonElement values to their actual types
-        foreach (var kvp in jsonArguments)
+        Dictionary<string, object?> arguments;
+        try
         {
-            if (kvp.Value is System.Text.Json.JsonElement jsonElement)
-            {
-                arguments[kvp.Key] = jsonElement.ValueKind switch
-                {
-                    System.Text.Json.JsonValueKind.String => jsonElement.GetString(),
-                    System.Text.Json.JsonValueKind.Number => jsonElement.GetDecimal(),
-                    System.Text.Json.JsonValueKind.True => true,
-                    System.Text.Json.JsonValueKind.False => false,
-                    System.Text.Json.JsonValueKind.Null => null,
-                    _ => jsonElement.ToString()
-                };
-            }
-            else
-            {
-                arguments[kvp.Key] = kvp.Value;
-            }
+            arguments = ParseToolArguments(functionCallItem.FunctionArguments);
+        }
+        catch (Exception ex)
+        {
+            LogMcpToolArgumentParseError(_Logger, functionCallItem.FunctionName, ex, endUserId);
+            return new FunctionCallOutputResponseItem(
+                functionCallItem.CallId,
+                $"Error parsing arguments for '{functionCallItem.FunctionName}': invalid JSON.");
         }
 
-        // Execute the function call using the MCP client
         var toolResult = await mcpClient.CallToolAsync(
             functionCallItem.FunctionName,
             arguments: arguments,
             cancellationToken: cancellationToken);
 
-        // Create input items with both the function call and the result
-        // This matches the Python pattern: append both tool_call and result
-#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        var inputItems = new List<ResponseItem>
-        {
-            functionCallItem, // The original function call
-            new FunctionCallOutputResponseItem(functionCallItem.CallId, McpToolResultFormatter.GetModelInput(toolResult))
-        };
-#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-
-        // Stream the function call response using the same processing logic
-        var functionResponseStream = _ResponseClient.CreateResponseStreamingAsync(
-            inputItems,
-            responseOptions,
-            cancellationToken);
-
-        await foreach (var result in ProcessStreamingUpdatesAsync(functionResponseStream, responseOptions, mcpClient, toolCallDepth, endUserId, cancellationToken))
-        {
-            yield return result;
-        }
+        return new FunctionCallOutputResponseItem(
+            functionCallItem.CallId,
+            McpToolResultFormatter.GetModelInput(toolResult));
     }
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
     /// <summary>
     /// Creates response options with optional features
@@ -348,12 +365,11 @@ public partial class AIChatService
             options.PreviousResponseId = previousResponseId;
         }
 
-        // endUserId is reserved for forwarding to Azure OpenAI for end-user attribution
-        // (Microsoft Defender prompt-shield correlation). OpenAI .NET SDK v2.7.0 does not
-        // expose ResponseCreationOptions.User; this parameter is intentionally discarded
-        // until SDK support is available.
+        // Wire up end-user ID for Azure OpenAI abuse monitoring and Microsoft Defender
+        // prompt-shield correlation. The SDK now exposes EndUserId directly.
         // See: https://learn.microsoft.com/en-us/azure/defender-for-cloud/gain-end-user-context-ai
-        _ = endUserId;
+        if (!string.IsNullOrEmpty(endUserId))
+            options.EndUserId = endUserId;
 
         // Add tools if provided
         if (tools != null)
@@ -378,7 +394,11 @@ public partial class AIChatService
                 }
 
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-                options.Tools.Add(ResponseTool.CreateFunctionTool(tool.Name, functionDescription: tool.Description, strictModeEnabled: true, functionParameters: BinaryData.FromString(tool.JsonSchema.GetRawText())));
+                // strictModeEnabled: false — MCP tool schemas come from external servers and are not
+                // guaranteed to satisfy OpenAI strict-mode constraints (all properties required,
+                // additionalProperties: false everywhere). A single non-conforming schema with
+                // strict mode enabled would cause a 400 at registration time for ALL tools.
+                options.Tools.Add(ResponseTool.CreateFunctionTool(tool.Name, functionDescription: tool.Description, strictModeEnabled: false, functionParameters: BinaryData.FromString(tool.JsonSchema.GetRawText())));
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
             }
         }
@@ -412,15 +432,22 @@ public partial class AIChatService
         // Create the response using the Responses API
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         List<ResponseItem> responseItems = [ResponseItem.CreateUserMessageItem(prompt)];
-#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
         const int MaxToolCallIterations = 10;
         for (int iteration = 0; iteration < MaxToolCallIterations; iteration++)
         {
-            var response = await _ResponseClient.CreateResponseAsync(
-                responseItems,
-                options: responseOptions,
-                cancellationToken: cancellationToken);
+            ClientResult<OpenAIResponse> response;
+            try
+            {
+                response = await _ResponseClient.CreateResponseAsync(
+                    responseItems,
+                    options: responseOptions,
+                    cancellationToken: cancellationToken);
+            }
+            catch (ClientResultException ex) when (IsContextLengthError(ex))
+            {
+                throw new ConversationContextLimitExceededException(responseOptions.PreviousResponseId, ex);
+            }
 
             string responseId = response.Value.Id;
 
@@ -429,6 +456,12 @@ public partial class AIChatService
 
             if (functionCalls.Count > 0 && mcpClient != null)
             {
+                // Advance the chain: the server now has everything up to responseId stored
+                // (user message + all prior function calls/results + this response's funcCalls).
+                // The next request only needs to supply the tool outputs — not the growing history.
+                responseOptions.PreviousResponseId = responseId;
+                responseItems = [];
+
                 foreach (var functionCallItem in functionCalls)
                 {
                     // Defense-in-depth: validate tool name against static allowlist before executing.
@@ -436,8 +469,7 @@ public partial class AIChatService
                     if (!IsMcpToolAllowed(functionCallItem.FunctionName))
                     {
                         LogMcpToolCallRejected(_Logger, functionCallItem.FunctionName, endUserId);
-                        // Return a benign error to the model so it can respond gracefully
-                        responseItems.Add(functionCallItem);
+                        // The functionCallItem is in the stored response; send only the error output.
                         responseItems.Add(new FunctionCallOutputResponseItem(
                             functionCallItem.CallId,
                             $"Tool '{functionCallItem.FunctionName}' is not available."));
@@ -445,23 +477,19 @@ public partial class AIChatService
                     }
 
                     LogMcpToolCallInvoked(_Logger, functionCallItem.FunctionName, iteration, endUserId);
-                    var jsonResponse = functionCallItem.FunctionArguments.ToString();
-                    var jsonArguments = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(jsonResponse) ?? new Dictionary<string, object?>();
 
-                    Dictionary<string, object?> arguments = [];
-                    foreach (var kvp in jsonArguments)
+                    Dictionary<string, object?> arguments;
+                    try
                     {
-                        arguments[kvp.Key] = kvp.Value is System.Text.Json.JsonElement jsonElement
-                            ? jsonElement.ValueKind switch
-                            {
-                                System.Text.Json.JsonValueKind.String => jsonElement.GetString(),
-                                System.Text.Json.JsonValueKind.Number => jsonElement.GetDecimal(),
-                                System.Text.Json.JsonValueKind.True => true,
-                                System.Text.Json.JsonValueKind.False => false,
-                                System.Text.Json.JsonValueKind.Null => null,
-                                _ => (object?)jsonElement.ToString()
-                            }
-                            : kvp.Value;
+                        arguments = ParseToolArguments(functionCallItem.FunctionArguments);
+                    }
+                    catch (Exception ex)
+                    {
+                        LogMcpToolArgumentParseError(_Logger, functionCallItem.FunctionName, ex, endUserId);
+                        responseItems.Add(new FunctionCallOutputResponseItem(
+                            functionCallItem.CallId,
+                            $"Error parsing arguments for '{functionCallItem.FunctionName}': invalid JSON."));
+                        continue;
                     }
 
                     var toolResult = await mcpClient.CallToolAsync(
@@ -469,7 +497,8 @@ public partial class AIChatService
                         arguments: arguments,
                         cancellationToken: cancellationToken);
 
-                    responseItems.Add(functionCallItem);
+                    // The functionCallItem is stored server-side in the response at PreviousResponseId.
+                    // Only the tool output is new content that needs to be included.
                     responseItems.Add(new FunctionCallOutputResponseItem(
                         functionCallItem.CallId,
                         McpToolResultFormatter.GetModelInput(toolResult)));
@@ -501,6 +530,70 @@ public partial class AIChatService
         return _AllowedMcpTools.Contains(toolName);
     }
 
+    /// <summary>
+    /// Returns a clone of <paramref name="source"/> with
+    /// <see cref="ResponseCreationOptions.PreviousResponseId"/> replaced.
+    /// All behavior-affecting properties are copied so that tool-call continuation legs
+    /// produce identical generation behavior to the initial leg.
+    /// </summary>
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+    private static ResponseCreationOptions CloneOptionsWithPreviousResponseId(
+        ResponseCreationOptions source,
+        string? previousResponseId)
+    {
+        var clone = new ResponseCreationOptions
+        {
+            Instructions = source.Instructions,
+            PreviousResponseId = previousResponseId,
+            EndUserId = source.EndUserId,
+            ReasoningOptions = source.ReasoningOptions,
+            MaxOutputTokenCount = source.MaxOutputTokenCount,
+            TextOptions = source.TextOptions,
+            TruncationMode = source.TruncationMode,
+            ParallelToolCallsEnabled = source.ParallelToolCallsEnabled,
+            StoredOutputEnabled = source.StoredOutputEnabled,
+            ToolChoice = source.ToolChoice,
+            Temperature = source.Temperature,
+            TopP = source.TopP,
+            ServiceTier = source.ServiceTier,
+        };
+        foreach (var tool in source.Tools)
+            clone.Tools.Add(tool);
+        if (source.Metadata is { Count: > 0 })
+            foreach (var kvp in source.Metadata)
+                clone.Metadata[kvp.Key] = kvp.Value;
+        return clone;
+    }
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
+    /// <summary>
+    /// Parses function call arguments from a <see cref="BinaryData"/> JSON payload into a
+    /// strongly-typed dictionary, converting <see cref="System.Text.Json.JsonElement"/> values
+    /// to their native CLR equivalents.
+    /// </summary>
+    private static Dictionary<string, object?> ParseToolArguments(BinaryData functionArguments)
+    {
+        var jsonArguments = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(
+            functionArguments.ToString()) ?? [];
+
+        var arguments = new Dictionary<string, object?>(jsonArguments.Count);
+        foreach (var kvp in jsonArguments)
+        {
+            arguments[kvp.Key] = kvp.Value is System.Text.Json.JsonElement jsonElement
+                ? jsonElement.ValueKind switch
+                {
+                    System.Text.Json.JsonValueKind.String => jsonElement.GetString(),
+                    System.Text.Json.JsonValueKind.Number => jsonElement.GetDecimal(),
+                    System.Text.Json.JsonValueKind.True => true,
+                    System.Text.Json.JsonValueKind.False => false,
+                    System.Text.Json.JsonValueKind.Null => null,
+                    _ => (object?)jsonElement.ToString()
+                }
+                : kvp.Value;
+        }
+        return arguments;
+    }
+
     [LoggerMessage(Level = LogLevel.Information, Message = "AI tool call invoked: tool={ToolName} iteration={Iteration} user={EndUserId}")]
     private static partial void LogMcpToolCallInvoked(ILogger logger, string toolName, int iteration, string? endUserId);
 
@@ -510,9 +603,57 @@ public partial class AIChatService
     [LoggerMessage(Level = LogLevel.Warning, Message = "AI tool call rejected — not on allowlist: tool={ToolName} user={EndUserId}")]
     private static partial void LogMcpToolCallRejected(ILogger logger, string toolName, string? endUserId);
 
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to parse tool arguments for '{ToolName}': user={EndUserId}")]
+    private static partial void LogMcpToolArgumentParseError(ILogger logger, string toolName, Exception exception, string? endUserId);
+
     [LoggerMessage(Level = LogLevel.Warning, Message = "MCP tool skipped during option setup — not on allowlist: tool={ToolName}")]
     private static partial void LogMcpToolSkippedNotAllowed(ILogger logger, string toolName);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "AI contextual search performed for prompt enrichment")]
     private static partial void LogContextualSearchPerformed(ILogger logger);
+
+    /// <summary>
+    /// Returns <c>true</c> when the API error indicates the conversation context window was exceeded.
+    /// Prefers structured JSON error code from the response body; falls back to message text matching.
+    /// Also handles HTTP 413 (payload too large via API gateway) and <c>token_limit_exceeded</c>.
+    /// </summary>
+    private static bool IsContextLengthError(ClientResultException ex)
+    {
+        if (ex.Status is not (400 or 413)) return false;
+
+        // Prefer structured error code from the response body
+        var errorCode = TryExtractErrorCode(ex);
+        if (errorCode is not null)
+            return errorCode is "context_length_exceeded" or "token_limit_exceeded";
+
+        // Fallback: substring match on exception message (Azure OpenAI format may vary)
+        return ex.Message.Contains("context_length_exceeded", StringComparison.OrdinalIgnoreCase) ||
+               ex.Message.Contains("maximum context length", StringComparison.OrdinalIgnoreCase) ||
+               ex.Message.Contains("reduce the length of the messages", StringComparison.OrdinalIgnoreCase) ||
+               ex.Message.Contains("token_limit_exceeded", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Attempts to extract the <c>error.code</c> field from the raw JSON response body.
+    /// Returns <c>null</c> on any parse failure — this is best-effort.
+    /// </summary>
+    private static string? TryExtractErrorCode(ClientResultException ex)
+    {
+        try
+        {
+            var content = ex.GetRawResponse()?.Content;
+            if (content is null) return null;
+            using var doc = System.Text.Json.JsonDocument.Parse(content.ToMemory());
+            if (doc.RootElement.TryGetProperty("error", out var error) &&
+                error.TryGetProperty("code", out var code))
+                return code.GetString();
+        }
+        catch (Exception)
+        {
+            // Best-effort extraction inside an error handler — catch all to guarantee we never
+            // throw from error-parsing logic. The Azure SDK response internals are outside our
+            // control and the exception surface can change across SDK versions.
+        }
+        return null;
+    }
 }
