@@ -78,9 +78,11 @@ public class EmbeddingService(
 
         // ── Step 2 & 3: Batch-embed and immediately upsert each batch ─────────────────
         // Azure OpenAI supports at most EmbeddingBatchSize inputs per GenerateAsync call.
-        // Upserting per-batch keeps peak memory bounded to one batch of embeddings at a
-        // time rather than the full dataset. The staging-swap (Step 4) is safe because
-        // only complete, successfully upserted data ends up in staging.
+        // All chunks are materialized upfront (bookContents.ToList()) so Chunk() can
+        // slice them by index. Embedding vectors are generated and upserted one batch at
+        // a time, keeping peak vector memory bounded to a single batch rather than the
+        // full dataset. The staging-swap (Step 4) is safe because it only runs after all
+        // batches have been successfully upserted.
         var chunkList = bookContents.ToList();
         try
         {
