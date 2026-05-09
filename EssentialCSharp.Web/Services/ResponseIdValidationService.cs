@@ -31,6 +31,7 @@ public sealed class ResponseIdValidationService : IDisposable
 
     private readonly IMemoryCache _cache;
     private readonly bool _ownsCache;
+    private bool _disposed;
 
     /// <summary>
     /// Production constructor. Creates and owns a dedicated <see cref="MemoryCache"/> with a bounded
@@ -54,8 +55,16 @@ public sealed class ResponseIdValidationService : IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
+        if (_disposed)
+        {
+            return;
+        }
+        _disposed = true;
+
         if (_ownsCache && _cache is IDisposable disposable)
+        {
             disposable.Dispose();
+        }
     }
 
     /// <summary>

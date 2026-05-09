@@ -1,20 +1,19 @@
+using System.Diagnostics.CodeAnalysis;
 using EssentialCSharp.Web.Services;
 
 namespace EssentialCSharp.Web.Tests;
 
-public class ResponseIdValidationServiceTests : IDisposable
+// CA1001: TUnit invokes [After(Test)] for per-test cleanup; IDisposable is not the correct TUnit
+// lifecycle hook — using both causes double-dispose because TUnit calls each path independently.
+[SuppressMessage("Design", "CA1001:TypesThatOwnDisposableFieldsShouldBeDisposable",
+    Justification = "Cleanup is handled by [After(Test)], which is the idiomatic TUnit per-test teardown hook.")]
+public class ResponseIdValidationServiceTests
 {
     // Match production SizeLimit so SetSize(1) is exercised in tests, not silently ignored.
     private readonly ResponseIdValidationService _service = new();
 
     [After(Test)]
     public void Cleanup() => _service.Dispose();
-
-    public void Dispose()
-    {
-        _service.Dispose();
-        GC.SuppressFinalize(this);
-    }
 
     [Test]
     [Arguments(null)]
