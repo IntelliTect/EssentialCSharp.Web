@@ -437,6 +437,17 @@ a:hover {
   right: 3rem;
 }
 
+.turn-page-tooltip .tooltip-center {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Share button reset */
+.turn-page button.arrow-btn {
+  border: none;
+  padding: 0;
+}
+
 /* Chapter Navigation Sidebar Styles */
 
 .sidebar {
