@@ -183,9 +183,9 @@ From this listing, observe that it is possible to assign a variable as part of t
         await Assert.That(result).IsNotNull();
         await Assert.That(result.FileName).IsEqualTo(fileName);
         await Assert.That(result.FilePath).IsEqualTo(filePath);
-        await Assert.That(string.Join("\n", result.Chunks)).Contains("This is the first section.");
-        await Assert.That(string.Join("\n", result.Chunks)).Contains("Console.WriteLine(\"Hello World\");");
-        await Assert.That(result.Chunks).Contains(c => c.Contains("This is the second section."));
+        await Assert.That(string.Join("\n", result.Chunks.Select(c => c.ChunkText))).Contains("This is the first section.");
+        await Assert.That(string.Join("\n", result.Chunks.Select(c => c.ChunkText))).Contains("Console.WriteLine(\"Hello World\");");
+        await Assert.That(result.Chunks).Contains(c => c.ChunkText.Contains("This is the second section."));
     }
     #endregion ProcessSingleMarkdownFile
 }

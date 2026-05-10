@@ -32,10 +32,23 @@ public sealed class BookContentChunk
     public string ChunkText { get; set; } = string.Empty;
 
     /// <summary>
-    /// Chapter number extracted from filename (e.g., "Chapter01.md" -> 1)
+    /// Chapter number extracted from filename (e.g., "Chapter01.md" -> 1).
+    /// Null for files that do not follow the ChapterNN naming pattern.
     /// </summary>
     [VectorStoreData]
     public int? ChapterNumber { get; set; }
+
+    /// <summary>
+    /// Zero-based ordinal of this chunk within its source file.
+    /// Together with FileName, forms the basis for the deterministic Id.
+    /// </summary>
+    /// <remarks>
+    /// This column was added as part of the bulk-embedding refactor. Existing vector-store
+    /// collections created before this change must be rebuilt (via the staging-swap upload
+    /// command) before reads against the live table will succeed with this schema.
+    /// </remarks>
+    [VectorStoreData]
+    public int ChunkIndex { get; set; }
 
     /// <summary>
     /// SHA256 hash of the chunk content for change detection

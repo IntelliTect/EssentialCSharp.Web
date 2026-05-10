@@ -33,6 +33,8 @@ public class AISearchServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GeneratedEmbeddings<Embedding<float>>([new Embedding<float>(new float[1536])]));
 
+        // NpgsqlDataSource has no default constructor so Moq cannot proxy it.
+        // The upload path is not exercised by these tests, so pass null.
         var embeddingService = new EmbeddingService(vectorStoreMock.Object, embGenMock.Object);
         var loggerMock = new Mock<ILogger<AISearchService>>();
 
@@ -105,5 +107,34 @@ public class AISearchServiceTests
         SetupSearch(collectionMock).Returns(() => throw new PostgresException("auth failed", "FATAL", "FATAL", "28000"));
 
         await Assert.ThrowsAsync<PostgresException>(() => svc.ExecuteVectorSearch("test query"));
+    }
+
+    [Test]
+    public async Task ExecuteVectorSearch_DeduplicatesByHeading_KeepsHighestScoringChunkPerHeading()
+    {
+        var (svc, collectionMock) = CreateService();
+
+        var chunkA1 = new BookContentChunk { Id = "a1", ChunkText = "text a1", Heading = "Section A" };
+        var chunkA2 = new BookContentChunk { Id = "a2", ChunkText = "text a2", Heading = "Section A" };
+        var chunkB  = new BookContentChunk { Id = "b1", ChunkText = "text b1", Heading = "Section B" };
+
+        async IAsyncEnumerable<VectorSearchResult<BookContentChunk>> MultiResultStream()
+        {
+            // a1 scores lower than a2 — dedup should keep a2
+            yield return new VectorSearchResult<BookContentChunk>(chunkA1, 0.7f);
+            yield return new VectorSearchResult<BookContentChunk>(chunkA2, 0.9f);
+            yield return new VectorSearchResult<BookContentChunk>(chunkB, 0.8f);
+            await Task.CompletedTask;
+        }
+
+        SetupSearch(collectionMock).Returns(MultiResultStream);
+
+        // top defaults to 5, so both distinct headings should appear
+        var results = await svc.ExecuteVectorSearch("test query");
+
+        await Assert.That(results.Count).IsEqualTo(2);
+        // Highest-scoring chunk for Section A should be a2 (score 0.9), ordered before b (0.8)
+        await Assert.That(results[0].Record.Id).IsEqualTo("a2");
+        await Assert.That(results[1].Record.Id).IsEqualTo("b1");
     }
 }
