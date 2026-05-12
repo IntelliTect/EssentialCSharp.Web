@@ -179,21 +179,28 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # Copy image from dev ACR to prod ACR (server-side, no artifact download needed)
+      # Server-side copy from dev ACR to prod ACR — no artifact download needed.
+      # PREREQUISITE: prod OIDC identity must have AcrPull on the dev ACR (Terraform RBAC).
       - name: Import image from dev ACR to prod ACR
         id: import
         run: |
+          DEV_ACR="${{ vars.DEVCONTAINER_REGISTRY }}"
           PROD_ACR="${{ vars.PRODCONTAINER_REGISTRY }}"
           az acr import \
             --name "${PROD_ACR%.azurecr.io}" \
-            --source "${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb:${{ github.sha }}" \
+            --source "${DEV_ACR}/essentialcsharpweb:${{ github.sha }}" \
+            --registry "${DEV_ACR%.azurecr.io}" \
             --image "essentialcsharpweb:${{ github.sha }}" \
             --image "essentialcsharpweb:latest" \
             --force
-          DIGEST=$(az acr repository show-manifests \
+          DIGEST=$(az acr repository show \
             --name "${PROD_ACR%.azurecr.io}" \
-            --repository essentialcsharpweb \
-            --query "[?tags[?@=='${{ github.sha }}']].digest | [0]" -o tsv)
+            --image "essentialcsharpweb:${{ github.sha }}" \
+            --query "digest" -o tsv)
+          if [ -z "$DIGEST" ]; then
+            echo "::error::Failed to capture image digest from prod ACR after import"
+            exit 1
+          fi
           echo "digest=$DIGEST" >> $GITHUB_OUTPUT
 
       - name: Deploy to Container App
@@ -232,12 +239,16 @@ jobs:
             --name "$CONTAINER_APP_NAME" \
             --resource-group "$RESOURCEGROUP" \
             --query "properties.configuration.ingress.fqdn" -o tsv)
-          curl --fail --retry 5 --retry-delay 10 "https://$FQDN/health"
+          # --retry-all-errors ensures HTTP 5xx (cold-start 503s) also trigger retries
+          curl --fail --retry 10 --retry-delay 15 --retry-all-errors --max-time 30 "https://$FQDN/health"
 
       - name: Tag commit as deployed
         run: |
-          git tag "deployed/prod/${{ github.sha }}"
-          git push origin "deployed/prod/${{ github.sha }}"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          # -f allows re-tagging the same SHA on workflow re-runs
+          git tag -f "deployed/prod/${{ github.sha }}"
+          git push origin "deployed/prod/${{ github.sha }}" --force
 
       - name: Logout of Azure CLI
         if: always()
