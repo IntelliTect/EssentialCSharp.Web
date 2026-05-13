@@ -5,14 +5,14 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-FROM node:24-bookworm-slim AS frontend-build
+FROM node:26-bookworm-slim AS frontend-build
 WORKDIR /frontend/EssentialCSharp.Web
 COPY EssentialCSharp.Web/package.json EssentialCSharp.Web/package-lock.json ./
 RUN npm ci
 COPY EssentialCSharp.Web/ ./
 RUN npm run build
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0.203 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.300 AS build
 ARG ACCESS_TO_NUGET_FEED=true
 ENV ACCESS_TO_NUGET_FEED=$ACCESS_TO_NUGET_FEED
 WORKDIR /src
