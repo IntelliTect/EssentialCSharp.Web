@@ -26,6 +26,11 @@ updates:
           patterns:
             - "ContentFeedNuget"
             - "EssentialCSharp.Shared.Models"
+       ef-core:
+          applies-to: version-updates
+          patterns:
+            - "Microsoft.EntityFrameworkCore*"
+            - "dotnet-ef"
 
   - package-ecosystem: "github-actions" # See documentation for possible values
     directory: "/" # Location of package manifests
