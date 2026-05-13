@@ -2,15 +2,12 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using EssentialCSharp.Web.Services;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Tests;
 
-[NotInParallel("McpTests")]
-[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
-public class McpToolContractTests(WebApplicationFactory factory)
+public class McpToolContractTests : IntegrationTestBase
 {
     [Test]
     public async Task McpToolsList_StructuredAndHybridTools_AdvertiseOutputSchema()
@@ -201,10 +198,10 @@ public class McpToolContractTests(WebApplicationFactory factory)
     private async Task<(HttpClient Client, string RawToken, string? SessionId)> CreateAuthenticatedSessionAsync()
     {
         (_, string rawToken) = await McpTestHelper.CreateUserAndTokenAsync(
-            factory,
+            Factory,
             "mcp-contract-test",
             userPrefix: "mcp-contract");
-        HttpClient client = McpTestHelper.CreateClient(factory);
+        HttpClient client = McpTestHelper.CreateClient(Factory);
 
         using var initRequest = McpTestHelper.CreateInitializeRequest("/mcp");
         McpTestHelper.AddBearerToken(initRequest, rawToken);
@@ -223,7 +220,7 @@ public class McpToolContractTests(WebApplicationFactory factory)
 
     private string GetConfiguredBaseUrl()
     {
-        string baseUrl = factory.Services.GetRequiredService<IOptions<SiteSettings>>().Value.BaseUrl;
+        string baseUrl = Factory.Services.GetRequiredService<IOptions<SiteSettings>>().Value.BaseUrl;
         return baseUrl.TrimEnd('/') + "/";
     }
 

@@ -3,21 +3,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace EssentialCSharp.Web.Tests;
 
-[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
-public class RouteConfigurationServiceTests
+public class RouteConfigurationServiceTests : IntegrationTestBase
 {
-    private readonly WebApplicationFactory _Factory;
-
-    public RouteConfigurationServiceTests(WebApplicationFactory factory)
-    {
-        _Factory = factory;
-    }
-
     [Test]
     public async Task GetStaticRoutes_ShouldReturnExpectedRoutes()
     {
         // Act
-        var routes = _Factory.InServiceScope(serviceProvider =>
+        var routes = InServiceScope(serviceProvider =>
         {
             var routeConfigurationService = serviceProvider.GetRequiredService<IRouteConfigurationService>();
             return routeConfigurationService.GetStaticRoutes().ToList();

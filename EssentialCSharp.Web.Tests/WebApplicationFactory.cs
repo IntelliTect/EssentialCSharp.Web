@@ -1,9 +1,9 @@
+using System.Collections.Concurrent;
 using System.Data.Common;
 using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Services;
-using TUnit.Core.Interfaces;
+using TUnit.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -12,19 +12,12 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace EssentialCSharp.Web.Tests;
 
-public sealed class WebApplicationFactory : WebApplicationFactory<Program>, IAsyncInitializer
+public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
 {
-    public Task InitializeAsync()
-    {
-        // Force eager server initialization before tests run.
-        // This is thread-safe and prevents race conditions from parallel tests
-        // calling CreateClient() concurrently during lazy init.
-        _ = Server;
-        return Task.CompletedTask;
-    }
-
     private static string SqlConnectionString => $"DataSource=file:{Guid.NewGuid()}?mode=memory&cache=shared";
-    private SqliteConnection? _Connection;
+
+    // Each per-test factory's ConfigureWebHost creates a new connection; track all for disposal.
+    private readonly ConcurrentBag<SqliteConnection> _connections = [];
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -58,12 +51,15 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>, IAsy
                 services.Remove(migrationServiceDescriptor);
             }
 
-            _Connection = new SqliteConnection(SqlConnectionString);
-            _Connection.Open();
+            // Capture in a local variable so each per-test factory's closure binds
+            // to its own connection, not to a shared field that gets overwritten.
+            SqliteConnection connection = new(SqlConnectionString);
+            connection.Open();
+            _connections.Add(connection);
 
             services.AddDbContext<EssentialCSharpWebContext>(options =>
             {
-                options.UseSqlite(_Connection);
+                options.UseSqlite(connection);
             });
 
             using ServiceProvider serviceProvider = services.BuildServiceProvider();
@@ -80,37 +76,12 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>, IAsy
         });
     }
 
-    /// <summary>
-    /// Executes an action within a service scope, handling scope creation and cleanup automatically.
-    /// </summary>
-    /// <typeparam name="T">The return type of the action</typeparam>
-    /// <param name="action">The action to execute with the scoped service provider</param>
-    /// <returns>The result of the action</returns>
-    public T InServiceScope<T>(Func<IServiceProvider, T> action)
-    {
-        var factory = Services.GetRequiredService<IServiceScopeFactory>();
-        using var scope = factory.CreateScope();
-        return action(scope.ServiceProvider);
-    }
-
-    /// <summary>
-    /// Executes an action within a service scope, handling scope creation and cleanup automatically.
-    /// </summary>
-    /// <param name="action">The action to execute with the scoped service provider</param>
-    public void InServiceScope(Action<IServiceProvider> action)
-    {
-        var factory = Services.GetRequiredService<IServiceScopeFactory>();
-        using var scope = factory.CreateScope();
-        action(scope.ServiceProvider);
-    }
-
     public override async ValueTask DisposeAsync()
     {
         await base.DisposeAsync().ConfigureAwait(false);
-        if (_Connection != null)
+        foreach (SqliteConnection connection in _connections)
         {
-            await _Connection.DisposeAsync().ConfigureAwait(false);
-            _Connection = null;
+            await connection.DisposeAsync().ConfigureAwait(false);
         }
         GC.SuppressFinalize(this);
     }
@@ -120,8 +91,10 @@ public sealed class WebApplicationFactory : WebApplicationFactory<Program>, IAsy
         base.Dispose(disposing);
         if (disposing)
         {
-            _Connection?.Dispose();
-            _Connection = null;
+            foreach (SqliteConnection connection in _connections)
+            {
+                connection.Dispose();
+            }
         }
     }
 }

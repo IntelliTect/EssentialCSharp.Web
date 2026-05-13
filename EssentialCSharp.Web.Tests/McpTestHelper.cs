@@ -9,15 +9,17 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using TUnit.AspNetCore;
 
 namespace EssentialCSharp.Web.Tests;
 
 internal static class McpTestHelper
 {
-    public static HttpClient CreateClient(WebApplicationFactory factory) => factory.CreateClient(new WebApplicationFactoryClientOptions
-    {
-        AllowAutoRedirect = false
-    });
+    public static HttpClient CreateClient(TracedWebApplicationFactory<Program> factory) =>
+        factory.Inner.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
 
     public static HttpRequestMessage CreateInitializeRequest(string path = "/mcp")
     {
@@ -50,7 +52,7 @@ internal static class McpTestHelper
     public static void AddCookie(HttpRequestMessage request, string cookieName, string cookieValue) =>
         request.Headers.Add("Cookie", $"{cookieName}={cookieValue}");
 
-    public static async Task<string> CreateUserAsync(WebApplicationFactory factory, string userPrefix)
+    public static async Task<string> CreateUserAsync(TracedWebApplicationFactory<Program> factory, string userPrefix)
     {
         string userId = Guid.NewGuid().ToString();
         string suffix = Guid.NewGuid().ToString("N")[..8];
@@ -73,7 +75,7 @@ internal static class McpTestHelper
     }
 
     public static async Task<(string UserId, string RawToken)> CreateUserAndTokenAsync(
-        WebApplicationFactory factory,
+        TracedWebApplicationFactory<Program> factory,
         string tokenName,
         string userPrefix = "mcp-test",
         DateTime? expiresAt = null)
@@ -90,7 +92,7 @@ internal static class McpTestHelper
     }
 
     public static async Task<(string CookieName, string CookieValue)> CreateIdentityApplicationCookieAsync(
-        WebApplicationFactory factory,
+        TracedWebApplicationFactory<Program> factory,
         string userId)
     {
         using var scope = factory.Services.CreateScope();

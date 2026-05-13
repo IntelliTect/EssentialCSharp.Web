@@ -5,17 +5,15 @@ namespace EssentialCSharp.Web.Tests;
 
 /// <summary>
 /// HTTP integration tests for the "content" rate limit policy.
-/// Uses its own factory (PerClass) to get a fresh in-memory rate limiter for each run.
+/// Each test gets its own factory (fresh IHost) so the rate limiter starts from a clean state.
 /// Anonymous users are limited to 10 requests per minute on chapter content pages.
 /// </summary>
-[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
-public class ContentRateLimitingTests(WebApplicationFactory factory)
+public class ContentRateLimitingTests : IntegrationTestBase
 {
     [Test]
     public async Task ContentEndpoint_ExceedingPerMinuteLimit_Returns429()
     {
-        // AllowAutoRedirect = false prevents redirect-following from consuming extra permits.
-        HttpClient client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        HttpClient client = Factory.Inner.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false
         });

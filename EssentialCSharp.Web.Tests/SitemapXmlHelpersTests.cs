@@ -3,20 +3,10 @@ using DotnetSitemapGenerator;
 using EssentialCSharp.Web.Helpers;
 using EssentialCSharp.Web.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 namespace EssentialCSharp.Web.Tests;
 
-[NotInParallel("SitemapTests")]
-[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
-public class SitemapXmlHelpersTests
+public class SitemapXmlHelpersTests : IntegrationTestBase
 {
-    private readonly WebApplicationFactory _Factory;
-
-    public SitemapXmlHelpersTests(WebApplicationFactory factory)
-    {
-        _Factory = factory;
-    }
-
     [Test]
     public async Task EnsureSitemapHealthy_WithValidSiteMappings_DoesNotThrow()
     {
@@ -73,7 +63,7 @@ public class SitemapXmlHelpersTests
         var baseUrl = "https://test.example.com/";
 
         // Act & Assert
-        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
             siteMappings,
             routeConfigurationService,
@@ -99,7 +89,7 @@ public class SitemapXmlHelpersTests
         var baseUrl = "https://test.example.com/";
 
         // Act & Assert
-        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
             siteMappings,
             routeConfigurationService,
@@ -131,7 +121,7 @@ public class SitemapXmlHelpersTests
         };
 
         // Act & Assert
-        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
             siteMappings,
             routeConfigurationService,
@@ -153,7 +143,7 @@ public class SitemapXmlHelpersTests
         var baseUrl = "https://test.example.com/";
 
         // Act & Assert
-        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
             siteMappings,
             routeConfigurationService,
@@ -174,7 +164,7 @@ public class SitemapXmlHelpersTests
         var baseUrl = "https://test.example.com/";
 
         // Act & Assert
-        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
             siteMappings,
             routeConfigurationService,
@@ -195,7 +185,7 @@ public class SitemapXmlHelpersTests
         var baseUrl = "https://test.example.com/";
 
         // Act
-        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
             siteMappings,
             routeConfigurationService,
@@ -221,7 +211,7 @@ public class SitemapXmlHelpersTests
         };
 
         // Act
-        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
             siteMappings,
             routeConfigurationService,
@@ -244,7 +234,7 @@ public class SitemapXmlHelpersTests
         };
 
         // Act
-        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
             siteMappings,
             routeConfigurationService,
