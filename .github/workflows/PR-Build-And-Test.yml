@@ -42,15 +42,15 @@ jobs:
         env:
           ASPNETCORE_ENVIRONMENT: Development
 
-      - name: Expose GitHub Actions Runtime
-        uses: actions/github-script@v9
-        with:
-          script: |
-            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env['ACTIONS_RUNTIME_TOKEN']);
-            core.exportVariable('ACTIONS_RESULTS_URL', process.env['ACTIONS_RESULTS_URL']);
-
       - name: Run .NET Tests
         run: dotnet test --no-build --configuration Release --report-trx --coverage --results-directory ${{ runner.temp }}
+
+      - name: Upload HTML Test Report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: TestReport
+          path: '**/*-report.html'
       
       - name: Convert TRX to VS Playlist
         if: failure()
