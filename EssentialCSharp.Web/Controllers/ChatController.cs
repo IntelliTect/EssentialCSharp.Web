@@ -153,12 +153,15 @@ public partial class ChatController : ControllerBase
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
                 {
+                    // Best-effort write during an aborted request — no response body can be delivered.
                 }
                 catch (IOException) when (HttpContext.RequestAborted.IsCancellationRequested)
                 {
+                    // Expected client disconnect while attempting a best-effort error response write.
                 }
                 catch (ObjectDisposedException) when (HttpContext.RequestAborted.IsCancellationRequested)
                 {
+                    // Response stream can already be disposed after an abrupt client disconnect.
                 }
             }
             else
@@ -192,12 +195,15 @@ public partial class ChatController : ControllerBase
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
             {
+                // Best-effort write during an aborted request — no response body can be delivered.
             }
             catch (IOException) when (HttpContext.RequestAborted.IsCancellationRequested)
             {
+                // Expected client disconnect while attempting a best-effort error response write.
             }
             catch (ObjectDisposedException) when (HttpContext.RequestAborted.IsCancellationRequested)
             {
+                // Response stream can already be disposed after an abrupt client disconnect.
             }
         }
         catch (Exception ex)
