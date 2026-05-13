@@ -14,7 +14,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: EssentialCSharp.Web/package.json
+          node-version: '26'
           cache: npm
           cache-dependency-path: EssentialCSharp.Web/package-lock.json
 
