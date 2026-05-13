@@ -189,7 +189,6 @@ jobs:
           az acr import \
             --name "${PROD_ACR%.azurecr.io}" \
             --source "${DEV_ACR}/essentialcsharpweb:${{ github.sha }}" \
-            --registry "${DEV_ACR%.azurecr.io}" \
             --image "essentialcsharpweb:${{ github.sha }}" \
             --image "essentialcsharpweb:latest" \
             --force
