@@ -1,3 +1,4 @@
+using System.IO;
 using System.Security.Claims;
 using System.Text.Json;
 using EssentialCSharp.Chat.Common.Services;
@@ -153,12 +154,12 @@ public partial class ChatController : ControllerBase
                     await Response.WriteAsync("data: {\"type\":\"error\",\"message\":\"This conversation has grown too long. Please start a new one.\",\"errorCode\":\"context_limit_exceeded\"}\n\n", cancellationToken);
                     await Response.Body.FlushAsync(cancellationToken);
                 }
-                catch (Exception)
+                catch (Exception ex) when (ex is IOException or OperationCanceledException or ObjectDisposedException)
                 {
                     // Best-effort write to an already-streaming response. Kestrel can throw
                     // IOException (connection reset), OperationCanceledException, or
-                    // ObjectDisposedException on abrupt client disconnect — swallow all to
-                    // avoid masking the original exception.
+                    // ObjectDisposedException on abrupt client disconnect — swallow expected
+                    // transport/disconnect exceptions to avoid masking the original exception.
                 }
             }
         }
