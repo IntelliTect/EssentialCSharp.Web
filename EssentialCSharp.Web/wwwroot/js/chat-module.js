@@ -3,6 +3,14 @@ import DOMPurify from "dompurify";
 import { marked } from "marked";
 import { ref, nextTick, watch, onMounted, onUnmounted } from "vue";
 
+const errorIconClassByType = {
+    'rate-limit': 'fas fa-clock',
+    'auth-error': 'fas fa-lock',
+    'validation-error': 'fas fa-exclamation-circle',
+    'network-error': 'fas fa-wifi',
+    'connection-error': 'fas fa-plug'
+};
+
 export function useChatWidget() {
     // Authentication state
     const isAuthenticated = ref(window.IS_AUTHENTICATED || false);
@@ -143,29 +151,12 @@ export function useChatWidget() {
     function getErrorMessageClass(errorType) {
         if (errorType === 'rate-limit') {
             return 'rate-limit-error';
-        } else if (errorType === 'auth-error') {
-            return 'error-message';
-        } else if (errorType === 'validation-error') {
-            return 'error-message';
-        } else {
-            return 'error-message';
         }
+        return 'error-message';
     }
 
     function getErrorIconClass(errorType) {
-        if (errorType === 'rate-limit') {
-            return 'fas fa-clock';
-        } else if (errorType === 'auth-error') {
-            return 'fas fa-lock';
-        } else if (errorType === 'validation-error') {
-            return 'fas fa-exclamation-circle';
-        } else if (errorType === 'network-error') {
-            return 'fas fa-wifi';
-        } else if (errorType === 'connection-error') {
-            return 'fas fa-plug';
-        } else {
-            return 'fas fa-exclamation-triangle';
-        }
+        return errorIconClassByType[errorType] || 'fas fa-exclamation-triangle';
     }
 
     async function sendChatMessage() {
