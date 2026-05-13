@@ -6,6 +6,26 @@ on:
   workflow_dispatch:
 
 jobs:
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: EssentialCSharp.Web/package.json
+          cache: npm
+          cache-dependency-path: EssentialCSharp.Web/package-lock.json
+
+      - name: Install npm dependencies
+        working-directory: EssentialCSharp.Web
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: EssentialCSharp.Web
+        run: npm run build
+
   build-and-test:
     runs-on: ubuntu-latest
     steps:
