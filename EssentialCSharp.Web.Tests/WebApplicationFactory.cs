@@ -76,29 +76,25 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
         });
     }
 
-    private int _disposed;
+    private int _connectionsDisposed;
 
     public override async ValueTask DisposeAsync()
     {
-        if (Interlocked.Exchange(ref _disposed, 1) == 1) return;
         await base.DisposeAsync().ConfigureAwait(false);
-        foreach (SqliteConnection connection in _connections)
+        if (Interlocked.Exchange(ref _connectionsDisposed, 1) == 0)
         {
-            await connection.DisposeAsync().ConfigureAwait(false);
+            foreach (SqliteConnection connection in _connections)
+                await connection.DisposeAsync().ConfigureAwait(false);
         }
-        GC.SuppressFinalize(this);
     }
 
     protected override void Dispose(bool disposing)
     {
-        if (Interlocked.Exchange(ref _disposed, 1) == 1) return;
         base.Dispose(disposing);
-        if (disposing)
+        if (disposing && Interlocked.Exchange(ref _connectionsDisposed, 1) == 0)
         {
             foreach (SqliteConnection connection in _connections)
-            {
                 connection.Dispose();
-            }
         }
     }
 }
