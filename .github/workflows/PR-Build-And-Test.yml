@@ -3,6 +3,7 @@ name: PR Build and Test EssentialCSharp.Web
 on:
   pull_request:
     branches: ["main"]
+  merge_group:
   workflow_dispatch:
 
 jobs:
@@ -67,7 +68,7 @@ jobs:
         with:
           file: ./EssentialCSharp.Web/Dockerfile
           context: .
-          outputs: type=docker,dest=${{ github.workspace }}/essentialcsharpwebimage.tar
+          push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: ACCESS_TO_NUGET_FEED=false
