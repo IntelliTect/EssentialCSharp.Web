@@ -3,6 +3,14 @@ import DOMPurify from "dompurify";
 import { marked } from "marked";
 import { ref, nextTick, watch, onMounted, onUnmounted } from "vue";
 
+const errorIconClassByType = {
+    'rate-limit': 'fas fa-clock',
+    'auth-error': 'fas fa-lock',
+    'validation-error': 'fas fa-exclamation-circle',
+    'network-error': 'fas fa-wifi',
+    'connection-error': 'fas fa-plug'
+};
+
 export function useChatWidget() {
     // Authentication state
     const isAuthenticated = ref(window.IS_AUTHENTICATED || false);
@@ -148,15 +156,7 @@ export function useChatWidget() {
     }
 
     function getErrorIconClass(errorType) {
-        const iconClassByErrorType = {
-            'rate-limit': 'fas fa-clock',
-            'auth-error': 'fas fa-lock',
-            'validation-error': 'fas fa-exclamation-circle',
-            'network-error': 'fas fa-wifi',
-            'connection-error': 'fas fa-plug'
-        };
-
-        return iconClassByErrorType[errorType] || 'fas fa-exclamation-triangle';
+        return errorIconClassByType[errorType] || 'fas fa-exclamation-triangle';
     }
 
     async function sendChatMessage() {
