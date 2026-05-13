@@ -134,7 +134,7 @@ public partial class ChatController : ControllerBase
             await Response.WriteAsync("data: [DONE]\n\n", cancellationToken);
             await Response.Body.FlushAsync(cancellationToken);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
         {
             LogChatStreamCancelled(_Logger, User.Identity?.Name);
         }
@@ -142,9 +142,24 @@ public partial class ChatController : ControllerBase
         {
             if (!Response.HasStarted)
             {
+                if (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
+                    return;
+
                 Response.StatusCode = 400;
                 Response.ContentType = "application/json";
-                await Response.WriteAsJsonAsync(new { error = "This conversation has grown too long. Please start a new one.", errorCode = "context_limit_exceeded" }, cancellationToken);
+                try
+                {
+                    await Response.WriteAsJsonAsync(new { error = "This conversation has grown too long. Please start a new one.", errorCode = "context_limit_exceeded" }, cancellationToken);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
+                {
+                }
+                catch (IOException) when (HttpContext.RequestAborted.IsCancellationRequested)
+                {
+                }
+                catch (ObjectDisposedException) when (HttpContext.RequestAborted.IsCancellationRequested)
+                {
+                }
             }
             else
             {
@@ -154,7 +169,7 @@ public partial class ChatController : ControllerBase
                     await Response.WriteAsync("data: {\"type\":\"error\",\"message\":\"This conversation has grown too long. Please start a new one.\",\"errorCode\":\"context_limit_exceeded\"}\n\n", cancellationToken);
                     await Response.Body.FlushAsync(cancellationToken);
                 }
-                catch (Exception ex) when (ex is IOException or OperationCanceledException or ObjectDisposedException)
+                catch (Exception writeException) when (writeException is IOException or OperationCanceledException or ObjectDisposedException)
                 {
                     // Best-effort write to an already-streaming response. Kestrel can throw
                     // IOException (connection reset), OperationCanceledException, or
@@ -166,9 +181,24 @@ public partial class ChatController : ControllerBase
         catch (Exception ex) when (!Response.HasStarted)
         {
             LogChatStreamErrorBeforeResponseStarted(_Logger, ex, User.Identity?.Name);
+            if (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
+                return;
+
             Response.StatusCode = 500;
             Response.ContentType = "application/json";
-            await Response.WriteAsJsonAsync(new { error = "Chat service unavailable" }, cancellationToken);
+            try
+            {
+                await Response.WriteAsJsonAsync(new { error = "Chat service unavailable" }, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
+            {
+            }
+            catch (IOException) when (HttpContext.RequestAborted.IsCancellationRequested)
+            {
+            }
+            catch (ObjectDisposedException) when (HttpContext.RequestAborted.IsCancellationRequested)
+            {
+            }
         }
         catch (Exception ex)
         {
@@ -178,12 +208,12 @@ public partial class ChatController : ControllerBase
                 await Response.WriteAsync("data: {\"type\":\"error\",\"message\":\"Stream interrupted\"}\n\n", cancellationToken);
                 await Response.Body.FlushAsync(cancellationToken);
             }
-            catch (Exception)
+            catch (Exception writeException) when (writeException is IOException or OperationCanceledException or ObjectDisposedException)
             {
                 // Best-effort write to an already-streaming response. Kestrel can throw
                 // IOException (connection reset), OperationCanceledException, or
-                // ObjectDisposedException on abrupt client disconnect — swallow all to
-                // avoid masking the original exception.
+                // ObjectDisposedException on abrupt client disconnect — swallow expected
+                // transport/disconnect exceptions to avoid masking the original exception.
             }
         }
     }
