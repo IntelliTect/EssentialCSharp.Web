@@ -1,5 +1,4 @@
 using System.Net;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace EssentialCSharp.Web.Tests;
 
@@ -13,10 +12,7 @@ public class ContentRateLimitingTests : IntegrationTestBase
     [Test]
     public async Task ContentEndpoint_ExceedingPerMinuteLimit_Returns429()
     {
-        HttpClient client = Factory.Inner.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            AllowAutoRedirect = false
-        });
+        HttpClient client = Factory.CreateClient();
 
         // Anonymous limit is 10/min. First 10 requests should not be rate-limited.
         for (int i = 0; i < 10; i++)

@@ -76,8 +76,11 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
         });
     }
 
+    private int _disposed;
+
     public override async ValueTask DisposeAsync()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) == 1) return;
         await base.DisposeAsync().ConfigureAwait(false);
         foreach (SqliteConnection connection in _connections)
         {
@@ -88,6 +91,7 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
 
     protected override void Dispose(bool disposing)
     {
+        if (Interlocked.Exchange(ref _disposed, 1) == 1) return;
         base.Dispose(disposing);
         if (disposing)
         {
