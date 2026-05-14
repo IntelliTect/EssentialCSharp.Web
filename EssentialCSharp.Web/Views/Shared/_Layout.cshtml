@@ -6,9 +6,11 @@
 @using Microsoft.AspNetCore.Identity
 @using EssentialCSharp.Web.Areas.Identity.Data
 @using Microsoft.Extensions.Configuration
+@using Microsoft.Extensions.Options
 @inject ISiteMappingService _SiteMappings
 @inject SignInManager<EssentialCSharpWebUser> SignInManager
 @inject IConfiguration Configuration
+@inject IOptions<CaptchaOptions> _CaptchaOptions
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -192,6 +194,7 @@
         window.TRYDOTNET_ORIGIN = @Json.Serialize(Configuration["TryDotNet:Origin"]);
         window.BUILD_LABEL = @Json.Serialize(buildLabel);
         window.ENABLE_CHAT_WIDGET = @Json.Serialize(!Context.Request.Path.StartsWithSegments("/Identity"));
+        window.HCAPTCHA_SITE_KEY = @Json.Serialize(_CaptchaOptions.Value.SiteKey);
     </script>
     <script src="~/dist/assets/site-shell.js" type="module" asp-append-version="true"></script>
 </body>

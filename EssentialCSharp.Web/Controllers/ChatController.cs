@@ -1,10 +1,12 @@
 using System.Security.Claims;
 using System.Text.Json;
 using EssentialCSharp.Chat.Common.Services;
+using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Controllers;
 
@@ -17,13 +19,38 @@ public partial class ChatController : ControllerBase
 {
     private readonly AIChatService _AiChatService;
     private readonly ResponseIdValidationService _ResponseIdValidationService;
+    private readonly ICaptchaService _CaptchaService;
+    private readonly CaptchaOptions _CaptchaOptions;
     private readonly ILogger<ChatController> _Logger;
 
-    public ChatController(ILogger<ChatController> logger, AIChatService aiChatService, ResponseIdValidationService responseIdValidationService)
+    public ChatController(ILogger<ChatController> logger, AIChatService aiChatService,
+        ResponseIdValidationService responseIdValidationService,
+        ICaptchaService captchaService, IOptions<CaptchaOptions> captchaOptions)
     {
         _AiChatService = aiChatService;
         _ResponseIdValidationService = responseIdValidationService;
+        _CaptchaService = captchaService;
+        _CaptchaOptions = captchaOptions.Value;
         _Logger = logger;
+    }
+
+    /// <summary>
+    /// Validates the hCaptcha token when captcha is configured.
+    /// Returns <c>true</c> when captcha is not configured (dev mode) or when the token is valid.
+    /// Fails open on hCaptcha service outages to avoid blocking legitimate users.
+    /// </summary>
+    private async Task<bool> IsCaptchaValidAsync(string? token, string? remoteIp, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(_CaptchaOptions.SecretKey))
+            return true; // captcha not configured — skip validation
+
+        HCaptchaResult? result = await _CaptchaService.VerifyAsync(token, remoteIp, ct);
+        if (result is null)
+        {
+            LogCaptchaServiceUnavailable(_Logger); // hCaptcha unreachable — fail open
+            return true;
+        }
+        return result.Success;
     }
 
     [HttpPost("message")]
@@ -36,6 +63,9 @@ public partial class ChatController : ControllerBase
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
             return Unauthorized();
+
+        if (!await IsCaptchaValidAsync(request.CaptchaResponse, HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken))
+            return StatusCode(403, new { error = "Human verification required.", errorCode = "captcha_failed" });
 
         var previousResponseId = string.IsNullOrWhiteSpace(request.PreviousResponseId)
             ? null
@@ -84,6 +114,13 @@ public partial class ChatController : ControllerBase
         {
             Response.StatusCode = 401;
             await Response.WriteAsJsonAsync(new { error = "Unauthorized." }, CancellationToken.None);
+            return;
+        }
+
+        if (!await IsCaptchaValidAsync(request.CaptchaResponse, HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken))
+        {
+            Response.StatusCode = 403;
+            await Response.WriteAsJsonAsync(new { error = "Human verification required.", errorCode = "captcha_failed" }, CancellationToken.None);
             return;
         }
 
@@ -183,6 +220,9 @@ public partial class ChatController : ControllerBase
             }
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "hCaptcha service unavailable during chat request — failing open")]
+    private static partial void LogCaptchaServiceUnavailable(ILogger<ChatController> logger);
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Chat stream cancelled for user {User}")]
     private static partial void LogChatStreamCancelled(ILogger<ChatController> logger, string? user);
