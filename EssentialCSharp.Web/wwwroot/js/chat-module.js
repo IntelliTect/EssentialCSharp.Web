@@ -21,6 +21,13 @@ let captchaTokenReject = null;
 let captchaPending = false; // prevents concurrent token requests overwriting promise callbacks
 const CAPTCHA_TIMEOUT_MS = 15_000;
 
+// Resolves once the widget has rendered. getCaptchaToken() awaits this so a user who
+// submits before hCaptcha finishes loading waits (up to 15 s) rather than getting a 403.
+let captchaWidgetReadyResolve = null;
+const captchaWidgetReady = captchaSiteKey
+    ? new Promise((resolve) => { captchaWidgetReadyResolve = resolve; })
+    : Promise.resolve();
+
 function initCaptchaWidget() {
     if (!captchaSiteKey) return;
     // Guard: only render once (widget lives outside the v-if dialog overlay)
@@ -52,23 +59,26 @@ function initCaptchaWidget() {
                 reject?.(new Error('captcha-error'));
             }
         });
+        captchaWidgetReadyResolve?.(); // unblock any getCaptchaToken() calls waiting for the widget
     });
 }
 
 /**
  * Returns a fresh hCaptcha token, or null if captcha is not configured.
- * Resolves after the invisible challenge completes (typically instant for non-suspicious users).
+ * Waits for the widget to finish rendering if it has not yet (handles slow script loads).
  * Rejects with 'captcha-concurrent' if a token request is already in-flight.
  * Rejects with 'captcha-timeout' if the widget does not respond within 15 seconds.
  */
 function getCaptchaToken() {
-    if (!captchaSiteKey || captchaWidgetId === null) return Promise.resolve(null);
+    if (!captchaSiteKey) return Promise.resolve(null);
     if (captchaPending) return Promise.reject(new Error('captcha-concurrent'));
     captchaPending = true;
 
     let timeoutId;
 
-    const tokenPromise = new Promise((resolve, reject) => {
+    // Chain onto captchaWidgetReady so calls made before the widget finishes loading
+    // wait rather than immediately returning null and causing a 403.
+    const tokenPromise = captchaWidgetReady.then(() => new Promise((resolve, reject) => {
         captchaTokenResolve = (token) => {
             captchaPending = false;
             clearTimeout(timeoutId); // cancel lingering timer so it can't corrupt the next call
@@ -80,7 +90,7 @@ function getCaptchaToken() {
             reject(err);
         };
         window.hcaptcha.execute(captchaWidgetId);
-    });
+    }));
 
     const timeoutPromise = new Promise((_, reject) => {
         // timeoutId is assigned synchronously here, before captchaTokenResolve can fire
