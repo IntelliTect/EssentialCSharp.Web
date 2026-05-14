@@ -10,5 +10,4 @@ public class ChatMessageRequest
     [StringLength(200)]
     public string? PreviousResponseId { get; set; }
     public bool EnableContextualSearch { get; set; } = true;
-    public string? CaptchaResponse { get; set; } // hCaptcha token; validated server-side when chat captcha enforcement is wired up
 }

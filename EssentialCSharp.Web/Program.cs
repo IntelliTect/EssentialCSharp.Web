@@ -128,6 +128,8 @@ public partial class Program
             {
                 if (System.Net.IPNetwork.TryParse(cidr, out var network))
                     options.KnownIPNetworks.Add(network);
+                else
+                    Console.Error.WriteLine($"[WARN] ForwardedHeaders:TrustedProxyCidrs: could not parse '{cidr}' as an IP network — entry skipped. Check your configuration.");
             }
         });
 
@@ -320,7 +322,7 @@ public partial class Program
                     return RateLimitPartition.GetNoLimiter("mcp-transport");
 
                 var partitionKey = httpContext.User.Identity?.IsAuthenticated == true
-                    ? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "unknown-user"
+                    ? httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown-user"
                     : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip";
 
                 return RateLimitPartition.GetFixedWindowLimiter(
@@ -436,6 +438,16 @@ public partial class Program
         loggerFactory.Dispose();
 
         WebApplication app = builder.Build();
+
+        // Warn if the effective trusted-proxy set is empty in non-Development — this fires for
+        // both "no CIDRs configured" and "all configured CIDRs failed to parse" cases, ensuring
+        // X-Forwarded-For spoofing protection (F4) is visibly inactive until properly configured.
+        if (!app.Environment.IsDevelopment())
+        {
+            var fwdOpts = app.Services.GetRequiredService<IOptions<ForwardedHeadersOptions>>().Value;
+            if (fwdOpts.KnownIPNetworks.Count == 0 && fwdOpts.KnownProxies.Count == 0)
+                LogTrustedProxyCidrsNotConfigured(app.Logger);
+        }
 
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
@@ -623,4 +635,7 @@ public partial class Program
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Ignoring invalid TryDotNet origin in CSP: {Origin}")]
     private static partial void LogIgnoringInvalidTryDotNetOrigin(ILogger logger, string origin);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "SECURITY: ForwardedHeaders:TrustedProxyCidrs is not configured. All X-Forwarded-For values are trusted, enabling IP spoofing against rate limits. Set this to your load-balancer CIDR (e.g., Azure Container Apps ingress range) to harden this endpoint.")]
+    private static partial void LogTrustedProxyCidrsNotConfigured(ILogger logger);
 }
