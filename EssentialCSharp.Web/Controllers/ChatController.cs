@@ -134,7 +134,7 @@ public partial class ChatController : ControllerBase
             await Response.WriteAsync("data: [DONE]\n\n", cancellationToken);
             await Response.Body.FlushAsync(cancellationToken);
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
+        catch (OperationCanceledException) when (Response.HasStarted || cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
         {
             LogChatStreamCancelled(_Logger, User.Identity?.Name);
         }
