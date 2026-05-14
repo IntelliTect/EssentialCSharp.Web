@@ -37,18 +37,27 @@ public partial class ChatController : ControllerBase
     /// <summary>
     /// Validates the hCaptcha token when captcha is configured.
     /// Returns <c>true</c> when captcha is not configured (dev mode) or when the token is valid.
-    /// Fails open on hCaptcha service outages to avoid blocking legitimate users.
+    /// Fails open on hCaptcha service outages (null result) to avoid blocking legitimate users —
+    /// this is intentional given the existing [Authorize] + rate-limiting backstop.
     /// </summary>
     private async Task<bool> IsCaptchaValidAsync(string? token, string? remoteIp, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(_CaptchaOptions.SecretKey))
             return true; // captcha not configured — skip validation
 
+        if (string.IsNullOrWhiteSpace(token))
+            return false; // token required when captcha is configured — reject without an outbound call
+
         HCaptchaResult? result = await _CaptchaService.VerifyAsync(token, remoteIp, ct);
         if (result is null)
         {
-            LogCaptchaServiceUnavailable(_Logger); // hCaptcha unreachable — fail open
+            LogCaptchaServiceUnavailable(_Logger); // hCaptcha unreachable — fail open (intentional)
             return true;
+        }
+
+        if (!result.Success)
+        {
+            LogCaptchaValidationFailed(_Logger, string.Join(',', result.ErrorCodes ?? []));
         }
         return result.Success;
     }
@@ -223,6 +232,9 @@ public partial class ChatController : ControllerBase
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "hCaptcha service unavailable during chat request — failing open")]
     private static partial void LogCaptchaServiceUnavailable(ILogger<ChatController> logger);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "hCaptcha validation failed for chat request — error codes: {ErrorCodes}")]
+    private static partial void LogCaptchaValidationFailed(ILogger<ChatController> logger, string errorCodes);
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Chat stream cancelled for user {User}")]
     private static partial void LogChatStreamCancelled(ILogger<ChatController> logger, string? user);

@@ -18,6 +18,8 @@ const captchaSiteKey = window.HCAPTCHA_SITE_KEY || null;
 let captchaWidgetId = null;
 let captchaTokenResolve = null;
 let captchaTokenReject = null;
+let captchaPending = false; // prevents concurrent token requests overwriting promise callbacks
+const CAPTCHA_TIMEOUT_MS = 15_000;
 
 function initCaptchaWidget() {
     if (!captchaSiteKey) return;
@@ -56,17 +58,47 @@ function initCaptchaWidget() {
 /**
  * Returns a fresh hCaptcha token, or null if captcha is not configured.
  * Resolves after the invisible challenge completes (typically instant for non-suspicious users).
+ * Rejects with 'captcha-concurrent' if a token request is already in-flight.
+ * Rejects with 'captcha-timeout' if the widget does not respond within 15 seconds.
  */
 function getCaptchaToken() {
     if (!captchaSiteKey || captchaWidgetId === null) return Promise.resolve(null);
-    return new Promise((resolve, reject) => {
-        captchaTokenResolve = resolve;
-        captchaTokenReject = reject;
+    if (captchaPending) return Promise.reject(new Error('captcha-concurrent'));
+    captchaPending = true;
+
+    let timeoutId;
+
+    const tokenPromise = new Promise((resolve, reject) => {
+        captchaTokenResolve = (token) => {
+            captchaPending = false;
+            clearTimeout(timeoutId); // cancel lingering timer so it can't corrupt the next call
+            resolve(token);
+        };
+        captchaTokenReject  = (err) => {
+            captchaPending = false;
+            clearTimeout(timeoutId);
+            reject(err);
+        };
         window.hcaptcha.execute(captchaWidgetId);
     });
+
+    const timeoutPromise = new Promise((_, reject) => {
+        // timeoutId is assigned synchronously here, before captchaTokenResolve can fire
+        timeoutId = setTimeout(() => {
+            captchaPending = false;
+            captchaTokenResolve = null;
+            captchaTokenReject  = null;
+            reject(new Error('captcha-timeout'));
+        }, CAPTCHA_TIMEOUT_MS);
+    });
+
+    return Promise.race([tokenPromise, timeoutPromise]);
 }
 
 function resetCaptchaWidget() {
+    captchaPending = false;
+    captchaTokenResolve = null;
+    captchaTokenReject = null;
     if (captchaWidgetId !== null && typeof window.hcaptcha?.reset === 'function') {
         window.hcaptcha.reset(captchaWidgetId);
     }
