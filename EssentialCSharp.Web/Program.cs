@@ -112,11 +112,23 @@ public partial class Program
             options.ForwardedHeaders =
                 ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
 
-            // Only loopback proxies are allowed by default.
-            // Clear that restriction because forwarders are enabled by explicit 
-            // configuration.
             options.KnownIPNetworks.Clear();
             options.KnownProxies.Clear();
+
+            // Restrict trusted proxy sources to configured CIDRs.
+            // SECURITY: Set ForwardedHeaders:TrustedProxyCidrs in production to your
+            // load-balancer IP range (e.g., the Azure Container Apps ingress CIDR) to
+            // prevent X-Forwarded-For spoofing. Without this, any client can fabricate
+            // a forwarded IP and bypass IP-partitioned rate limits.
+            var trustedCidrs = builder.Configuration
+                .GetSection("ForwardedHeaders:TrustedProxyCidrs")
+                .Get<string[]>() ?? [];
+
+            foreach (var cidr in trustedCidrs)
+            {
+                if (System.Net.IPNetwork.TryParse(cidr, out var network))
+                    options.KnownIPNetworks.Add(network);
+            }
         });
 
         ConfigurationManager configuration = builder.Configuration;
@@ -326,7 +338,7 @@ public partial class Program
             {
                 // Partitioned per-user (when authenticated) or per-IP (anonymous)
                 var partitionKey = httpContext.User.Identity?.IsAuthenticated == true
-                    ? $"chat-user:{httpContext.User.Identity.Name ?? "unknown-user"}"
+                    ? $"chat-user:{httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown-user"}"
                     : $"chat-ip:{httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip"}";
 
                 return RateLimitPartition.GetFixedWindowLimiter(
@@ -363,7 +375,6 @@ public partial class Program
                     Dictionary<string, object> errorResponse = new()
                     {
                         ["error"] = "Rate limit exceeded. Please wait before sending another message.",
-                        ["requiresCaptcha"] = true,
                         ["statusCode"] = 429
                     };
                     if (retryAfterSeconds is int retryAfter)
