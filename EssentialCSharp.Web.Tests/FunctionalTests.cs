@@ -51,5 +51,10 @@ public class FunctionalTests(WebApplicationFactory factory)
         using HttpResponseMessage response = await client.GetAsync("/non-existing-page1234");
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
+
+        string content = await response.Content.ReadAsStringAsync();
+        await Assert.That(content).Contains("Go Home");
+        await Assert.That(content).Contains("Go Back");
+        await Assert.That(content).Contains("Browse Chapters");
     }
 }
