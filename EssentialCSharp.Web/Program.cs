@@ -609,7 +609,7 @@ public partial class Program
             SitemapXmlHelpers.EnsureSitemapHealthy(siteMappingService.SiteMappings.ToList());
             LogSitemapValidationSucceeded(logger);
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
         {
             LogSitemapValidationFailed(logger, ex);
             // Continue startup even if sitemap validation fails
