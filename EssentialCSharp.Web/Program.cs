@@ -493,6 +493,20 @@ public partial class Program
             app.UseSecurityHeadersMiddleware(new SecurityHeadersBuilder()
                 .AddDefaultSecurePolicy()
                 .AddContentSecurityPolicy(csp));
+
+            // Redirect www.essentialcsharp.com → essentialcsharp.com (permanent 301)
+            // Must be after UseForwardedHeaders so the Host header reflects the real hostname.
+            app.Use(async (context, next) =>
+            {
+                if (context.Request.Host.Host.StartsWith("www.", StringComparison.OrdinalIgnoreCase))
+                {
+                    string apexHost = context.Request.Host.Host[4..];
+                    string redirectUrl = $"{context.Request.Scheme}://{apexHost}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
+                    context.Response.Redirect(redirectUrl, permanent: true);
+                    return;
+                }
+                await next(context);
+            });
         }
         else
         {
