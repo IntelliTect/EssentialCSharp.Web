@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 
 namespace EssentialCSharp.Web.Tests;
 
@@ -47,12 +48,7 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
                 services.Remove(migrationServiceDescriptor);
             }
 
-            // Capture in a local variable so each per-test factory's closure binds
-            // to its own connection, not to a shared field that gets overwritten.
-            SqliteConnection connection = new(SqlConnectionString);
-            connection.Open();
-
-            services.AddSingleton<DbConnection>(connection);
+            services.AddSingleton<DbConnection>(_ => CreateOpenSqliteConnection());
 
             services.AddDbContext<EssentialCSharpWebContext>((serviceProvider, options) =>
             {
@@ -60,18 +56,32 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
                 options.UseSqlite(dbConnection);
             });
 
-            DbContextOptions<EssentialCSharpWebContext> dbContextOptions =
-                new DbContextOptionsBuilder<EssentialCSharpWebContext>()
-                    .UseSqlite(connection)
-                    .Options;
-            using EssentialCSharpWebContext db = new(dbContextOptions);
-
-            db.Database.EnsureCreated();
+            services.AddHostedService<EnsureCreatedHostedService>();
 
             // Replace IListingSourceCodeService with one backed by TestData
             services.RemoveAll<IListingSourceCodeService>();
             services.AddSingleton<IListingSourceCodeService>(
                 _ => TestListingSourceCodeServiceHelper.CreateService());
         });
+    }
+
+    private static SqliteConnection CreateOpenSqliteConnection()
+    {
+        SqliteConnection connection = new(SqlConnectionString);
+        connection.Open();
+        return connection;
+    }
+
+    private sealed class EnsureCreatedHostedService(IServiceProvider serviceProvider) : IHostedService
+    {
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            using IServiceScope scope = serviceProvider.CreateScope();
+            EssentialCSharpWebContext dbContext =
+                scope.ServiceProvider.GetRequiredService<EssentialCSharpWebContext>();
+            await dbContext.Database.EnsureCreatedAsync(cancellationToken);
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }
