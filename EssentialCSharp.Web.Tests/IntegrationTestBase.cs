@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc.Testing;
+using System.Net;
 using Microsoft.Extensions.DependencyInjection;
 using TUnit.AspNetCore;
 
@@ -7,14 +7,38 @@ namespace EssentialCSharp.Web.Tests;
 public abstract class IntegrationTestBase : WebApplicationTest<WebApplicationFactory, Program>
 {
     /// <summary>
-    /// Creates an HTTP client with redirect following enabled.
-    /// NOTE: This bypasses TUnit trace correlation because <see cref="TracedWebApplicationFactory{T}"/>
-    /// does not expose a <c>CreateClient(WebApplicationFactoryClientOptions)</c> overload.
-    /// Use <see cref="TUnit.AspNetCore.TracedWebApplicationFactory{T}.CreateClient()"/> for all
-    /// other tests where AllowAutoRedirect=false is acceptable.
+    /// Executes a GET request and follows redirect responses while preserving
+    /// TUnit trace correlation by using <see cref="TracedWebApplicationFactory{T}.CreateClient()"/>.
     /// </summary>
-    protected HttpClient CreateRedirectFollowingClient() =>
-        Factory.Inner.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = true });
+    protected async Task<HttpResponseMessage> GetWithRedirectsAsync(string relativeUrl, int maxRedirects = 10)
+    {
+        HttpClient client = Factory.CreateClient();
+        HttpResponseMessage response = await client.GetAsync(relativeUrl);
+
+        for (int redirectCount = 0;
+             redirectCount < maxRedirects && IsRedirectStatusCode(response.StatusCode);
+             redirectCount++)
+        {
+            Uri? location = response.Headers.Location;
+            if (location is null)
+            {
+                return response;
+            }
+
+            response.Dispose();
+
+            response = await client.GetAsync(location);
+        }
+
+        return response;
+    }
+
+    private static bool IsRedirectStatusCode(HttpStatusCode statusCode) =>
+        statusCode == HttpStatusCode.Moved ||
+        statusCode == HttpStatusCode.Found ||
+        statusCode == HttpStatusCode.RedirectMethod ||
+        statusCode == HttpStatusCode.TemporaryRedirect ||
+        statusCode == HttpStatusCode.PermanentRedirect;
 
     public T InServiceScope<T>(Func<IServiceProvider, T> action)
     {
