@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.RateLimiting;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
+using Azure.Monitor.OpenTelemetry.Profiler;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -90,7 +91,7 @@ public partial class Program
             });
 
         if (useAzureMonitor)
-            otel.UseAzureMonitor();
+            otel.UseAzureMonitor().AddAzureMonitorProfiler();
         else if (useOtlp)
             otel.UseOtlpExporter();
 
@@ -105,31 +106,39 @@ public partial class Program
             c.Timeout = TimeSpan.FromSeconds(3);
         });
 
-
+        bool hasTrustedProxyConfig = false;
 
         builder.Services.Configure<ForwardedHeadersOptions>(options =>
         {
             options.ForwardedHeaders =
                 ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
 
-            options.KnownIPNetworks.Clear();
-            options.KnownProxies.Clear();
-
-            // Restrict trusted proxy sources to configured CIDRs.
-            // SECURITY: Set ForwardedHeaders:TrustedProxyCidrs in production to your
-            // load-balancer IP range (e.g., the Azure Container Apps ingress CIDR) to
-            // prevent X-Forwarded-For spoofing. Without this, any client can fabricate
-            // a forwarded IP and bypass IP-partitioned rate limits.
             var trustedCidrs = builder.Configuration
                 .GetSection("ForwardedHeaders:TrustedProxyCidrs")
                 .Get<string[]>() ?? [];
 
+            List<System.Net.IPNetwork> trustedNetworks = [];
             foreach (var cidr in trustedCidrs)
             {
                 if (System.Net.IPNetwork.TryParse(cidr, out var network))
-                    options.KnownIPNetworks.Add(network);
+                {
+                    trustedNetworks.Add(network);
+                    hasTrustedProxyConfig = true;
+                }
                 else
                     Console.Error.WriteLine($"[WARN] ForwardedHeaders:TrustedProxyCidrs: could not parse '{cidr}' as an IP network — entry skipped. Check your configuration.");
+            }
+
+            // Only replace the default loopback trust set when at least one valid
+            // proxy CIDR is configured. Otherwise forwarded headers remain limited to
+            // the default safe behavior instead of trusting arbitrary client-supplied
+            // X-Forwarded-* values.
+            if (hasTrustedProxyConfig)
+            {
+                options.KnownIPNetworks.Clear();
+                options.KnownProxies.Clear();
+                foreach (System.Net.IPNetwork network in trustedNetworks)
+                    options.KnownIPNetworks.Add(network);
             }
         });
 
@@ -444,8 +453,7 @@ public partial class Program
         // X-Forwarded-For spoofing protection (F4) is visibly inactive until properly configured.
         if (!app.Environment.IsDevelopment())
         {
-            var fwdOpts = app.Services.GetRequiredService<IOptions<ForwardedHeadersOptions>>().Value;
-            if (fwdOpts.KnownIPNetworks.Count == 0 && fwdOpts.KnownProxies.Count == 0)
+            if (!hasTrustedProxyConfig)
                 LogTrustedProxyCidrsNotConfigured(app.Logger);
         }
 
@@ -610,6 +618,16 @@ public partial class Program
             LogSitemapValidationSucceeded(logger);
         }
         catch (InvalidOperationException ex)
+        {
+            LogSitemapValidationFailed(logger, ex);
+            // Continue startup even if sitemap validation fails
+        }
+        catch (ArgumentException ex)
+        {
+            LogSitemapValidationFailed(logger, ex);
+            // Continue startup even if sitemap validation fails
+        }
+        catch (FormatException ex)
         {
             LogSitemapValidationFailed(logger, ex);
             // Continue startup even if sitemap validation fails

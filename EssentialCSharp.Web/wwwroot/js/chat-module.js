@@ -19,6 +19,7 @@ let captchaWidgetId = null;
 let captchaTokenResolve = null;
 let captchaTokenReject = null;
 let captchaPending = false; // prevents concurrent token requests overwriting promise callbacks
+let captchaRequestGeneration = 0;
 const CAPTCHA_TIMEOUT_MS = 15_000;
 
 // Resolves once the widget has rendered. getCaptchaToken() awaits this so a user who
@@ -73,12 +74,17 @@ function getCaptchaToken() {
     if (!captchaSiteKey) return Promise.resolve(null);
     if (captchaPending) return Promise.reject(new Error('captcha-concurrent'));
     captchaPending = true;
+    const requestGeneration = ++captchaRequestGeneration;
 
     let timeoutId;
 
     // Chain onto captchaWidgetReady so calls made before the widget finishes loading
     // wait rather than immediately returning null and causing a 403.
     const tokenPromise = captchaWidgetReady.then(() => new Promise((resolve, reject) => {
+        if (requestGeneration !== captchaRequestGeneration) {
+            reject(new Error('captcha-stale'));
+            return;
+        }
         captchaTokenResolve = (token) => {
             captchaPending = false;
             clearTimeout(timeoutId); // cancel lingering timer so it can't corrupt the next call
@@ -95,6 +101,8 @@ function getCaptchaToken() {
     const timeoutPromise = new Promise((_, reject) => {
         // timeoutId is assigned synchronously here, before captchaTokenResolve can fire
         timeoutId = setTimeout(() => {
+            if (requestGeneration !== captchaRequestGeneration) return;
+            captchaRequestGeneration++;
             captchaPending = false;
             captchaTokenResolve = null;
             captchaTokenReject  = null;
@@ -106,6 +114,7 @@ function getCaptchaToken() {
 }
 
 function resetCaptchaWidget() {
+    captchaRequestGeneration++;
     captchaPending = false;
     captchaTokenResolve = null;
     captchaTokenReject = null;
@@ -339,6 +348,8 @@ export function useChatWidget() {
                     throw new Error('Authentication required');
                 } else if (response.status === 403) {
                     throw new Error('captcha-failed: Human verification failed. Please try again.');
+                } else if (response.status === 503) {
+                    throw new Error('captcha-unavailable: Human verification is temporarily unavailable. Please try again later.');
                 } else if (response.status === 429) {
                     // Handle rate limiting - simple error message without captcha
                     let errorData;
@@ -441,7 +452,9 @@ export function useChatWidget() {
                 errorType = 'auth-error';
                 isAuthenticated.value = false; // Update auth state
             } else if (error.message?.startsWith('captcha-')) {
-                errorMessage = 'Human verification failed. Please try again.';
+                errorMessage = error.message.includes('captcha-unavailable')
+                    ? 'Human verification is temporarily unavailable. Please try again later.'
+                    : 'Human verification failed. Please try again.';
                 errorType = 'captcha-error';
             } else if (error.message?.includes('Rate limit exceeded')) {
                 errorMessage = error.message; // Use the specific rate limit message with timing
