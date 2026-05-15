@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.RateLimiting;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
+using Azure.Monitor.OpenTelemetry.Profiler;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -90,7 +91,7 @@ public partial class Program
             });
 
         if (useAzureMonitor)
-            otel.UseAzureMonitor();
+            otel.UseAzureMonitor().AddAzureMonitorProfiler();
         else if (useOtlp)
             otel.UseOtlpExporter();
 
@@ -586,7 +587,17 @@ public partial class Program
             SitemapXmlHelpers.EnsureSitemapHealthy(siteMappingService.SiteMappings.ToList());
             LogSitemapValidationSucceeded(logger);
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
+        {
+            LogSitemapValidationFailed(logger, ex);
+            // Continue startup even if sitemap validation fails
+        }
+        catch (ArgumentException ex)
+        {
+            LogSitemapValidationFailed(logger, ex);
+            // Continue startup even if sitemap validation fails
+        }
+        catch (FormatException ex)
         {
             LogSitemapValidationFailed(logger, ex);
             // Continue startup even if sitemap validation fails
