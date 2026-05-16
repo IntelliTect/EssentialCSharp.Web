@@ -479,6 +479,54 @@ a:hover {
   padding: 0;
 }
 
+#page-share-host {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.page-share-action {
+  margin-bottom: 1rem;
+}
+
+.page-share-action .turn-page-tooltip {
+  display: inline-block;
+}
+
+.page-share-action .page-share-btn {
+  display: block;
+  border: none;
+  padding: 0;
+  border-radius: 3rem;
+  background-color: var(--primary-color);
+  background: var(--primary-color);
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1.5rem;
+  cursor: pointer;
+  text-align: center;
+  position: relative;
+}
+
+.page-share-action .arrow-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+}
+
+.page-share-action .page-share-tooltip {
+  right: 0;
+  left: auto;
+  top: calc(100% + 0.5rem);
+}
+
+@media only screen and (max-width: 768px) {
+  .page-share-action {
+    margin-bottom: 0.75rem;
+  }
+}
+
 /* Chapter Navigation Sidebar Styles */
 
 .sidebar {
