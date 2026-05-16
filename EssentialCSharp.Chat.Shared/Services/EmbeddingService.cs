@@ -1,6 +1,8 @@
 using System.Text.RegularExpressions;
 using EssentialCSharp.Chat.Common.Models;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.VectorData;
 using Npgsql;
 
@@ -9,10 +11,14 @@ namespace EssentialCSharp.Chat.Common.Services;
 /// <summary>
 /// Service for generating embeddings for markdown chunks using Azure OpenAI and uploading
 /// them to a PostgreSQL vector store via a staging-then-swap pattern to avoid downtime.
+/// Automatically retries on transient Azure OpenAI failures (429 rate limit, 500/503 errors, timeouts)
+/// using exponential backoff with jitter.
 /// </summary>
 public class EmbeddingService(
     VectorStore vectorStore,
     IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
+    IOptions<RetryOptions> retryOptions,
+    ILogger<EmbeddingService>? logger = null,
     NpgsqlDataSource? dataSource = null)
 {
     public static string CollectionName { get; } = "markdown_chunks";
@@ -22,15 +28,145 @@ public class EmbeddingService(
     /// </summary>
     private const int EmbeddingBatchSize = 2048;
 
+    private readonly RetryOptions _retryOptions = retryOptions?.Value ?? new RetryOptions();
+    private readonly ILogger<EmbeddingService>? _logger = logger;
+    private readonly Random _random = new();
+
     // Only allow simple identifiers: letters, digits, and underscores, starting with a letter or underscore.
     private static readonly Regex _safeIdentifierRegex = new(@"^[a-zA-Z_][a-zA-Z0-9_]*$", RegexOptions.Compiled);
 
     /// <summary>
+    /// Initializes the RetryOptions if not provided via dependency injection.
+    /// This is useful for scenarios where RetryOptions is not registered in DI.
+    /// </summary>
+    public EmbeddingService(
+        VectorStore vectorStore,
+        IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
+        NpgsqlDataSource? dataSource = null)
+        : this(vectorStore, embeddingGenerator, Options.Create(new RetryOptions()), null, dataSource)
+    {
+    }
+
+    /// <summary>
+    /// Determines whether an exception represents a transient error that should be retried.
+    /// </summary>
+    private static bool IsTransientError(Exception ex)
+    {
+        // HttpRequestException can represent various HTTP errors, but we specifically
+        // check for 429, 500, 503, and timeout-related exceptions
+        if (ex is HttpRequestException httpEx)
+        {
+            return httpEx.StatusCode is System.Net.HttpStatusCode.TooManyRequests or // 429
+                                        System.Net.HttpStatusCode.InternalServerError or // 500
+                                        System.Net.HttpStatusCode.ServiceUnavailable; // 503
+        }
+
+        // Timeout errors are transient
+        if (ex is TaskCanceledException or TimeoutException)
+            return true;
+
+        // Check inner exceptions
+        if (ex.InnerException != null)
+            return IsTransientError(ex.InnerException);
+
+        return false;
+    }
+
+    /// <summary>
+    /// Extracts the Retry-After delay from an HttpRequestException if present.
+    /// Returns null if the header is not present or invalid.
+    /// </summary>
+    private static TimeSpan? ExtractRetryAfter(Exception ex)
+    {
+        if (ex is not HttpRequestException httpEx)
+            return null;
+
+        // Azure OpenAI may include Retry-After header with delay in seconds
+        // This would be accessible via the response, but HttpRequestException
+        // doesn't expose headers directly. Log the attempt but rely on
+        // exponential backoff as primary mechanism.
+        return null;
+    }
+
+    /// <summary>
+    /// Calculates the delay for the given retry attempt using exponential backoff with jitter.
+    /// </summary>
+    private TimeSpan CalculateRetryDelay(int attemptNumber)
+    {
+        // Exponential backoff: baseDelay * (multiplier ^ attemptNumber)
+        var delayMs = _retryOptions.BaseDelayMs * 
+                     Math.Pow(_retryOptions.BackoffMultiplier, attemptNumber);
+
+        // Add jitter to prevent thundering herd
+        var jitterMs = delayMs * _retryOptions.MaxJitterFraction * _random.NextDouble();
+        var totalDelayMs = delayMs + jitterMs;
+
+        return TimeSpan.FromMilliseconds(totalDelayMs);
+    }
+
+    /// <summary>
+    /// Wraps an async operation with retry logic for transient failures.
+    /// </summary>
+#pragma warning disable CA1848 // Use LoggerMessage delegates - suppressed for simplicity
+    private async Task<T> ExecuteWithRetryAsync<T>(
+        Func<CancellationToken, Task<T>> operation,
+        string operationName,
+        CancellationToken cancellationToken)
+    {
+        Exception? lastException = null;
+
+        for (int attempt = 0; attempt <= _retryOptions.MaxRetries; attempt++)
+        {
+            try
+            {
+                return await operation(cancellationToken);
+            }
+            catch (Exception ex) when (IsTransientError(ex) && attempt < _retryOptions.MaxRetries)
+            {
+                lastException = ex;
+                var delay = CalculateRetryDelay(attempt);
+                var retryAfter = ExtractRetryAfter(ex);
+                var waitTime = retryAfter ?? delay;
+
+                _logger?.LogWarning(
+                    "Transient error during {OperationName} (attempt {Attempt}/{MaxRetries}). " +
+                    "Will retry after {DelayMs}ms. Error: {ErrorMessage}",
+                    operationName, attempt + 1, _retryOptions.MaxRetries + 1,
+                    (int)waitTime.TotalMilliseconds, ex.Message);
+
+                await Task.Delay(waitTime, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                // Permanent error or exceeded max retries
+                _logger?.LogError(ex,
+                    "Operation {OperationName} failed with {ExceptionType}: {ErrorMessage}",
+                    operationName, ex.GetType().Name, ex.Message);
+                throw;
+            }
+        }
+
+        // Max retries exceeded with transient errors
+        _logger?.LogError(lastException,
+            "Operation {OperationName} failed after {MaxRetries} retries. Last error: {ErrorMessage}",
+            operationName, _retryOptions.MaxRetries, lastException?.Message);
+
+        throw new InvalidOperationException(
+            $"Operation {operationName} failed after {_retryOptions.MaxRetries} retry attempts. " +
+            $"Last error: {lastException?.Message}", lastException);
+    }
+#pragma warning restore CA1848
+
+    /// <summary>
     /// Generate an embedding for the given text.
+    /// Automatically retries on transient Azure OpenAI failures.
     /// </summary>
     public async Task<ReadOnlyMemory<float>> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default)
     {
-        var embedding = await embeddingGenerator.GenerateAsync(text, cancellationToken: cancellationToken);
+        var embedding = await ExecuteWithRetryAsync(
+            async ct => await embeddingGenerator.GenerateAsync(text, cancellationToken: ct),
+            $"GenerateEmbedding",
+            cancellationToken);
         return embedding.Vector;
     }
 
@@ -87,8 +223,11 @@ public class EmbeddingService(
 
         async Task EmbedAndUpsertBatchAsync()
         {
-            var batchEmbeddings = await embeddingGenerator.GenerateAsync(
-                buffer.Select(c => c.ChunkText), cancellationToken: cancellationToken);
+            var batchEmbeddings = await ExecuteWithRetryAsync(
+                async ct => await embeddingGenerator.GenerateAsync(
+                    buffer.Select(c => c.ChunkText), cancellationToken: ct),
+                $"GenerateBatchEmbeddings(size={buffer.Count})",
+                cancellationToken);
 
             if (batchEmbeddings.Count != buffer.Count)
                 throw new InvalidOperationException(

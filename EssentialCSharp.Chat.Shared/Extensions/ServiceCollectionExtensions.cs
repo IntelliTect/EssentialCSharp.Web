@@ -1,6 +1,7 @@
 using Azure.AI.OpenAI;
 using Azure.Core;
 using Azure.Identity;
+using EssentialCSharp.Chat.Common.Models;
 using EssentialCSharp.Chat.Common.Services;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
@@ -65,6 +66,14 @@ public static class ServiceCollectionExtensions
             .UseOpenTelemetry();
 #pragma warning restore SKEXP0010
 
+        // Register retry options with default or configuration values
+        services.Configure<EssentialCSharp.Chat.Common.Models.RetryOptions>(options =>
+        {
+            // Default values are set in RetryOptions class
+            // These can be overridden via environment variables:
+            // EmbeddingRetry:MaxRetries, EmbeddingRetry:BaseDelayMs, etc.
+        });
+
         // Register shared AI services
         services.AddSingleton<EmbeddingService>();
         services.AddSingleton<AISearchService>();
@@ -88,6 +97,11 @@ public static class ServiceCollectionExtensions
     {
         // Configure AI options from configuration
         services.Configure<AIOptions>(configuration.GetSection("AIOptions"));
+
+        // Configure retry options from configuration section
+        // Environment variables like EmbeddingRetry:MaxRetries will override defaults
+        services.Configure<EssentialCSharp.Chat.Common.Models.RetryOptions>(
+            configuration.GetSection(EssentialCSharp.Chat.Common.Models.RetryOptions.SectionName));
 
         var aiOptions = configuration.GetSection("AIOptions").Get<AIOptions>();
         if (aiOptions == null)
