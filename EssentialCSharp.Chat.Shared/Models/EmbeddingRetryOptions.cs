@@ -35,6 +35,20 @@ public sealed class EmbeddingRetryOptions
     public int MaxDelayMs { get; set; } = 60000;
 
     /// <summary>
+    /// Maximum embedding request payload size sent per API call.
+    /// The service may adaptively downshift below this value when throttled.
+    /// </summary>
+    [Range(1, 2048)]
+    public int MaxEmbeddingBatchSize { get; set; } = 2048;
+
+    /// <summary>
+    /// Minimum delay between embedding API requests in milliseconds.
+    /// This adds request pacing to reduce sustained rate-limit pressure.
+    /// </summary>
+    [Range(0, 600000)]
+    public int MinInterRequestDelayMs { get; set; } = 250;
+
+    /// <summary>
     /// Exponential backoff multiplier. Each retry delay is multiplied by this value.
     /// For example, with baseDelay=1000ms and multiplier=2.0:
     /// - 1st retry: 1000ms
@@ -73,6 +87,15 @@ public sealed class EmbeddingRetryOptions
 
         if (BaseDelayMs > MaxDelayMs)
             throw new InvalidOperationException("BaseDelayMs must be less than or equal to MaxDelayMs.");
+
+        if (MaxEmbeddingBatchSize <= 0)
+            throw new InvalidOperationException("MaxEmbeddingBatchSize must be positive.");
+
+        if (MaxEmbeddingBatchSize > 2048)
+            throw new InvalidOperationException("MaxEmbeddingBatchSize cannot exceed Azure embedding API limit (2048).");
+
+        if (MinInterRequestDelayMs < 0)
+            throw new InvalidOperationException("MinInterRequestDelayMs must be non-negative.");
 
         if (BackoffMultiplier < 1.0)
             throw new InvalidOperationException("BackoffMultiplier must be >= 1.0.");

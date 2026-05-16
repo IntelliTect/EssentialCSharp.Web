@@ -100,8 +100,8 @@ public static class ServiceCollectionExtensions
         // Configure AI options from configuration
         services.Configure<AIOptions>(configuration.GetSection("AIOptions"));
 
-        // Configure retry options from configuration section
-        // Environment variables like EmbeddingRetry:MaxRetries will override defaults
+        // Configure retry options from configuration section.
+        // Environment variables can override via AIOptions__EmbeddingRetry__*.
         services.AddOptions<EmbeddingRetryOptions>()
             .Bind(configuration.GetSection(EmbeddingRetryOptions.SectionPath))
             .ValidateDataAnnotations()
