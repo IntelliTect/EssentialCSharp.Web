@@ -32,6 +32,7 @@ TestResults/
 !Michaelis_TableOfContents.docx
 
 # Old or generated files to not commit
+build_output.txt
 wwwroot/sitemap.xml
 wwwroot/Chapters
 EssentialCSharp.Web/wwwroot/Chapters
