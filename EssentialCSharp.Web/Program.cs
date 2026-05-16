@@ -68,9 +68,11 @@ public partial class Program
             options.Filter = ctx =>
                 !ctx.Request.Path.StartsWithSegments("/health")
                 && !ctx.Request.Path.StartsWithSegments("/alive");
-            options.EnrichWithHttpRequest = (activity, request) =>
+            // EnrichWithHttpResponse fires after the authentication middleware has run,
+            // so HttpContext.User is populated and IsAuthenticated is reliable.
+            options.EnrichWithHttpResponse = (activity, response) =>
             {
-                var user = request.HttpContext.User;
+                var user = response.HttpContext.User;
                 if (user?.Identity?.IsAuthenticated != true)
                 {
                     return;

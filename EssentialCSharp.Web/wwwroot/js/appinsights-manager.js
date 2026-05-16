@@ -149,7 +149,6 @@
                 }
                 if (!appInsights) {
                     appInsights = createAppInsights();
-                    window.ecsAppInsights = appInsights;
                 } else {
                     appInsights.config.disableTelemetry = false;
                     setAuthenticatedContext();

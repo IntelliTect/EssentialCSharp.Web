@@ -75,7 +75,7 @@ class ConsentManager {
                 });
                 
                 this.consentState = { ...this.consentState, ...validatedPreferences };
-                this.updateConsentMode();
+                this.updateConsentMode({ skipNotify: true });
             } catch (e) {
                 // Malformed cookie — delete it so the banner is shown again
                 console.warn('Failed to parse consent preferences', e);
@@ -253,7 +253,7 @@ class ConsentManager {
         this.removeConsentBanner();
     }
 
-    updateConsentMode() {
+    updateConsentMode({ skipNotify = false } = {}) {
         if (window.gtag) {
             try {
                 window.gtag('consent', 'update', this.consentState);
@@ -261,7 +261,9 @@ class ConsentManager {
                 console.warn('Failed to update Google Consent Mode:', error);
             }
         }
-        this.notifyConsentChanged();
+        if (!skipNotify) {
+            this.notifyConsentChanged();
+        }
     }
 
     updateClarityConsent() {
