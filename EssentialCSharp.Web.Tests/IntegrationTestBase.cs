@@ -8,11 +8,11 @@ namespace EssentialCSharp.Web.Tests;
 public abstract class IntegrationTestBase : WebApplicationTest<WebApplicationFactory, Program>
 {
     /// <summary>
-    /// Executes a GET request and follows redirect responses while preserving
-    /// TUnit trace correlation by using <see cref="TracedWebApplicationFactory{T}.CreateClient()"/>.
-    /// This helper intentionally follows redirects using GET requests only.
+    /// Creates an <see cref="HttpClient"/> with <c>AllowAutoRedirect = false</c> so callers can
+    /// assert exact redirect status codes and <c>Location</c> headers without the client
+    /// silently following them.
     /// </summary>
-    protected HttpClient CreateClientWithoutRedirectFollowing() =>
+    protected HttpClient CreateClientWithoutAutoRedirect() =>
         Factory.Inner.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
 
     protected static async Task<HttpResponseMessage> GetFollowingGetRedirectsAsync(

@@ -14,7 +14,13 @@ namespace EssentialCSharp.Web.Tests;
 
 public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
 {
-    private static string SqlConnectionString => $"DataSource=file:{Guid.NewGuid()}?mode=memory&cache=shared";
+    // One GUID per factory instance → each factory gets its own isolated in-memory database.
+    private readonly string _sqlConnectionString =
+        $"DataSource=file:{Guid.NewGuid():N}?mode=memory&cache=shared";
+
+    // Kept open for the factory lifetime so the shared-cache in-memory database is not dropped
+    // when per-scope connections are disposed between requests.
+    private SqliteConnection? _keepAliveConnection;
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -48,7 +54,19 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
                 services.Remove(migrationServiceDescriptor);
             }
 
-            services.AddSingleton<DbConnection>(_ => CreateOpenSqliteConnection());
+            // Open a keep-alive connection to prevent the shared-cache in-memory database from
+            // being dropped when per-scope connections are disposed between requests.
+            _keepAliveConnection = new SqliteConnection(_sqlConnectionString);
+            _keepAliveConnection.Open();
+
+            // Register as scoped so each request scope gets its own SqliteConnection,
+            // preventing "database is locked" errors under concurrent requests.
+            services.AddScoped<DbConnection>(_ =>
+            {
+                SqliteConnection conn = new(_sqlConnectionString);
+                conn.Open();
+                return conn;
+            });
 
             services.AddDbContext<EssentialCSharpWebContext>((serviceProvider, options) =>
             {
@@ -84,11 +102,13 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
         });
     }
 
-    private static SqliteConnection CreateOpenSqliteConnection()
+    protected override void Dispose(bool disposing)
     {
-        SqliteConnection connection = new(SqlConnectionString);
-        connection.Open();
-        return connection;
+        if (disposing)
+        {
+            _keepAliveConnection?.Dispose();
+        }
+        base.Dispose(disposing);
     }
 
     private sealed class EnsureCreatedHostedService(IServiceProvider serviceProvider) : IHostedService
