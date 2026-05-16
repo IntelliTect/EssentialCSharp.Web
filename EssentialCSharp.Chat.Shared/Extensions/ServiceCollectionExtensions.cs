@@ -6,6 +6,7 @@ using EssentialCSharp.Chat.Common.Services;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Npgsql;
@@ -101,7 +102,8 @@ public static class ServiceCollectionExtensions
         bool hasAzureEndpoint = !string.IsNullOrWhiteSpace(aiOptions.Endpoint);
         bool hasAzureChatDeployment = !string.IsNullOrWhiteSpace(aiOptions.ChatDeploymentName);
         bool hasAzureVectorDeployment = !string.IsNullOrWhiteSpace(aiOptions.VectorGenerationDeploymentName);
-        bool hasAzureConfig = hasAzureEndpoint && hasAzureChatDeployment && hasAzureVectorDeployment && !string.IsNullOrWhiteSpace(postgresConnectionString);
+        bool hasAzureConfig = hasAzureEndpoint && hasAzureChatDeployment && hasAzureVectorDeployment
+            && IsValidNpgsqlConnectionString(postgresConnectionString);
 
         string localEndpoint = ResolveLocalEndpoint(aiOptions, configuration);
         bool hasLocalConfig = aiOptions.UseLocalAI
@@ -120,6 +122,10 @@ public static class ServiceCollectionExtensions
             else
             {
                 services.AddAzureOpenAIServices(aiOptions, postgresConnectionString!);
+                // Bind EmbeddingRetry from config so operator appsettings/env overrides are honored.
+                // The AIOptions overload of AddAzureOpenAIServices only registers validation, not config binding.
+                services.AddOptions<EmbeddingRetryOptions>()
+                    .Bind(configuration.GetSection(EmbeddingRetryOptions.SectionPath));
                 services.AddSingleton<IChatCompletionService>(provider => provider.GetRequiredService<AIChatService>());
                 Console.WriteLine("[AI] Selected backend: Azure/Foundry.");
                 return services;
@@ -140,7 +146,12 @@ public static class ServiceCollectionExtensions
             {
                 client.BaseAddress = localEndpointUri;
                 client.Timeout = TimeSpan.FromSeconds(120);
-            });
+            })
+            // Disable the global standard resilience handler (set by ConfigureHttpClientDefaults
+            // in Program.cs). Its default attempt timeout (30s) and total timeout (90s) would
+            // cut off long local-LLM completions. We set HttpClient.Timeout directly instead.
+            // Retries are also wrong for LLM calls (non-idempotent, partial responses).
+            .RemoveAllResilienceHandlers();
             services.AddSingleton<IChatCompletionService, LocalChatService>();
             Console.WriteLine("[AI] Selected backend: Local (Ollama/OpenAI-compatible).");
             return services;
@@ -272,6 +283,26 @@ public static class ServiceCollectionExtensions
         }
 
         return configuration.GetConnectionString("ollama-chat") ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Returns true if <paramref name="connectionString"/> can be parsed by
+    /// <see cref="NpgsqlConnectionStringBuilder"/> and resolves to a non-empty Host.
+    /// Rejects null, empty, and placeholder strings like "your-postgres-connection-string-here".
+    /// </summary>
+    private static bool IsValidNpgsqlConnectionString(string? connectionString)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+            return false;
+        try
+        {
+            var builder = new NpgsqlConnectionStringBuilder(connectionString);
+            return !string.IsNullOrWhiteSpace(builder.Host);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
 }

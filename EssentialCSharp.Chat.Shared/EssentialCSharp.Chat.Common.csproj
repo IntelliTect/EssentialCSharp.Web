@@ -2,6 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
+    <!-- Suppress experimental API warning from RemoveAllResilienceHandlers() used to opt out
+         the local AI HttpClient from the global standard resilience handler. -->
+    <NoWarn>$(NoWarn);EXTEXP0001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -9,6 +12,7 @@
     <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
     <PackageReference Include="Microsoft.SemanticKernel" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.PgVector" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
     <PackageReference Include="ModelContextProtocol" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
     <PackageReference Include="Microsoft.SourceLink.GitHub">
