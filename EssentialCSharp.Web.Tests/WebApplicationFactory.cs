@@ -56,7 +56,8 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
                 options.UseSqlite(dbConnection);
             });
 
-            services.AddHostedService<EnsureCreatedHostedService>();
+            // Ensure schema exists before any other hosted service that reads from the database.
+            services.Insert(0, ServiceDescriptor.Singleton<IHostedService, EnsureCreatedHostedService>());
 
             // Replace IListingSourceCodeService with one backed by TestData
             services.RemoveAll<IListingSourceCodeService>();

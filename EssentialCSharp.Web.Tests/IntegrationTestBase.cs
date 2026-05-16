@@ -9,8 +9,9 @@ public abstract class IntegrationTestBase : WebApplicationTest<WebApplicationFac
     /// <summary>
     /// Executes a GET request and follows redirect responses while preserving
     /// TUnit trace correlation by using <see cref="TracedWebApplicationFactory{T}.CreateClient()"/>.
+    /// This helper intentionally follows redirects using GET requests only.
     /// </summary>
-    protected async Task<HttpResponseMessage> GetWithRedirectsAsync(string relativeUrl, int maxRedirects = 10)
+    protected async Task<HttpResponseMessage> GetFollowingRedirectsAsync(string relativeUrl, int maxRedirects = 10)
     {
         HttpClient client = Factory.CreateClient();
         HttpResponseMessage response = await client.GetAsync(relativeUrl);
@@ -28,6 +29,12 @@ public abstract class IntegrationTestBase : WebApplicationTest<WebApplicationFac
             response.Dispose();
 
             response = await client.GetAsync(location);
+        }
+
+        if (IsRedirectStatusCode(response.StatusCode))
+        {
+            throw new InvalidOperationException(
+                $"Exceeded redirect limit ({maxRedirects}) for '{relativeUrl}'. Last status: {(int)response.StatusCode} {response.StatusCode}.");
         }
 
         return response;
