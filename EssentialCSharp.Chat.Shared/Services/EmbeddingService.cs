@@ -385,6 +385,8 @@ public partial class EmbeddingService(
         var knownTotalChunks = bookContents.TryGetNonEnumeratedCount(out var totalChunkCount) ? totalChunkCount : (int?)null;
         var nextProgressPercentToLog = 10;
         var nextProgressChunkCountToLog = 500;
+        var successfulBatchRequestCounts = new Dictionary<int, int>();
+        var successfulBatchChunkTotals = new Dictionary<int, int>();
         int totalCount = 0;
 
         if (_logger is not null)
@@ -419,12 +421,32 @@ public partial class EmbeddingService(
 
         async Task EmbedAndUpsertExactBatchAsync(IReadOnlyList<BookContentChunk> batch)
         {
+            const string operationName = "GenerateBatchEmbeddings";
+            int attemptNumber = 0;
+
             var batchEmbeddings = await ExecuteWithRetryAsync(
-                async ct => await ExecuteEmbeddingRequestWithPacingAsync(
-                    async pacingCt => await embeddingGenerator.GenerateAsync(
-                        batch.Select(c => c.ChunkText), cancellationToken: pacingCt),
-                    ct),
-                $"GenerateBatchEmbeddings(size={batch.Count})",
+                async ct =>
+                {
+                    attemptNumber++;
+                    if (_logger is not null)
+                    {
+                        LogEmbeddingBatchRequestState(
+                            _logger,
+                            operationName,
+                            batch.Count,
+                            adaptiveBatchSize,
+                            batch.Count,
+                            attemptNumber,
+                            false,
+                            false);
+                    }
+
+                    return await ExecuteEmbeddingRequestWithPacingAsync(
+                        async pacingCt => await embeddingGenerator.GenerateAsync(
+                            batch.Select(c => c.ChunkText), cancellationToken: pacingCt),
+                        ct);
+                },
+                $"{operationName}(size={batch.Count})",
                 cancellationToken);
 
             if (batchEmbeddings.Count != batch.Count)
@@ -435,6 +457,25 @@ public partial class EmbeddingService(
                 batch[i].TextEmbedding = batchEmbeddings[i].Vector;
 
             await staging.UpsertAsync(batch, cancellationToken);
+            if (_logger is not null)
+            {
+                LogEmbeddingBatchRequestState(
+                    _logger,
+                    operationName,
+                    batch.Count,
+                    adaptiveBatchSize,
+                    batch.Count,
+                    attemptNumber,
+                    true,
+                    false);
+            }
+
+            if (!successfulBatchRequestCounts.TryAdd(batch.Count, 1))
+                successfulBatchRequestCounts[batch.Count]++;
+
+            if (!successfulBatchChunkTotals.TryAdd(batch.Count, batch.Count))
+                successfulBatchChunkTotals[batch.Count] += batch.Count;
+
             totalCount += batch.Count;
             LogProgressIfNeeded();
         }
@@ -454,7 +495,15 @@ public partial class EmbeddingService(
                     adaptiveBatchSize = splitSize;
                     if (_logger is not null)
                     {
-                        LogEmbeddingBatchDownshift(_logger, previousAdaptiveBatchSize, adaptiveBatchSize, _retryOptions.MaxRetries + 1);
+                        LogEmbeddingBatchRequestState(
+                            _logger,
+                            "GenerateBatchEmbeddings",
+                            previousAdaptiveBatchSize,
+                            adaptiveBatchSize,
+                            batch.Count,
+                            _retryOptions.MaxRetries + 1,
+                            false,
+                            true);
                     }
                 }
 
@@ -489,6 +538,19 @@ public partial class EmbeddingService(
                 var batchToProcess = buffer.ToArray();
                 buffer.Clear();
                 await EmbedAndUpsertBatchAdaptiveAsync(batchToProcess);
+            }
+
+            if (_logger is not null)
+            {
+                foreach (var entry in successfulBatchRequestCounts.OrderBy(kvp => kvp.Key))
+                {
+                    successfulBatchChunkTotals.TryGetValue(entry.Key, out var successfulChunkCount);
+                    LogEmbeddingBatchSizeSummary(
+                        _logger,
+                        entry.Key,
+                        entry.Value,
+                        successfulChunkCount);
+                }
             }
 
             Console.WriteLine($"Uploaded {totalCount} chunks to staging collection '{stagingName}'.");
@@ -585,13 +647,17 @@ public partial class EmbeddingService(
 
     [LoggerMessage(
         EventId = 12004,
-        Level = LogLevel.Warning,
-        Message = "Embedding batch downshift triggered after throttling. PreviousBatchSize={PreviousBatchSize}, NewBatchSize={NewBatchSize}, RetryAttemptsPerRequest={RetryAttemptsPerRequest}")]
-    private static partial void LogEmbeddingBatchDownshift(
+        Level = LogLevel.Information,
+        Message = "Embedding batch request state: operation_name={operation_name} current_batch_size={current_batch_size} effective_batch_size={effective_batch_size} chunk_count_in_request={chunk_count_in_request} attempt_number={attempt_number} request_succeeded={request_succeeded} request_throttled={request_throttled}")]
+    private static partial void LogEmbeddingBatchRequestState(
         ILogger logger,
-        int previousBatchSize,
-        int newBatchSize,
-        int retryAttemptsPerRequest);
+        string operation_name,
+        int current_batch_size,
+        int effective_batch_size,
+        int chunk_count_in_request,
+        int attempt_number,
+        bool request_succeeded,
+        bool request_throttled);
 
     [LoggerMessage(
         EventId = 12005,
@@ -622,4 +688,14 @@ public partial class EmbeddingService(
         ILogger logger,
         int processedChunks,
         int adaptiveBatchSize);
+
+    [LoggerMessage(
+        EventId = 12008,
+        Level = LogLevel.Information,
+        Message = "Embedding successful batch-size summary: successful_batch_size={successful_batch_size} successful_request_count={successful_request_count} successful_chunk_count={successful_chunk_count}")]
+    private static partial void LogEmbeddingBatchSizeSummary(
+        ILogger logger,
+        int successful_batch_size,
+        int successful_request_count,
+        int successful_chunk_count);
 }
