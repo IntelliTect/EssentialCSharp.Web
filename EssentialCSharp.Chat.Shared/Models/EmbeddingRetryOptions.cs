@@ -39,7 +39,7 @@ public sealed class EmbeddingRetryOptions
     /// The service may adaptively downshift below this value when throttled.
     /// </summary>
     [Range(1, 2048)]
-    public int MaxEmbeddingBatchSize { get; set; } = 2048;
+    public int MaxEmbeddingBatchSize { get; set; } = 1024;
 
     /// <summary>
     /// Minimum delay between embedding API requests in milliseconds.
