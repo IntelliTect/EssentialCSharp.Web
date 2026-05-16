@@ -1,8 +1,8 @@
-using System.Collections.Concurrent;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ModelContextProtocol.Client;
@@ -10,13 +10,19 @@ using OpenAI.Responses;
 
 namespace EssentialCSharp.Chat.Common.Services;
 
-public partial class LocalChatService : IChatCompletionService
+public partial class LocalChatService : IChatCompletionService, IDisposable
 {
     private const int MaxConversationMessages = 20;
+    private const int MaxConversationEntries = 500;
+    private static readonly TimeSpan _HistoryTtl = TimeSpan.FromMinutes(30);
+
     private readonly AIOptions _Options;
     private readonly IHttpClientFactory _HttpClientFactory;
     private readonly ILogger<LocalChatService> _Logger;
-    private readonly ConcurrentDictionary<string, List<LocalChatMessage>> _ConversationHistory = new();
+    private readonly MemoryCache _ConversationHistory = new(new MemoryCacheOptions { SizeLimit = MaxConversationEntries });
+    private static readonly MemoryCacheEntryOptions _HistoryEntryOptions = new MemoryCacheEntryOptions()
+        .SetSlidingExpiration(_HistoryTtl)
+        .SetSize(1);
 
     public bool IsAvailable => true;
 
@@ -25,6 +31,12 @@ public partial class LocalChatService : IChatCompletionService
         _Options = options.Value;
         _HttpClientFactory = httpClientFactory;
         _Logger = logger;
+    }
+
+    public void Dispose()
+    {
+        _ConversationHistory.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     public async Task<(string response, string responseId)> GetChatCompletion(
@@ -77,7 +89,7 @@ public partial class LocalChatService : IChatCompletionService
                 var (text, responseId) = ParseResponse(body);
                 history.Add(new LocalChatMessage("user", prompt));
                 history.Add(new LocalChatMessage("assistant", text));
-                _ConversationHistory[responseId] = history.TakeLast(MaxConversationMessages).ToList();
+                _ConversationHistory.Set(responseId, history.TakeLast(MaxConversationMessages).ToList(), _HistoryEntryOptions);
                 return (text, responseId);
             }
             catch (Exception ex) when (ex is JsonException || ex is InvalidOperationException || ex is NotSupportedException)
@@ -147,7 +159,7 @@ public partial class LocalChatService : IChatCompletionService
         if (string.IsNullOrWhiteSpace(previousResponseId))
             return [];
 
-        return _ConversationHistory.TryGetValue(previousResponseId, out var history)
+        return _ConversationHistory.TryGetValue(previousResponseId, out List<LocalChatMessage>? history) && history is not null
             ? [.. history]
             : [];
     }
