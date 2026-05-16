@@ -391,18 +391,18 @@ export function useTryDotNet() {
             }
             : {};
 
-        trackTryEvent('TryCodeRunRequested', eventProperties);
+        trackTryEvent('TryCodeRunnerRequested', eventProperties);
 
         try {
             await withTimeout(session.run(), RUN_TIMEOUT, ERROR_MESSAGES.runTimeout);
             const durationMs = Math.round(performance.now() - startedAt);
-            trackTryEvent('TryCodeRunCompleted', { ...eventProperties, success: 'true' }, { durationMs });
+            trackTryEvent('TryCodeRunnerCompleted', { ...eventProperties, success: 'true' }, { durationMs });
         } catch (error) {
             codeRunnerOutput.value = error.message;
             codeRunnerOutputError.value = true;
             const durationMs = Math.round(performance.now() - startedAt);
             trackTryEvent(
-                'TryCodeRunCompleted',
+                'TryCodeRunnerCompleted',
                 { ...eventProperties, success: 'false', errorType: error?.name ?? 'Error' },
                 { durationMs }
             );

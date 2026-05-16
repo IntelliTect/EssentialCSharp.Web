@@ -143,6 +143,10 @@
 
         ensureSdkLoaded()
             .then(() => {
+                // Re-check consent — user may have revoked while the SDK script was downloading
+                if (!hasAnalyticsConsent()) {
+                    return;
+                }
                 if (!appInsights) {
                     appInsights = createAppInsights();
                     window.ecsAppInsights = appInsights;

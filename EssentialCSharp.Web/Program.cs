@@ -512,7 +512,7 @@ public partial class Program
                 $"style-src 'self' 'unsafe-inline' cdnjs.cloudflare.com fonts.googleapis.com https://hcaptcha.com https://*.hcaptcha.com",
                 $"font-src 'self' fonts.gstatic.com cdnjs.cloudflare.com",
                 $"img-src 'self' data: https:",
-                $"connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://api.pwnedpasswords.com https://*.algolia.net https://*.algolianet.com https://*.google-analytics.com https://*.clarity.ms https://*.in.applicationinsights.azure.com{GetApplicationInsightsCspSources(app.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"])}{tryDotNetSources}",
+                $"connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://api.pwnedpasswords.com https://*.algolia.net https://*.algolianet.com https://*.google-analytics.com https://*.clarity.ms https://*.in.applicationinsights.azure.com{GetApplicationInsightsCspSources(app.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"], app.Logger)}{tryDotNetSources}",
                 $"frame-src https://hcaptcha.com https://*.hcaptcha.com https://newassets.hcaptcha.com{tryDotNetSources}",
                 $"worker-src blob:",
                 $"frame-ancestors 'none'",
@@ -670,7 +670,10 @@ public partial class Program
     [LoggerMessage(Level = LogLevel.Warning, Message = "Azure Monitor profiler is not supported on this platform ({Platform}). Skipping profiler registration and continuing with Azure Monitor telemetry export.")]
     private static partial void LogSkippingUnsupportedAzureMonitorProfiler(ILogger<Program> logger, string platform);
 
-    private static string GetApplicationInsightsCspSources(string? connectionString)
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Application Insights connection string has a non-HTTPS or unparseable IngestionEndpoint value ({Endpoint}); omitting from CSP connect-src.")]
+    private static partial void LogInvalidApplicationInsightsIngestionEndpoint(ILogger logger, string? endpoint);
+
+    private static string GetApplicationInsightsCspSources(string? connectionString, ILogger? logger = null)
     {
         if (string.IsNullOrWhiteSpace(connectionString))
         {
@@ -682,6 +685,10 @@ public partial class Program
             || !Uri.TryCreate(ingestionEndpoint, UriKind.Absolute, out Uri? ingestionUri)
             || ingestionUri.Scheme != Uri.UriSchemeHttps)
         {
+            if (logger is not null)
+            {
+                LogInvalidApplicationInsightsIngestionEndpoint(logger, ingestionEndpoint);
+            }
             return string.Empty;
         }
 
@@ -704,7 +711,7 @@ public partial class Program
                 continue;
             }
 
-            return segment[(separatorIndex + 1)..];
+            return segment[(separatorIndex + 1)..].Trim('"');
         }
 
         return null;
