@@ -34,7 +34,7 @@ public partial class EmbeddingService(
     private readonly EmbeddingRetryOptions _retryOptions = ValidateRetryOptions(retryOptions?.Value ?? new EmbeddingRetryOptions());
     private readonly ILogger<EmbeddingService>? _logger = logger;
     private static readonly SemaphoreSlim _embeddingRequestLock = new(1, 1);
-    private DateTimeOffset _lastEmbeddingRequestStartedUtc = DateTimeOffset.MinValue;
+    private static DateTimeOffset _lastEmbeddingRequestStartedUtc = DateTimeOffset.MinValue;
 
     // Only allow simple identifiers: letters, digits, and underscores, starting with a letter or underscore.
     private static readonly Regex _safeIdentifierRegex = new(@"^[a-zA-Z_][a-zA-Z0-9_]*$", RegexOptions.Compiled);
@@ -404,7 +404,7 @@ public partial class EmbeddingService(
             if (knownTotalChunks is > 0)
             {
                 while (nextProgressPercentToLog <= 100
-                    && totalCount * 100 >= knownTotalChunks.Value * nextProgressPercentToLog)
+                    && (long)totalCount * 100 >= (long)knownTotalChunks.Value * nextProgressPercentToLog)
                 {
                     LogEmbeddingProgressPercent(_logger, totalCount, knownTotalChunks.Value, nextProgressPercentToLog, adaptiveBatchSize);
                     nextProgressPercentToLog += 10;
