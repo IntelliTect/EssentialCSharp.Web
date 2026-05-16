@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Runtime.InteropServices;
 using System.Threading.RateLimiting;
 using ModelContextProtocol.Protocol;
 using EssentialCSharp.Chat.Common.Extensions;
@@ -51,6 +52,8 @@ public partial class Program
         string? appInsightsConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
         bool useAzureMonitor = !string.IsNullOrWhiteSpace(appInsightsConnectionString);
         bool useOtlp = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
+        bool profilerSupportedPlatform = OperatingSystem.IsWindows() || OperatingSystem.IsLinux();
+        bool profilerSkippedUnsupportedPlatform = false;
 
         builder.Logging.AddOpenTelemetry(logging =>
         {
@@ -91,7 +94,15 @@ public partial class Program
             });
 
         if (useAzureMonitor)
-            otel.UseAzureMonitor().AddAzureMonitorProfiler();
+        {
+            // Azure Monitor export is supported cross-platform, but the profiler currently only
+            // supports Windows and Linux.
+            var azureMonitor = otel.UseAzureMonitor();
+            if (profilerSupportedPlatform)
+                azureMonitor.AddAzureMonitorProfiler();
+            else
+                profilerSkippedUnsupportedPlatform = true;
+        }
         else if (useOtlp)
             otel.UseOtlpExporter();
 
@@ -127,6 +138,8 @@ public partial class Program
         var loggerFactory = LoggerFactory.Create(loggingBuilder =>
             loggingBuilder.AddConsole().SetMinimumLevel(LogLevel.Information));
         var initialLogger = loggerFactory.CreateLogger<Program>();
+        if (profilerSkippedUnsupportedPlatform)
+            LogSkippingUnsupportedAzureMonitorProfiler(initialLogger, RuntimeInformation.OSDescription);
 
         builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure(5)));
 
@@ -623,4 +636,7 @@ public partial class Program
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Ignoring invalid TryDotNet origin in CSP: {Origin}")]
     private static partial void LogIgnoringInvalidTryDotNetOrigin(ILogger logger, string origin);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Azure Monitor profiler is not supported on this platform ({Platform}). Skipping profiler registration and continuing with Azure Monitor telemetry export.")]
+    private static partial void LogSkippingUnsupportedAzureMonitorProfiler(ILogger<Program> logger, string platform);
 }
