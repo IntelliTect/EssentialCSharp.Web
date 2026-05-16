@@ -160,6 +160,11 @@ public partial class EmbeddingService(
         return TimeSpan.FromMilliseconds(totalDelayMs);
     }
 
+    private TimeSpan ClampRetryDelay(TimeSpan delay) =>
+        delay > TimeSpan.FromMilliseconds(_retryOptions.MaxDelayMs)
+            ? TimeSpan.FromMilliseconds(_retryOptions.MaxDelayMs)
+            : delay;
+
     /// <summary>
     /// Wraps an async operation with retry logic for transient failures.
     /// </summary>
@@ -182,7 +187,7 @@ public partial class EmbeddingService(
             {
                 var delay = CalculateRetryDelay(attempt);
                 var retryAfter = ExtractRetryAfter(ex);
-                var waitTime = retryAfter ?? delay;
+                var waitTime = retryAfter.HasValue ? ClampRetryDelay(retryAfter.Value) : delay;
                 var statusCode = TryGetStatusCode(ex);
 
                 if (_logger is not null)
@@ -213,10 +218,7 @@ public partial class EmbeddingService(
                         TryGetStatusCode(ex));
                 }
 
-                throw new InvalidOperationException(
-                    $"Operation {operationName} failed after {_retryOptions.MaxRetries + 1} total attempts " +
-                    $"({_retryOptions.MaxRetries} retries). Last error: {ex.Message}",
-                    ex);
+                throw;
             }
             catch (Exception ex)
             {
@@ -236,7 +238,7 @@ public partial class EmbeddingService(
     {
         var embedding = await ExecuteWithRetryAsync(
             async ct => await embeddingGenerator.GenerateAsync(text, cancellationToken: ct),
-            $"GenerateEmbedding",
+            "GenerateEmbedding",
             cancellationToken);
         return embedding.Vector;
     }

@@ -13,8 +13,8 @@ public sealed class EmbeddingRetryOptions
     public const string SectionPath = "AIOptions:EmbeddingRetry";
 
     /// <summary>
-    /// Maximum number of retry attempts for transient failures.
-    /// Default is 5 attempts (initial attempt + 4 retries).
+    /// Maximum number of retries for transient failures.
+    /// Default is 5 retries (initial attempt + 5 retries = 6 total attempts).
     /// </summary>
     [Range(0, 20)]
     public int MaxRetries { get; set; } = 5;
