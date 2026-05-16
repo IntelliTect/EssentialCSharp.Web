@@ -134,9 +134,15 @@ public partial class ChatController : ControllerBase
             await Response.WriteAsync("data: [DONE]\n\n", cancellationToken);
             await Response.Body.FlushAsync(cancellationToken);
         }
-        catch (OperationCanceledException) when (Response.HasStarted || cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
+        catch (OperationCanceledException)
         {
-            LogChatStreamCancelled(_Logger, User.Identity?.Name);
+            if (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
+            {
+                LogChatStreamCancelled(_Logger, User.Identity?.Name);
+                return;
+            }
+
+            throw;
         }
         catch (ConversationContextLimitExceededException ex)
         {
@@ -149,7 +155,11 @@ public partial class ChatController : ControllerBase
                 Response.ContentType = "application/json";
                 try
                 {
-                    await Response.WriteAsJsonAsync(new { error = "This conversation has grown too long. Please start a new one.", errorCode = "context_limit_exceeded" }, cancellationToken);
+                    var writeCancellationToken =
+                        cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested
+                            ? CancellationToken.None
+                            : cancellationToken;
+                    await Response.WriteAsJsonAsync(new { error = "This conversation has grown too long. Please start a new one.", errorCode = "context_limit_exceeded" }, writeCancellationToken);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
                 {
