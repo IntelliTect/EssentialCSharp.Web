@@ -382,7 +382,40 @@ public partial class EmbeddingService(
         var configuredMaxBatchSize = Math.Clamp(_retryOptions.MaxEmbeddingBatchSize, 1, EmbeddingBatchSize);
         var adaptiveBatchSize = configuredMaxBatchSize;
         var buffer = new List<BookContentChunk>(configuredMaxBatchSize);
+        var knownTotalChunks = bookContents.TryGetNonEnumeratedCount(out var totalChunkCount) ? totalChunkCount : (int?)null;
+        var nextProgressPercentToLog = 10;
+        var nextProgressChunkCountToLog = 500;
         int totalCount = 0;
+
+        if (_logger is not null)
+        {
+            LogEmbeddingRebuildStarted(
+                _logger,
+                knownTotalChunks,
+                configuredMaxBatchSize,
+                _retryOptions.MinInterRequestDelayMs);
+        }
+
+        void LogProgressIfNeeded()
+        {
+            if (_logger is null)
+                return;
+
+            if (knownTotalChunks is > 0)
+            {
+                while (nextProgressPercentToLog <= 100
+                    && totalCount * 100 >= knownTotalChunks.Value * nextProgressPercentToLog)
+                {
+                    LogEmbeddingProgressPercent(_logger, totalCount, knownTotalChunks.Value, nextProgressPercentToLog, adaptiveBatchSize);
+                    nextProgressPercentToLog += 10;
+                }
+            }
+            else if (totalCount >= nextProgressChunkCountToLog)
+            {
+                LogEmbeddingProgressCount(_logger, totalCount, adaptiveBatchSize);
+                nextProgressChunkCountToLog += 500;
+            }
+        }
 
         async Task EmbedAndUpsertExactBatchAsync(IReadOnlyList<BookContentChunk> batch)
         {
@@ -403,6 +436,7 @@ public partial class EmbeddingService(
 
             await staging.UpsertAsync(batch, cancellationToken);
             totalCount += batch.Count;
+            LogProgressIfNeeded();
         }
 
         async Task EmbedAndUpsertBatchAdaptiveAsync(IReadOnlyList<BookContentChunk> batch)
@@ -558,4 +592,34 @@ public partial class EmbeddingService(
         int previousBatchSize,
         int newBatchSize,
         int retryAttemptsPerRequest);
+
+    [LoggerMessage(
+        EventId = 12005,
+        Level = LogLevel.Information,
+        Message = "Embedding rebuild started. TotalChunks={TotalChunks}, InitialBatchSize={InitialBatchSize}, MinInterRequestDelayMs={MinInterRequestDelayMs}")]
+    private static partial void LogEmbeddingRebuildStarted(
+        ILogger logger,
+        int? totalChunks,
+        int initialBatchSize,
+        int minInterRequestDelayMs);
+
+    [LoggerMessage(
+        EventId = 12006,
+        Level = LogLevel.Information,
+        Message = "Embedding progress: {ProcessedChunks}/{TotalChunks} chunks ({ProgressPercent}%). CurrentAdaptiveBatchSize={AdaptiveBatchSize}")]
+    private static partial void LogEmbeddingProgressPercent(
+        ILogger logger,
+        int processedChunks,
+        int totalChunks,
+        int progressPercent,
+        int adaptiveBatchSize);
+
+    [LoggerMessage(
+        EventId = 12007,
+        Level = LogLevel.Information,
+        Message = "Embedding progress: {ProcessedChunks} chunks processed. CurrentAdaptiveBatchSize={AdaptiveBatchSize}")]
+    private static partial void LogEmbeddingProgressCount(
+        ILogger logger,
+        int processedChunks,
+        int adaptiveBatchSize);
 }
