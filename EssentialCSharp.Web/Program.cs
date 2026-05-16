@@ -119,17 +119,7 @@ public partial class Program
 
 
 
-        builder.Services.Configure<ForwardedHeadersOptions>(options =>
-        {
-            options.ForwardedHeaders =
-                ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-
-            // Only loopback proxies are allowed by default.
-            // Clear that restriction because forwarders are enabled by explicit 
-            // configuration.
-            options.KnownIPNetworks.Clear();
-            options.KnownProxies.Clear();
-        });
+        builder.Services.AddTrustedForwardedHeaders(builder.Configuration, builder.Environment);
 
         ConfigurationManager configuration = builder.Configuration;
         string connectionString = builder.Configuration.GetConnectionString("EssentialCSharpWebContextConnection") ?? throw new InvalidOperationException("Connection string 'EssentialCSharpWebContextConnection' not found.");
