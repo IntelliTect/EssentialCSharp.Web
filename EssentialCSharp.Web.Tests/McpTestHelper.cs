@@ -6,6 +6,7 @@ using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using TUnit.AspNetCore;
@@ -15,7 +16,7 @@ namespace EssentialCSharp.Web.Tests;
 internal static class McpTestHelper
 {
     public static HttpClient CreateClient(TracedWebApplicationFactory<Program> factory) =>
-        factory.CreateClient();
+        factory.Inner.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
 
     public static HttpRequestMessage CreateInitializeRequest(string path = "/mcp")
     {

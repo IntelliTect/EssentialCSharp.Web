@@ -1,4 +1,5 @@
 using System.Net;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using TUnit.AspNetCore;
 
@@ -11,9 +12,14 @@ public abstract class IntegrationTestBase : WebApplicationTest<WebApplicationFac
     /// TUnit trace correlation by using <see cref="TracedWebApplicationFactory{T}.CreateClient()"/>.
     /// This helper intentionally follows redirects using GET requests only.
     /// </summary>
-    protected async Task<HttpResponseMessage> GetFollowingRedirectsAsync(string relativeUrl, int maxRedirects = 10)
+    protected HttpClient CreateClientWithoutRedirectFollowing() =>
+        Factory.Inner.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+    protected static async Task<HttpResponseMessage> GetFollowingGetRedirectsAsync(
+        HttpClient client,
+        string relativeUrl,
+        int maxRedirects = 10)
     {
-        HttpClient client = Factory.CreateClient();
         HttpResponseMessage response = await client.GetAsync(relativeUrl);
 
         for (int redirectCount = 0;

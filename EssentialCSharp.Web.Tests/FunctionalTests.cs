@@ -13,7 +13,8 @@ public class FunctionalTests : IntegrationTestBase
     [Arguments("/alive")]
     public async Task WhenTheApplicationStarts_ItCanLoadLoadPages(string relativeUrl)
     {
-        using HttpResponseMessage response = await GetFollowingRedirectsAsync(relativeUrl);
+        using HttpClient client = Factory.CreateClient();
+        using HttpResponseMessage response = await GetFollowingGetRedirectsAsync(client, relativeUrl);
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
@@ -28,7 +29,8 @@ public class FunctionalTests : IntegrationTestBase
     [Arguments("/about?someOtherParam=value")]
     public async Task WhenPagesAreAccessed_TheyReturnHtml(string relativeUrl)
     {
-        using HttpResponseMessage response = await GetFollowingRedirectsAsync(relativeUrl);
+        using HttpClient client = Factory.CreateClient();
+        using HttpResponseMessage response = await GetFollowingGetRedirectsAsync(client, relativeUrl);
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
 
@@ -43,7 +45,8 @@ public class FunctionalTests : IntegrationTestBase
     [Test]
     public async Task WhenTheApplicationStarts_NonExistingPage_GivesCorrectStatusCode()
     {
-        using HttpResponseMessage response = await GetFollowingRedirectsAsync("/non-existing-page1234");
+        using HttpClient client = Factory.CreateClient();
+        using HttpResponseMessage response = await GetFollowingGetRedirectsAsync(client, "/non-existing-page1234");
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
     }

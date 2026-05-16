@@ -12,7 +12,7 @@ public class ContentRateLimitingTests : IntegrationTestBase
     [Test]
     public async Task ContentEndpoint_ExceedingPerMinuteLimit_Returns429()
     {
-        HttpClient client = Factory.CreateClient();
+        using HttpClient client = CreateClientWithoutRedirectFollowing();
 
         // Anonymous limit is 10/min. First 10 requests should not be rate-limited.
         for (int i = 0; i < 10; i++)

@@ -56,8 +56,26 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
                 options.UseSqlite(dbConnection);
             });
 
-            // Ensure schema exists before any other hosted service that reads from the database.
-            services.Insert(0, ServiceDescriptor.Singleton<IHostedService, EnsureCreatedHostedService>());
+            // Ensure schema exists before any hosted service that reads from the database.
+            ServiceDescriptor ensureCreatedDescriptor =
+                ServiceDescriptor.Singleton<IHostedService, EnsureCreatedHostedService>();
+            int firstHostedServiceIndex = -1;
+            for (int i = 0; i < services.Count; i++)
+            {
+                if (services[i].ServiceType == typeof(IHostedService))
+                {
+                    firstHostedServiceIndex = i;
+                    break;
+                }
+            }
+            if (firstHostedServiceIndex >= 0)
+            {
+                services.Insert(firstHostedServiceIndex, ensureCreatedDescriptor);
+            }
+            else
+            {
+                services.Add(ensureCreatedDescriptor);
+            }
 
             // Replace IListingSourceCodeService with one backed by TestData
             services.RemoveAll<IListingSourceCodeService>();
