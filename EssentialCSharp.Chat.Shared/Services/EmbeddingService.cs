@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.VectorData;
 using Npgsql;
 using System.ClientModel;
+using System.ClientModel.Primitives;
 using System.Globalization;
 
 namespace EssentialCSharp.Chat.Common.Services;
@@ -32,9 +33,12 @@ public partial class EmbeddingService(
 
     private readonly EmbeddingRetryOptions _retryOptions = ValidateRetryOptions(retryOptions?.Value ?? new EmbeddingRetryOptions());
     private readonly ILogger<EmbeddingService>? _logger = logger;
+    private static readonly SemaphoreSlim _embeddingRequestLock = new(1, 1);
+    private DateTimeOffset _lastEmbeddingRequestStartedUtc = DateTimeOffset.MinValue;
 
     // Only allow simple identifiers: letters, digits, and underscores, starting with a letter or underscore.
     private static readonly Regex _safeIdentifierRegex = new(@"^[a-zA-Z_][a-zA-Z0-9_]*$", RegexOptions.Compiled);
+    private static readonly Regex _retryAfterSecondsRegex = new(@"retry\s+after\s+(?<seconds>\d+)\s+seconds?", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private static EmbeddingRetryOptions ValidateRetryOptions(EmbeddingRetryOptions options)
     {
@@ -96,6 +100,10 @@ public partial class EmbeddingService(
         return ex.InnerException is null ? null : TryGetStatusCode(ex.InnerException);
     }
 
+    private static bool IsRateLimitError(Exception ex) =>
+        TryGetStatusCode(ex) == 429
+        || ex.Message.Contains("RateLimitReached", StringComparison.OrdinalIgnoreCase);
+
     /// <summary>
     /// Extracts the Retry-After delay from known exception types if present.
     /// Returns null if the header is not present or invalid.
@@ -105,17 +113,59 @@ public partial class EmbeddingService(
         if (ex is ClientResultException clientResultException)
         {
             var rawResponse = clientResultException.GetRawResponse();
-            var headerValue = rawResponse?.Headers.TryGetValue("retry-after", out var value) == true
-                ? value
-                : null;
-            if (TryParseRetryAfterValue(headerValue, out var retryAfter))
+            if (TryGetHeaderValue(rawResponse, "x-ms-retry-after-ms", out var msHeaderValue)
+                && TryParseMilliseconds(msHeaderValue, out var msRetryAfter))
+            {
+                return msRetryAfter;
+            }
+
+            if (TryGetHeaderValue(rawResponse, "retry-after-ms", out var retryAfterMsHeaderValue)
+                && TryParseMilliseconds(retryAfterMsHeaderValue, out var retryAfterMs))
+            {
+                return retryAfterMs;
+            }
+
+            if (TryGetHeaderValue(rawResponse, "retry-after", out var headerValue)
+                && TryParseRetryAfterValue(headerValue, out var retryAfter))
+            {
                 return retryAfter;
+            }
         }
 
-        if (ex is HttpRequestException)
-            return null;
+        if (TryParseRetryAfterValue(ex.Message, out var messageRetryAfter))
+            return messageRetryAfter;
 
         return ex.InnerException is null ? null : ExtractRetryAfter(ex.InnerException);
+    }
+
+    private static bool TryGetHeaderValue(PipelineResponse? response, string headerName, out string? headerValue)
+    {
+        headerValue = null;
+        if (response is null)
+            return false;
+
+        if (response.Headers.TryGetValue(headerName, out var value) && !string.IsNullOrWhiteSpace(value))
+        {
+            headerValue = value;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryParseMilliseconds(string? value, out TimeSpan retryAfter)
+    {
+        retryAfter = default;
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
+
+        if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var msValue) && msValue >= 0)
+        {
+            retryAfter = TimeSpan.FromMilliseconds(msValue);
+            return true;
+        }
+
+        return false;
     }
 
     private static bool TryParseRetryAfterValue(string? headerValue, out TimeSpan retryAfter)
@@ -138,6 +188,15 @@ public partial class EmbeddingService(
                 retryAfter = delay;
                 return true;
             }
+        }
+
+        var secondsMatch = _retryAfterSecondsRegex.Match(headerValue);
+        if (secondsMatch.Success
+            && int.TryParse(secondsMatch.Groups["seconds"].Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var extractedSeconds)
+            && extractedSeconds >= 0)
+        {
+            retryAfter = TimeSpan.FromSeconds(extractedSeconds);
+            return true;
         }
 
         return false;
@@ -164,6 +223,31 @@ public partial class EmbeddingService(
         delay > TimeSpan.FromMilliseconds(_retryOptions.MaxDelayMs)
             ? TimeSpan.FromMilliseconds(_retryOptions.MaxDelayMs)
             : delay;
+
+    private async Task<T> ExecuteEmbeddingRequestWithPacingAsync<T>(
+        Func<CancellationToken, Task<T>> embeddingRequest,
+        CancellationToken cancellationToken)
+    {
+        await _embeddingRequestLock.WaitAsync(cancellationToken);
+        try
+        {
+            var minimumSpacing = TimeSpan.FromMilliseconds(_retryOptions.MinInterRequestDelayMs);
+            if (minimumSpacing > TimeSpan.Zero && _lastEmbeddingRequestStartedUtc != DateTimeOffset.MinValue)
+            {
+                var elapsed = DateTimeOffset.UtcNow - _lastEmbeddingRequestStartedUtc;
+                var remainingDelay = minimumSpacing - elapsed;
+                if (remainingDelay > TimeSpan.Zero)
+                    await Task.Delay(remainingDelay, cancellationToken);
+            }
+
+            _lastEmbeddingRequestStartedUtc = DateTimeOffset.UtcNow;
+            return await embeddingRequest(cancellationToken);
+        }
+        finally
+        {
+            _embeddingRequestLock.Release();
+        }
+    }
 
     /// <summary>
     /// Wraps an async operation with retry logic for transient failures.
@@ -237,7 +321,9 @@ public partial class EmbeddingService(
     public async Task<ReadOnlyMemory<float>> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default)
     {
         var embedding = await ExecuteWithRetryAsync(
-            async ct => await embeddingGenerator.GenerateAsync(text, cancellationToken: ct),
+            async ct => await ExecuteEmbeddingRequestWithPacingAsync(
+                async pacingCt => await embeddingGenerator.GenerateAsync(text, cancellationToken: pacingCt),
+                ct),
             "GenerateEmbedding",
             cancellationToken);
         return embedding.Vector;
@@ -287,31 +373,151 @@ public partial class EmbeddingService(
 
         // ── Step 2 & 3: Batch-embed and immediately upsert each batch ─────────────────
         // Azure OpenAI supports at most EmbeddingBatchSize inputs per GenerateAsync call.
-        // bookContents is streamed in fixed-size batches without full upfront materialization,
-        // keeping peak memory bounded to one batch of chunk objects and their embeddings at a time.
+        // The effective request size starts at min(EmbeddingBatchSize, MaxEmbeddingBatchSize)
+        // and adaptively downshifts on 429 throttling responses.
+        // bookContents is streamed in batches without full upfront materialization,
+        // keeping peak memory bounded to one batch (or adaptive split) at a time.
         // The staging-swap (Step 3) is safe because it only runs after all batches have
         // been successfully upserted.
-        var buffer = new List<BookContentChunk>(EmbeddingBatchSize);
+        var configuredMaxBatchSize = Math.Clamp(_retryOptions.MaxEmbeddingBatchSize, 1, EmbeddingBatchSize);
+        var adaptiveBatchSize = configuredMaxBatchSize;
+        var buffer = new List<BookContentChunk>(configuredMaxBatchSize);
+        var knownTotalChunks = bookContents.TryGetNonEnumeratedCount(out var totalChunkCount) ? totalChunkCount : (int?)null;
+        var nextProgressPercentToLog = 10;
+        var nextProgressChunkCountToLog = 500;
+        var successfulBatchRequestCounts = new Dictionary<int, int>();
+        var successfulBatchChunkTotals = new Dictionary<int, int>();
         int totalCount = 0;
 
-        async Task EmbedAndUpsertBatchAsync()
+        if (_logger is not null)
         {
+            LogEmbeddingRebuildStarted(
+                _logger,
+                knownTotalChunks,
+                configuredMaxBatchSize,
+                _retryOptions.MinInterRequestDelayMs);
+        }
+
+        void LogProgressIfNeeded()
+        {
+            if (_logger is null)
+                return;
+
+            if (knownTotalChunks is > 0)
+            {
+                while (nextProgressPercentToLog <= 100
+                    && (long)totalCount * 100 >= (long)knownTotalChunks.Value * nextProgressPercentToLog)
+                {
+                    LogEmbeddingProgressPercent(_logger, totalCount, knownTotalChunks.Value, nextProgressPercentToLog, adaptiveBatchSize);
+                    nextProgressPercentToLog += 10;
+                }
+            }
+            else if (totalCount >= nextProgressChunkCountToLog)
+            {
+                LogEmbeddingProgressCount(_logger, totalCount, adaptiveBatchSize);
+                nextProgressChunkCountToLog += 500;
+            }
+        }
+
+        async Task EmbedAndUpsertExactBatchAsync(IReadOnlyList<BookContentChunk> batch)
+        {
+            const string operationName = "GenerateBatchEmbeddings";
+            int attemptNumber = 0;
+
             var batchEmbeddings = await ExecuteWithRetryAsync(
-                async ct => await embeddingGenerator.GenerateAsync(
-                    buffer.Select(c => c.ChunkText), cancellationToken: ct),
-                $"GenerateBatchEmbeddings(size={buffer.Count})",
+                async ct =>
+                {
+                    attemptNumber++;
+                    if (_logger is not null)
+                    {
+                        LogEmbeddingBatchRequestState(
+                            _logger,
+                            operationName,
+                            batch.Count,
+                            adaptiveBatchSize,
+                            batch.Count,
+                            attemptNumber,
+                            false,
+                            false);
+                    }
+
+                    return await ExecuteEmbeddingRequestWithPacingAsync(
+                        async pacingCt => await embeddingGenerator.GenerateAsync(
+                            batch.Select(c => c.ChunkText), cancellationToken: pacingCt),
+                        ct);
+                },
+                $"{operationName}(size={batch.Count})",
                 cancellationToken);
 
-            if (batchEmbeddings.Count != buffer.Count)
+            if (batchEmbeddings.Count != batch.Count)
                 throw new InvalidOperationException(
-                    $"Embedding count mismatch: expected {buffer.Count}, got {batchEmbeddings.Count}.");
+                    $"Embedding count mismatch: expected {batch.Count}, got {batchEmbeddings.Count}.");
 
-            for (int i = 0; i < buffer.Count; i++)
-                buffer[i].TextEmbedding = batchEmbeddings[i].Vector;
+            for (int i = 0; i < batch.Count; i++)
+                batch[i].TextEmbedding = batchEmbeddings[i].Vector;
 
-            await staging.UpsertAsync(buffer, cancellationToken);
-            totalCount += buffer.Count;
-            buffer.Clear();
+            await staging.UpsertAsync(batch, cancellationToken);
+            if (_logger is not null)
+            {
+                LogEmbeddingBatchRequestState(
+                    _logger,
+                    operationName,
+                    batch.Count,
+                    adaptiveBatchSize,
+                    batch.Count,
+                    attemptNumber,
+                    true,
+                    false);
+            }
+
+            if (!successfulBatchRequestCounts.TryAdd(batch.Count, 1))
+                successfulBatchRequestCounts[batch.Count]++;
+
+            if (!successfulBatchChunkTotals.TryAdd(batch.Count, batch.Count))
+                successfulBatchChunkTotals[batch.Count] += batch.Count;
+
+            totalCount += batch.Count;
+            LogProgressIfNeeded();
+        }
+
+        async Task EmbedAndUpsertBatchAdaptiveAsync(IReadOnlyList<BookContentChunk> batch)
+        {
+            try
+            {
+                await EmbedAndUpsertExactBatchAsync(batch);
+            }
+            catch (Exception ex) when (IsRateLimitError(ex) && batch.Count > 1)
+            {
+                var splitSize = Math.Max(1, batch.Count / 2);
+                if (adaptiveBatchSize > splitSize)
+                {
+                    var previousAdaptiveBatchSize = adaptiveBatchSize;
+                    adaptiveBatchSize = splitSize;
+                    if (_logger is not null)
+                    {
+                        LogEmbeddingBatchRequestState(
+                            _logger,
+                            "GenerateBatchEmbeddings",
+                            previousAdaptiveBatchSize,
+                            adaptiveBatchSize,
+                            batch.Count,
+                            _retryOptions.MaxRetries + 1,
+                            false,
+                            true);
+                    }
+                }
+
+                var first = batch.Take(splitSize).ToArray();
+                var second = batch.Skip(splitSize).ToArray();
+                await EmbedAndUpsertBatchAdaptiveAsync(first);
+                await EmbedAndUpsertBatchAdaptiveAsync(second);
+            }
+            catch (Exception ex) when (IsRateLimitError(ex) && batch.Count == 1)
+            {
+                throw new InvalidOperationException(
+                    $"Embedding request failed with repeated 429 rate limits even at batch size 1 after {_retryOptions.MaxRetries + 1} attempts.",
+                    ex);
+            }
         }
 
         try
@@ -319,12 +525,33 @@ public partial class EmbeddingService(
             foreach (var chunk in bookContents)
             {
                 buffer.Add(chunk);
-                if (buffer.Count == EmbeddingBatchSize)
-                    await EmbedAndUpsertBatchAsync();
+                if (buffer.Count >= adaptiveBatchSize)
+                {
+                    var batchToProcess = buffer.ToArray();
+                    buffer.Clear();
+                    await EmbedAndUpsertBatchAdaptiveAsync(batchToProcess);
+                }
             }
 
             if (buffer.Count > 0)
-                await EmbedAndUpsertBatchAsync();
+            {
+                var batchToProcess = buffer.ToArray();
+                buffer.Clear();
+                await EmbedAndUpsertBatchAdaptiveAsync(batchToProcess);
+            }
+
+            if (_logger is not null)
+            {
+                foreach (var entry in successfulBatchRequestCounts.OrderBy(kvp => kvp.Key))
+                {
+                    successfulBatchChunkTotals.TryGetValue(entry.Key, out var successfulChunkCount);
+                    LogEmbeddingBatchSizeSummary(
+                        _logger,
+                        entry.Key,
+                        entry.Value,
+                        successfulChunkCount);
+                }
+            }
 
             Console.WriteLine($"Uploaded {totalCount} chunks to staging collection '{stagingName}'.");
         }
@@ -417,4 +644,58 @@ public partial class EmbeddingService(
         int attemptCount,
         string lastError,
         int? statusCode);
+
+    [LoggerMessage(
+        EventId = 12004,
+        Level = LogLevel.Information,
+        Message = "Embedding batch request state: operation_name={operation_name} current_batch_size={current_batch_size} effective_batch_size={effective_batch_size} chunk_count_in_request={chunk_count_in_request} attempt_number={attempt_number} request_succeeded={request_succeeded} request_throttled={request_throttled}")]
+    private static partial void LogEmbeddingBatchRequestState(
+        ILogger logger,
+        string operation_name,
+        int current_batch_size,
+        int effective_batch_size,
+        int chunk_count_in_request,
+        int attempt_number,
+        bool request_succeeded,
+        bool request_throttled);
+
+    [LoggerMessage(
+        EventId = 12005,
+        Level = LogLevel.Information,
+        Message = "Embedding rebuild started. TotalChunks={TotalChunks}, InitialBatchSize={InitialBatchSize}, MinInterRequestDelayMs={MinInterRequestDelayMs}")]
+    private static partial void LogEmbeddingRebuildStarted(
+        ILogger logger,
+        int? totalChunks,
+        int initialBatchSize,
+        int minInterRequestDelayMs);
+
+    [LoggerMessage(
+        EventId = 12006,
+        Level = LogLevel.Information,
+        Message = "Embedding progress: {ProcessedChunks}/{TotalChunks} chunks ({ProgressPercent}%). CurrentAdaptiveBatchSize={AdaptiveBatchSize}")]
+    private static partial void LogEmbeddingProgressPercent(
+        ILogger logger,
+        int processedChunks,
+        int totalChunks,
+        int progressPercent,
+        int adaptiveBatchSize);
+
+    [LoggerMessage(
+        EventId = 12007,
+        Level = LogLevel.Information,
+        Message = "Embedding progress: {ProcessedChunks} chunks processed. CurrentAdaptiveBatchSize={AdaptiveBatchSize}")]
+    private static partial void LogEmbeddingProgressCount(
+        ILogger logger,
+        int processedChunks,
+        int adaptiveBatchSize);
+
+    [LoggerMessage(
+        EventId = 12008,
+        Level = LogLevel.Information,
+        Message = "Embedding successful batch-size summary: successful_batch_size={successful_batch_size} successful_request_count={successful_request_count} successful_chunk_count={successful_chunk_count}")]
+    private static partial void LogEmbeddingBatchSizeSummary(
+        ILogger logger,
+        int successful_batch_size,
+        int successful_request_count,
+        int successful_chunk_count);
 }
