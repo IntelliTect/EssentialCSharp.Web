@@ -274,11 +274,8 @@ public partial class Program
         builder.Services.AddSingleton<IBookToolQueryService, BookToolQueryService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
 
-        // Add AI Chat services
-        if (!builder.Environment.IsDevelopment())
-        {
-            builder.Services.AddAzureOpenAIServices(configuration);
-        }
+        // Add AI Chat services using configuration-driven backend selection.
+        builder.Services.AddConfiguredChatServices(configuration);
 
         // MCP server — always enabled, authenticated via opaque DB-backed tokens.
         builder.Services.AddScoped<McpApiTokenService>();

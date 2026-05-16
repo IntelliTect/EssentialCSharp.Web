@@ -15,6 +15,7 @@ namespace EssentialCSharp.Chat.Common.Extensions;
 public static class ServiceCollectionExtensions
 {
     private static readonly string[] _PostgresScopes = ["https://ossrdbms-aad.database.windows.net/.default"];
+    private const string LocalChatHttpClientName = "LocalAIChat";
 
     /// <summary>
     /// Adds Azure OpenAI and related AI services to the service collection using Managed Identity
@@ -82,6 +83,71 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<AIChatService>();
         services.AddSingleton<MarkdownChunkingService>();
 
+        return services;
+    }
+
+    /// <summary>
+    /// Registers chat services using configuration-driven backend selection.
+    /// This method never throws for missing or partial AI configuration; it falls back to
+    /// <see cref="UnavailableChatService"/> so the app can continue running.
+    /// </summary>
+    public static IServiceCollection AddConfiguredChatServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<AIOptions>(configuration.GetSection("AIOptions"));
+
+        var aiOptions = configuration.GetSection("AIOptions").Get<AIOptions>() ?? new AIOptions();
+        string? postgresConnectionString = configuration.GetConnectionString("PostgresVectorStore");
+
+        bool hasAzureEndpoint = !string.IsNullOrWhiteSpace(aiOptions.Endpoint);
+        bool hasAzureChatDeployment = !string.IsNullOrWhiteSpace(aiOptions.ChatDeploymentName);
+        bool hasAzureVectorDeployment = !string.IsNullOrWhiteSpace(aiOptions.VectorGenerationDeploymentName);
+        bool hasAzureConfig = hasAzureEndpoint && hasAzureChatDeployment && hasAzureVectorDeployment && !string.IsNullOrWhiteSpace(postgresConnectionString);
+
+        string localEndpoint = ResolveLocalEndpoint(aiOptions, configuration);
+        bool hasLocalConfig = aiOptions.UseLocalAI
+            && !string.IsNullOrWhiteSpace(localEndpoint)
+            && !string.IsNullOrWhiteSpace(aiOptions.LocalChatModel);
+
+        if (hasAzureConfig)
+        {
+            // Pre-validate endpoint URI to avoid exceptions in AddAzureOpenAIServices for
+            // non-empty but invalid endpoint values.
+            if (!Uri.TryCreate(aiOptions.Endpoint, UriKind.Absolute, out var azureUri)
+                || (azureUri.Scheme != Uri.UriSchemeHttp && azureUri.Scheme != Uri.UriSchemeHttps))
+            {
+                Console.Error.WriteLine("[AI] Azure endpoint is not a valid http/https URI. Falling back to local/unavailable.");
+            }
+            else
+            {
+                services.AddAzureOpenAIServices(aiOptions, postgresConnectionString!);
+                services.AddSingleton<IChatCompletionService>(provider => provider.GetRequiredService<AIChatService>());
+                Console.WriteLine("[AI] Selected backend: Azure/Foundry.");
+                return services;
+            }
+        }
+
+        if (hasLocalConfig)
+        {
+            if (!Uri.TryCreate(localEndpoint, UriKind.Absolute, out var localEndpointUri)
+                || (localEndpointUri.Scheme != Uri.UriSchemeHttp && localEndpointUri.Scheme != Uri.UriSchemeHttps))
+            {
+                services.AddSingleton<IChatCompletionService, UnavailableChatService>();
+                Console.Error.WriteLine("[AI] Local backend selected but LocalEndpoint is invalid. Falling back to unavailable backend.");
+                return services;
+            }
+
+            services.AddHttpClient(LocalChatHttpClientName, client =>
+            {
+                client.BaseAddress = localEndpointUri;
+                client.Timeout = TimeSpan.FromSeconds(120);
+            });
+            services.AddSingleton<IChatCompletionService, LocalChatService>();
+            Console.WriteLine("[AI] Selected backend: Local (Ollama/OpenAI-compatible).");
+            return services;
+        }
+
+        services.AddSingleton<IChatCompletionService, UnavailableChatService>();
+        Console.WriteLine("[AI] Selected backend: Unavailable (missing or invalid AI configuration).");
         return services;
     }
 
@@ -196,6 +262,16 @@ public static class ServiceCollectionExtensions
 #pragma warning restore SKEXP0010
 
         return services;
+    }
+
+    private static string ResolveLocalEndpoint(AIOptions options, IConfiguration configuration)
+    {
+        if (!string.IsNullOrWhiteSpace(options.LocalEndpoint))
+        {
+            return options.LocalEndpoint!;
+        }
+
+        return configuration.GetConnectionString("ollama-chat") ?? string.Empty;
     }
 
 }

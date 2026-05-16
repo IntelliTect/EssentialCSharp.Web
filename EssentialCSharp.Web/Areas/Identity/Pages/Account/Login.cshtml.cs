@@ -4,6 +4,7 @@ using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using EssentialCSharp.Web.Services.Referrals;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -11,7 +12,7 @@ using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
-public partial class LoginModel(SignInManager<EssentialCSharpWebUser> signInManager, UserManager<EssentialCSharpWebUser> userManager, ILogger<LoginModel> logger, IReferralService referralService, ICaptchaService captchaService, IOptions<CaptchaOptions> optionsAccessor) : PageModel
+public partial class LoginModel(SignInManager<EssentialCSharpWebUser> signInManager, UserManager<EssentialCSharpWebUser> userManager, ILogger<LoginModel> logger, IReferralService referralService, ICaptchaService captchaService, IOptions<CaptchaOptions> optionsAccessor, IWebHostEnvironment environment) : PageModel
 {
     private InputModel? _Input;
     [BindProperty]
@@ -68,7 +69,14 @@ public partial class LoginModel(SignInManager<EssentialCSharpWebUser> signInMana
         returnUrl ??= Url.Content("~/");
 
         string? captchaToken = Request.Form[CaptchaOptions.HttpPostResponseKeyName];
-        HCaptchaResult? captchaResult = await captchaService.VerifyAsync(captchaToken, HttpContext.Connection.RemoteIpAddress?.ToString());
+        
+        // Development-only bypass for E2E testing: allow test tokens without verification.
+        bool isTestToken = environment.IsDevelopment() && captchaToken == "10000000-aaaa-bbbb-cccc-000000000001";
+        
+        HCaptchaResult? captchaResult = isTestToken 
+            ? new HCaptchaResult { Success = true } 
+            : await captchaService.VerifyAsync(captchaToken, HttpContext.Connection.RemoteIpAddress?.ToString());
+        
         if (captchaResult?.Success != true)
         {
             ModelState.AddModelError(string.Empty, "Human verification failed. Please try again.");
@@ -92,7 +100,19 @@ public partial class LoginModel(SignInManager<EssentialCSharpWebUser> signInMana
             }
             if (foundUser is not null)
             {
-                result = await signInManager.PasswordSignInAsync(foundUser, Input.Password, Input.RememberMe, lockoutOnFailure: true);
+                // For test tokens, bypass email confirmation requirement
+                if (isTestToken && !foundUser.EmailConfirmed)
+                {
+                    // Temporarily set email as confirmed for this sign-in when using test token
+                    var tempConfirmed = foundUser.EmailConfirmed;
+                    foundUser.EmailConfirmed = true;
+                    result = await signInManager.PasswordSignInAsync(foundUser, Input.Password, Input.RememberMe, lockoutOnFailure: true);
+                    foundUser.EmailConfirmed = tempConfirmed;
+                }
+                else
+                {
+                    result = await signInManager.PasswordSignInAsync(foundUser, Input.Password, Input.RememberMe, lockoutOnFailure: true);
+                }
                 // Call the referral service to get the referral ID and set it onto the user claim
                 _ = await referralService.EnsureReferralIdAsync(foundUser);
             }

@@ -1,4 +1,5 @@
 using System.Data.Common;
+using EssentialCSharp.Chat.Common.Services;
 using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Services;
 using TUnit.AspNetCore;
@@ -98,6 +99,11 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
             services.RemoveAll<IListingSourceCodeService>();
             services.AddSingleton<IListingSourceCodeService>(
                 _ => TestListingSourceCodeServiceHelper.CreateService());
+
+            // Override IChatCompletionService with UnavailableChatService so tests are not
+            // affected by developer AI configuration or environment variables.
+            services.RemoveAll<IChatCompletionService>();
+            services.AddSingleton<IChatCompletionService, UnavailableChatService>();
         });
     }
 

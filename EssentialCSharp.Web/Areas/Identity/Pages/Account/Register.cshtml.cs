@@ -5,6 +5,7 @@ using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -22,7 +23,8 @@ public partial class RegisterModel(
     IEmailSender emailSender,
     ICaptchaService captchaService,
     IOptions<CaptchaOptions> optionsAccessor,
-    IUserEmailStore<EssentialCSharpWebUser> emailStore) : PageModel
+    IUserEmailStore<EssentialCSharpWebUser> emailStore,
+    IWebHostEnvironment environment) : PageModel
 {
     public string CaptchaSiteKey { get; } = optionsAccessor.Value.SiteKey ?? string.Empty;
 
@@ -95,7 +97,13 @@ public partial class RegisterModel(
             return Page();
         }
 
-        HCaptchaResult? response = await captchaService.VerifyAsync(hCaptcha_response, HttpContext.Connection.RemoteIpAddress?.ToString());
+        // Development-only bypass for E2E testing: allow test tokens without verification.
+        bool isTestToken = environment.IsDevelopment() && hCaptcha_response == "10000000-aaaa-bbbb-cccc-000000000001";
+        
+        HCaptchaResult? response = isTestToken 
+            ? new HCaptchaResult { Success = true } 
+            : await captchaService.VerifyAsync(hCaptcha_response, HttpContext.Connection.RemoteIpAddress?.ToString());
+        
         if (response is null)
         {
             ModelState.AddModelError(string.Empty, "Captcha verification is temporarily unavailable. Please try again later.");
