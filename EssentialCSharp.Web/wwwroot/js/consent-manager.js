@@ -36,6 +36,8 @@ class ConsentManager {
         if (this.shouldShowConsentBanner()) {
             this.showConsentBanner();
         }
+
+        this.notifyConsentChanged();
     }
 
     initGoogleConsentMode() {
@@ -73,7 +75,7 @@ class ConsentManager {
                 });
                 
                 this.consentState = { ...this.consentState, ...validatedPreferences };
-                this.updateConsentMode();
+                this.updateConsentMode({ skipNotify: true });
             } catch (e) {
                 // Malformed cookie — delete it so the banner is shown again
                 console.warn('Failed to parse consent preferences', e);
@@ -251,13 +253,16 @@ class ConsentManager {
         this.removeConsentBanner();
     }
 
-    updateConsentMode() {
+    updateConsentMode({ skipNotify = false } = {}) {
         if (window.gtag) {
             try {
                 window.gtag('consent', 'update', this.consentState);
             } catch (error) {
                 console.warn('Failed to update Google Consent Mode:', error);
             }
+        }
+        if (!skipNotify) {
+            this.notifyConsentChanged();
         }
     }
 
@@ -424,8 +429,18 @@ class ConsentManager {
         return this.consentState.analytics_storage === 'granted';
     }
 
+    getConsentState() {
+        return { ...this.consentState };
+    }
+
     hasAdvertisingConsent() {
         return this.consentState.ad_storage === 'granted';
+    }
+
+    notifyConsentChanged() {
+        window.dispatchEvent(new CustomEvent('ecs:consent-changed', {
+            detail: { consentState: { ...this.consentState } }
+        }));
     }
 
     // Method to revoke consent (useful for "forget me" functionality)
@@ -437,8 +452,8 @@ class ConsentManager {
     }
 
     clearTrackingCookies() {
-        // Clear common tracking cookies (Google Analytics and Microsoft Clarity)
-        const trackingCookies = ['_ga', '_gid', '_gat', '_clck', '_clsk', 'CLID', 'ANONCHK', 'MR', 'MUID', 'SM'];
+        // Clear common tracking cookies (Google Analytics, Microsoft Clarity, and App Insights)
+        const trackingCookies = ['_ga', '_gid', '_gat', '_clck', '_clsk', 'CLID', 'ANONCHK', 'MR', 'MUID', 'SM', 'ai_user', 'ai_session'];
         const expired = 'expires=Thu, 01 Jan 1970 00:00:00 GMT';
         const hostname = window.location.hostname;
         // Build candidate domains: exact host plus progressively shorter parent domains.
@@ -476,4 +491,11 @@ window.openConsentPreferences = function() {
     if (window.consentManager) {
         window.consentManager.openConsentPreferences();
     }
+};
+
+window.getEcsConsentState = function() {
+    if (window.consentManager && typeof window.consentManager.getConsentState === 'function') {
+        return window.consentManager.getConsentState();
+    }
+    return null;
 };
