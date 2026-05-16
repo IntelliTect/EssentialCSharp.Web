@@ -450,8 +450,8 @@ class ConsentManager {
     }
 
     clearTrackingCookies() {
-        // Clear common tracking cookies (Google Analytics and Microsoft Clarity)
-        const trackingCookies = ['_ga', '_gid', '_gat', '_clck', '_clsk', 'CLID', 'ANONCHK', 'MR', 'MUID', 'SM'];
+        // Clear common tracking cookies (Google Analytics, Microsoft Clarity, and App Insights)
+        const trackingCookies = ['_ga', '_gid', '_gat', '_clck', '_clsk', 'CLID', 'ANONCHK', 'MR', 'MUID', 'SM', 'ai_user', 'ai_session'];
         const expired = 'expires=Thu, 01 Jan 1970 00:00:00 GMT';
         const hostname = window.location.hostname;
         // Build candidate domains: exact host plus progressively shorter parent domains.

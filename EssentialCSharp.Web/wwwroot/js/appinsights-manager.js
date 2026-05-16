@@ -59,8 +59,18 @@
         sdkLoadPromise = new Promise((resolve, reject) => {
             const existing = document.querySelector(`script[src="${SDK_URL}"]`);
             if (existing) {
-                existing.addEventListener("load", () => resolve(), { once: true });
-                existing.addEventListener("error", () => reject(new Error("Failed to load App Insights SDK.")), { once: true });
+                // Guard: script may have already loaded successfully
+                if (window.Microsoft?.ApplicationInsights?.ApplicationInsights) {
+                    resolve();
+                    return;
+                }
+                // Guard: script may have already errored — add timeout so promise doesn't hang forever
+                const timeoutId = setTimeout(() => {
+                    sdkLoadPromise = null;
+                    reject(new Error("App Insights SDK load timed out."));
+                }, 15000);
+                existing.addEventListener("load", () => { clearTimeout(timeoutId); resolve(); }, { once: true });
+                existing.addEventListener("error", () => { clearTimeout(timeoutId); sdkLoadPromise = null; reject(new Error("Failed to load App Insights SDK.")); }, { once: true });
                 return;
             }
 
@@ -69,7 +79,10 @@
             script.async = true;
             script.defer = true;
             script.onload = () => resolve();
-            script.onerror = () => reject(new Error("Failed to load App Insights SDK."));
+            script.onerror = () => {
+                sdkLoadPromise = null; // allow retry on transient failure
+                reject(new Error("Failed to load App Insights SDK."));
+            };
             document.head.appendChild(script);
         });
 
@@ -94,7 +107,13 @@
         });
 
         instance.loadAppInsights();
-        setAuthenticatedContext();
+
+        // Set authenticated context on `instance` directly — the module-level `appInsights` variable
+        // is not yet assigned at this point, so setAuthenticatedContext() would be a no-op.
+        const userId = getAuthenticatedUserId();
+        if (userId) {
+            instance.setAuthenticatedUserContext(userId);
+        }
 
         if (!didInitialPageView) {
             instance.trackPageView();
@@ -126,12 +145,24 @@
     }
 
     function onConsentRevoked() {
-        if (!appInsights) {
-            return;
+        clearAuthenticatedContext(); // guards internally
+        if (appInsights) {
+            appInsights.config.disableTelemetry = true;
         }
 
-        clearAuthenticatedContext();
-        appInsights.config.disableTelemetry = true;
+        // Run unconditionally — appInsights may never have been initialized this session
+        // (user has always denied), but ai_user/ai_session cookies from a prior consented
+        // session can still be present in the browser.
+        // consent-manager.clearTrackingCookies() only runs on the "forget me" path;
+        // normal reject/revoke flows fire the consent event without calling it.
+        const expired = "expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        const secure = window.location.protocol === "https:" ? ";Secure" : "";
+        const hostname = window.location.hostname;
+        ["ai_user", "ai_session"].forEach(function (name) {
+            document.cookie = `${name}=;${expired};path=/${secure}`;
+            document.cookie = `${name}=;${expired};path=/;domain=${hostname}${secure}`;
+            document.cookie = `${name}=;${expired};path=/;domain=.${hostname}${secure}`;
+        });
     }
 
     function syncConsentState() {
