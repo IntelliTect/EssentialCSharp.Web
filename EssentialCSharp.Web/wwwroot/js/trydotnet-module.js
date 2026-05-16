@@ -34,6 +34,11 @@ function getCorrelationContext() {
 function trackTryEvent(name, properties = {}, measurements = {}) {
     const appInsights = getAppInsights();
     if (!appInsights || typeof appInsights.trackEvent !== 'function') {
+        // No-op when the SDK is unavailable (consent denied, or SDK still loading).
+        // Known limitation: if consent is granted but the CDN script hasn't finished
+        // downloading yet, TryCodeRunnerRequested/TryCodeRunnerCompleted for a run
+        // started during that window may be dropped or mismatched.  This is accepted
+        // as a low-frequency edge case for v1.
         return;
     }
 

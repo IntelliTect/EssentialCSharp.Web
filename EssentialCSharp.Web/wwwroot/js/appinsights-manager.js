@@ -152,6 +152,10 @@
                 } else {
                     appInsights.config.disableTelemetry = false;
                     setAuthenticatedContext();
+                    // Intentionally no trackPageView() here: the instance was created (and the
+                    // initial page view recorded) during a previous consent-granted cycle in this
+                    // same page lifetime.  Re-tracking would produce a duplicate page view for
+                    // the same URL visit.
                 }
             })
             .catch((error) => {
