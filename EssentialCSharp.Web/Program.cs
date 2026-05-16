@@ -443,6 +443,17 @@ public partial class Program
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
         {
+            SiteSettings siteSettings = app.Services.GetRequiredService<IOptions<SiteSettings>>().Value;
+            if (!Uri.TryCreate(siteSettings.BaseUrl, UriKind.Absolute, out Uri? configuredBaseUri))
+            {
+                throw new InvalidOperationException($"Invalid {SiteSettings.SectionName}:{nameof(SiteSettings.BaseUrl)} value: '{siteSettings.BaseUrl}'.");
+            }
+            string apexHost = configuredBaseUri.Host.StartsWith("www.", StringComparison.OrdinalIgnoreCase)
+                ? configuredBaseUri.Host[4..]
+                : configuredBaseUri.Host;
+            string wwwHost = $"www.{apexHost}";
+            string redirectAuthority = new UriBuilder(configuredBaseUri) { Host = apexHost }.Uri.GetLeftPart(UriPartial.Authority);
+
             app.UseExceptionHandler(exceptionApp =>
             {
                 exceptionApp.Run(async context =>
@@ -506,6 +517,19 @@ public partial class Program
             app.UseSecurityHeadersMiddleware(new SecurityHeadersBuilder()
                 .AddDefaultSecurePolicy()
                 .AddContentSecurityPolicy(csp));
+
+            // Redirect configured www host to configured apex host (permanent 301).
+            // Must be after UseForwardedHeaders so the Host header reflects the real hostname.
+            app.Use(async (context, next) =>
+            {
+                if (string.Equals(context.Request.Host.Host, wwwHost, StringComparison.OrdinalIgnoreCase))
+                {
+                    string redirectUrl = $"{redirectAuthority}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
+                    context.Response.Redirect(redirectUrl, permanent: true);
+                    return;
+                }
+                await next(context);
+            });
         }
         else
         {
