@@ -37,6 +37,7 @@ public class McpToolContractTests(WebApplicationFactory factory)
         await Assert.That(GetTool(tools, "get_chapter_summary").TryGetProperty("outputSchema", out _)).IsTrue();
         await Assert.That(GetTool(tools, "search_listings_by_code").TryGetProperty("outputSchema", out _)).IsTrue();
         await Assert.That(GetTool(tools, "find_book_help_for_diagnostic").TryGetProperty("outputSchema", out _)).IsTrue();
+        await Assert.That(GetTool(tools, "search_book_content").TryGetProperty("outputSchema", out _)).IsTrue();
 
         await Assert.That(GetTool(tools, "get_section_content").TryGetProperty("outputSchema", out _)).IsFalse();
         await Assert.That(GetTool(tools, "get_listing_source_code").TryGetProperty("outputSchema", out _)).IsFalse();

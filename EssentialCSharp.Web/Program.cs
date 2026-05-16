@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Runtime.InteropServices;
 using System.Threading.RateLimiting;
 using ModelContextProtocol.Protocol;
 using EssentialCSharp.Chat.Common.Extensions;
@@ -19,6 +20,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.RateLimiting;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
+using Azure.Monitor.OpenTelemetry.Profiler;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -50,6 +52,8 @@ public partial class Program
         string? appInsightsConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
         bool useAzureMonitor = !string.IsNullOrWhiteSpace(appInsightsConnectionString);
         bool useOtlp = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
+        bool profilerSupportedPlatform = OperatingSystem.IsWindows() || OperatingSystem.IsLinux();
+        bool profilerSkippedUnsupportedPlatform = false;
 
         builder.Logging.AddOpenTelemetry(logging =>
         {
@@ -90,7 +94,15 @@ public partial class Program
             });
 
         if (useAzureMonitor)
-            otel.UseAzureMonitor();
+        {
+            // Azure Monitor export is supported cross-platform, but the profiler currently only
+            // supports Windows and Linux.
+            var azureMonitor = otel.UseAzureMonitor();
+            if (profilerSupportedPlatform)
+                azureMonitor.AddAzureMonitorProfiler();
+            else
+                profilerSkippedUnsupportedPlatform = true;
+        }
         else if (useOtlp)
             otel.UseOtlpExporter();
 
@@ -116,6 +128,8 @@ public partial class Program
         var loggerFactory = LoggerFactory.Create(loggingBuilder =>
             loggingBuilder.AddConsole().SetMinimumLevel(LogLevel.Information));
         var initialLogger = loggerFactory.CreateLogger<Program>();
+        if (profilerSkippedUnsupportedPlatform)
+            LogSkippingUnsupportedAzureMonitorProfiler(initialLogger, RuntimeInformation.OSDescription);
 
         builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure(5)));
 
@@ -419,6 +433,17 @@ public partial class Program
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
         {
+            SiteSettings siteSettings = app.Services.GetRequiredService<IOptions<SiteSettings>>().Value;
+            if (!Uri.TryCreate(siteSettings.BaseUrl, UriKind.Absolute, out Uri? configuredBaseUri))
+            {
+                throw new InvalidOperationException($"Invalid {SiteSettings.SectionName}:{nameof(SiteSettings.BaseUrl)} value: '{siteSettings.BaseUrl}'.");
+            }
+            string apexHost = configuredBaseUri.Host.StartsWith("www.", StringComparison.OrdinalIgnoreCase)
+                ? configuredBaseUri.Host[4..]
+                : configuredBaseUri.Host;
+            string wwwHost = $"www.{apexHost}";
+            string redirectAuthority = new UriBuilder(configuredBaseUri) { Host = apexHost }.Uri.GetLeftPart(UriPartial.Authority);
+
             app.UseExceptionHandler(exceptionApp =>
             {
                 exceptionApp.Run(async context =>
@@ -482,6 +507,19 @@ public partial class Program
             app.UseSecurityHeadersMiddleware(new SecurityHeadersBuilder()
                 .AddDefaultSecurePolicy()
                 .AddContentSecurityPolicy(csp));
+
+            // Redirect configured www host to configured apex host (permanent 301).
+            // Must be after UseForwardedHeaders so the Host header reflects the real hostname.
+            app.Use(async (context, next) =>
+            {
+                if (string.Equals(context.Request.Host.Host, wwwHost, StringComparison.OrdinalIgnoreCase))
+                {
+                    string redirectUrl = $"{redirectAuthority}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
+                    context.Response.Redirect(redirectUrl, permanent: true);
+                    return;
+                }
+                await next(context);
+            });
         }
         else
         {
@@ -576,7 +614,17 @@ public partial class Program
             SitemapXmlHelpers.EnsureSitemapHealthy(siteMappingService.SiteMappings.ToList());
             LogSitemapValidationSucceeded(logger);
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
+        {
+            LogSitemapValidationFailed(logger, ex);
+            // Continue startup even if sitemap validation fails
+        }
+        catch (ArgumentException ex)
+        {
+            LogSitemapValidationFailed(logger, ex);
+            // Continue startup even if sitemap validation fails
+        }
+        catch (FormatException ex)
         {
             LogSitemapValidationFailed(logger, ex);
             // Continue startup even if sitemap validation fails
@@ -602,4 +650,7 @@ public partial class Program
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Ignoring invalid TryDotNet origin in CSP: {Origin}")]
     private static partial void LogIgnoringInvalidTryDotNetOrigin(ILogger logger, string origin);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Azure Monitor profiler is not supported on this platform ({Platform}). Skipping profiler registration and continuing with Azure Monitor telemetry export.")]
+    private static partial void LogSkippingUnsupportedAzureMonitorProfiler(ILogger<Program> logger, string platform);
 }
