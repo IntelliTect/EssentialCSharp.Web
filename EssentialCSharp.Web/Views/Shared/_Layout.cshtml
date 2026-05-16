@@ -55,6 +55,15 @@
     <!-- Cookie Consent Manager - Load before analytics -->
     <script src="~/js/consent-manager.js" asp-append-version="true"></script>
     <script src="~/js/appinsights-manager.js" asp-append-version="true"></script>
+    @{
+        string? authUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    }
+    @if (!string.IsNullOrEmpty(authUserId))
+    {
+        // Scoped to a <meta> tag rather than a window global to avoid exposing the stable
+        // user GUID to third-party scripts that enumerate window properties.
+        <meta name="ecs-auth-user-id" content="@authUserId" />
+    }
     
     <!-- Microsoft Clarity - Will be activated based on consent -->
     <script type="text/javascript">
@@ -193,7 +202,6 @@
         window.IS_AUTHENTICATED = @Json.Serialize(SignInManager.IsSignedIn(User));
         window.TRYDOTNET_ORIGIN = @Json.Serialize(Configuration["TryDotNet:Origin"]);
         window.APPLICATIONINSIGHTS_CONNECTION_STRING = @Json.Serialize(Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]);
-        window.AUTHENTICATED_USER_ID = @Json.Serialize(User.FindFirstValue(ClaimTypes.NameIdentifier));
         window.BUILD_LABEL = @Json.Serialize(buildLabel);
         window.ENABLE_CHAT_WIDGET = @Json.Serialize(!Context.Request.Path.StartsWithSegments("/Identity"));
     </script>

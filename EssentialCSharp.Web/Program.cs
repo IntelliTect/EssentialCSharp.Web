@@ -512,7 +512,7 @@ public partial class Program
                 $"style-src 'self' 'unsafe-inline' cdnjs.cloudflare.com fonts.googleapis.com https://hcaptcha.com https://*.hcaptcha.com",
                 $"font-src 'self' fonts.gstatic.com cdnjs.cloudflare.com",
                 $"img-src 'self' data: https:",
-                $"connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://api.pwnedpasswords.com https://*.algolia.net https://*.algolianet.com https://*.google-analytics.com https://*.clarity.ms https://dc.services.visualstudio.com https://*.in.applicationinsights.azure.com{GetApplicationInsightsCspSources(app.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"])}{tryDotNetSources}",
+                $"connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://api.pwnedpasswords.com https://*.algolia.net https://*.algolianet.com https://*.google-analytics.com https://*.clarity.ms https://*.in.applicationinsights.azure.com{GetApplicationInsightsCspSources(app.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"])}{tryDotNetSources}",
                 $"frame-src https://hcaptcha.com https://*.hcaptcha.com https://newassets.hcaptcha.com{tryDotNetSources}",
                 $"worker-src blob:",
                 $"frame-ancestors 'none'",
@@ -678,7 +678,9 @@ public partial class Program
         }
 
         string? ingestionEndpoint = GetConnectionStringValue(connectionString, "IngestionEndpoint");
-        if (string.IsNullOrWhiteSpace(ingestionEndpoint) || !Uri.TryCreate(ingestionEndpoint, UriKind.Absolute, out Uri? ingestionUri))
+        if (string.IsNullOrWhiteSpace(ingestionEndpoint)
+            || !Uri.TryCreate(ingestionEndpoint, UriKind.Absolute, out Uri? ingestionUri)
+            || ingestionUri.Scheme != Uri.UriSchemeHttps)
         {
             return string.Empty;
         }

@@ -25,8 +25,12 @@
     }
 
     function getAuthenticatedUserId() {
-        const userId = window.AUTHENTICATED_USER_ID;
-        return typeof userId === "string" && userId.trim().length > 0 ? userId.trim() : null;
+        // Read from a <meta> tag rather than a window global to avoid exposing the stable
+        // user GUID to third-party scripts that enumerate window properties.
+        const meta = document.querySelector('meta[name="ecs-auth-user-id"]');
+        if (!meta) { return null; }
+        const value = meta.getAttribute("content") || "";
+        return value.trim().length > 0 ? value.trim() : null;
     }
 
     function setAuthenticatedContext() {
@@ -64,13 +68,20 @@
                     resolve();
                     return;
                 }
-                // Guard: script may have already errored — add timeout so promise doesn't hang forever
+                // Guard: script may have already errored — add timeout so promise doesn't hang forever.
+                // On timeout, remove the dead element so the next retry can append a fresh one.
                 const timeoutId = setTimeout(() => {
                     sdkLoadPromise = null;
+                    existing.remove();
                     reject(new Error("App Insights SDK load timed out."));
                 }, 15000);
                 existing.addEventListener("load", () => { clearTimeout(timeoutId); resolve(); }, { once: true });
-                existing.addEventListener("error", () => { clearTimeout(timeoutId); sdkLoadPromise = null; reject(new Error("Failed to load App Insights SDK.")); }, { once: true });
+                existing.addEventListener("error", () => {
+                    clearTimeout(timeoutId);
+                    sdkLoadPromise = null;
+                    existing.remove(); // remove so the next retry appends a fresh element
+                    reject(new Error("Failed to load App Insights SDK."));
+                }, { once: true });
                 return;
             }
 
@@ -81,6 +92,7 @@
             script.onload = () => resolve();
             script.onerror = () => {
                 sdkLoadPromise = null; // allow retry on transient failure
+                script.remove(); // remove dead element so the next retry appends a fresh one
                 reject(new Error("Failed to load App Insights SDK."));
             };
             document.head.appendChild(script);
@@ -173,10 +185,17 @@
         }
     }
 
-    function getCurrentTraceId() {
+    function generateSpanId() {
+        const arr = new Uint8Array(8);
+        crypto.getRandomValues(arr);
+        return Array.from(arr, function (b) { return b.toString(16).padStart(2, "0"); }).join("");
+    }
+
+    function getCurrentTraceparent() {
         const traceId = appInsights?.context?.telemetryTrace?.traceID;
         if (typeof traceId === "string" && /^[a-f0-9]{32}$/i.test(traceId)) {
-            return traceId.toLowerCase();
+            // Return a full W3C traceparent so callers don't need to synthesise span IDs.
+            return `00-${traceId.toLowerCase()}-${generateSpanId()}-01`;
         }
         return null;
     }
@@ -185,8 +204,10 @@
         return appInsights;
     };
 
+    // Returns a W3C traceparent string (00-{traceId}-{spanId}-01) suitable for passing
+    // as configuration.correlationContext to the TryDotNet SDK.
     window.ecsGetCorrelationContext = function () {
-        return getCurrentTraceId();
+        return getCurrentTraceparent();
     };
 
     function init() {
