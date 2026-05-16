@@ -34,7 +34,7 @@ public partial class EmbeddingService(
     private readonly EmbeddingRetryOptions _retryOptions = ValidateRetryOptions(retryOptions?.Value ?? new EmbeddingRetryOptions());
     private readonly ILogger<EmbeddingService>? _logger = logger;
     private static readonly SemaphoreSlim _embeddingRequestLock = new(1, 1);
-    private static DateTimeOffset _lastEmbeddingRequestStartedUtc = DateTimeOffset.MinValue;
+    private DateTimeOffset _lastEmbeddingRequestStartedUtc = DateTimeOffset.MinValue;
 
     // Only allow simple identifiers: letters, digits, and underscores, starting with a letter or underscore.
     private static readonly Regex _safeIdentifierRegex = new(@"^[a-zA-Z_][a-zA-Z0-9_]*$", RegexOptions.Compiled);
