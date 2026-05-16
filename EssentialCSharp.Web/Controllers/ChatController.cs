@@ -1,3 +1,4 @@
+using System.IO;
 using System.Security.Claims;
 using System.Text.Json;
 using EssentialCSharp.Chat.Common.Services;
@@ -17,7 +18,7 @@ namespace EssentialCSharp.Web.Controllers;
 [IgnoreAntiforgeryToken]
 public partial class ChatController : ControllerBase
 {
-    private readonly AIChatService _AiChatService;
+    private readonly AIChatService _AIChatService;
     private readonly ResponseIdValidationService _ResponseIdValidationService;
     private readonly ICaptchaService _CaptchaService;
     private readonly CaptchaOptions _CaptchaOptions;
@@ -27,7 +28,7 @@ public partial class ChatController : ControllerBase
         ResponseIdValidationService responseIdValidationService,
         ICaptchaService captchaService, IOptions<CaptchaOptions> captchaOptions)
     {
-        _AiChatService = aiChatService;
+        _AIChatService = aiChatService;
         _ResponseIdValidationService = responseIdValidationService;
         _CaptchaService = captchaService;
         _CaptchaOptions = captchaOptions.Value;
@@ -88,7 +89,7 @@ public partial class ChatController : ControllerBase
 
         try
         {
-            var (response, responseId) = await _AiChatService.GetChatCompletion(
+            var (response, responseId) = await _AIChatService.GetChatCompletion(
                 prompt: request.Message,
                 previousResponseId: previousResponseId,
                 enableContextualSearch: request.EnableContextualSearch,
@@ -117,7 +118,7 @@ public partial class ChatController : ControllerBase
         if (string.IsNullOrEmpty(request.Message))
         {
             Response.StatusCode = 400;
-            await Response.WriteAsJsonAsync(new { error = "Message cannot be empty." }, CancellationToken.None);
+            await Response.WriteAsJsonAsync(new { error = "Message cannot be empty." }, cancellationToken);
             return;
         }
 
@@ -125,7 +126,7 @@ public partial class ChatController : ControllerBase
         if (string.IsNullOrEmpty(userId))
         {
             Response.StatusCode = 401;
-            await Response.WriteAsJsonAsync(new { error = "Unauthorized." }, CancellationToken.None);
+            await Response.WriteAsJsonAsync(new { error = "Unauthorized." }, cancellationToken);
             return;
         }
 
@@ -150,7 +151,7 @@ public partial class ChatController : ControllerBase
         if (!_ResponseIdValidationService.ValidateResponseId(userId, previousResponseId))
         {
             Response.StatusCode = 400;
-            await Response.WriteAsJsonAsync(new { error = "Invalid conversation context." }, CancellationToken.None);
+            await Response.WriteAsJsonAsync(new { error = "Invalid conversation context." }, cancellationToken);
             return;
         }
 
@@ -160,7 +161,7 @@ public partial class ChatController : ControllerBase
 
         try
         {
-            await foreach (var (text, responseId) in _AiChatService.GetChatCompletionStream(
+            await foreach (var (text, responseId) in _AIChatService.GetChatCompletionStream(
                 prompt: request.Message,
                 previousResponseId: previousResponseId,
                 enableContextualSearch: request.EnableContextualSearch,
@@ -189,53 +190,102 @@ public partial class ChatController : ControllerBase
             await Response.WriteAsync("data: [DONE]\n\n", cancellationToken);
             await Response.Body.FlushAsync(cancellationToken);
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
+        catch (OperationCanceledException)
         {
-            LogChatStreamCancelled(_Logger, User.Identity?.Name);
-        }
-        catch (ConversationContextLimitExceededException) when (!Response.HasStarted)
-        {
-            Response.StatusCode = 400;
-            Response.ContentType = "application/json";
-            await Response.WriteAsJsonAsync(new { error = "This conversation has grown too long. Please start a new one.", errorCode = "context_limit_exceeded" }, CancellationToken.None);
+            if (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
+            {
+                LogChatStreamCancelled(_Logger, User.Identity?.Name);
+                return;
+            }
+
+            throw;
         }
         catch (ConversationContextLimitExceededException ex)
         {
-            LogChatStreamErrorMidStream(_Logger, ex, User.Identity?.Name);
-            try
+            if (!Response.HasStarted)
             {
-                await Response.WriteAsync("data: {\"type\":\"error\",\"message\":\"This conversation has grown too long. Please start a new one.\",\"errorCode\":\"context_limit_exceeded\"}\n\n", CancellationToken.None);
-                await Response.Body.FlushAsync(CancellationToken.None);
+                if (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
+                    return;
+
+                Response.StatusCode = 400;
+                Response.ContentType = "application/json";
+                try
+                {
+                    var writeCancellationToken =
+                        cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested
+                            ? CancellationToken.None
+                            : cancellationToken;
+                    await Response.WriteAsJsonAsync(new { error = "This conversation has grown too long. Please start a new one.", errorCode = "context_limit_exceeded" }, writeCancellationToken);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
+                {
+                    // Best-effort write during an aborted request — no response body can be delivered.
+                }
+                catch (IOException) when (HttpContext.RequestAborted.IsCancellationRequested)
+                {
+                    // Expected client disconnect while attempting a best-effort error response write.
+                }
+                catch (ObjectDisposedException) when (HttpContext.RequestAborted.IsCancellationRequested)
+                {
+                    // Response stream can already be disposed after an abrupt client disconnect.
+                }
             }
-            catch (Exception)
+            else
             {
-                // Best-effort write to an already-streaming response. Kestrel can throw
-                // IOException (connection reset), OperationCanceledException, or
-                // ObjectDisposedException on abrupt client disconnect — swallow all to
-                // avoid masking the original exception.
+                LogChatStreamErrorMidStream(_Logger, ex, User.Identity?.Name);
+                try
+                {
+                    await Response.WriteAsync("data: {\"type\":\"error\",\"message\":\"This conversation has grown too long. Please start a new one.\",\"errorCode\":\"context_limit_exceeded\"}\n\n", cancellationToken);
+                    await Response.Body.FlushAsync(cancellationToken);
+                }
+                catch (Exception writeException) when (writeException is IOException or OperationCanceledException or ObjectDisposedException)
+                {
+                    // Best-effort write to an already-streaming response. Kestrel can throw
+                    // IOException (connection reset), OperationCanceledException, or
+                    // ObjectDisposedException on abrupt client disconnect — swallow expected
+                    // transport/disconnect exceptions to avoid masking the original exception.
+                }
             }
         }
         catch (Exception ex) when (!Response.HasStarted)
         {
             LogChatStreamErrorBeforeResponseStarted(_Logger, ex, User.Identity?.Name);
+            if (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
+                return;
+
             Response.StatusCode = 500;
             Response.ContentType = "application/json";
-            await Response.WriteAsJsonAsync(new { error = "Chat service unavailable" }, CancellationToken.None);
+            try
+            {
+                await Response.WriteAsJsonAsync(new { error = "Chat service unavailable" }, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
+            {
+                // Best-effort write during an aborted request — no response body can be delivered.
+            }
+            catch (IOException) when (HttpContext.RequestAborted.IsCancellationRequested)
+            {
+                // Expected client disconnect while attempting a best-effort error response write.
+            }
+            catch (ObjectDisposedException) when (HttpContext.RequestAborted.IsCancellationRequested)
+            {
+                // Response stream can already be disposed after an abrupt client disconnect.
+            }
         }
         catch (Exception ex)
         {
             LogChatStreamErrorMidStream(_Logger, ex, User.Identity?.Name);
             try
             {
-                await Response.WriteAsync("data: {\"type\":\"error\",\"message\":\"Stream interrupted\"}\n\n", CancellationToken.None);
-                await Response.Body.FlushAsync(CancellationToken.None);
+                await Response.WriteAsync("data: {\"type\":\"error\",\"message\":\"Stream interrupted\"}\n\n", cancellationToken);
+                await Response.Body.FlushAsync(cancellationToken);
             }
-            catch (Exception)
+            catch (Exception writeException) when (writeException is IOException or OperationCanceledException or ObjectDisposedException)
             {
                 // Best-effort write to an already-streaming response. Kestrel can throw
                 // IOException (connection reset), OperationCanceledException, or
-                // ObjectDisposedException on abrupt client disconnect — swallow all to
-                // avoid masking the original exception.
+                // ObjectDisposedException on abrupt client disconnect — swallow expected
+                // transport/disconnect exceptions to avoid masking the original exception.
             }
         }
     }

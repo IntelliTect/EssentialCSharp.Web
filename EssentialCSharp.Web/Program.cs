@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Runtime.InteropServices;
 using System.Threading.RateLimiting;
 using ModelContextProtocol.Protocol;
 using EssentialCSharp.Chat.Common.Extensions;
@@ -51,6 +52,8 @@ public partial class Program
         string? appInsightsConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
         bool useAzureMonitor = !string.IsNullOrWhiteSpace(appInsightsConnectionString);
         bool useOtlp = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
+        bool profilerSupportedPlatform = OperatingSystem.IsWindows() || OperatingSystem.IsLinux();
+        bool profilerSkippedUnsupportedPlatform = false;
 
         builder.Logging.AddOpenTelemetry(logging =>
         {
@@ -91,7 +94,15 @@ public partial class Program
             });
 
         if (useAzureMonitor)
-            otel.UseAzureMonitor().AddAzureMonitorProfiler();
+        {
+            // Azure Monitor export is supported cross-platform, but the profiler currently only
+            // supports Windows and Linux.
+            var azureMonitor = otel.UseAzureMonitor();
+            if (profilerSupportedPlatform)
+                azureMonitor.AddAzureMonitorProfiler();
+            else
+                profilerSkippedUnsupportedPlatform = true;
+        }
         else if (useOtlp)
             otel.UseOtlpExporter();
 
@@ -106,41 +117,7 @@ public partial class Program
             c.Timeout = TimeSpan.FromSeconds(3);
         });
 
-        bool hasTrustedProxyConfig = false;
-
-        builder.Services.Configure<ForwardedHeadersOptions>(options =>
-        {
-            options.ForwardedHeaders =
-                ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-
-            var trustedCidrs = builder.Configuration
-                .GetSection("ForwardedHeaders:TrustedProxyCidrs")
-                .Get<string[]>() ?? [];
-
-            List<System.Net.IPNetwork> trustedNetworks = [];
-            foreach (var cidr in trustedCidrs)
-            {
-                if (System.Net.IPNetwork.TryParse(cidr, out var network))
-                {
-                    trustedNetworks.Add(network);
-                    hasTrustedProxyConfig = true;
-                }
-                else
-                    Console.Error.WriteLine($"[WARN] ForwardedHeaders:TrustedProxyCidrs: could not parse '{cidr}' as an IP network — entry skipped. Check your configuration.");
-            }
-
-            // Only replace the default loopback trust set when at least one valid
-            // proxy CIDR is configured. Otherwise forwarded headers remain limited to
-            // the default safe behavior instead of trusting arbitrary client-supplied
-            // X-Forwarded-* values.
-            if (hasTrustedProxyConfig)
-            {
-                options.KnownIPNetworks.Clear();
-                options.KnownProxies.Clear();
-                foreach (System.Net.IPNetwork network in trustedNetworks)
-                    options.KnownIPNetworks.Add(network);
-            }
-        });
+        builder.Services.AddTrustedForwardedHeaders(builder.Configuration, builder.Environment);
 
         ConfigurationManager configuration = builder.Configuration;
         string connectionString = builder.Configuration.GetConnectionString("EssentialCSharpWebContextConnection") ?? throw new InvalidOperationException("Connection string 'EssentialCSharpWebContextConnection' not found.");
@@ -149,6 +126,8 @@ public partial class Program
         var loggerFactory = LoggerFactory.Create(loggingBuilder =>
             loggingBuilder.AddConsole().SetMinimumLevel(LogLevel.Information));
         var initialLogger = loggerFactory.CreateLogger<Program>();
+        if (profilerSkippedUnsupportedPlatform)
+            LogSkippingUnsupportedAzureMonitorProfiler(initialLogger, RuntimeInformation.OSDescription);
 
         builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure(5)));
 
@@ -448,18 +427,20 @@ public partial class Program
 
         WebApplication app = builder.Build();
 
-        // Warn if the effective trusted-proxy set is empty in non-Development — this fires for
-        // both "no CIDRs configured" and "all configured CIDRs failed to parse" cases, ensuring
-        // X-Forwarded-For spoofing protection (F4) is visibly inactive until properly configured.
-        if (!app.Environment.IsDevelopment())
-        {
-            if (!hasTrustedProxyConfig)
-                LogTrustedProxyCidrsNotConfigured(app.Logger);
-        }
-
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
         {
+            SiteSettings siteSettings = app.Services.GetRequiredService<IOptions<SiteSettings>>().Value;
+            if (!Uri.TryCreate(siteSettings.BaseUrl, UriKind.Absolute, out Uri? configuredBaseUri))
+            {
+                throw new InvalidOperationException($"Invalid {SiteSettings.SectionName}:{nameof(SiteSettings.BaseUrl)} value: '{siteSettings.BaseUrl}'.");
+            }
+            string apexHost = configuredBaseUri.Host.StartsWith("www.", StringComparison.OrdinalIgnoreCase)
+                ? configuredBaseUri.Host[4..]
+                : configuredBaseUri.Host;
+            string wwwHost = $"www.{apexHost}";
+            string redirectAuthority = new UriBuilder(configuredBaseUri) { Host = apexHost }.Uri.GetLeftPart(UriPartial.Authority);
+
             app.UseExceptionHandler(exceptionApp =>
             {
                 exceptionApp.Run(async context =>
@@ -523,6 +504,19 @@ public partial class Program
             app.UseSecurityHeadersMiddleware(new SecurityHeadersBuilder()
                 .AddDefaultSecurePolicy()
                 .AddContentSecurityPolicy(csp));
+
+            // Redirect configured www host to configured apex host (permanent 301).
+            // Must be after UseForwardedHeaders so the Host header reflects the real hostname.
+            app.Use(async (context, next) =>
+            {
+                if (string.Equals(context.Request.Host.Host, wwwHost, StringComparison.OrdinalIgnoreCase))
+                {
+                    string redirectUrl = $"{redirectAuthority}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
+                    context.Response.Redirect(redirectUrl, permanent: true);
+                    return;
+                }
+                await next(context);
+            });
         }
         else
         {
@@ -654,6 +648,6 @@ public partial class Program
     [LoggerMessage(Level = LogLevel.Warning, Message = "Ignoring invalid TryDotNet origin in CSP: {Origin}")]
     private static partial void LogIgnoringInvalidTryDotNetOrigin(ILogger logger, string origin);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "SECURITY: ForwardedHeaders:TrustedProxyCidrs is not configured. All X-Forwarded-For values are trusted, enabling IP spoofing against rate limits. Set this to your load-balancer CIDR (e.g., Azure Container Apps ingress range) to harden this endpoint.")]
-    private static partial void LogTrustedProxyCidrsNotConfigured(ILogger logger);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Azure Monitor profiler is not supported on this platform ({Platform}). Skipping profiler registration and continuing with Azure Monitor telemetry export.")]
+    private static partial void LogSkippingUnsupportedAzureMonitorProfiler(ILogger<Program> logger, string platform);
 }
