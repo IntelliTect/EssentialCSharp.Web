@@ -96,7 +96,7 @@ public partial class RegisterModel(
         }
 
         HCaptchaResult? response = await captchaService.VerifyAsync(hCaptcha_response, HttpContext.Connection.RemoteIpAddress?.ToString());
-        
+
         if (response is null)
         {
             ModelState.AddModelError(string.Empty, "Captcha verification is temporarily unavailable. Please try again later.");
