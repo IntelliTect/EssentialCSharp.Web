@@ -36,6 +36,8 @@ class ConsentManager {
         if (this.shouldShowConsentBanner()) {
             this.showConsentBanner();
         }
+
+        this.notifyConsentChanged();
     }
 
     initGoogleConsentMode() {
@@ -259,6 +261,7 @@ class ConsentManager {
                 console.warn('Failed to update Google Consent Mode:', error);
             }
         }
+        this.notifyConsentChanged();
     }
 
     updateClarityConsent() {
@@ -424,8 +427,18 @@ class ConsentManager {
         return this.consentState.analytics_storage === 'granted';
     }
 
+    getConsentState() {
+        return { ...this.consentState };
+    }
+
     hasAdvertisingConsent() {
         return this.consentState.ad_storage === 'granted';
+    }
+
+    notifyConsentChanged() {
+        window.dispatchEvent(new CustomEvent('ecs:consent-changed', {
+            detail: { consentState: { ...this.consentState } }
+        }));
     }
 
     // Method to revoke consent (useful for "forget me" functionality)
@@ -476,4 +489,11 @@ window.openConsentPreferences = function() {
     if (window.consentManager) {
         window.consentManager.openConsentPreferences();
     }
+};
+
+window.getEcsConsentState = function() {
+    if (window.consentManager && typeof window.consentManager.getConsentState === 'function') {
+        return window.consentManager.getConsentState();
+    }
+    return null;
 };

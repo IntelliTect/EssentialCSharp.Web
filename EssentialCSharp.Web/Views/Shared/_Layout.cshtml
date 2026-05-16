@@ -1,5 +1,6 @@
 @using EssentialCSharp.Web.Extensions
 @using System.Globalization
+@using System.Security.Claims
 @using EssentialCSharp.Web.Services
 @using IntelliTect.Multitool
 @using EssentialCSharp.Common
@@ -53,6 +54,7 @@
     <meta name="theme-color" content="#ffffff">
     <!-- Cookie Consent Manager - Load before analytics -->
     <script src="~/js/consent-manager.js" asp-append-version="true"></script>
+    <script src="~/js/appinsights-manager.js" asp-append-version="true"></script>
     
     <!-- Microsoft Clarity - Will be activated based on consent -->
     <script type="text/javascript">
@@ -190,6 +192,8 @@
         window.REFERRAL_ID = @Json.Serialize(ViewBag.ReferralId);
         window.IS_AUTHENTICATED = @Json.Serialize(SignInManager.IsSignedIn(User));
         window.TRYDOTNET_ORIGIN = @Json.Serialize(Configuration["TryDotNet:Origin"]);
+        window.APPLICATIONINSIGHTS_CONNECTION_STRING = @Json.Serialize(Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]);
+        window.AUTHENTICATED_USER_ID = @Json.Serialize(User.FindFirstValue(ClaimTypes.NameIdentifier));
         window.BUILD_LABEL = @Json.Serialize(buildLabel);
         window.ENABLE_CHAT_WIDGET = @Json.Serialize(!Context.Request.Path.StartsWithSegments("/Identity"));
     </script>

@@ -64,9 +64,25 @@ public partial class Program
         // Health probe paths excluded from tracing unconditionally — applies to both
         // manual instrumentation and Azure Monitor's auto-instrumentation.
         builder.Services.Configure<AspNetCoreTraceInstrumentationOptions>(options =>
+        {
             options.Filter = ctx =>
                 !ctx.Request.Path.StartsWithSegments("/health")
-                && !ctx.Request.Path.StartsWithSegments("/alive"));
+                && !ctx.Request.Path.StartsWithSegments("/alive");
+            options.EnrichWithHttpRequest = (activity, request) =>
+            {
+                var user = request.HttpContext.User;
+                if (user?.Identity?.IsAuthenticated != true)
+                {
+                    return;
+                }
+
+                string? userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!string.IsNullOrWhiteSpace(userId))
+                {
+                    activity.SetTag("enduser.id", userId);
+                }
+            };
+        });
 
         var otel = builder.Services.AddOpenTelemetry()
             .WithMetrics(metrics =>
@@ -492,11 +508,11 @@ public partial class Program
 
             string csp = string.Join("; ",
                 $"default-src 'self'",
-                $"script-src 'self' 'unsafe-inline' cdn.jsdelivr.net www.clarity.ms www.googletagmanager.com https://hcaptcha.com https://*.hcaptcha.com{tryDotNetSources}",
+                $"script-src 'self' 'unsafe-inline' cdn.jsdelivr.net www.clarity.ms www.googletagmanager.com js.monitor.azure.com https://hcaptcha.com https://*.hcaptcha.com{tryDotNetSources}",
                 $"style-src 'self' 'unsafe-inline' cdnjs.cloudflare.com fonts.googleapis.com https://hcaptcha.com https://*.hcaptcha.com",
                 $"font-src 'self' fonts.gstatic.com cdnjs.cloudflare.com",
                 $"img-src 'self' data: https:",
-                $"connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://api.pwnedpasswords.com https://*.algolia.net https://*.algolianet.com https://*.google-analytics.com https://*.clarity.ms{tryDotNetSources}",
+                $"connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://api.pwnedpasswords.com https://*.algolia.net https://*.algolianet.com https://*.google-analytics.com https://*.clarity.ms https://dc.services.visualstudio.com https://*.in.applicationinsights.azure.com{GetApplicationInsightsCspSources(app.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"])}{tryDotNetSources}",
                 $"frame-src https://hcaptcha.com https://*.hcaptcha.com https://newassets.hcaptcha.com{tryDotNetSources}",
                 $"worker-src blob:",
                 $"frame-ancestors 'none'",
@@ -653,4 +669,42 @@ public partial class Program
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Azure Monitor profiler is not supported on this platform ({Platform}). Skipping profiler registration and continuing with Azure Monitor telemetry export.")]
     private static partial void LogSkippingUnsupportedAzureMonitorProfiler(ILogger<Program> logger, string platform);
+
+    private static string GetApplicationInsightsCspSources(string? connectionString)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            return string.Empty;
+        }
+
+        string? ingestionEndpoint = GetConnectionStringValue(connectionString, "IngestionEndpoint");
+        if (string.IsNullOrWhiteSpace(ingestionEndpoint) || !Uri.TryCreate(ingestionEndpoint, UriKind.Absolute, out Uri? ingestionUri))
+        {
+            return string.Empty;
+        }
+
+        return $" {ingestionUri.GetLeftPart(UriPartial.Authority)}";
+    }
+
+    private static string? GetConnectionStringValue(string connectionString, string key)
+    {
+        foreach (string segment in connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            int separatorIndex = segment.IndexOf('=');
+            if (separatorIndex <= 0)
+            {
+                continue;
+            }
+
+            string currentKey = segment[..separatorIndex];
+            if (!currentKey.Equals(key, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            return segment[(separatorIndex + 1)..];
+        }
+
+        return null;
+    }
 }
