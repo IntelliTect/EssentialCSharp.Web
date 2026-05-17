@@ -54,14 +54,20 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
                     descriptor.ImplementationType == typeof(DatabaseMigrationService),
                 nameof(DatabaseMigrationService));
 
-            // Open a keep-alive connection to prevent the shared-cache in-memory database from
-            // being dropped when per-scope connections are disposed between requests.
-            // Register as scoped so each request scope gets its own SqliteConnection,
-            // preventing "database is locked" errors under concurrent requests.
+            // Keep per-scope connections so each request/test scope uses a fresh DbConnection,
+            // which avoids locking issues from sharing one SqliteConnection instance.
             services.AddScoped<DbConnection>(_ =>
             {
                 SqliteConnection conn = new(_sqlConnectionString);
-                conn.Open();
+                try
+                {
+                    conn.Open();
+                }
+                catch
+                {
+                    conn.Dispose();
+                    throw;
+                }
                 return conn;
             });
 
@@ -73,7 +79,8 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
                 options.UseSqlite(dbConnection);
             });
 
-            // Ensure schema exists before any hosted service that reads from the database.
+            // Ensure schema exists before hosted services by prepending this registration
+            // at index 0 of the service collection.
             RemoveSingleOrNone(
                 services,
                 descriptor => descriptor.ServiceType == typeof(IHostedService) &&
