@@ -9,6 +9,8 @@ namespace EssentialCSharp.Web.Tests;
 [ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
 public class ChatAvailabilityTests(WebApplicationFactory factory)
 {
+    private const string HCaptchaTestToken = "10000000-aaaa-bbbb-cccc-000000000001";
+
     [Test]
     public async Task ChatMessage_WhenBackendUnavailable_Returns503WithContract()
     {
@@ -19,7 +21,7 @@ public class ChatAvailabilityTests(WebApplicationFactory factory)
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "/api/chat/message")
         {
-            Content = JsonContent.Create(new { message = "Hello", enableContextualSearch = false })
+            Content = JsonContent.Create(new { message = "Hello", enableContextualSearch = false, captchaResponse = HCaptchaTestToken })
         };
         McpTestHelper.AddCookie(request, cookieName, cookieValue);
 
@@ -40,7 +42,7 @@ public class ChatAvailabilityTests(WebApplicationFactory factory)
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "/api/chat/stream")
         {
-            Content = JsonContent.Create(new { message = "Hello", enableContextualSearch = false })
+            Content = JsonContent.Create(new { message = "Hello", enableContextualSearch = false, captchaResponse = HCaptchaTestToken })
         };
         McpTestHelper.AddCookie(request, cookieName, cookieValue);
 
