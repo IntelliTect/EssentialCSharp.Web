@@ -1,19 +1,16 @@
 using System.Net;
 using System.Text;
 using EssentialCSharp.Web.Services;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace EssentialCSharp.Web.Tests;
 
-[NotInParallel("McpTests")]
-[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
-public class McpTests(WebApplicationFactory factory)
+public class McpTests : IntegrationTestBase
 {
     [Test]
     public async Task McpTokenEndpoint_WithoutAuth_Returns401()
     {
-        HttpClient client = McpTestHelper.CreateClient(factory);
+        HttpClient client = McpTestHelper.CreateClient(Factory);
 
         using HttpResponseMessage response = await client.PostAsync("/api/McpToken", null);
 
@@ -23,7 +20,7 @@ public class McpTests(WebApplicationFactory factory)
     [Test]
     public async Task McpEndpoint_WithoutToken_Returns401()
     {
-        HttpClient client = McpTestHelper.CreateClient(factory);
+        HttpClient client = McpTestHelper.CreateClient(Factory);
 
         using var request = McpTestHelper.CreateInitializeRequest("/mcp");
         using HttpResponseMessage response = await client.SendAsync(request);
@@ -34,11 +31,11 @@ public class McpTests(WebApplicationFactory factory)
     [Test]
     public async Task McpEndpoint_WithSiteCookieButWithoutBearer_Returns401()
     {
-        string cookieUserId = await McpTestHelper.CreateUserAsync(factory, "mcp-cookie-only");
+        string cookieUserId = await McpTestHelper.CreateUserAsync(Factory, "mcp-cookie-only");
         (string cookieName, string cookieValue) =
-            await McpTestHelper.CreateIdentityApplicationCookieAsync(factory, cookieUserId);
+            await McpTestHelper.CreateIdentityApplicationCookieAsync(Factory, cookieUserId);
 
-        HttpClient client = McpTestHelper.CreateClient(factory);
+        HttpClient client = McpTestHelper.CreateClient(Factory);
         using var request = McpTestHelper.CreateInitializeRequest("/mcp");
         McpTestHelper.AddCookie(request, cookieName, cookieValue);
 
@@ -51,11 +48,11 @@ public class McpTests(WebApplicationFactory factory)
     public async Task McpEndpoint_WithValidToken_Returns200AndListsTools()
     {
         (_, string rawToken) = await McpTestHelper.CreateUserAndTokenAsync(
-            factory,
+            Factory,
             "integration-test",
             userPrefix: "mcp-testuser");
 
-        HttpClient client = McpTestHelper.CreateClient(factory);
+        HttpClient client = McpTestHelper.CreateClient(Factory);
 
         // Step 1: Initialize the MCP session
         using var initRequest = McpTestHelper.CreateInitializeRequest("/mcp");
@@ -108,7 +105,7 @@ public class McpTests(WebApplicationFactory factory)
     [Test]
     public async Task McpEndpoint_WithInvalidToken_Returns401()
     {
-        HttpClient client = McpTestHelper.CreateClient(factory);
+        HttpClient client = McpTestHelper.CreateClient(Factory);
         using var request = McpTestHelper.CreateInitializeRequest("/mcp");
         McpTestHelper.AddBearerToken(request, "mcp_invalid_token_that_does_not_exist");
         using HttpResponseMessage response = await client.SendAsync(request);
@@ -118,16 +115,16 @@ public class McpTests(WebApplicationFactory factory)
     [Test]
     public async Task McpEndpoint_WithRevokedToken_Returns401()
     {
-        string testUserId = await McpTestHelper.CreateUserAsync(factory, "revoked-user");
+        string testUserId = await McpTestHelper.CreateUserAsync(Factory, "revoked-user");
         string rawToken;
-        using (var scope = factory.Services.CreateScope())
+        using (var scope = Factory.Services.CreateScope())
         {
             var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
             (rawToken, var entity) = await tokenService.CreateTokenAsync(testUserId, "revoke-test");
             await tokenService.RevokeTokenAsync(entity.Id, testUserId);
         }
 
-        HttpClient client = McpTestHelper.CreateClient(factory);
+        HttpClient client = McpTestHelper.CreateClient(Factory);
         using var request = McpTestHelper.CreateInitializeRequest("/mcp");
         McpTestHelper.AddBearerToken(request, rawToken);
         using HttpResponseMessage response = await client.SendAsync(request);
@@ -138,12 +135,12 @@ public class McpTests(WebApplicationFactory factory)
     public async Task McpEndpoint_WithExpiredToken_Returns401()
     {
         (_, string rawToken) = await McpTestHelper.CreateUserAndTokenAsync(
-            factory,
+            Factory,
             "expired-test",
             userPrefix: "expired-user",
             expiresAt: DateTime.UtcNow.AddSeconds(-1));
 
-        HttpClient client = McpTestHelper.CreateClient(factory);
+        HttpClient client = McpTestHelper.CreateClient(Factory);
         using var request = McpTestHelper.CreateInitializeRequest("/mcp");
         McpTestHelper.AddBearerToken(request, rawToken);
         using HttpResponseMessage response = await client.SendAsync(request);
@@ -153,7 +150,7 @@ public class McpTests(WebApplicationFactory factory)
     [Test]
     public async Task WellKnownOAuthProtectedResource_AllMethodsReturn404WithoutRedirectAndNoStore()
     {
-        HttpClient client = McpTestHelper.CreateClient(factory);
+        HttpClient client = McpTestHelper.CreateClient(Factory);
 
         foreach (HttpMethod method in new[] { HttpMethod.Get, HttpMethod.Post, HttpMethod.Options })
         {
@@ -171,7 +168,7 @@ public class McpTests(WebApplicationFactory factory)
     [Test]
     public async Task McpEndpoint_PreflightFromLoopbackOrigin_ReturnsCorsHeaders()
     {
-        HttpClient client = McpTestHelper.CreateClient(factory);
+        HttpClient client = McpTestHelper.CreateClient(Factory);
         using var request = new HttpRequestMessage(HttpMethod.Options, "/mcp");
         request.Headers.Add("Origin", "http://localhost:6274");
         request.Headers.Add("Access-Control-Request-Method", "POST");
@@ -191,7 +188,7 @@ public class McpTests(WebApplicationFactory factory)
     [Test]
     public async Task McpEndpoint_GetFromLoopbackOrigin_Returns405WithoutRedirect()
     {
-        HttpClient client = McpTestHelper.CreateClient(factory);
+        HttpClient client = McpTestHelper.CreateClient(Factory);
         using var request = new HttpRequestMessage(HttpMethod.Get, "/mcp");
         request.Headers.Add("Origin", "http://localhost:6274");
         request.Headers.Accept.ParseAdd("text/event-stream");

@@ -2,27 +2,25 @@ using System.Net;
 using System.Text.Json;
 using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Services;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace EssentialCSharp.Web.Tests;
 
 /// <summary>
-/// Each class gets its own factory so the global limiter starts from a fresh state.
+/// Each test method gets its own per-test factory (fresh IHost + rate limiter state)
+/// via TUnit.AspNetCore's WebApplicationTest, so [NotInParallel] is no longer needed.
 /// </summary>
-[NotInParallel("McpTests")]
-[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
-public class McpDistinctUserRateLimitingTests(WebApplicationFactory factory)
+public class McpRateLimitingTests : IntegrationTestBase
 {
     [Test]
     public async Task DistinctValidMcpUsers_DoNotShareRateLimitBucket()
     {
-        HttpClient client = McpTestHelper.CreateClient(factory);
+        HttpClient client = McpTestHelper.CreateClient(Factory);
 
         for (int i = 0; i < 31; i++)
         {
             (_, string rawToken) = await McpTestHelper.CreateUserAndTokenAsync(
-                factory,
+                Factory,
                 $"mcp-rate-limit-isolation-{i}",
                 userPrefix: $"mcp-isolation-{i}");
 
@@ -35,20 +33,15 @@ public class McpDistinctUserRateLimitingTests(WebApplicationFactory factory)
                 .Because($"distinct MCP user request {i + 1} should use its own rate-limit bucket");
         }
     }
-}
 
-[NotInParallel("McpTests")]
-[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
-public class McpPerUserRateLimitingTests(WebApplicationFactory factory)
-{
     [Test]
     public async Task SingleValidMcpUser_ExceedingTokenBucket_Returns429AndDoesNotCountRejectedRequests()
     {
         (_, string rawToken) = await McpTestHelper.CreateUserAndTokenAsync(
-            factory,
+            Factory,
             "mcp-rate-limit-single-user",
             userPrefix: "mcp-single-user");
-        HttpClient client = McpTestHelper.CreateClient(factory);
+        HttpClient client = McpTestHelper.CreateClient(Factory);
         List<HttpStatusCode> statuses = [];
         string? rateLimitedPayload = null;
         string? rateLimitedContentType = null;
@@ -70,7 +63,7 @@ public class McpPerUserRateLimitingTests(WebApplicationFactory factory)
             }
         }
 
-        (long UsageCount, bool HasLastUsedAt) tokenUsage = factory.InServiceScope(services =>
+        (long UsageCount, bool HasLastUsedAt) tokenUsage = InServiceScope(services =>
         {
             var db = services.GetRequiredService<EssentialCSharpWebContext>();
             byte[] tokenHash = McpApiTokenService.HashToken(rawToken);
@@ -104,16 +97,11 @@ public class McpPerUserRateLimitingTests(WebApplicationFactory factory)
         await Assert.That(error.GetProperty("code").GetInt32()).IsEqualTo(-32000);
         await Assert.That(error.GetProperty("message").GetString()).Contains("Rate limit exceeded");
     }
-}
 
-[NotInParallel("McpTests")]
-[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
-public class McpAnonymousRateLimitingTests(WebApplicationFactory factory)
-{
     [Test]
     public async Task InvalidMcpBearerRequests_FallBackToAnonymousIpBucket()
     {
-        HttpClient client = McpTestHelper.CreateClient(factory);
+        HttpClient client = McpTestHelper.CreateClient(Factory);
 
         for (int i = 0; i < McpRateLimiterPolicy.AnonymousPermitLimit; i++)
         {
@@ -132,21 +120,16 @@ public class McpAnonymousRateLimitingTests(WebApplicationFactory factory)
         using HttpResponseMessage rateLimitedResponse = await client.SendAsync(rateLimitedRequest);
         await Assert.That(rateLimitedResponse.StatusCode).IsEqualTo(HttpStatusCode.TooManyRequests);
     }
-}
 
-[NotInParallel("McpTests")]
-[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
-public class McpCookieIsolationRateLimitingTests(WebApplicationFactory factory)
-{
     [Test]
     public async Task InvalidMcpBearerRequests_WithDifferentSiteCookies_StillShareAnonymousIpBucket()
     {
-        HttpClient client = McpTestHelper.CreateClient(factory);
+        HttpClient client = McpTestHelper.CreateClient(Factory);
 
         for (int i = 0; i < McpRateLimiterPolicy.AnonymousPermitLimit; i++)
         {
-            string cookieUserId = await McpTestHelper.CreateUserAsync(factory, $"mcp-cookie-user-{i}");
-            (string cookieName, string cookieValue) = await McpTestHelper.CreateIdentityApplicationCookieAsync(factory, cookieUserId);
+            string cookieUserId = await McpTestHelper.CreateUserAsync(Factory, $"mcp-cookie-user-{i}");
+            (string cookieName, string cookieValue) = await McpTestHelper.CreateIdentityApplicationCookieAsync(Factory, cookieUserId);
 
             using var request = McpTestHelper.CreateInitializeRequest("/mcp");
             McpTestHelper.AddBearerToken(request, "mcp_invalid_token_that_does_not_exist");
@@ -158,8 +141,8 @@ public class McpCookieIsolationRateLimitingTests(WebApplicationFactory factory)
                 .Because($"invalid MCP bearer request {i + 1} should ignore the site cookie principal and stay in the anonymous/IP bucket");
         }
 
-        string finalCookieUserId = await McpTestHelper.CreateUserAsync(factory, "mcp-cookie-user-final");
-        (string finalCookieName, string finalCookieValue) = await McpTestHelper.CreateIdentityApplicationCookieAsync(factory, finalCookieUserId);
+        string finalCookieUserId = await McpTestHelper.CreateUserAsync(Factory, "mcp-cookie-user-final");
+        (string finalCookieName, string finalCookieValue) = await McpTestHelper.CreateIdentityApplicationCookieAsync(Factory, finalCookieUserId);
 
         using var rateLimitedRequest = McpTestHelper.CreateInitializeRequest("/mcp");
         McpTestHelper.AddBearerToken(rateLimitedRequest, "mcp_invalid_token_that_does_not_exist");
@@ -168,20 +151,15 @@ public class McpCookieIsolationRateLimitingTests(WebApplicationFactory factory)
         using HttpResponseMessage rateLimitedResponse = await client.SendAsync(rateLimitedRequest);
         await Assert.That(rateLimitedResponse.StatusCode).IsEqualTo(HttpStatusCode.TooManyRequests);
     }
-}
 
-[NotInParallel("McpTests")]
-[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
-public class McpGlobalBypassRateLimitingTests(WebApplicationFactory factory)
-{
     [Test]
     public async Task ValidMcpPostRequests_DoNotConsumeGlobalLimiterBudgetForGetShim()
     {
         (_, string rawToken) = await McpTestHelper.CreateUserAndTokenAsync(
-            factory,
+            Factory,
             "mcp-global-bypass",
             userPrefix: "mcp-bypass");
-        HttpClient client = McpTestHelper.CreateClient(factory);
+        HttpClient client = McpTestHelper.CreateClient(Factory);
 
         for (int i = 0; i < 10; i++)
         {
@@ -211,16 +189,11 @@ public class McpGlobalBypassRateLimitingTests(WebApplicationFactory factory)
         using HttpResponseMessage rateLimitedGetResponse = await client.SendAsync(rateLimitedGetRequest);
         await Assert.That(rateLimitedGetResponse.StatusCode).IsEqualTo(HttpStatusCode.TooManyRequests);
     }
-}
 
-[NotInParallel("McpTests")]
-[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
-public class McpWellKnownIsolationRateLimitingTests(WebApplicationFactory factory)
-{
     [Test]
     public async Task WellKnownRequests_DoNotConsumeContentLimiterBudget()
     {
-        HttpClient client = McpTestHelper.CreateClient(factory);
+        HttpClient client = McpTestHelper.CreateClient(Factory);
 
         for (int i = 0; i < 10; i++)
         {
@@ -243,3 +216,4 @@ public class McpWellKnownIsolationRateLimitingTests(WebApplicationFactory factor
         await Assert.That(rateLimitedResponse.StatusCode).IsEqualTo(HttpStatusCode.TooManyRequests);
     }
 }
+
