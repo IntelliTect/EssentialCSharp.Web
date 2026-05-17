@@ -1,23 +1,21 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace EssentialCSharp.Web.Tests;
 
 [NotInParallel("ChatAvailabilityTests")]
-[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
-public class ChatAvailabilityTests(WebApplicationFactory factory)
+public class ChatAvailabilityTests : IntegrationTestBase
 {
     private const string HCaptchaTestToken = "10000000-aaaa-bbbb-cccc-000000000001";
 
     [Test]
     public async Task ChatMessage_WhenBackendUnavailable_Returns503WithContract()
     {
-        HttpClient client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        HttpClient client = McpTestHelper.CreateClient(Factory);
 
-        string userId = await McpTestHelper.CreateUserAsync(factory, "chat-unavailable");
-        (string cookieName, string cookieValue) = await McpTestHelper.CreateIdentityApplicationCookieAsync(factory, userId);
+        string userId = await McpTestHelper.CreateUserAsync(Factory, "chat-unavailable");
+        (string cookieName, string cookieValue) = await McpTestHelper.CreateIdentityApplicationCookieAsync(Factory, userId);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "/api/chat/message")
         {
@@ -35,10 +33,10 @@ public class ChatAvailabilityTests(WebApplicationFactory factory)
     [Test]
     public async Task ChatStream_WhenBackendUnavailable_Returns503WithContract()
     {
-        HttpClient client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        HttpClient client = McpTestHelper.CreateClient(Factory);
 
-        string userId = await McpTestHelper.CreateUserAsync(factory, "chat-stream-unavailable");
-        (string cookieName, string cookieValue) = await McpTestHelper.CreateIdentityApplicationCookieAsync(factory, userId);
+        string userId = await McpTestHelper.CreateUserAsync(Factory, "chat-stream-unavailable");
+        (string cookieName, string cookieValue) = await McpTestHelper.CreateIdentityApplicationCookieAsync(Factory, userId);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "/api/chat/stream")
         {
