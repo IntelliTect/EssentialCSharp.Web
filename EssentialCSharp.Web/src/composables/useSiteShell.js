@@ -1,5 +1,6 @@
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useWindowSize } from "./useWindowSize.js";
+import { NON_CONTENT_ROUTES } from "../constants/routes.js";
 
 const SMALL_SCREEN_SIZE = 768;
 
@@ -71,7 +72,21 @@ export function useSiteShell() {
     const smallScreen = computed(() => (windowWidth.value || 0) < SMALL_SCREEN_SIZE);
     const currentPage = findCurrentPage([], tocData) ?? [];
     const chapterParentPage = currentPage.find((parent) => parent.level === 0) ?? null;
-    const isContentPage = computed(() => percentComplete.value !== null);
+    
+    /**
+     * Determines if the current page is a content page (from sitemap) or a static page.
+     * Checks against the NON_CONTENT_ROUTES array and falls back to percentComplete check
+     * for additional verification.
+     */
+    const isContentPage = computed(() => {
+        const currentPath = window.location.pathname.toLowerCase();
+        const isStaticPage = NON_CONTENT_ROUTES.some(route => 
+            currentPath === route.toLowerCase() || 
+            currentPath.startsWith(route.toLowerCase() + '/')
+        );
+        
+        return !isStaticPage && percentComplete.value !== null;
+    });
 
     for (const item of currentPage) {
         expandedTocs.add(item.key);
