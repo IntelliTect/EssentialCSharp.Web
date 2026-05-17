@@ -8,7 +8,6 @@ on:
 permissions:
   id-token: write
   contents: read
-  actions: write
 
 jobs:
   build-and-test:
@@ -243,7 +242,7 @@ jobs:
             
             try {
               while (true) {
-                const { data: runs } = await github.rest.actions.listWorkflowRuns({
+                const { data } = await github.rest.actions.listWorkflowRuns({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   workflow_id: context.workflow,
@@ -251,6 +250,7 @@ jobs:
                   per_page: 100,
                   page: page
                 });
+                const runs = data.workflow_runs;
                 
                 if (runs.length === 0) {
                   break;
