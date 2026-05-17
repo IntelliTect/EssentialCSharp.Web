@@ -241,6 +241,16 @@ jobs:
       - name: Notify IndexNow of Sitemap Update
         continue-on-error: true
         run: |
+          # IndexNow Protocol: Notifies search engines (Bing, Yandex, Naver) of content updates
+          # IMPORTANT: The API key must be verifiable by hosting it at https://essentialcsharp.com/{key}.txt
+          # containing exactly the key value. Without this verification file, IndexNow will reject submissions (HTTP 403).
+          # See: https://www.indexnow.org/documentation
+          # Setup required:
+          # 1. Place the key file in EssentialCSharp.Web/wwwroot/{INDEXNOW_API_KEY}.txt
+          # 2. File should contain only the key value (no whitespace, no metadata)
+          # 3. Ensure the file is deployed as a static asset to essentialcsharp.com
+          # Note: urlList should ideally contain actual changed URLs for better search engine indexing,
+          # though submitting the sitemap URL is a valid (if less efficient) approach.
           curl -X POST https://api.indexnow.org/indexnow \
             -H "Content-Type: application/json" \
             -d '{
