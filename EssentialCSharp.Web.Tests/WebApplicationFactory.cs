@@ -16,7 +16,8 @@ namespace EssentialCSharp.Web.Tests;
 public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
 {
     private static readonly SemaphoreSlim SchemaInitializationGate = new(1, 1);
-    // One GUID per factory instance → each factory gets its own isolated in-memory database.
+    // One GUID per factory instance (field, not computed property) ensures each factory
+    // gets its own isolated in-memory database and keeps a stable connection string.
     private readonly string _sqlConnectionString =
         $"DataSource=file:{Guid.NewGuid():N}?mode=memory&cache=shared";
 
@@ -28,34 +29,24 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
     {
         builder.ConfigureServices(services =>
         {
-            for (int i = services.Count - 1; i >= 0; i--)
-            {
-                if (services[i].ServiceType ==
-                    typeof(IDbContextOptionsConfiguration<EssentialCSharpWebContext>))
-                {
-                    services.RemoveAt(i);
-                }
-            }
+            RemoveSingleOrNone(
+                services,
+                descriptor => descriptor.ServiceType ==
+                    typeof(IDbContextOptionsConfiguration<EssentialCSharpWebContext>),
+                "IDbContextOptionsConfiguration<EssentialCSharpWebContext>");
 
-            for (int i = services.Count - 1; i >= 0; i--)
-            {
-                if (services[i].ServiceType == typeof(DbConnection))
-                {
-                    services.RemoveAt(i);
-                }
-            }
+            RemoveSingleOrNone(
+                services,
+                descriptor => descriptor.ServiceType == typeof(DbConnection),
+                nameof(DbConnection));
 
             // Remove DatabaseMigrationService: it calls MigrateAsync which conflicts
             // with EnsureCreated() used below for the in-memory SQLite test database.
-            for (int i = services.Count - 1; i >= 0; i--)
-            {
-                ServiceDescriptor descriptor = services[i];
-                if (descriptor.ServiceType == typeof(IHostedService) &&
-                    descriptor.ImplementationType == typeof(DatabaseMigrationService))
-                {
-                    services.RemoveAt(i);
-                }
-            }
+            RemoveSingleOrNone(
+                services,
+                descriptor => descriptor.ServiceType == typeof(IHostedService) &&
+                    descriptor.ImplementationType == typeof(DatabaseMigrationService),
+                nameof(DatabaseMigrationService));
 
             // Open a keep-alive connection to prevent the shared-cache in-memory database from
             // being dropped when per-scope connections are disposed between requests.
@@ -81,15 +72,11 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
             });
 
             // Ensure schema exists before any hosted service that reads from the database.
-            for (int i = services.Count - 1; i >= 0; i--)
-            {
-                ServiceDescriptor descriptor = services[i];
-                if (descriptor.ServiceType == typeof(IHostedService) &&
-                    descriptor.ImplementationType == typeof(EnsureCreatedHostedService))
-                {
-                    services.RemoveAt(i);
-                }
-            }
+            RemoveSingleOrNone(
+                services,
+                descriptor => descriptor.ServiceType == typeof(IHostedService) &&
+                    descriptor.ImplementationType == typeof(EnsureCreatedHostedService),
+                nameof(EnsureCreatedHostedService));
 
             ServiceDescriptor ensureCreatedDescriptor =
                 ServiceDescriptor.Singleton<IHostedService, EnsureCreatedHostedService>();
@@ -125,6 +112,32 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
             _keepAliveConnection?.Dispose();
         }
         base.Dispose(disposing);
+    }
+
+    private static void RemoveSingleOrNone(
+        IServiceCollection services,
+        Func<ServiceDescriptor, bool> predicate,
+        string descriptorName)
+    {
+        List<int> matchIndexes = [];
+        for (int i = 0; i < services.Count; i++)
+        {
+            if (predicate(services[i]))
+            {
+                matchIndexes.Add(i);
+            }
+        }
+
+        if (matchIndexes.Count > 1)
+        {
+            throw new InvalidOperationException(
+                $"Expected at most one '{descriptorName}' registration but found {matchIndexes.Count}.");
+        }
+
+        if (matchIndexes.Count == 1)
+        {
+            services.RemoveAt(matchIndexes[0]);
+        }
     }
 
     private sealed class EnsureCreatedHostedService(IServiceProvider serviceProvider) : IHostedService
