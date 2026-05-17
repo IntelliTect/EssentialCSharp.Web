@@ -238,6 +238,19 @@ jobs:
           git tag -f "deployed/prod/${{ github.sha }}"
           git push origin "deployed/prod/${{ github.sha }}" --force
 
+      - name: Notify IndexNow of Sitemap Update
+        continue-on-error: true
+        run: |
+          curl -X POST https://api.indexnow.org/indexnow \
+            -H "Content-Type: application/json" \
+            -d '{
+              "host": "essentialcsharp.com",
+              "key": "${{ secrets.INDEXNOW_API_KEY }}",
+              "urlList": [
+                "https://essentialcsharp.com/sitemap.xml"
+              ]
+            }'
+
       - name: Logout of Azure CLI
         if: always()
         uses: azure/CLI@v3
