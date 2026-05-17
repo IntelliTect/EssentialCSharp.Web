@@ -2,9 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <!-- Suppress experimental API warning from RemoveAllResilienceHandlers() used to opt out
-         the local AI HttpClient from the global standard resilience handler. -->
-    <NoWarn>$(NoWarn);EXTEXP0001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

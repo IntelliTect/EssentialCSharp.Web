@@ -1,4 +1,5 @@
 using System.Linq;
+using System.IO;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -20,9 +21,6 @@ public partial class LocalChatService : IChatCompletionService, IDisposable
     private readonly IHttpClientFactory _HttpClientFactory;
     private readonly ILogger<LocalChatService> _Logger;
     private readonly MemoryCache _ConversationHistory = new(new MemoryCacheOptions { SizeLimit = MaxConversationEntries });
-    private static readonly MemoryCacheEntryOptions _HistoryEntryOptions = new MemoryCacheEntryOptions()
-        .SetSlidingExpiration(_HistoryTtl)
-        .SetSize(1);
 
     public bool IsAvailable => true;
 
@@ -76,7 +74,23 @@ public partial class LocalChatService : IChatCompletionService, IDisposable
 
         using (response)
         {
-            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            string body;
+            try
+            {
+                body = await response.Content.ReadAsStringAsync(cancellationToken);
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new ChatBackendUnavailableException("Local AI backend is unavailable while reading response.", ex);
+            }
+            catch (IOException ex)
+            {
+                throw new ChatBackendUnavailableException("Local AI backend connection closed while reading response.", ex);
+            }
+            catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+            {
+                throw new ChatBackendUnavailableException("Local AI backend timed out while reading response.", ex);
+            }
 
             if (!response.IsSuccessStatusCode)
             {
@@ -89,7 +103,10 @@ public partial class LocalChatService : IChatCompletionService, IDisposable
                 var (text, responseId) = ParseResponse(body);
                 history.Add(new LocalChatMessage("user", prompt));
                 history.Add(new LocalChatMessage("assistant", text));
-                _ConversationHistory.Set(responseId, history.TakeLast(MaxConversationMessages).ToList(), _HistoryEntryOptions);
+                var entryOptions = new MemoryCacheEntryOptions()
+                    .SetSlidingExpiration(_HistoryTtl)
+                    .SetSize(1);
+                _ConversationHistory.Set(responseId, history.TakeLast(MaxConversationMessages).ToList(), entryOptions);
                 return (text, responseId);
             }
             catch (Exception ex) when (ex is JsonException || ex is InvalidOperationException || ex is NotSupportedException)

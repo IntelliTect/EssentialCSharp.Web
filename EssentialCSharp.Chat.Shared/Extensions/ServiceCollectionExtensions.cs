@@ -142,6 +142,7 @@ public static class ServiceCollectionExtensions
                 return services;
             }
 
+#pragma warning disable EXTEXP0001
             services.AddHttpClient(LocalChatHttpClientName, client =>
             {
                 client.BaseAddress = localEndpointUri;
@@ -152,6 +153,7 @@ public static class ServiceCollectionExtensions
             // cut off long local-LLM completions. We set HttpClient.Timeout directly instead.
             // Retries are also wrong for LLM calls (non-idempotent, partial responses).
             .RemoveAllResilienceHandlers();
+#pragma warning restore EXTEXP0001
             services.AddSingleton<IChatCompletionService, LocalChatService>();
             Console.WriteLine("[AI] Selected backend: Local (Ollama/OpenAI-compatible).");
             return services;

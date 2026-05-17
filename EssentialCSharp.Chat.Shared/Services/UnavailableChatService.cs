@@ -20,11 +20,10 @@ public class UnavailableChatService : IChatCompletionService
         string? endUserId = null,
         CancellationToken cancellationToken = default)
     {
-        return Task.FromResult<(string response, string responseId)>(
-            ("Chat service is unavailable in this environment.", Guid.NewGuid().ToString("N")));
+        throw new ChatBackendUnavailableException("Chat service is unavailable in this environment.");
     }
 
-    public async IAsyncEnumerable<(string text, string? responseId)> GetChatCompletionStream(
+    public IAsyncEnumerable<(string text, string? responseId)> GetChatCompletionStream(
         string prompt,
         string? systemPrompt = null,
         string? previousResponseId = null,
@@ -35,10 +34,8 @@ public class UnavailableChatService : IChatCompletionService
 #pragma warning restore OPENAI001
         bool enableContextualSearch = false,
         string? endUserId = null,
-        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default)
     {
-        yield return ("Chat service is unavailable in this environment.", responseId: null);
-        yield return (string.Empty, Guid.NewGuid().ToString("N"));
-        await Task.CompletedTask;
+        throw new ChatBackendUnavailableException("Chat service is unavailable in this environment.");
     }
 }
