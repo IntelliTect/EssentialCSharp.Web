@@ -115,9 +115,9 @@ public static class ServiceCollectionExtensions
             // Pre-validate endpoint URI to avoid exceptions in AddAzureOpenAIServices for
             // non-empty but invalid endpoint values.
             if (!Uri.TryCreate(aiOptions.Endpoint, UriKind.Absolute, out var azureUri)
-                || (azureUri.Scheme != Uri.UriSchemeHttp && azureUri.Scheme != Uri.UriSchemeHttps))
+                || azureUri.Scheme != Uri.UriSchemeHttps)
             {
-                Console.Error.WriteLine("[AI] Azure endpoint is not a valid http/https URI. Falling back to local/unavailable.");
+                Console.Error.WriteLine("[AI] Azure endpoint must be a valid https URI. Falling back to local/unavailable.");
             }
             else
             {
