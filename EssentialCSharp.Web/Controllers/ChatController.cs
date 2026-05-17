@@ -7,7 +7,6 @@ using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Controllers;
 
@@ -20,47 +19,17 @@ public partial class ChatController : ControllerBase
 {
     private readonly AIChatService _AIChatService;
     private readonly ResponseIdValidationService _ResponseIdValidationService;
-    private readonly ICaptchaService _CaptchaService;
-    private readonly CaptchaOptions _CaptchaOptions;
+    private readonly ICaptchaValidationService _CaptchaValidationService;
     private readonly ILogger<ChatController> _Logger;
 
     public ChatController(ILogger<ChatController> logger, AIChatService aiChatService,
         ResponseIdValidationService responseIdValidationService,
-        ICaptchaService captchaService, IOptions<CaptchaOptions> captchaOptions)
+        ICaptchaValidationService captchaValidationService)
     {
         _AIChatService = aiChatService;
         _ResponseIdValidationService = responseIdValidationService;
-        _CaptchaService = captchaService;
-        _CaptchaOptions = captchaOptions.Value;
+        _CaptchaValidationService = captchaValidationService;
         _Logger = logger;
-    }
-
-    /// <summary>
-    /// Validates the hCaptcha token when captcha is configured.
-    /// Returns <c>true</c> when captcha is not configured (dev mode) or when the token is valid.
-    /// Returns <c>false</c> for missing or invalid tokens.
-    /// Returns <c>null</c> when hCaptcha cannot be reached, so the caller can fail closed.
-    /// </summary>
-    private async Task<bool?> IsCaptchaValidAsync(string? token, string? remoteIp, CancellationToken ct)
-    {
-        if (string.IsNullOrWhiteSpace(_CaptchaOptions.SecretKey))
-            return true; // captcha not configured — skip validation
-
-        if (string.IsNullOrWhiteSpace(token))
-            return false; // token required when captcha is configured — reject without an outbound call
-
-        HCaptchaResult? result = await _CaptchaService.VerifyAsync(token, remoteIp, ct);
-        if (result is null)
-        {
-            LogCaptchaServiceUnavailable(_Logger); // hCaptcha unreachable — fail closed
-            return null;
-        }
-
-        if (!result.Success)
-        {
-            LogCaptchaValidationFailed(_Logger, string.Join(',', result.ErrorCodes ?? []));
-        }
-        return result.Success;
     }
 
     [HttpPost("message")]
@@ -74,11 +43,22 @@ public partial class ChatController : ControllerBase
         if (string.IsNullOrEmpty(userId))
             return Unauthorized();
 
-        bool? captchaValid = await IsCaptchaValidAsync(request.CaptchaResponse, HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
-        if (captchaValid is null)
-            return StatusCode(503, new { error = "Human verification is temporarily unavailable. Please try again later.", errorCode = "captcha_unavailable" });
-        if (!captchaValid.Value)
+        CaptchaValidationResult captchaValidation = await _CaptchaValidationService.ValidateAsync(request.CaptchaResponse, HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
+        if (!captchaValidation.ShouldProceed)
+        {
+            if (captchaValidation.Outcome == CaptchaValidationOutcome.Unavailable)
+            {
+                LogCaptchaServiceUnavailable(_Logger);
+                return StatusCode(503, new { error = "Human verification is temporarily unavailable. Please try again later.", errorCode = "captcha_unavailable" });
+            }
+
+            if (captchaValidation.Outcome == CaptchaValidationOutcome.Invalid)
+            {
+                LogCaptchaValidationFailed(_Logger, string.Join(',', captchaValidation.Response?.ErrorCodes ?? []));
+            }
+
             return StatusCode(403, new { error = "Human verification required.", errorCode = "captcha_failed" });
+        }
 
         var previousResponseId = string.IsNullOrWhiteSpace(request.PreviousResponseId)
             ? null
@@ -130,15 +110,22 @@ public partial class ChatController : ControllerBase
             return;
         }
 
-        bool? captchaValid = await IsCaptchaValidAsync(request.CaptchaResponse, HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
-        if (captchaValid is null)
+        CaptchaValidationResult captchaValidation = await _CaptchaValidationService.ValidateAsync(request.CaptchaResponse, HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
+        if (!captchaValidation.ShouldProceed)
         {
-            Response.StatusCode = 503;
-            await Response.WriteAsJsonAsync(new { error = "Human verification is temporarily unavailable. Please try again later.", errorCode = "captcha_unavailable" }, cancellationToken);
-            return;
-        }
-        if (!captchaValid.Value)
-        {
+            if (captchaValidation.Outcome == CaptchaValidationOutcome.Unavailable)
+            {
+                LogCaptchaServiceUnavailable(_Logger);
+                Response.StatusCode = 503;
+                await Response.WriteAsJsonAsync(new { error = "Human verification is temporarily unavailable. Please try again later.", errorCode = "captcha_unavailable" }, cancellationToken);
+                return;
+            }
+
+            if (captchaValidation.Outcome == CaptchaValidationOutcome.Invalid)
+            {
+                LogCaptchaValidationFailed(_Logger, string.Join(',', captchaValidation.Response?.ErrorCodes ?? []));
+            }
+
             Response.StatusCode = 403;
             await Response.WriteAsJsonAsync(new { error = "Human verification required.", errorCode = "captcha_failed" }, cancellationToken);
             return;

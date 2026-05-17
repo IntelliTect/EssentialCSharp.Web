@@ -20,7 +20,7 @@ public partial class RegisterModel(
     SignInManager<EssentialCSharpWebUser> signInManager,
     ILogger<RegisterModel> logger,
     IEmailSender emailSender,
-    ICaptchaService captchaService,
+    ICaptchaValidationService captchaValidationService,
     IOptions<CaptchaOptions> optionsAccessor,
     IUserEmailStore<EssentialCSharpWebUser> emailStore) : PageModel
 {
@@ -89,135 +89,140 @@ public partial class RegisterModel(
             return Page();
         }
 
-        if (string.IsNullOrEmpty(hCaptcha_response))
+        CaptchaValidationResult captchaResult = await captchaValidationService.ValidateAsync(hCaptcha_response, HttpContext.Connection.RemoteIpAddress?.ToString());
+        if (!captchaResult.ShouldProceed)
         {
-            ModelState.AddModelError(string.Empty, HCaptchaErrorDetails.GetValue(HCaptchaErrorDetails.MissingInputResponse).FriendlyDescription);
-            return Page();
-        }
-
-        HCaptchaResult? response = await captchaService.VerifyAsync(hCaptcha_response, HttpContext.Connection.RemoteIpAddress?.ToString());
-        if (response is null)
-        {
-            ModelState.AddModelError(string.Empty, "Captcha verification is temporarily unavailable. Please try again later.");
-            return Page();
-        }
-
-        // The JSON should also return a field "success" as true
-        // https://docs.hcaptcha.com/#verify-the-user-response-server-side
-        if (response.Success)
-        {
-            EssentialCSharpWebUser user = CreateUser();
-            user.FirstName = Input.FirstName;
-            user.LastName = Input.LastName;
-
-            await userStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
-            await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
-            if (Input.Password is null)
+            if (captchaResult.Outcome == CaptchaValidationOutcome.MissingToken)
             {
-                LogPasswordNull(logger);
-                ModelState.AddModelError(string.Empty, "Error: Password null; please enter in a password");
+                ModelState.AddModelError(string.Empty, HCaptchaErrorDetails.GetValue(HCaptchaErrorDetails.MissingInputResponse).FriendlyDescription);
                 return Page();
             }
-            IdentityResult result = await userManager.CreateAsync(user, Input.Password);
-
-            if (result.Succeeded)
+            if (captchaResult.Outcome == CaptchaValidationOutcome.Unavailable)
             {
-                LogUserCreatedWithPassword(logger);
-
-                string userId = await userManager.GetUserIdAsync(user);
-                string code = await userManager.GenerateEmailConfirmationTokenAsync(user);
-                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                string? callbackUrl = Url.Page(
-                    "/Account/ConfirmEmail",
-                    pageHandler: null,
-                    values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
-                    protocol: Request.Scheme);
-
-                if (callbackUrl is null)
+                ModelState.AddModelError(string.Empty, "Captcha verification is temporarily unavailable. Please try again later.");
+                return Page();
+            }
+            if (captchaResult.Outcome == CaptchaValidationOutcome.Invalid)
+            {
+                HCaptchaResult? response = captchaResult.Response;
+                // The JSON should also return a field "success" as true
+                // https://docs.hcaptcha.com/#verify-the-user-response-server-side
+                if (response is null)
                 {
-                    ModelState.AddModelError(string.Empty, "Error: callback url unexpectedly null.");
+                    LogHCaptchaNullErrorCodes(logger);
+                    ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
                     return Page();
                 }
-                if (Input.Email is null)
-                {
-                    ModelState.AddModelError(string.Empty, "Error: Email may not be null.");
-                    return Page();
-                }
-                await emailSender.SendEmailAsync(Input.Email, "Confirm your email",
-                    $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
-                if (userManager.Options.SignIn.RequireConfirmedAccount)
+                switch (response.ErrorCodes?.Length)
                 {
-                    return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl });
-                }
-                else
-                {
-                    await signInManager.SignInAsync(user, isPersistent: false);
-                    return LocalRedirect(returnUrl);
-                }
-            }
-            foreach (IdentityError error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-        }
-        else
-        {
-            switch (response.ErrorCodes?.Length)
-            {
-                case 0:
-                    LogHCaptchaNoErrorCodes(logger);
-                    ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
-                    break;
-                case > 1:
-                    LogHCaptchaMultipleErrorCodes(logger, string.Join(", ", response.ErrorCodes));
-                    ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
-                    break;
-                default:
-                    {
-                        if (response.ErrorCodes is null)
+                    case 0:
+                        LogHCaptchaNoErrorCodes(logger);
+                        ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
+                        return Page();
+                    case > 1:
+                        LogHCaptchaMultipleErrorCodes(logger, string.Join(", ", response.ErrorCodes));
+                        ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
+                        return Page();
+                    default:
                         {
-                            LogHCaptchaNullErrorCodes(logger);
-                            ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
-                            break;
-                        }
-                        if (HCaptchaErrorDetails.TryGetValue(response.ErrorCodes.Single(), out HCaptchaErrorDetails? details))
-                        {
-                            switch (details.ErrorCode)
+                            if (response.ErrorCodes is null)
                             {
-                                case HCaptchaErrorDetails.MissingInputResponse:
-                                case HCaptchaErrorDetails.InvalidInputResponse:
-                                case HCaptchaErrorDetails.InvalidOrAlreadySeenResponse:
-                                    ModelState.AddModelError(string.Empty, details.FriendlyDescription);
-                                    LogHCaptchaErrorCode(logger, details.ToString());
-                                    break;
-                                case HCaptchaErrorDetails.BadRequest:
-                                    ModelState.AddModelError(string.Empty, details.FriendlyDescription);
-                                    LogHCaptchaErrorCode(logger, details.ToString());
-                                    break;
-                                case HCaptchaErrorDetails.MissingInputSecret:
-                                case HCaptchaErrorDetails.InvalidInputSecret:
-                                case HCaptchaErrorDetails.NotUsingDummyPasscode:
-                                case HCaptchaErrorDetails.SitekeySecretMismatch:
-                                    LogHCaptchaCriticalErrorCode(logger, details.ToString());
-                                    ModelState.AddModelError(string.Empty, "Captcha verification is temporarily unavailable. Please try again later.");
-                                    break;
-                                default:
-                                    LogHCaptchaUnknownErrorCode(logger, details?.ErrorCode);
-                                    ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
-                                    break;
+                                LogHCaptchaNullErrorCodes(logger);
+                                ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
+                                return Page();
                             }
-                        }
-                        else
-                        {
+                            if (HCaptchaErrorDetails.TryGetValue(response.ErrorCodes.Single(), out HCaptchaErrorDetails? details))
+                            {
+                                switch (details.ErrorCode)
+                                {
+                                    case HCaptchaErrorDetails.MissingInputResponse:
+                                    case HCaptchaErrorDetails.InvalidInputResponse:
+                                    case HCaptchaErrorDetails.InvalidOrAlreadySeenResponse:
+                                        ModelState.AddModelError(string.Empty, details.FriendlyDescription);
+                                        LogHCaptchaErrorCode(logger, details.ToString());
+                                        return Page();
+                                    case HCaptchaErrorDetails.BadRequest:
+                                        ModelState.AddModelError(string.Empty, details.FriendlyDescription);
+                                        LogHCaptchaErrorCode(logger, details.ToString());
+                                        return Page();
+                                    case HCaptchaErrorDetails.MissingInputSecret:
+                                    case HCaptchaErrorDetails.InvalidInputSecret:
+                                    case HCaptchaErrorDetails.NotUsingDummyPasscode:
+                                    case HCaptchaErrorDetails.SitekeySecretMismatch:
+                                        LogHCaptchaCriticalErrorCode(logger, details.ToString());
+                                        ModelState.AddModelError(string.Empty, "Captcha verification is temporarily unavailable. Please try again later.");
+                                        return Page();
+                                    default:
+                                        LogHCaptchaUnknownErrorCode(logger, details?.ErrorCode);
+                                        ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
+                                        return Page();
+                                }
+                            }
+
                             LogHCaptchaUnrecognizedErrorCode(logger, response.ErrorCodes.Single());
                             ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
+                            return Page();
                         }
-
-                        break;
-                    }
-
+                }
             }
+
+            return Page();
+        }
+
+        EssentialCSharpWebUser user = CreateUser();
+        user.FirstName = Input.FirstName;
+        user.LastName = Input.LastName;
+
+        await userStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
+        await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+        if (Input.Password is null)
+        {
+            LogPasswordNull(logger);
+            ModelState.AddModelError(string.Empty, "Error: Password null; please enter in a password");
+            return Page();
+        }
+        IdentityResult result = await userManager.CreateAsync(user, Input.Password);
+
+        if (result.Succeeded)
+        {
+            LogUserCreatedWithPassword(logger);
+
+            string userId = await userManager.GetUserIdAsync(user);
+            string code = await userManager.GenerateEmailConfirmationTokenAsync(user);
+            code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+            string? callbackUrl = Url.Page(
+                "/Account/ConfirmEmail",
+                pageHandler: null,
+                values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
+                protocol: Request.Scheme);
+
+            if (callbackUrl is null)
+            {
+                ModelState.AddModelError(string.Empty, "Error: callback url unexpectedly null.");
+                return Page();
+            }
+            if (Input.Email is null)
+            {
+                ModelState.AddModelError(string.Empty, "Error: Email may not be null.");
+                return Page();
+            }
+            await emailSender.SendEmailAsync(Input.Email, "Confirm your email",
+                $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+
+            if (userManager.Options.SignIn.RequireConfirmedAccount)
+            {
+                return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl });
+            }
+            else
+            {
+                await signInManager.SignInAsync(user, isPersistent: false);
+                return LocalRedirect(returnUrl);
+            }
+        }
+        foreach (IdentityError error in result.Errors)
+        {
+            ModelState.AddModelError(string.Empty, error.Description);
         }
 
         // If we got this far, something failed, redisplay form
