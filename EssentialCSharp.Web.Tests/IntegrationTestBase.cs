@@ -13,8 +13,12 @@ public abstract class IntegrationTestBase : WebApplicationTest<WebApplicationFac
     /// silently following them.
     /// </summary>
     protected HttpClient CreateClientWithoutAutoRedirect() =>
-        Factory.Inner.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        Factory.CreateClient();
 
+    /// <summary>
+    /// Executes an initial GET and follows redirect responses with subsequent GET requests.
+    /// This helper is intentionally GET-only.
+    /// </summary>
     protected static async Task<HttpResponseMessage> GetFollowingGetRedirectsAsync(
         HttpClient client,
         string relativeUrl,
@@ -53,25 +57,25 @@ public abstract class IntegrationTestBase : WebApplicationTest<WebApplicationFac
         statusCode == HttpStatusCode.TemporaryRedirect ||
         statusCode == HttpStatusCode.PermanentRedirect;
 
-    public T InServiceScope<T>(Func<IServiceProvider, T> action)
+    protected T InServiceScope<T>(Func<IServiceProvider, T> action)
     {
         using IServiceScope scope = Factory.Services.GetRequiredService<IServiceScopeFactory>().CreateScope();
         return action(scope.ServiceProvider);
     }
 
-    public void InServiceScope(Action<IServiceProvider> action)
+    protected void InServiceScope(Action<IServiceProvider> action)
     {
         using IServiceScope scope = Factory.Services.GetRequiredService<IServiceScopeFactory>().CreateScope();
         action(scope.ServiceProvider);
     }
 
-    public async Task<T> InServiceScopeAsync<T>(Func<IServiceProvider, Task<T>> action)
+    protected async Task<T> InServiceScopeAsync<T>(Func<IServiceProvider, Task<T>> action)
     {
         using IServiceScope scope = Factory.Services.GetRequiredService<IServiceScopeFactory>().CreateScope();
         return await action(scope.ServiceProvider);
     }
 
-    public async Task InServiceScopeAsync(Func<IServiceProvider, Task> action)
+    protected async Task InServiceScopeAsync(Func<IServiceProvider, Task> action)
     {
         using IServiceScope scope = Factory.Services.GetRequiredService<IServiceScopeFactory>().CreateScope();
         await action(scope.ServiceProvider);

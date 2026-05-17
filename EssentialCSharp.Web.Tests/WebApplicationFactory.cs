@@ -9,17 +9,15 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using System.Threading;
 
 namespace EssentialCSharp.Web.Tests;
 
 public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
 {
-    private static readonly SemaphoreSlim SchemaInitializationGate = new(1, 1);
     // One GUID per factory instance (field, not computed property) ensures each factory
     // gets its own isolated in-memory database and keeps a stable connection string.
     private readonly string _sqlConnectionString =
-        $"DataSource=file:{Guid.NewGuid():N}?mode=memory&cache=shared";
+        $"DataSource=file:{Guid.NewGuid():N}?mode=memory&cache=shared;Pooling=True";
 
     // Kept open for the factory lifetime so the shared-cache in-memory database is not dropped
     // when per-scope connections are disposed between requests.
@@ -65,6 +63,8 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
                 return conn;
             });
 
+            // The scoped DI container owns this DbConnection instance and disposes it at
+            // scope end; EF Core treats it as externally owned when passed via UseSqlite.
             services.AddDbContext<EssentialCSharpWebContext>((serviceProvider, options) =>
             {
                 DbConnection dbConnection = serviceProvider.GetRequiredService<DbConnection>();
@@ -80,23 +80,7 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
 
             ServiceDescriptor ensureCreatedDescriptor =
                 ServiceDescriptor.Singleton<IHostedService, EnsureCreatedHostedService>();
-            int firstHostedServiceIndex = -1;
-            for (int i = 0; i < services.Count; i++)
-            {
-                if (services[i].ServiceType == typeof(IHostedService))
-                {
-                    firstHostedServiceIndex = i;
-                    break;
-                }
-            }
-            if (firstHostedServiceIndex >= 0)
-            {
-                services.Insert(firstHostedServiceIndex, ensureCreatedDescriptor);
-            }
-            else
-            {
-                services.Add(ensureCreatedDescriptor);
-            }
+            services.Insert(0, ensureCreatedDescriptor);
 
             // Replace IListingSourceCodeService with one backed by TestData
             services.RemoveAll<IListingSourceCodeService>();
@@ -144,18 +128,10 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
     {
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            await SchemaInitializationGate.WaitAsync(cancellationToken);
-            try
-            {
-                using IServiceScope scope = serviceProvider.CreateScope();
-                EssentialCSharpWebContext dbContext =
-                    scope.ServiceProvider.GetRequiredService<EssentialCSharpWebContext>();
-                await dbContext.Database.EnsureCreatedAsync(cancellationToken);
-            }
-            finally
-            {
-                SchemaInitializationGate.Release();
-            }
+            using IServiceScope scope = serviceProvider.CreateScope();
+            EssentialCSharpWebContext dbContext =
+                scope.ServiceProvider.GetRequiredService<EssentialCSharpWebContext>();
+            await dbContext.Database.EnsureCreatedAsync(cancellationToken);
         }
 
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
