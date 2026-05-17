@@ -299,7 +299,7 @@ public static class ServiceCollectionExtensions
             var builder = new NpgsqlConnectionStringBuilder(connectionString);
             return !string.IsNullOrWhiteSpace(builder.Host);
         }
-        catch (Exception)
+        catch (ArgumentException)
         {
             return false;
         }
