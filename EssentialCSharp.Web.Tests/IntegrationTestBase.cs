@@ -43,6 +43,7 @@ public abstract class IntegrationTestBase : WebApplicationTest<WebApplicationFac
 
         if (IsRedirectStatusCode(response.StatusCode))
         {
+            response.Dispose();
             throw new InvalidOperationException(
                 $"Exceeded redirect limit ({maxRedirects}) for '{relativeUrl}'. Last status: {(int)response.StatusCode} {response.StatusCode}.");
         }
