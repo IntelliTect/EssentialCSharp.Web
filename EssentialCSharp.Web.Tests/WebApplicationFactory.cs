@@ -26,38 +26,42 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
     {
         builder.ConfigureServices(services =>
         {
-            ServiceDescriptor? dbContextDescriptor = services.SingleOrDefault(
-                d => d.ServiceType ==
-                    typeof(IDbContextOptionsConfiguration<EssentialCSharpWebContext>));
-
-            if (dbContextDescriptor != null)
+            for (int i = services.Count - 1; i >= 0; i--)
             {
-                services.Remove(dbContextDescriptor);
+                if (services[i].ServiceType ==
+                    typeof(IDbContextOptionsConfiguration<EssentialCSharpWebContext>))
+                {
+                    services.RemoveAt(i);
+                }
             }
 
-            ServiceDescriptor? dbConnectionDescriptor =
-                services.SingleOrDefault(
-                    d => d.ServiceType ==
-                    typeof(DbConnection));
-
-            if (dbConnectionDescriptor != null)
+            for (int i = services.Count - 1; i >= 0; i--)
             {
-                services.Remove(dbConnectionDescriptor);
+                if (services[i].ServiceType == typeof(DbConnection))
+                {
+                    services.RemoveAt(i);
+                }
             }
 
             // Remove DatabaseMigrationService: it calls MigrateAsync which conflicts
             // with EnsureCreated() used below for the in-memory SQLite test database.
-            ServiceDescriptor? migrationServiceDescriptor = services.SingleOrDefault(
-                d => d.ImplementationType == typeof(DatabaseMigrationService));
-            if (migrationServiceDescriptor != null)
+            for (int i = services.Count - 1; i >= 0; i--)
             {
-                services.Remove(migrationServiceDescriptor);
+                ServiceDescriptor descriptor = services[i];
+                if (descriptor.ServiceType == typeof(IHostedService) &&
+                    descriptor.ImplementationType == typeof(DatabaseMigrationService))
+                {
+                    services.RemoveAt(i);
+                }
             }
 
             // Open a keep-alive connection to prevent the shared-cache in-memory database from
             // being dropped when per-scope connections are disposed between requests.
-            _keepAliveConnection = new SqliteConnection(_sqlConnectionString);
-            _keepAliveConnection.Open();
+            _keepAliveConnection ??= new SqliteConnection(_sqlConnectionString);
+            if (_keepAliveConnection.State != System.Data.ConnectionState.Open)
+            {
+                _keepAliveConnection.Open();
+            }
 
             // Register as scoped so each request scope gets its own SqliteConnection,
             // preventing "database is locked" errors under concurrent requests.
@@ -75,6 +79,16 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
             });
 
             // Ensure schema exists before any hosted service that reads from the database.
+            for (int i = services.Count - 1; i >= 0; i--)
+            {
+                ServiceDescriptor descriptor = services[i];
+                if (descriptor.ServiceType == typeof(IHostedService) &&
+                    descriptor.ImplementationType == typeof(EnsureCreatedHostedService))
+                {
+                    services.RemoveAt(i);
+                }
+            }
+
             ServiceDescriptor ensureCreatedDescriptor =
                 ServiceDescriptor.Singleton<IHostedService, EnsureCreatedHostedService>();
             int firstHostedServiceIndex = -1;
