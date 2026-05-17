@@ -9,11 +9,13 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using System.Threading;
 
 namespace EssentialCSharp.Web.Tests;
 
 public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
 {
+    private static readonly SemaphoreSlim SchemaInitializationGate = new(1, 1);
     // One GUID per factory instance → each factory gets its own isolated in-memory database.
     private readonly string _sqlConnectionString =
         $"DataSource=file:{Guid.NewGuid():N}?mode=memory&cache=shared";
@@ -129,10 +131,18 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
     {
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            using IServiceScope scope = serviceProvider.CreateScope();
-            EssentialCSharpWebContext dbContext =
-                scope.ServiceProvider.GetRequiredService<EssentialCSharpWebContext>();
-            await dbContext.Database.EnsureCreatedAsync(cancellationToken);
+            await SchemaInitializationGate.WaitAsync(cancellationToken);
+            try
+            {
+                using IServiceScope scope = serviceProvider.CreateScope();
+                EssentialCSharpWebContext dbContext =
+                    scope.ServiceProvider.GetRequiredService<EssentialCSharpWebContext>();
+                await dbContext.Database.EnsureCreatedAsync(cancellationToken);
+            }
+            finally
+            {
+                SchemaInitializationGate.Release();
+            }
         }
 
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
