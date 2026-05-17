@@ -16,7 +16,7 @@ namespace EssentialCSharp.Web.Tests;
 internal static class McpTestHelper
 {
     public static HttpClient CreateClient(TracedWebApplicationFactory<Program> factory) =>
-        factory.CreateClient();
+        factory.Inner.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
 
     public static HttpRequestMessage CreateInitializeRequest(string path = "/mcp")
     {

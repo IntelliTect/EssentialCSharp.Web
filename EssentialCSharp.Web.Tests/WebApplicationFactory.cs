@@ -23,7 +23,13 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
 
     // Kept open for the factory lifetime so the shared-cache in-memory database is not dropped
     // when per-scope connections are disposed between requests.
-    private SqliteConnection? _keepAliveConnection;
+    private readonly SqliteConnection _keepAliveConnection;
+
+    public WebApplicationFactory()
+    {
+        _keepAliveConnection = new SqliteConnection(_sqlConnectionString);
+        _keepAliveConnection.Open();
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -50,12 +56,6 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
 
             // Open a keep-alive connection to prevent the shared-cache in-memory database from
             // being dropped when per-scope connections are disposed between requests.
-            _keepAliveConnection ??= new SqliteConnection(_sqlConnectionString);
-            if (_keepAliveConnection.State != System.Data.ConnectionState.Open)
-            {
-                _keepAliveConnection.Open();
-            }
-
             // Register as scoped so each request scope gets its own SqliteConnection,
             // preventing "database is locked" errors under concurrent requests.
             services.AddScoped<DbConnection>(_ =>
@@ -98,7 +98,8 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
     {
         if (disposing)
         {
-            _keepAliveConnection?.Dispose();
+            _keepAliveConnection.Dispose();
+            _schemaInitializationGate.Dispose();
         }
         base.Dispose(disposing);
     }

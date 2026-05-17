@@ -13,7 +13,7 @@ public abstract class IntegrationTestBase : WebApplicationTest<WebApplicationFac
     /// silently following them.
     /// </summary>
     protected HttpClient CreateClientWithoutAutoRedirect() =>
-        Factory.CreateClient();
+        Factory.Inner.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
 
     /// <summary>
     /// Executes an initial GET and follows redirect responses with subsequent GET requests.
