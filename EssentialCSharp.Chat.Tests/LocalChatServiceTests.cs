@@ -20,7 +20,9 @@ public class LocalChatServiceTests
             {"id":"resp-1","choices":[{"message":{"content":"hello back"}}]}
             """));
 
-        var service = CreateService(new RecordingHttpMessageHandler(requests, responses));
+        var (service, client) = CreateService(new RecordingHttpMessageHandler(requests, responses));
+        using var clientScope = client;
+        using var serviceScope = service;
 
         var (response, responseId) = await service.GetChatCompletion("hello");
 
@@ -51,12 +53,15 @@ public class LocalChatServiceTests
     {
         var requests = new List<HttpRequestMessage>();
         var responses = new Queue<HttpResponseMessage>();
-        responses.Enqueue(new HttpResponseMessage(HttpStatusCode.BadGateway)
+        using var response = new HttpResponseMessage(HttpStatusCode.BadGateway)
         {
             Content = new StringContent("upstream error", Encoding.UTF8, "text/plain")
-        });
+        };
+        responses.Enqueue(response);
 
-        var service = CreateService(new RecordingHttpMessageHandler(requests, responses));
+        var (service, client) = CreateService(new RecordingHttpMessageHandler(requests, responses));
+        using var clientScope = client;
+        using var serviceScope = service;
 
         await Assert.ThrowsAsync<ChatBackendUnavailableException>(() => service.GetChatCompletion("hello"));
     }
@@ -68,7 +73,9 @@ public class LocalChatServiceTests
         var responses = new Queue<HttpResponseMessage>();
         responses.Enqueue(CreateJsonResponse("""{"id":"resp-1","choices":[]}"""));
 
-        var service = CreateService(new RecordingHttpMessageHandler(requests, responses));
+        var (service, client) = CreateService(new RecordingHttpMessageHandler(requests, responses));
+        using var clientScope = client;
+        using var serviceScope = service;
 
         await Assert.ThrowsAsync<ChatBackendUnavailableException>(() => service.GetChatCompletion("hello"));
     }
@@ -85,7 +92,9 @@ public class LocalChatServiceTests
             {"id":"resp-2","choices":[{"message":{"content":"assistant two"}}]}
             """));
 
-        var service = CreateService(new RecordingHttpMessageHandler(requests, responses));
+        var (service, client) = CreateService(new RecordingHttpMessageHandler(requests, responses));
+        using var clientScope = client;
+        using var serviceScope = service;
 
         var first = await service.GetChatCompletion("first");
         _ = await service.GetChatCompletion("second", previousResponseId: first.responseId);
@@ -109,7 +118,7 @@ public class LocalChatServiceTests
         await Assert.That(secondMessages[3].GetProperty("content").GetString()).IsEqualTo("second");
     }
 
-    private static LocalChatService CreateService(HttpMessageHandler handler)
+    private static (LocalChatService Service, HttpClient Client) CreateService(HttpMessageHandler handler)
     {
         var options = Options.Create(new AIOptions
         {
@@ -128,7 +137,7 @@ public class LocalChatServiceTests
             .Returns(client);
 
         var logger = Mock.Of<ILogger<LocalChatService>>();
-        return new LocalChatService(options, httpClientFactory.Object, logger);
+        return (new LocalChatService(options, httpClientFactory.Object, logger), client);
     }
 
     private static HttpResponseMessage CreateJsonResponse(string json) =>
