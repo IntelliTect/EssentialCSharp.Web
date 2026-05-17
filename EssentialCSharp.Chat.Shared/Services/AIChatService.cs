@@ -47,8 +47,8 @@ public partial class AIChatService
     /// <param name="tools">Optional tools for the AI to use</param>
     /// <param name="reasoningEffortLevel">Optional reasoning effort level for reasoning models</param>
     /// <param name="enableContextualSearch">Enable vector search for contextual information</param>
-    /// <param name="endUserId">Authenticated end-user identifier. Currently reserved for forwarding
-    /// to Azure OpenAI for abuse monitoring via <c>CreateResponseOptions.EndUserId</c>.</param>
+    /// <param name="endUserId">Forwarded to Azure OpenAI for abuse monitoring and Microsoft Defender
+    /// prompt-shield correlation via <c>CreateResponseOptions.EndUserId</c>.</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The AI response text and response ID for conversation continuity</returns>
     public async Task<(string response, string responseId)> GetChatCompletion(
@@ -78,8 +78,8 @@ public partial class AIChatService
     /// <param name="tools">Optional tools for the AI to use</param>
     /// <param name="reasoningEffortLevel">Optional reasoning effort level for reasoning models</param>
     /// <param name="enableContextualSearch">Enable vector search for contextual information</param>
-    /// <param name="endUserId">Authenticated end-user identifier. Currently reserved for forwarding
-    /// to Azure OpenAI for abuse monitoring via <c>CreateResponseOptions.EndUserId</c>.</param>
+    /// <param name="endUserId">Forwarded to Azure OpenAI for abuse monitoring and Microsoft Defender
+    /// prompt-shield correlation via <c>CreateResponseOptions.EndUserId</c>.</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>An async enumerable of response text chunks and final response ID</returns>
     public async IAsyncEnumerable<(string text, string? responseId)> GetChatCompletionStream(
@@ -351,6 +351,7 @@ public partial class AIChatService
     {
         var options = new CreateResponseOptions();
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        options.Model = _Options.ChatDeploymentName;
 
         // Set the system prompt via Instructions — this is stateless across turns when using previous_response_id,
         // preventing accumulation of system messages in the conversation context.
