@@ -548,6 +548,20 @@ public partial class Program
             Predicate = r => r.Tags.Contains("live")
         }).DisableRateLimiting();
 
+        // TEMPORARY: diagnostic endpoint to identify ACA proxy IP for ForwardedHeaders config
+        // Remove once correct TrustedProxyCidrs are confirmed (issue #796)
+        if (!app.Environment.IsProduction())
+        {
+            app.MapGet("/diag/proxy", (HttpContext ctx) => new
+            {
+                RemoteIpAddress = ctx.Connection.RemoteIpAddress?.ToString(),
+                XForwardedFor = ctx.Request.Headers["X-Forwarded-For"].ToString(),
+                XForwardedProto = ctx.Request.Headers["X-Forwarded-Proto"].ToString(),
+                Scheme = ctx.Request.Scheme,
+                Host = ctx.Request.Host.ToString(),
+            }).DisableRateLimiting().AllowAnonymous();
+        }
+
         if (app.Environment.IsDevelopment())
         {
         app.UseHttpsRedirection();
