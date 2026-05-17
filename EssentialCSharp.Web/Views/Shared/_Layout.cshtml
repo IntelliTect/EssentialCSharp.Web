@@ -7,9 +7,11 @@
 @using Microsoft.AspNetCore.Identity
 @using EssentialCSharp.Web.Areas.Identity.Data
 @using Microsoft.Extensions.Configuration
+@using Microsoft.Extensions.Options
 @inject ISiteMappingService _SiteMappings
 @inject SignInManager<EssentialCSharpWebUser> SignInManager
 @inject IConfiguration Configuration
+@inject IOptions<CaptchaOptions> _CaptchaOptions
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -193,6 +195,10 @@
             var buildLabel = ReleaseDateAttribute.GetReleaseDate() is DateTime date
                 ? TimeZoneInfo.ConvertTimeFromUtc(date, TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time")).ToString("d MMM, yyyy h:mm:ss tt", CultureInfo.InvariantCulture)
                 : null;
+            var chatCaptchaSiteKey = !string.IsNullOrWhiteSpace(_CaptchaOptions.Value.SecretKey)
+                && !string.IsNullOrWhiteSpace(_CaptchaOptions.Value.SiteKey)
+                ? _CaptchaOptions.Value.SiteKey
+                : null;
         }
         window.PERCENT_COMPLETE = @Json.Serialize(percentComplete);
         window.PREVIOUS_PAGE = @Json.Serialize(ViewBag.PreviousPage);
@@ -204,6 +210,7 @@
         window.APPLICATIONINSIGHTS_CONNECTION_STRING = @Json.Serialize(Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]);
         window.BUILD_LABEL = @Json.Serialize(buildLabel);
         window.ENABLE_CHAT_WIDGET = @Json.Serialize(!Context.Request.Path.StartsWithSegments("/Identity"));
+        window.HCAPTCHA_SITE_KEY = @Json.Serialize(chatCaptchaSiteKey);
     </script>
     <script src="~/dist/assets/site-shell.js" type="module" asp-append-version="true"></script>
 </body>

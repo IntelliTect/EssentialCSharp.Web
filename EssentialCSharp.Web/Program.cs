@@ -135,8 +135,6 @@ public partial class Program
             c.Timeout = TimeSpan.FromSeconds(3);
         });
 
-
-
         builder.Services.AddTrustedForwardedHeaders(builder.Configuration, builder.Environment);
 
         ConfigurationManager configuration = builder.Configuration;
@@ -330,7 +328,7 @@ public partial class Program
                     return RateLimitPartition.GetNoLimiter("mcp-transport");
 
                 var partitionKey = httpContext.User.Identity?.IsAuthenticated == true
-                    ? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "unknown-user"
+                    ? httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown-user"
                     : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip";
 
                 return RateLimitPartition.GetFixedWindowLimiter(
@@ -348,7 +346,7 @@ public partial class Program
             {
                 // Partitioned per-user (when authenticated) or per-IP (anonymous)
                 var partitionKey = httpContext.User.Identity?.IsAuthenticated == true
-                    ? $"chat-user:{httpContext.User.Identity.Name ?? "unknown-user"}"
+                    ? $"chat-user:{httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown-user"}"
                     : $"chat-ip:{httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip"}";
 
                 return RateLimitPartition.GetFixedWindowLimiter(
@@ -385,7 +383,6 @@ public partial class Program
                     Dictionary<string, object> errorResponse = new()
                     {
                         ["error"] = "Rate limit exceeded. Please wait before sending another message.",
-                        ["requiresCaptcha"] = true,
                         ["statusCode"] = 429
                     };
                     if (retryAfterSeconds is int retryAfter)
@@ -633,16 +630,6 @@ public partial class Program
             LogSitemapValidationSucceeded(logger);
         }
         catch (InvalidOperationException ex)
-        {
-            LogSitemapValidationFailed(logger, ex);
-            // Continue startup even if sitemap validation fails
-        }
-        catch (ArgumentException ex)
-        {
-            LogSitemapValidationFailed(logger, ex);
-            // Continue startup even if sitemap validation fails
-        }
-        catch (FormatException ex)
         {
             LogSitemapValidationFailed(logger, ex);
             // Continue startup even if sitemap validation fails
