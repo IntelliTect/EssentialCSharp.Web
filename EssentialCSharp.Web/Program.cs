@@ -616,16 +616,6 @@ public partial class Program
             LogSitemapValidationFailed(logger, ex);
             // Continue startup even if sitemap validation fails
         }
-        catch (ArgumentException ex)
-        {
-            LogSitemapValidationFailed(logger, ex);
-            // Continue startup even if sitemap validation fails
-        }
-        catch (FormatException ex)
-        {
-            LogSitemapValidationFailed(logger, ex);
-            // Continue startup even if sitemap validation fails
-        }
 
         app.Run();
     }

@@ -290,7 +290,7 @@ public partial class ChatController : ControllerBase
         }
     }
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "hCaptcha service unavailable during chat request — failing open")]
+    [LoggerMessage(Level = LogLevel.Warning, Message = "hCaptcha service unavailable during chat request — failing closed (503)")]
     private static partial void LogCaptchaServiceUnavailable(ILogger<ChatController> logger);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "hCaptcha validation failed for chat request — error codes: {ErrorCodes}")]
