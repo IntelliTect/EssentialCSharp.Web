@@ -20,7 +20,6 @@ let captchaTokenResolve = null;
 let captchaTokenReject = null;
 let captchaPending = false; // prevents concurrent token requests overwriting promise callbacks
 let captchaRequestGeneration = 0;
-const CAPTCHA_TIMEOUT_MS = 90_000;
 
 // Resolves once the widget has rendered. getCaptchaToken() awaits this so a user who
 // submits before hCaptcha finishes loading waits (up to 15 s) rather than getting a 403.
@@ -68,8 +67,7 @@ function initCaptchaWidget() {
  * Returns a fresh hCaptcha token, or null if captcha is not configured.
  * Waits for the widget to finish rendering if it has not yet (handles slow script loads).
  * Rejects with 'captcha-concurrent' if a token request is already in-flight.
- * Rejects with 'captcha-timeout' if the challenge does not complete within 90 seconds
- * after the widget is ready (the timer starts after widget load, not before).
+ * Rejects with 'captcha-expired' or 'captcha-error' via hCaptcha's own callbacks.
  */
 function getCaptchaToken() {
     if (!captchaSiteKey) return Promise.resolve(null);
@@ -79,42 +77,23 @@ function getCaptchaToken() {
 
     // Chain onto captchaWidgetReady so calls made before the widget finishes loading
     // wait rather than immediately returning null and causing a 403.
-    // The challenge timeout starts only after the widget is ready so script-load time
-    // does not eat into the window available for completing an interactive challenge.
     return captchaWidgetReady.then(() => {
         if (requestGeneration !== captchaRequestGeneration) {
             captchaPending = false;
             return Promise.reject(new Error('captcha-stale'));
         }
 
-        let timeoutId;
-
-        const tokenPromise = new Promise((resolve, reject) => {
+        return new Promise((resolve, reject) => {
             captchaTokenResolve = (token) => {
                 captchaPending = false;
-                clearTimeout(timeoutId); // cancel lingering timer so it can't corrupt the next call
                 resolve(token);
             };
-            captchaTokenReject  = (err) => {
+            captchaTokenReject = (err) => {
                 captchaPending = false;
-                clearTimeout(timeoutId);
                 reject(err);
             };
             window.hcaptcha.execute(captchaWidgetId);
         });
-
-        const timeoutPromise = new Promise((_, reject) => {
-            timeoutId = setTimeout(() => {
-                if (requestGeneration !== captchaRequestGeneration) return;
-                captchaRequestGeneration++;
-                captchaPending = false;
-                captchaTokenResolve = null;
-                captchaTokenReject  = null;
-                reject(new Error('captcha-timeout'));
-            }, CAPTCHA_TIMEOUT_MS);
-        });
-
-        return Promise.race([tokenPromise, timeoutPromise]);
     });
 }
 
