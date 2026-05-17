@@ -20,13 +20,24 @@ let captchaTokenResolve = null;
 let captchaTokenReject = null;
 let captchaPending = false; // prevents concurrent token requests overwriting promise callbacks
 let captchaRequestGeneration = 0;
+const CAPTCHA_WIDGET_READY_TIMEOUT_MS = 15_000;
 
-// Resolves once the widget has rendered. getCaptchaToken() awaits this so a user who
-// submits before hCaptcha finishes loading waits (up to 15 s) rather than getting a 403.
+// Resolves once the widget has rendered.
 let captchaWidgetReadyResolve = null;
 const captchaWidgetReady = captchaSiteKey
     ? new Promise((resolve) => { captchaWidgetReadyResolve = resolve; })
     : Promise.resolve();
+
+function awaitCaptchaWidgetReady() {
+    if (!captchaSiteKey) return Promise.resolve();
+    if (captchaWidgetId !== null) return Promise.resolve();
+
+    const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('captcha-unavailable')), CAPTCHA_WIDGET_READY_TIMEOUT_MS);
+    });
+
+    return Promise.race([captchaWidgetReady, timeoutPromise]);
+}
 
 function initCaptchaWidget() {
     if (!captchaSiteKey) return;
@@ -67,6 +78,7 @@ function initCaptchaWidget() {
  * Returns a fresh hCaptcha token, or null if captcha is not configured.
  * Waits for the widget to finish rendering if it has not yet (handles slow script loads).
  * Rejects with 'captcha-concurrent' if a token request is already in-flight.
+ * Rejects with 'captcha-unavailable' if the widget never becomes ready.
  * Rejects with 'captcha-expired' or 'captcha-error' via hCaptcha's own callbacks.
  */
 function getCaptchaToken() {
@@ -77,7 +89,7 @@ function getCaptchaToken() {
 
     // Chain onto captchaWidgetReady so calls made before the widget finishes loading
     // wait rather than immediately returning null and causing a 403.
-    return captchaWidgetReady.then(() => {
+    return awaitCaptchaWidgetReady().then(() => {
         if (requestGeneration !== captchaRequestGeneration) {
             captchaPending = false;
             return Promise.reject(new Error('captcha-stale'));
@@ -94,6 +106,9 @@ function getCaptchaToken() {
             };
             window.hcaptcha.execute(captchaWidgetId);
         });
+    }).catch((error) => {
+        captchaPending = false;
+        throw error;
     });
 }
 

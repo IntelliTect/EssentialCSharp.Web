@@ -134,13 +134,13 @@ public partial class ChatController : ControllerBase
         if (captchaValid is null)
         {
             Response.StatusCode = 503;
-            await Response.WriteAsJsonAsync(new { error = "Human verification is temporarily unavailable. Please try again later.", errorCode = "captcha_unavailable" }, CancellationToken.None);
+            await Response.WriteAsJsonAsync(new { error = "Human verification is temporarily unavailable. Please try again later.", errorCode = "captcha_unavailable" }, cancellationToken);
             return;
         }
         if (!captchaValid.Value)
         {
             Response.StatusCode = 403;
-            await Response.WriteAsJsonAsync(new { error = "Human verification required.", errorCode = "captcha_failed" }, CancellationToken.None);
+            await Response.WriteAsJsonAsync(new { error = "Human verification required.", errorCode = "captcha_failed" }, cancellationToken);
             return;
         }
 
