@@ -17,7 +17,9 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
     // One GUID per factory instance (field, not computed property) ensures each factory
     // gets its own isolated in-memory database and keeps a stable connection string.
     private readonly string _sqlConnectionString =
-        $"DataSource=file:{Guid.NewGuid():N}?mode=memory&cache=shared;Pooling=True";
+        $"DataSource=file:{Guid.NewGuid():N}?mode=memory&cache=shared";
+
+    private readonly SemaphoreSlim _schemaInitializationGate = new(1, 1);
 
     // Kept open for the factory lifetime so the shared-cache in-memory database is not dropped
     // when per-scope connections are disposed between requests.
@@ -79,7 +81,10 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
                 nameof(EnsureCreatedHostedService));
 
             ServiceDescriptor ensureCreatedDescriptor =
-                ServiceDescriptor.Singleton<IHostedService, EnsureCreatedHostedService>();
+                ServiceDescriptor.Singleton<IHostedService>(
+                    serviceProvider => new EnsureCreatedHostedService(
+                        serviceProvider,
+                        _schemaInitializationGate));
             services.Insert(0, ensureCreatedDescriptor);
 
             // Replace IListingSourceCodeService with one backed by TestData
@@ -124,14 +129,24 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
         }
     }
 
-    private sealed class EnsureCreatedHostedService(IServiceProvider serviceProvider) : IHostedService
+    private sealed class EnsureCreatedHostedService(
+        IServiceProvider serviceProvider,
+        SemaphoreSlim schemaInitializationGate) : IHostedService
     {
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            using IServiceScope scope = serviceProvider.CreateScope();
-            EssentialCSharpWebContext dbContext =
-                scope.ServiceProvider.GetRequiredService<EssentialCSharpWebContext>();
-            await dbContext.Database.EnsureCreatedAsync(cancellationToken);
+            await schemaInitializationGate.WaitAsync(cancellationToken);
+            try
+            {
+                using IServiceScope scope = serviceProvider.CreateScope();
+                EssentialCSharpWebContext dbContext =
+                    scope.ServiceProvider.GetRequiredService<EssentialCSharpWebContext>();
+                await dbContext.Database.EnsureCreatedAsync(cancellationToken);
+            }
+            finally
+            {
+                schemaInitializationGate.Release();
+            }
         }
 
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
