@@ -8,7 +8,7 @@ namespace EssentialCSharp.Web.Tests;
 public class CaptchaValidationServiceTests
 {
     [Test]
-    public async Task ValidateAsync_Disabled_SkipsVerification()
+    public async Task ValidateAsync_MissingConfig_RejectsWithoutVerification()
     {
         StubCaptchaService captchaService = new((_, _, _) => throw new InvalidOperationException("Verifier should not be called."));
         using ServiceProvider serviceProvider = CreateServiceProvider(
@@ -20,7 +20,7 @@ public class CaptchaValidationServiceTests
         CaptchaValidationResult result = await validationService.ValidateAsync("token", "127.0.0.1");
 
         await Assert.That(result.Outcome).IsEqualTo(CaptchaValidationOutcome.Disabled);
-        await Assert.That(result.ShouldProceed).IsTrue();
+        await Assert.That(result.ShouldProceed).IsFalse();
         await Assert.That(captchaService.CallCount).IsEqualTo(0);
     }
 
