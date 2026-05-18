@@ -3,10 +3,10 @@ using System.Text.RegularExpressions;
 
 namespace EssentialCSharp.Web.Services;
 
-public class RouteConfigurationService : IRouteConfigurationService
+public partial class RouteConfigurationService : IRouteConfigurationService
 {
-    private static readonly Regex s_routeParameterRegex =
-        new(@"\{[^}]+\}|\[[^\]]+\]", RegexOptions.Compiled);
+    [GeneratedRegex(@"\{[^}]+\}|\[[^\]]+\]")]
+    internal static partial Regex RouteParameterRegex();
 
     private readonly IActionDescriptorCollectionProvider _ActionDescriptorCollectionProvider;
     private readonly HashSet<string> _StaticRoutes;
@@ -75,7 +75,7 @@ public class RouteConfigurationService : IRouteConfigurationService
     {
         return _StaticRoutes
             .Where(route => !route.StartsWith("api/", StringComparison.OrdinalIgnoreCase))
-            .Where(route => !s_routeParameterRegex.IsMatch(route))
+            .Where(route => !RouteParameterRegex().IsMatch(route))
             .Where(route => !route.Contains("identity", StringComparison.OrdinalIgnoreCase))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
