@@ -87,6 +87,7 @@ public class RouteConfigurationServiceTests
         await Assert.That(routes).Contains("guidelines");
         await Assert.That(routes).Contains("announcements");
         await Assert.That(routes).Contains("termsofservice");
+        await Assert.That(routes).Contains("mcp-setup");
     }
 
     [Test]
