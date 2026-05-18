@@ -63,6 +63,12 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
+      - name: Write IndexNow key verification file
+        if: env.INDEXNOW_API_KEY != ''
+        env:
+          INDEXNOW_API_KEY: ${{ secrets.INDEXNOW_API_KEY }}
+        run: printf '%s' "$INDEXNOW_API_KEY" > "EssentialCSharp.Web/wwwroot/$INDEXNOW_API_KEY.txt"
+
       # Only build for dev registry — prod gets the image via az acr import in deploy-production
       - name: Build Container Image
         if: github.event_name != 'pull_request_target' && github.event_name != 'pull_request'

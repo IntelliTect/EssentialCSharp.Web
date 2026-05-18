@@ -24,24 +24,24 @@ The deployment workflow notifies search engines (Bing, Yandex, Naver) of content
 
 ### Setup Requirements
 
-#### 1. Key Verification File (already committed)
-IndexNow requires domain ownership proof via a publicly accessible `.txt` file at the root of the domain:
-- The key file lives at `EssentialCSharp.Web/wwwroot/{key}.txt`
-- The filename and file content are the same value (the key itself)
+#### 1. GitHub Secret
+Generate a random hex key and store it in GitHub repository secrets as `INDEXNOW_API_KEY`. The workflow uses this value both to write the key verification file into the Docker image at build time and to authenticate IndexNow submissions.
+
+Go to: **GitHub repo → Settings → Secrets and variables → Actions → New repository secret**
+- Name: `INDEXNOW_API_KEY`
+- Value: a random hex string (e.g. generate with `openssl rand -hex 16`)
+
+#### 2. Key Verification File (auto-generated at build time)
+IndexNow requires domain ownership proof via a publicly accessible `.txt` file:
+- The workflow writes `wwwroot/{key}.txt` (containing the key value) before building the Docker image
+- The file is NOT committed to git — it is generated fresh on every CI run from the GitHub Secret
 - ASP.NET Core's static file middleware serves it at `https://essentialcsharp.com/{key}.txt`
 - IndexNow crawls that URL to verify domain ownership before accepting submissions
 - Without this file, all submissions return HTTP 403
 
 The key file is intentionally public — that is by design. The "security" is that only the domain owner can host a file at that path.
 
-#### 2. GitHub Secret
-Store the key value in GitHub repository secrets as `INDEXNOW_API_KEY`. The workflow reads it from there — the secret value must match the key filename/content committed to the repo.
-
-Go to: **GitHub repo → Settings → Secrets and variables → Actions → New repository secret**
-- Name: `INDEXNOW_API_KEY`
-- Value: the key string (same value as the `.txt` filename in `wwwroot/`)
-
 ### Important Notes
 - The IndexNow step uses `continue-on-error: true` — a submission failure will never block a deployment
 - Submitting all sitemap URLs on every deploy is intentional; IndexNow has no hard rate limit for batch submissions and the full URL list ensures nothing is missed
-- To rotate the key: generate a new hex string, add a new `wwwroot/{newkey}.txt`, update the GitHub Secret, and remove the old `.txt` file
+- To rotate the key: generate a new hex string and update the GitHub Secret — the old key file disappears automatically on the next deploy
