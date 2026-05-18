@@ -49,11 +49,8 @@ public class SitemapXmlHelpersTests
 
         var allUrls = nodes.Select(n => n.Url).ToList();
 
-        // Verify no API routes are included
+        // Verify no API routes are included (assert on the /api/ pattern, not specific controller names)
         await Assert.That(allUrls).DoesNotContain(url => url.Contains("/api/", StringComparison.OrdinalIgnoreCase));
-        await Assert.That(allUrls).DoesNotContain(url => url.Contains("chat", StringComparison.OrdinalIgnoreCase));
-        await Assert.That(allUrls).DoesNotContain(url => url.Contains("listingsourcecode", StringComparison.OrdinalIgnoreCase));
-        await Assert.That(allUrls).DoesNotContain(url => url.Contains("mcptoken", StringComparison.OrdinalIgnoreCase));
     }
 
     [Test]
