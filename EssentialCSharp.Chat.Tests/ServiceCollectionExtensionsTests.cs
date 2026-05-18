@@ -33,6 +33,7 @@ public class ServiceCollectionExtensionsTests
     [Test]
     [Arguments("invalid-azure-falls-back-to-local")]
     [Arguments("valid-local")]
+    [Arguments("connection-string-fallback")]
     [Arguments("invalid-local")]
     [Arguments("missing-config")]
     public async Task AddConfiguredChatServices_SelectsExpectedBackend(string scenario)
@@ -78,6 +79,13 @@ public class ServiceCollectionExtensionsTests
             {
                 ["AIOptions:UseLocalAI"] = "true",
                 ["AIOptions:LocalEndpoint"] = "http://localhost:11434",
+                ["AIOptions:LocalChatModel"] = "qwen2.5-coder:7b"
+            },
+            typeof(LocalChatService)),
+        "connection-string-fallback" => (
+            new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:ollama-chat"] = "http://localhost:11434",
                 ["AIOptions:LocalChatModel"] = "qwen2.5-coder:7b"
             },
             typeof(LocalChatService)),

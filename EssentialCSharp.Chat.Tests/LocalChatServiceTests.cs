@@ -113,6 +113,32 @@ public class LocalChatServiceTests
         await Assert.That(secondMessages[3].GetProperty("content").GetString()).IsEqualTo("second");
     }
 
+    [Test]
+    public async Task GetChatCompletionStream_EmitsResponseTextAndFinalResponseId()
+    {
+        var requests = new List<HttpRequestMessage>();
+        var responses = new Queue<HttpResponseMessage>();
+        responses.Enqueue(CreateJsonResponse("""
+            {"id":"stream-resp-1","choices":[{"message":{"content":"streamed response text"}}]}
+            """));
+
+        var (service, client) = CreateService(new RecordingHttpMessageHandler(requests, responses));
+        using var clientScope = client;
+        using var serviceScope = service;
+
+        var streamItems = new List<(string text, string? responseId)>();
+        await foreach (var item in service.GetChatCompletionStream("stream prompt"))
+        {
+            streamItems.Add(item);
+        }
+
+        await Assert.That(streamItems.Count).IsEqualTo(2);
+        await Assert.That(streamItems[0].text).IsEqualTo("streamed response text");
+        await Assert.That(streamItems[0].responseId).IsNull();
+        await Assert.That(streamItems[1].text).IsEmpty();
+        await Assert.That(streamItems[1].responseId).IsEqualTo("stream-resp-1");
+    }
+
     private static (LocalChatService Service, HttpClient Client) CreateService(HttpMessageHandler handler)
     {
         var options = Options.Create(new AIOptions

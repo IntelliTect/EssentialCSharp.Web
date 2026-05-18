@@ -169,7 +169,7 @@ public partial class ChatController : ControllerBase
         {
             Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
             Response.ContentType = "application/json";
-            await Response.WriteAsJsonAsync(new { error = "Chat service unavailable", errorCode = "chat_unavailable" }, CancellationToken.None);
+            await Response.WriteAsJsonAsync(new { error = "Chat service unavailable", errorCode = "chat_unavailable" }, cancellationToken);
             return;
         }
 
@@ -278,7 +278,7 @@ public partial class ChatController : ControllerBase
             LogChatStreamErrorBeforeResponseStarted(_Logger, ex, User.Identity?.Name);
             Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
             Response.ContentType = "application/json";
-            await Response.WriteAsJsonAsync(new { error = "Chat service unavailable", errorCode = "chat_unavailable" }, CancellationToken.None);
+            await Response.WriteAsJsonAsync(new { error = "Chat service unavailable", errorCode = "chat_unavailable" }, cancellationToken);
         }
         catch (ChatBackendUnavailableException ex)
         {

@@ -106,8 +106,7 @@ public static class ServiceCollectionExtensions
             && IsValidNpgsqlConnectionString(postgresConnectionString);
 
         string localEndpoint = ResolveLocalEndpoint(aiOptions, configuration);
-        bool hasLocalConfig = aiOptions.UseLocalAI
-            && !string.IsNullOrWhiteSpace(localEndpoint)
+        bool hasLocalConfig = !string.IsNullOrWhiteSpace(localEndpoint)
             && !string.IsNullOrWhiteSpace(aiOptions.LocalChatModel);
 
         if (hasAzureConfig)
