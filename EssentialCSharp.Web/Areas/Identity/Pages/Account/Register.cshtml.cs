@@ -167,6 +167,7 @@ public partial class RegisterModel(
                 }
             }
 
+            ModelState.AddModelError(string.Empty, "Captcha verification is temporarily unavailable. Please try again later.");
             return Page();
         }
 

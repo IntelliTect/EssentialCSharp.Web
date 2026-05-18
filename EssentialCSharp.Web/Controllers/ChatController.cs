@@ -46,6 +46,12 @@ public partial class ChatController : ControllerBase
         CaptchaValidationResult captchaValidation = await _CaptchaValidationService.ValidateAsync(request.CaptchaResponse, HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
         if (!captchaValidation.ShouldProceed)
         {
+            if (captchaValidation.Outcome == CaptchaValidationOutcome.Disabled)
+            {
+                LogCaptchaConfigurationMissing(_Logger);
+                return StatusCode(503, new { error = "Human verification is temporarily unavailable. Please try again later.", errorCode = "captcha_unavailable" });
+            }
+
             if (captchaValidation.Outcome == CaptchaValidationOutcome.Unavailable)
             {
                 LogCaptchaServiceUnavailable(_Logger);
@@ -113,6 +119,14 @@ public partial class ChatController : ControllerBase
         CaptchaValidationResult captchaValidation = await _CaptchaValidationService.ValidateAsync(request.CaptchaResponse, HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
         if (!captchaValidation.ShouldProceed)
         {
+            if (captchaValidation.Outcome == CaptchaValidationOutcome.Disabled)
+            {
+                LogCaptchaConfigurationMissing(_Logger);
+                Response.StatusCode = 503;
+                await Response.WriteAsJsonAsync(new { error = "Human verification is temporarily unavailable. Please try again later.", errorCode = "captcha_unavailable" }, cancellationToken);
+                return;
+            }
+
             if (captchaValidation.Outcome == CaptchaValidationOutcome.Unavailable)
             {
                 LogCaptchaServiceUnavailable(_Logger);
@@ -279,6 +293,9 @@ public partial class ChatController : ControllerBase
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "hCaptcha service unavailable during chat request — failing closed (503)")]
     private static partial void LogCaptchaServiceUnavailable(ILogger<ChatController> logger);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "hCaptcha configuration missing during chat request — failing closed (503)")]
+    private static partial void LogCaptchaConfigurationMissing(ILogger<ChatController> logger);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "hCaptcha validation failed for chat request — error codes: {ErrorCodes}")]
     private static partial void LogCaptchaValidationFailed(ILogger<ChatController> logger, string errorCodes);
