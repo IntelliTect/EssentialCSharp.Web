@@ -5,7 +5,7 @@ const shell = inject("shell");
 </script>
 
 <template>
-    <div v-if="shell.currentPage.length > 0" class="page-share-action">
+    <div v-if="shell.isContentPage" class="page-share-action">
         <div class="turn-page-tooltip">
             <button
                 id="share-btn"
