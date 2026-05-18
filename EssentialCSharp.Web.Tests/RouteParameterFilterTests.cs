@@ -1,12 +1,16 @@
 using EssentialCSharp.Web.Services;
+using System.Text.RegularExpressions;
 
 namespace EssentialCSharp.Web.Tests;
 
 /// <summary>
 /// Parameterized tests for the route parameter regex in RouteConfigurationService.
+/// Tests the pattern directly so any change to RouteParameterPattern is immediately caught.
 /// </summary>
 public class RouteParameterFilterTests
 {
+    private static readonly Regex s_regex = new(RouteConfigurationService.RouteParameterPattern);
+
     [Test]
     [Arguments("{chapter}")]
     [Arguments("{id:guid}")]
@@ -17,7 +21,7 @@ public class RouteParameterFilterTests
     [Arguments("[optional]")]
     [Arguments("area/[optional]/page")]
     public async Task RouteParameterRegex_MatchesParameterizedRoutes(string route)
-        => await Assert.That(RouteConfigurationService.RouteParameterRegex().IsMatch(route)).IsTrue();
+        => await Assert.That(s_regex.IsMatch(route)).IsTrue();
 
     [Test]
     [Arguments("about")]
@@ -26,5 +30,5 @@ public class RouteParameterFilterTests
     [Arguments("api/listing")]
     [Arguments("")]
     public async Task RouteParameterRegex_DoesNotMatchStaticRoutes(string route)
-        => await Assert.That(RouteConfigurationService.RouteParameterRegex().IsMatch(route)).IsFalse();
+        => await Assert.That(s_regex.IsMatch(route)).IsFalse();
 }

@@ -5,8 +5,10 @@ namespace EssentialCSharp.Web.Services;
 
 public partial class RouteConfigurationService : IRouteConfigurationService
 {
-    [GeneratedRegex(@"\{[^}]+\}|\[[^\]]+\]")]
-    internal static partial Regex RouteParameterRegex();
+    [GeneratedRegex(RouteParameterPattern)]
+    private static partial Regex RouteParameterRegex();
+
+    public const string RouteParameterPattern = @"\{[^}]+\}|\[[^\]]+\]";
 
     private readonly IActionDescriptorCollectionProvider _ActionDescriptorCollectionProvider;
     private readonly HashSet<string> _StaticRoutes;
