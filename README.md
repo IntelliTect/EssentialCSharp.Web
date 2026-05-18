@@ -14,24 +14,34 @@ Please use issues or discussions to report issues found.
 
 ## IndexNow Setup (Production Deployment)
 
-The deployment workflow notifies search engines (Bing, Yandex, Naver) of content updates via the [IndexNow protocol](https://www.indexnow.org/). To enable this:
+The deployment workflow notifies search engines (Bing, Yandex, Naver) of content updates via the [IndexNow protocol](https://www.indexnow.org/). After each successful production deploy the workflow fetches the live `sitemap.xml`, extracts all content URLs, and submits them in a single batch POST to IndexNow.
 
-### Key File Requirement
-IndexNow requires verification that you own the domain by hosting your API key as a publicly accessible `.txt` file:
+### How It Works
 
-1. **Create the key file**: Place your IndexNow API key in `EssentialCSharp.Web/wwwroot/{INDEXNOW_API_KEY}.txt`
-   - File content should contain **only** the key value (no whitespace, no newlines)
-   - Example: if key is `abc123def456`, the file is `abc123def456.txt` containing exactly that string
+1. After the smoke test confirms the app is live, the workflow fetches `https://essentialcsharp.com/sitemap.xml`.
+2. All `<loc>` URLs are extracted and POSTed to `https://api.indexnow.org/indexnow`.
+3. IndexNow distributes those URLs to all participating search engines (Bing, Yandex, Naver, etc.).
 
-2. **Deploy as static asset**: Ensure the key file is deployed with the application so it's accessible at:
-   ```
-   https://essentialcsharp.com/{INDEXNOW_API_KEY}.txt
-   ```
+### Setup Requirements
 
-3. **Set GitHub Secret**: Store your IndexNow API key in GitHub repository secrets as `INDEXNOW_API_KEY`
-   - Do NOT commit the literal key to the repository
+#### 1. Key Verification File (already committed)
+IndexNow requires domain ownership proof via a publicly accessible `.txt` file at the root of the domain:
+- The key file lives at `EssentialCSharp.Web/wwwroot/{key}.txt`
+- The filename and file content are the same value (the key itself)
+- ASP.NET Core's static file middleware serves it at `https://essentialcsharp.com/{key}.txt`
+- IndexNow crawls that URL to verify domain ownership before accepting submissions
+- Without this file, all submissions return HTTP 403
+
+The key file is intentionally public — that is by design. The "security" is that only the domain owner can host a file at that path.
+
+#### 2. GitHub Secret
+Store the key value in GitHub repository secrets as `INDEXNOW_API_KEY`. The workflow reads it from there — the secret value must match the key filename/content committed to the repo.
+
+Go to: **GitHub repo → Settings → Secrets and variables → Actions → New repository secret**
+- Name: `INDEXNOW_API_KEY`
+- Value: the key string (same value as the `.txt` filename in `wwwroot/`)
 
 ### Important Notes
-- Without the verification file, IndexNow submissions will be rejected with HTTP 403
-- The workflow submits `sitemap.xml` to IndexNow; for more granular control, consider extracting individual changed URLs and submitting those instead
-- The IndexNow step uses `continue-on-error: true` to prevent deployment failures if the notification fails
+- The IndexNow step uses `continue-on-error: true` — a submission failure will never block a deployment
+- Submitting all sitemap URLs on every deploy is intentional; IndexNow has no hard rate limit for batch submissions and the full URL list ensures nothing is missed
+- To rotate the key: generate a new hex string, add a new `wwwroot/{newkey}.txt`, update the GitHub Secret, and remove the old `.txt` file

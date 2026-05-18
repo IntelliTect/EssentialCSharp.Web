@@ -240,26 +240,46 @@ jobs:
 
       - name: Notify IndexNow of Sitemap Update
         continue-on-error: true
+        env:
+          INDEXNOW_API_KEY: ${{ secrets.INDEXNOW_API_KEY }}
         run: |
-          # IndexNow Protocol: Notifies search engines (Bing, Yandex, Naver) of content updates
-          # IMPORTANT: The API key must be verifiable by hosting it at https://essentialcsharp.com/{key}.txt
-          # containing exactly the key value. Without this verification file, IndexNow will reject submissions (HTTP 403).
+          # IndexNow Protocol: Notifies search engines (Bing, Yandex, Naver) of content updates.
           # See: https://www.indexnow.org/documentation
-          # Setup required:
-          # 1. Place the key file in EssentialCSharp.Web/wwwroot/{INDEXNOW_API_KEY}.txt
-          # 2. File should contain only the key value (no whitespace, no metadata)
-          # 3. Ensure the file is deployed as a static asset to essentialcsharp.com
-          # Note: urlList should ideally contain actual changed URLs for better search engine indexing,
-          # though submitting the sitemap URL is a valid (if less efficient) approach.
-          curl -X POST https://api.indexnow.org/indexnow \
-            -H "Content-Type: application/json" \
-            -d '{
-              "host": "essentialcsharp.com",
-              "key": "${{ secrets.INDEXNOW_API_KEY }}",
-              "urlList": [
-                "https://essentialcsharp.com/sitemap.xml"
-              ]
-            }'
+          #
+          # Domain ownership is verified via a key file hosted at:
+          #   https://essentialcsharp.com/{key}.txt  (served from wwwroot/{key}.txt)
+          # The file must contain exactly the key value. Without it, submissions return HTTP 403.
+          #
+          # We fetch the live sitemap (app is confirmed up after smoke test) and extract all <loc>
+          # URLs to submit as actual content URLs per the IndexNow spec.
+
+          # Fetch the live sitemap and extract all <loc> URLs into a newline-delimited list
+          SITEMAP=$(curl -sf "https://essentialcsharp.com/sitemap.xml")
+          if [ -z "$SITEMAP" ]; then
+            echo "::warning::Could not fetch sitemap; skipping IndexNow submission."
+            exit 0
+          fi
+
+          # Build a JSON array from <loc>...</loc> entries
+          URL_ARRAY=$(echo "$SITEMAP" \
+            | grep -oP '(?<=<loc>)[^<]+' \
+            | jq -Rn '[inputs]')
+
+          URL_COUNT=$(echo "$URL_ARRAY" | jq 'length')
+          echo "Submitting $URL_COUNT URLs to IndexNow..."
+
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST https://api.indexnow.org/indexnow \
+            -H "Content-Type: application/json; charset=utf-8" \
+            -d "{
+              \"host\": \"essentialcsharp.com\",
+              \"key\": \"$INDEXNOW_API_KEY\",
+              \"urlList\": $URL_ARRAY
+            }")
+
+          echo "IndexNow response: HTTP $RESPONSE"
+          if [ "$RESPONSE" != "200" ] && [ "$RESPONSE" != "202" ]; then
+            echo "::warning::IndexNow submission returned HTTP $RESPONSE (200/202 = success, 202 = key validation pending)."
+          fi
 
       - name: Logout of Azure CLI
         if: always()
