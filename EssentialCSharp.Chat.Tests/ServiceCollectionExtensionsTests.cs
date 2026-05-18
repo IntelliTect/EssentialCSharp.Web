@@ -31,58 +31,17 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Test]
-    public async Task AddConfiguredChatServices_WithInvalidAzureEndpoint_FallsBackToLocal_WhenLocalConfigIsValid()
+    [Arguments("invalid-azure-falls-back-to-local")]
+    [Arguments("valid-local")]
+    [Arguments("invalid-local")]
+    [Arguments("missing-config")]
+    public async Task AddConfiguredChatServices_SelectsExpectedBackend(string scenario)
     {
-        var services = CreateServices(new Dictionary<string, string?>
-        {
-            ["AIOptions:Endpoint"] = "not-a-valid-uri",
-            ["AIOptions:ChatDeploymentName"] = "chat-deployment",
-            ["AIOptions:VectorGenerationDeploymentName"] = "embedding-deployment",
-            ["ConnectionStrings:PostgresVectorStore"] = "Host=localhost;Database=test;Username=test;Password=test",
-            ["AIOptions:UseLocalAI"] = "true",
-            ["AIOptions:LocalEndpoint"] = "http://localhost:11434",
-            ["AIOptions:LocalChatModel"] = "qwen2.5-coder:7b"
-        });
+        var (configValues, expectedChatServiceType) = CreateBackendSelectionScenario(scenario);
+        var services = CreateServices(configValues);
 
         var descriptor = GetChatServiceDescriptor(services);
-        await Assert.That(descriptor.ImplementationType).IsEqualTo(typeof(LocalChatService));
-    }
-
-    [Test]
-    public async Task AddConfiguredChatServices_WithValidLocalConfig_SelectsLocalBackend()
-    {
-        var services = CreateServices(new Dictionary<string, string?>
-        {
-            ["AIOptions:UseLocalAI"] = "true",
-            ["AIOptions:LocalEndpoint"] = "http://localhost:11434",
-            ["AIOptions:LocalChatModel"] = "qwen2.5-coder:7b"
-        });
-
-        var descriptor = GetChatServiceDescriptor(services);
-        await Assert.That(descriptor.ImplementationType).IsEqualTo(typeof(LocalChatService));
-    }
-
-    [Test]
-    public async Task AddConfiguredChatServices_WithInvalidLocalEndpoint_SelectsUnavailableBackend()
-    {
-        var services = CreateServices(new Dictionary<string, string?>
-        {
-            ["AIOptions:UseLocalAI"] = "true",
-            ["AIOptions:LocalEndpoint"] = "invalid-uri",
-            ["AIOptions:LocalChatModel"] = "qwen2.5-coder:7b"
-        });
-
-        var descriptor = GetChatServiceDescriptor(services);
-        await Assert.That(descriptor.ImplementationType).IsEqualTo(typeof(UnavailableChatService));
-    }
-
-    [Test]
-    public async Task AddConfiguredChatServices_WithMissingConfig_SelectsUnavailableBackend()
-    {
-        var services = CreateServices(new Dictionary<string, string?>());
-
-        var descriptor = GetChatServiceDescriptor(services);
-        await Assert.That(descriptor.ImplementationType).IsEqualTo(typeof(UnavailableChatService));
+        await Assert.That(descriptor.ImplementationType).IsEqualTo(expectedChatServiceType);
     }
 
     private static ServiceCollection CreateServices(Dictionary<string, string?> values)
@@ -99,4 +58,40 @@ public class ServiceCollectionExtensionsTests
 
     private static ServiceDescriptor GetChatServiceDescriptor(IServiceCollection services) =>
         services.Single(d => d.ServiceType == typeof(IChatCompletionService));
+
+    private static (Dictionary<string, string?> ConfigValues, Type ExpectedChatServiceType) CreateBackendSelectionScenario(string scenario) => scenario switch
+    {
+        "invalid-azure-falls-back-to-local" => (
+            new Dictionary<string, string?>
+            {
+                ["AIOptions:Endpoint"] = "not-a-valid-uri",
+                ["AIOptions:ChatDeploymentName"] = "chat-deployment",
+                ["AIOptions:VectorGenerationDeploymentName"] = "embedding-deployment",
+                ["ConnectionStrings:PostgresVectorStore"] = "Host=localhost;Database=test;Username=test;Password=test",
+                ["AIOptions:UseLocalAI"] = "true",
+                ["AIOptions:LocalEndpoint"] = "http://localhost:11434",
+                ["AIOptions:LocalChatModel"] = "qwen2.5-coder:7b"
+            },
+            typeof(LocalChatService)),
+        "valid-local" => (
+            new Dictionary<string, string?>
+            {
+                ["AIOptions:UseLocalAI"] = "true",
+                ["AIOptions:LocalEndpoint"] = "http://localhost:11434",
+                ["AIOptions:LocalChatModel"] = "qwen2.5-coder:7b"
+            },
+            typeof(LocalChatService)),
+        "invalid-local" => (
+            new Dictionary<string, string?>
+            {
+                ["AIOptions:UseLocalAI"] = "true",
+                ["AIOptions:LocalEndpoint"] = "invalid-uri",
+                ["AIOptions:LocalChatModel"] = "qwen2.5-coder:7b"
+            },
+            typeof(UnavailableChatService)),
+        "missing-config" => (
+            new Dictionary<string, string?>(),
+            typeof(UnavailableChatService)),
+        _ => throw new ArgumentOutOfRangeException(nameof(scenario), scenario, "Unknown backend selection scenario.")
+    };
 }

@@ -60,29 +60,13 @@ public class LocalChatServiceTests
     }
 
     [Test]
-    public async Task GetChatCompletion_WhenBackendReturnsNonSuccess_ThrowsChatBackendUnavailableException()
+    [Arguments("non-success")]
+    [Arguments("invalid-payload")]
+    public async Task GetChatCompletion_WhenResponseIsInvalid_ThrowsChatBackendUnavailableException(string caseName)
     {
         var requests = new List<HttpRequestMessage>();
         var responses = new Queue<HttpResponseMessage>();
-        using var response = new HttpResponseMessage(HttpStatusCode.BadGateway)
-        {
-            Content = new StringContent("upstream error", Encoding.UTF8, "text/plain")
-        };
-        responses.Enqueue(response);
-
-        var (service, client) = CreateService(new RecordingHttpMessageHandler(requests, responses));
-        using var clientScope = client;
-        using var serviceScope = service;
-
-        await Assert.ThrowsAsync<ChatBackendUnavailableException>(() => service.GetChatCompletion("hello"));
-    }
-
-    [Test]
-    public async Task GetChatCompletion_WhenPayloadIsInvalid_ThrowsChatBackendUnavailableException()
-    {
-        var requests = new List<HttpRequestMessage>();
-        var responses = new Queue<HttpResponseMessage>();
-        responses.Enqueue(CreateJsonResponse("""{"id":"resp-1","choices":[]}"""));
+        responses.Enqueue(CreateFailureResponse(caseName));
 
         var (service, client) = CreateService(new RecordingHttpMessageHandler(requests, responses));
         using var clientScope = client;
@@ -156,6 +140,16 @@ public class LocalChatServiceTests
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
         };
+
+    private static HttpResponseMessage CreateFailureResponse(string caseName) => caseName switch
+    {
+        "non-success" => new HttpResponseMessage(HttpStatusCode.BadGateway)
+        {
+            Content = new StringContent("upstream error", Encoding.UTF8, "text/plain")
+        },
+        "invalid-payload" => CreateJsonResponse("""{"id":"resp-1","choices":[]}"""),
+        _ => throw new ArgumentOutOfRangeException(nameof(caseName), caseName, "Unknown failure case.")
+    };
 
     private sealed class RecordingHttpMessageHandler(
         List<HttpRequestMessage> requests,
