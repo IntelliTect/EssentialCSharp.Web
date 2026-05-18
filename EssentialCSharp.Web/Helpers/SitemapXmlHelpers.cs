@@ -75,25 +75,21 @@ public static class SitemapXmlHelpers
 
     private static ChangeFrequency GetChangeFrequencyForRoute(string route)
     {
-        var normalizedRoute = route.TrimStart('/').ToLowerInvariant();
-        
-        if (RouteConstants.SeoMetadata.RouteConfig.TryGetValue(normalizedRoute, out var config))
+        if (RouteConstants.SeoMetadata.RouteConfig.TryGetValue(route, out var config))
         {
-            return (ChangeFrequency)(int)config.Item1;
+            return config.Frequency;
         }
-        
+
         return ChangeFrequency.Monthly;
     }
 
     private static decimal GetPriorityForRoute(string route)
     {
-        var normalizedRoute = route.TrimStart('/').ToLowerInvariant();
-        
-        if (RouteConstants.SeoMetadata.RouteConfig.TryGetValue(normalizedRoute, out var config))
+        if (RouteConstants.SeoMetadata.RouteConfig.TryGetValue(route, out var config))
         {
-            return config.Item2;
+            return config.Priority;
         }
-        
+
         return 0.5M;
     }
 

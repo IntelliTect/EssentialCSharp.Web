@@ -27,6 +27,8 @@ export const NON_CONTENT_ROUTES = [
 /**
  * Navigation link definitions for the sidebar.
  * Each link includes href, label, icon class, and active path matching patterns.
+ * Note: ROUTES.TERMS_OF_SERVICE is intentionally excluded from this list —
+ * it is a legal page linked in the footer, not a primary navigation destination.
  */
 export const NAVIGATION_LINKS = [
     {

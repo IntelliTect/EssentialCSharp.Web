@@ -1,15 +1,18 @@
+using System.Collections.Frozen;
+using DotnetSitemapGenerator;
+
 namespace EssentialCSharp.Web.Constants;
 
 /// <summary>
 /// Centralized definition of application routes and their metadata.
-/// This constant provides a single source of truth for route paths,
-/// making it easier to maintain and update routes across the application.
+/// This is the single source of truth for static page route paths.
+/// Update these whenever a static page is added, removed, or renamed.
 /// </summary>
 public static class RouteConstants
 {
     /// <summary>
     /// Static page routes that are not content pages (e.g., informational, utility pages).
-    /// Content pages are dynamically loaded from sitemap.json.
+    /// Content pages are dynamically discovered from sitemap.json.
     /// </summary>
     public static class StaticPages
     {
@@ -21,56 +24,36 @@ public static class RouteConstants
     }
 
     /// <summary>
-    /// Set of non-content route paths. Use this to determine if a requested path
-    /// is a static page (non-content) or a content page (from sitemap).
+    /// Immutable set of non-content route paths. Use to determine if a requested path
+    /// is a static page (non-content) rather than a content page (from sitemap).
     /// </summary>
-    public static readonly HashSet<string> NonContentRoutes = new(StringComparer.OrdinalIgnoreCase)
+    public static readonly FrozenSet<string> NonContentRoutes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         StaticPages.Home,
         StaticPages.About,
         StaticPages.Guidelines,
         StaticPages.Announcements,
         StaticPages.TermsOfService
-    };
+    }.ToFrozenSet();
 
     /// <summary>
-    /// SEO metadata for routes used in sitemap generation.
-    /// Maps route paths to their change frequency and priority values.
+    /// SEO metadata for static routes used in sitemap.xml generation.
     /// </summary>
     public static class SeoMetadata
     {
-        public enum ChangeFrequency
-        {
-            Always,
-            Hourly,
-            Daily,
-            Weekly,
-            Monthly,
-            Yearly,
-            Never
-        }
-
         /// <summary>
-        /// Maps route paths to (ChangeFrequency, Priority) tuples for sitemap.xml generation.
-        /// Priority is a decimal value between 0.0 and 1.0 (0.5 is the default).
+        /// Immutable map of route paths to (ChangeFrequency, Priority) tuples.
+        /// Keys include the leading slash (e.g. "/home") to match how ASP.NET Core
+        /// exposes routes. Priority is 0.0–1.0; 0.5 is the sitemap default.
         /// </summary>
-        public static readonly Dictionary<string, (ChangeFrequency, decimal)> RouteConfig =
-            new(StringComparer.OrdinalIgnoreCase)
+        public static readonly FrozenDictionary<string, (ChangeFrequency Frequency, decimal Priority)> RouteConfig =
+            new Dictionary<string, (ChangeFrequency, decimal)>(StringComparer.OrdinalIgnoreCase)
             {
-                { StaticPages.Home, (ChangeFrequency.Monthly, 0.5m) },
-                { StaticPages.About, (ChangeFrequency.Monthly, 0.5m) },
-                { StaticPages.Guidelines, (ChangeFrequency.Monthly, 0.9m) },
+                { StaticPages.Home,          (ChangeFrequency.Monthly, 0.5m) },
+                { StaticPages.About,         (ChangeFrequency.Monthly, 0.5m) },
+                { StaticPages.Guidelines,    (ChangeFrequency.Monthly, 0.9m) },
                 { StaticPages.Announcements, (ChangeFrequency.Monthly, 0.5m) },
-                { StaticPages.TermsOfService, (ChangeFrequency.Yearly, 0.2m) }
-            };
-    }
-
-    /// <summary>
-    /// Determines if the given path represents a content page (from sitemap)
-    /// versus a static page (non-content).
-    /// </summary>
-    public static bool IsContentPage(string path)
-    {
-        return !NonContentRoutes.Contains(path);
+                { StaticPages.TermsOfService,(ChangeFrequency.Yearly,  0.2m) }
+            }.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
     }
 }

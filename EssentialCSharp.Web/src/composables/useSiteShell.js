@@ -1,6 +1,6 @@
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useWindowSize } from "./useWindowSize.js";
-import { NON_CONTENT_ROUTES } from "../constants/routes.js";
+import { isContentPagePath } from "../constants/routes.js";
 
 const SMALL_SCREEN_SIZE = 768;
 
@@ -75,17 +75,11 @@ export function useSiteShell() {
     
     /**
      * Determines if the current page is a content page (from sitemap) or a static page.
-     * Checks against the NON_CONTENT_ROUTES array and falls back to percentComplete check
-     * for additional verification.
+     * Checks against the NON_CONTENT_ROUTES array via isContentPagePath and falls back
+     * to percentComplete check for additional verification that content data is loaded.
      */
     const isContentPage = computed(() => {
-        const currentPath = window.location.pathname.toLowerCase();
-        const isStaticPage = NON_CONTENT_ROUTES.some(route => 
-            currentPath === route.toLowerCase() || 
-            currentPath.startsWith(route.toLowerCase() + '/')
-        );
-        
-        return !isStaticPage && percentComplete.value !== null;
+        return isContentPagePath(window.location.pathname) && percentComplete.value !== null;
     });
 
     for (const item of currentPage) {
