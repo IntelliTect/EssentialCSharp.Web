@@ -34,7 +34,7 @@ public static class RouteConstants
         StaticPages.Guidelines,
         StaticPages.Announcements,
         StaticPages.TermsOfService
-    }.ToFrozenSet();
+    }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// SEO metadata for static routes used in sitemap.xml generation.
