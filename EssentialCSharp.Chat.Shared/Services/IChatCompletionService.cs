@@ -7,6 +7,8 @@ public interface IChatCompletionService
 {
     bool IsAvailable { get; }
 
+    bool SupportsContextualSearch { get; }
+
     Task<(string response, string responseId)> GetChatCompletion(
         string prompt,
         string? systemPrompt = null,

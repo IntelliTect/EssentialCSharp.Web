@@ -23,6 +23,7 @@ public partial class LocalChatService : IChatCompletionService, IDisposable
     private readonly MemoryCache _ConversationHistory = new(new MemoryCacheOptions { SizeLimit = MaxConversationEntries });
 
     public bool IsAvailable => true;
+    public bool SupportsContextualSearch => false;
 
     public LocalChatService(IOptions<AIOptions> options, IHttpClientFactory httpClientFactory, ILogger<LocalChatService> logger)
     {
@@ -50,6 +51,11 @@ public partial class LocalChatService : IChatCompletionService, IDisposable
         string? endUserId = null,
         CancellationToken cancellationToken = default)
     {
+        if (enableContextualSearch)
+        {
+            throw new NotSupportedException("Local AI backend does not support contextual search.");
+        }
+
         var (client, history, jsonPayload) = PrepareRequest(prompt, systemPrompt, previousResponseId);
 
         HttpResponseMessage response;
@@ -129,6 +135,11 @@ public partial class LocalChatService : IChatCompletionService, IDisposable
         string? endUserId = null,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        if (enableContextualSearch)
+        {
+            throw new NotSupportedException("Local AI backend does not support contextual search.");
+        }
+
         var (response, responseId) = await GetChatCompletion(
             prompt,
             systemPrompt,

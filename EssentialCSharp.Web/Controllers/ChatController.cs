@@ -90,6 +90,9 @@ public partial class ChatController : ControllerBase
         if (!_ChatService.IsAvailable)
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "Chat service unavailable", errorCode = "chat_unavailable" });
 
+        if (request.EnableContextualSearch && !_ChatService.SupportsContextualSearch)
+            return BadRequest(new { error = "Contextual search is not supported by the selected chat backend.", errorCode = "contextual_search_unsupported" });
+
         try
         {
             var (response, responseId) = await _ChatService.GetChatCompletion(
@@ -167,6 +170,14 @@ public partial class ChatController : ControllerBase
             Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
             Response.ContentType = "application/json";
             await Response.WriteAsJsonAsync(new { error = "Chat service unavailable", errorCode = "chat_unavailable" }, CancellationToken.None);
+            return;
+        }
+
+        if (request.EnableContextualSearch && !_ChatService.SupportsContextualSearch)
+        {
+            Response.StatusCode = StatusCodes.Status400BadRequest;
+            Response.ContentType = "application/json";
+            await Response.WriteAsJsonAsync(new { error = "Contextual search is not supported by the selected chat backend.", errorCode = "contextual_search_unsupported" }, cancellationToken);
             return;
         }
 

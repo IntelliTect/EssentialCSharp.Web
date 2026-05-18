@@ -1,6 +1,7 @@
 using System.Data.Common;
 using EssentialCSharp.Chat.Common.Services;
 using EssentialCSharp.Web.Data;
+using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using TUnit.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
@@ -104,6 +105,11 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
             // affected by developer AI configuration or environment variables.
             services.RemoveAll<IChatCompletionService>();
             services.AddSingleton<IChatCompletionService, UnavailableChatService>();
+
+            // Keep chat contract tests off the real hCaptcha network path so failures reflect
+            // chat availability behavior rather than captcha service reachability.
+            services.RemoveAll<ICaptchaService>();
+            services.AddSingleton<ICaptchaService, PassingCaptchaService>();
         });
     }
 
@@ -164,5 +170,20 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
         }
 
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    }
+
+    private sealed class PassingCaptchaService : ICaptchaService
+    {
+        private static readonly HCaptchaResult _Success = new()
+        {
+            Success = true,
+            Hostname = "localhost"
+        };
+
+        public Task<HCaptchaResult?> VerifyAsync(string? response, CancellationToken cancellationToken = default) =>
+            Task.FromResult<HCaptchaResult?>(_Success);
+
+        public Task<HCaptchaResult?> VerifyAsync(string? response, string? remoteIp, CancellationToken cancellationToken = default) =>
+            Task.FromResult<HCaptchaResult?>(_Success);
     }
 }

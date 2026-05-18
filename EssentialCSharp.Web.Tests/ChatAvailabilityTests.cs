@@ -4,7 +4,6 @@ using System.Text.Json;
 
 namespace EssentialCSharp.Web.Tests;
 
-[NotInParallel("ChatAvailabilityTests")]
 public class ChatAvailabilityTests : IntegrationTestBase
 {
     private const string HCaptchaTestToken = "10000000-aaaa-bbbb-cccc-000000000001";

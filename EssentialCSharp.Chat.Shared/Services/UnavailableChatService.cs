@@ -6,6 +6,7 @@ namespace EssentialCSharp.Chat.Common.Services;
 public class UnavailableChatService : IChatCompletionService
 {
     public bool IsAvailable => false;
+    public bool SupportsContextualSearch => false;
 
     public Task<(string response, string responseId)> GetChatCompletion(
         string prompt,

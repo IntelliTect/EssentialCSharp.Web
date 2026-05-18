@@ -23,6 +23,7 @@ public partial class AIChatService : IChatCompletionService
     private readonly ILogger<AIChatService> _Logger;
     private readonly FrozenSet<string> _AllowedMcpTools;
     public bool IsAvailable => true;
+    public bool SupportsContextualSearch => true;
 
     public AIChatService(IOptions<AIOptions> options, AISearchService searchService, AzureOpenAIClient azureClient, ILogger<AIChatService> logger)
     {

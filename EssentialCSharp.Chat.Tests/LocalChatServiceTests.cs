@@ -49,6 +49,17 @@ public class LocalChatServiceTests
     }
 
     [Test]
+    public async Task LocalChatService_DoesNotSupportContextualSearch()
+    {
+        var (service, client) = CreateService(new RecordingHttpMessageHandler([], []));
+        using var clientScope = client;
+        using var serviceScope = service;
+
+        await Assert.That(service.SupportsContextualSearch).IsFalse();
+        await Assert.ThrowsAsync<NotSupportedException>(() => service.GetChatCompletion("hello", enableContextualSearch: true));
+    }
+
+    [Test]
     public async Task GetChatCompletion_WhenBackendReturnsNonSuccess_ThrowsChatBackendUnavailableException()
     {
         var requests = new List<HttpRequestMessage>();
