@@ -44,13 +44,9 @@ public class RouteConfigurationServiceTests
             return routeConfigurationService.GetIndexableRoutes().ToList();
         });
 
-        // Assert - API routes should NOT be included
-        await Assert.That(routes).DoesNotContain(route => 
-            route.Contains("api/chat", StringComparison.OrdinalIgnoreCase));
-        await Assert.That(routes).DoesNotContain(route => 
-            route.Contains("api/listingsourcecode", StringComparison.OrdinalIgnoreCase));
-        await Assert.That(routes).DoesNotContain(route => 
-            route.Contains("api/mcptoken", StringComparison.OrdinalIgnoreCase));
+        // Assert - no indexable route should start with api/ (matches the actual filter behavior)
+        await Assert.That(routes).DoesNotContain(route =>
+            route.StartsWith("api/", StringComparison.OrdinalIgnoreCase));
     }
 
     [Test]
