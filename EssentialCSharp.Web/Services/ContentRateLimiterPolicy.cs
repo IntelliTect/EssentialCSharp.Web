@@ -26,7 +26,7 @@ internal sealed class ContentRateLimiterPolicy : IRateLimiterPolicy<string>
         // Use stable user ID (GUID) for authenticated users so the bucket survives
         // username changes and doesn't conflate login/logout with scraping.
         string partitionKey = isAuthenticated
-            ? $"user:{httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? httpContext.User.Identity!.Name ?? "unknown"}"
+            ? $"user:{httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown-user"}"
             : $"ip:{httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip"}";
 
         int perMinuteLimit = isAuthenticated ? AuthenticatedPerMinute : AnonymousPerMinute;

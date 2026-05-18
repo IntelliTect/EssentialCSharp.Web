@@ -3,21 +3,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace EssentialCSharp.Web.Tests;
 
-[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
-public class RouteConfigurationServiceTests
+public class RouteConfigurationServiceTests : IntegrationTestBase
 {
-    private readonly WebApplicationFactory _Factory;
-
-    public RouteConfigurationServiceTests(WebApplicationFactory factory)
-    {
-        _Factory = factory;
-    }
-
     [Test]
     public async Task GetStaticRoutes_ShouldReturnExpectedRoutes()
     {
         // Act
-        var routes = _Factory.InServiceScope(serviceProvider =>
+        var routes = InServiceScope(serviceProvider =>
         {
             var routeConfigurationService = serviceProvider.GetRequiredService<IRouteConfigurationService>();
             return routeConfigurationService.GetStaticRoutes().ToList();
@@ -38,7 +30,7 @@ public class RouteConfigurationServiceTests
     public async Task GetIndexableRoutes_ShouldExcludeApiControllerRoutes()
     {
         // Act
-        var routes = _Factory.InServiceScope(serviceProvider =>
+        var routes = InServiceScope(serviceProvider =>
         {
             var routeConfigurationService = serviceProvider.GetRequiredService<IRouteConfigurationService>();
             return routeConfigurationService.GetIndexableRoutes().ToList();
@@ -53,7 +45,7 @@ public class RouteConfigurationServiceTests
     public async Task GetIndexableRoutes_ShouldExcludeParameterizedRoutes()
     {
         // Act
-        var routes = _Factory.InServiceScope(serviceProvider =>
+        var routes = InServiceScope(serviceProvider =>
         {
             var routeConfigurationService = serviceProvider.GetRequiredService<IRouteConfigurationService>();
             return routeConfigurationService.GetIndexableRoutes().ToList();
@@ -71,7 +63,7 @@ public class RouteConfigurationServiceTests
     public async Task GetIndexableRoutes_ShouldIncludeValidContentRoutes()
     {
         // Act
-        var routes = _Factory.InServiceScope(serviceProvider =>
+        var routes = InServiceScope(serviceProvider =>
         {
             var routeConfigurationService = serviceProvider.GetRequiredService<IRouteConfigurationService>();
             return routeConfigurationService.GetIndexableRoutes().ToList();
@@ -90,13 +82,13 @@ public class RouteConfigurationServiceTests
     public async Task GetStaticRoutes_StillReturnsAllRoutes_ForBackwardCompatibility()
     {
         // Act
-        var staticRoutes = _Factory.InServiceScope(serviceProvider =>
+        var staticRoutes = InServiceScope(serviceProvider =>
         {
             var routeConfigurationService = serviceProvider.GetRequiredService<IRouteConfigurationService>();
             return routeConfigurationService.GetStaticRoutes().ToList();
         });
 
-        var indexableRoutes = _Factory.InServiceScope(serviceProvider =>
+        var indexableRoutes = InServiceScope(serviceProvider =>
         {
             var routeConfigurationService = serviceProvider.GetRequiredService<IRouteConfigurationService>();
             return routeConfigurationService.GetIndexableRoutes().ToList();
@@ -106,3 +98,4 @@ public class RouteConfigurationServiceTests
         await Assert.That(staticRoutes.Count).IsGreaterThan(indexableRoutes.Count);
     }
 }
+

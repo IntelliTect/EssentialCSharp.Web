@@ -13,6 +13,7 @@
     <PackageReference Include="Moq" />
     <PackageReference Include="Moq.AutoMock" />
     <PackageReference Include="TUnit" />
+    <PackageReference Include="TUnit.AspNetCore" />
     <PackageReference Include="Newtonsoft.Json" />
   </ItemGroup>
 

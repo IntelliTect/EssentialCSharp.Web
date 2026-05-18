@@ -6,10 +6,121 @@ import { ref, nextTick, watch, onMounted, onUnmounted } from "vue";
 const errorIconClassByType = {
     'rate-limit': 'fas fa-clock',
     'auth-error': 'fas fa-lock',
+    'captcha-error': 'fas fa-shield-alt',
     'validation-error': 'fas fa-exclamation-circle',
     'network-error': 'fas fa-wifi',
     'connection-error': 'fas fa-plug'
 };
+
+// hCaptcha integration — invisible widget renders once and is reused across messages.
+// When HCAPTCHA_SITE_KEY is null (dev / captcha not configured), all captcha calls are no-ops.
+const captchaSiteKey = window.HCAPTCHA_SITE_KEY || null;
+let captchaWidgetId = null;
+let captchaTokenResolve = null;
+let captchaTokenReject = null;
+let captchaPending = false; // prevents concurrent token requests overwriting promise callbacks
+let captchaRequestGeneration = 0;
+const CAPTCHA_WIDGET_READY_TIMEOUT_MS = 15_000;
+
+// Resolves once the widget has rendered.
+let captchaWidgetReadyResolve = null;
+const captchaWidgetReady = captchaSiteKey
+    ? new Promise((resolve) => { captchaWidgetReadyResolve = resolve; })
+    : Promise.resolve();
+
+function awaitCaptchaWidgetReady() {
+    if (!captchaSiteKey) return Promise.resolve();
+    if (captchaWidgetId !== null) return Promise.resolve();
+
+    const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('captcha-unavailable')), CAPTCHA_WIDGET_READY_TIMEOUT_MS);
+    });
+
+    return Promise.race([captchaWidgetReady, timeoutPromise]);
+}
+
+function initCaptchaWidget() {
+    if (!captchaSiteKey) return;
+    // Guard: only render once (widget lives outside the v-if dialog overlay)
+    if (captchaWidgetId !== null) return;
+    const container = document.getElementById('chat-captcha-container');
+    if (!container) return;
+
+    window.EssentialCSharp.HCaptcha.whenHcaptchaReady(() => {
+        if (captchaWidgetId !== null) return; // double-check after async wait
+        captchaWidgetId = window.hcaptcha.render(container, {
+            sitekey: captchaSiteKey,
+            size: 'invisible',
+            callback: (token) => {
+                const resolve = captchaTokenResolve;
+                captchaTokenResolve = null;
+                captchaTokenReject = null;
+                resolve?.(token);
+            },
+            'expired-callback': () => {
+                const reject = captchaTokenReject;
+                captchaTokenResolve = null;
+                captchaTokenReject = null;
+                reject?.(new Error('captcha-expired'));
+            },
+            'error-callback': () => {
+                const reject = captchaTokenReject;
+                captchaTokenResolve = null;
+                captchaTokenReject = null;
+                reject?.(new Error('captcha-error'));
+            }
+        });
+        captchaWidgetReadyResolve?.(); // unblock any getCaptchaToken() calls waiting for the widget
+    });
+}
+
+/**
+ * Returns a fresh hCaptcha token, or null if captcha is not configured.
+ * Waits for the widget to finish rendering if it has not yet (handles slow script loads).
+ * Rejects with 'captcha-concurrent' if a token request is already in-flight.
+ * Rejects with 'captcha-unavailable' if the widget never becomes ready.
+ * Rejects with 'captcha-expired' or 'captcha-error' via hCaptcha's own callbacks.
+ */
+function getCaptchaToken() {
+    if (!captchaSiteKey) return Promise.resolve(null);
+    if (captchaPending) return Promise.reject(new Error('captcha-concurrent'));
+    captchaPending = true;
+    const requestGeneration = ++captchaRequestGeneration;
+
+    // Chain onto captchaWidgetReady so calls made before the widget finishes loading
+    // wait rather than immediately returning null and causing a 403.
+    return awaitCaptchaWidgetReady().then(() => {
+        if (requestGeneration !== captchaRequestGeneration) {
+            captchaPending = false;
+            return Promise.reject(new Error('captcha-stale'));
+        }
+
+        return new Promise((resolve, reject) => {
+            captchaTokenResolve = (token) => {
+                captchaPending = false;
+                resolve(token);
+            };
+            captchaTokenReject = (err) => {
+                captchaPending = false;
+                reject(err);
+            };
+            window.hcaptcha.execute(captchaWidgetId);
+        });
+    }).catch((error) => {
+        captchaPending = false;
+        throw error;
+    });
+}
+
+function resetCaptchaWidget() {
+    captchaRequestGeneration++;
+    captchaPending = false;
+    captchaTokenResolve = null;
+    captchaTokenReject = null;
+    if (captchaWidgetId !== null && typeof window.hcaptcha?.reset === 'function') {
+        window.hcaptcha.reset(captchaWidgetId);
+    }
+}
 
 export function useChatWidget() {
     // Authentication state
@@ -109,6 +220,7 @@ export function useChatWidget() {
                 chatInputField.value.focus();
             }
             scrollToBottom();
+            initCaptchaWidget();
         });
     }
 
@@ -212,10 +324,14 @@ export function useChatWidget() {
 
         let reader = null;
         try {
+            // Obtain invisible hCaptcha token (null when captcha is not configured)
+            const captchaResponse = await getCaptchaToken();
+
             const requestBody = {
                 message: userMessage,
                 enableContextualSearch: true,
-                previousResponseId: lastResponseId.value
+                previousResponseId: lastResponseId.value,
+                captchaResponse: captchaResponse
             };
 
             const response = await fetch('/api/chat/stream', {
@@ -229,6 +345,10 @@ export function useChatWidget() {
             if (!response.ok) {
                 if (response.status === 401) {
                     throw new Error('Authentication required');
+                } else if (response.status === 403) {
+                    throw new Error('captcha-failed: Human verification failed. Please try again.');
+                } else if (response.status === 503) {
+                    throw new Error('captcha-unavailable: Human verification is temporarily unavailable. Please try again later.');
                 } else if (response.status === 429) {
                     // Handle rate limiting - simple error message without captcha
                     let errorData;
@@ -330,6 +450,11 @@ export function useChatWidget() {
                 errorMessage = 'You must be logged in to use the chat feature. Please log in and try again.';
                 errorType = 'auth-error';
                 isAuthenticated.value = false; // Update auth state
+            } else if (error.message?.startsWith('captcha-')) {
+                errorMessage = error.message.includes('captcha-unavailable')
+                    ? 'Human verification is temporarily unavailable. Please try again later.'
+                    : 'Human verification failed. Please try again.';
+                errorType = 'captcha-error';
             } else if (error.message?.includes('Rate limit exceeded')) {
                 errorMessage = error.message; // Use the specific rate limit message with timing
                 errorType = 'rate-limit';
@@ -358,6 +483,9 @@ export function useChatWidget() {
                 }
             }
             
+            // Reset the captcha widget so a fresh token is obtained for the next message
+            resetCaptchaWidget();
+
             // Ensure typing indicator is hidden
             isTyping.value = false;
             
@@ -379,6 +507,7 @@ export function useChatWidget() {
         isTyping,
         chatMessagesEl,
         chatInputField,
+        captchaSiteKey,
 
         // Methods
         openChatDialog,

@@ -1,10 +1,12 @@
 using Azure.AI.OpenAI;
 using Azure.Core;
 using Azure.Identity;
+using EssentialCSharp.Chat.Common.Models;
 using EssentialCSharp.Chat.Common.Services;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Npgsql;
 
@@ -65,6 +67,15 @@ public static class ServiceCollectionExtensions
             .UseOpenTelemetry();
 #pragma warning restore SKEXP0010
 
+        // Ensure options are available even when caller provides AIOptions directly.
+        services.AddOptions<EmbeddingRetryOptions>()
+            .ValidateDataAnnotations()
+            .Validate(options =>
+            {
+                options.Validate();
+                return true;
+            }, "Embedding retry configuration is invalid.");
+
         // Register shared AI services
         services.AddSingleton<EmbeddingService>();
         services.AddSingleton<AISearchService>();
@@ -88,6 +99,17 @@ public static class ServiceCollectionExtensions
     {
         // Configure AI options from configuration
         services.Configure<AIOptions>(configuration.GetSection("AIOptions"));
+
+        // Configure retry options from configuration section.
+        // Environment variables can override via AIOptions__EmbeddingRetry__*.
+        services.AddOptions<EmbeddingRetryOptions>()
+            .Bind(configuration.GetSection(EmbeddingRetryOptions.SectionPath))
+            .ValidateDataAnnotations()
+            .Validate(options =>
+            {
+                options.Validate();
+                return true;
+            }, "Embedding retry configuration is invalid.");
 
         var aiOptions = configuration.GetSection("AIOptions").Get<AIOptions>();
         if (aiOptions == null)
