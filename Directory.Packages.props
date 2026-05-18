@@ -8,6 +8,7 @@
          to avoid NU1900 errors when the private Azure DevOps feed is unavailable (e.g. CI without credentials). -->
     <NuGetAudit>true</NuGetAudit>
     <NuGetAuditSources Condition="'$(AccessToNugetFeed)' != 'true'">https://api.nuget.org/v3/index.json</NuGetAuditSources>
+    <RestoreSources Condition="'$(AccessToNugetFeed)' != 'true'">https://api.nuget.org/v3/index.json</RestoreSources>
   </PropertyGroup>
   <ItemGroup Condition="$(AccessToNugetFeed)">
     <PackageVersion Include="ContentFeedNuget" Version="$(ToolingPackagesVersion)" />
