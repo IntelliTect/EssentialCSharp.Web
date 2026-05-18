@@ -12,7 +12,7 @@ This guide will help you set up your local development environment for working o
 For basic browsing and UI development, no secrets are needed. The database connection and HCaptcha test keys are already configured in `appsettings.Development.json`.
 
 1. Clone the repository.
-2. If you have access to the private NuGet feed, set `<AccessToNugetFeed>true</AccessToNugetFeed>` in [Directory.Packages.props](../Directory.Packages.props).
+2. (Optional) If you have access to the private NuGet feed, set `<AccessToNugetFeed>true</AccessToNugetFeed>` in [Directory.Packages.props](../Directory.Packages.props) to include internal packages. Without this, the app runs with placeholder content but security audits still function.
 3. Run the project.
 
 > **Tip:** Use the [dotnet secret manager](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets#set-a-secret) for any secrets below:

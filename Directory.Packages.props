@@ -4,10 +4,10 @@
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
     <ToolingPackagesVersion>1.1.1.19071</ToolingPackagesVersion>
     <AccessToNugetFeed Condition="'$(AccessToNugetFeed)' == ''">false</AccessToNugetFeed>
-    <!-- Disable NuGet vulnerability audit when the private feed is unavailable (e.g. CI without credentials).
-         NuGet audit queries all sources in nuget.config regardless of RestoreSources, causing NU1900 which is
-         escalated to an error by TreatWarningsAsErrors. -->
-    <NuGetAudit Condition="'$(AccessToNugetFeed)' != 'true'">false</NuGetAudit>
+    <!-- Enable NuGet vulnerability audit on public nuget.org feed. Restrict to 'nuget' source to avoid
+         NU1900 errors when the private Azure DevOps feed is unavailable (e.g. CI without credentials). -->
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditSources Condition="'$(AccessToNugetFeed)' != 'true'">nuget</NuGetAuditSources>
   </PropertyGroup>
   <ItemGroup Condition="$(AccessToNugetFeed)">
     <PackageVersion Include="ContentFeedNuget" Version="$(ToolingPackagesVersion)" />
