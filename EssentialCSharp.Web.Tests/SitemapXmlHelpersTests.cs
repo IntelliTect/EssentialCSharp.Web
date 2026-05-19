@@ -3,20 +3,10 @@ using DotnetSitemapGenerator;
 using EssentialCSharp.Web.Helpers;
 using EssentialCSharp.Web.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 namespace EssentialCSharp.Web.Tests;
 
-[NotInParallel("SitemapTests")]
-[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
-public class SitemapXmlHelpersTests
+public class SitemapXmlHelpersTests : IntegrationTestBase
 {
-    private readonly WebApplicationFactory _Factory;
-
-    public SitemapXmlHelpersTests(WebApplicationFactory factory)
-    {
-        _Factory = factory;
-    }
-
     [Test]
     public async Task EnsureSitemapHealthy_WithValidSiteMappings_DoesNotThrow()
     {
@@ -30,6 +20,48 @@ public class SitemapXmlHelpersTests
 
         // Act & Assert
         await Assert.That(() => SitemapXmlHelpers.EnsureSitemapHealthy(siteMappings)).ThrowsNothing();
+    }
+
+    [Test]
+    public async Task GenerateSitemapXml_DoesNotIncludeApiRoutes()
+    {
+        // Arrange
+        var siteMappings = new List<SiteMapping> { CreateSiteMapping(1, 1, true) };
+        var baseUrl = "https://test.example.com/";
+
+        // Act & Assert
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        SitemapXmlHelpers.GenerateSitemapXml(
+            siteMappings,
+            routeConfigurationService,
+            baseUrl,
+            out var nodes);
+
+        var allUrls = nodes.Select(n => n.Url).ToList();
+
+        // Verify no API routes are included (assert on the /api/ pattern, not specific controller names)
+        await Assert.That(allUrls).DoesNotContain(url => url.Contains("/api/", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Test]
+    public async Task GenerateSitemapXml_DoesNotIncludeParameterizedRoutes()
+    {
+        // Arrange
+        var siteMappings = new List<SiteMapping> { CreateSiteMapping(1, 1, true) };
+        var baseUrl = "https://test.example.com/";
+
+        // Act & Assert
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        SitemapXmlHelpers.GenerateSitemapXml(
+            siteMappings,
+            routeConfigurationService,
+            baseUrl,
+            out var nodes);
+
+        var allUrls = nodes.Select(n => n.Url).ToList();
+
+        // Verify no parameterized routes (with {}) are included
+        await Assert.That(allUrls).DoesNotContain(url => url.Contains('{'));
     }
 
     [Test]
@@ -73,7 +105,7 @@ public class SitemapXmlHelpersTests
         var baseUrl = "https://test.example.com/";
 
         // Act & Assert
-        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
             siteMappings,
             routeConfigurationService,
@@ -99,7 +131,7 @@ public class SitemapXmlHelpersTests
         var baseUrl = "https://test.example.com/";
 
         // Act & Assert
-        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
             siteMappings,
             routeConfigurationService,
@@ -131,7 +163,7 @@ public class SitemapXmlHelpersTests
         };
 
         // Act & Assert
-        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
             siteMappings,
             routeConfigurationService,
@@ -153,7 +185,7 @@ public class SitemapXmlHelpersTests
         var baseUrl = "https://test.example.com/";
 
         // Act & Assert
-        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
             siteMappings,
             routeConfigurationService,
@@ -174,7 +206,7 @@ public class SitemapXmlHelpersTests
         var baseUrl = "https://test.example.com/";
 
         // Act & Assert
-        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
             siteMappings,
             routeConfigurationService,
@@ -195,7 +227,7 @@ public class SitemapXmlHelpersTests
         var baseUrl = "https://test.example.com/";
 
         // Act
-        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
             siteMappings,
             routeConfigurationService,
@@ -221,7 +253,7 @@ public class SitemapXmlHelpersTests
         };
 
         // Act
-        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
             siteMappings,
             routeConfigurationService,
@@ -244,7 +276,7 @@ public class SitemapXmlHelpersTests
         };
 
         // Act
-        var routeConfigurationService = _Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
         SitemapXmlHelpers.GenerateSitemapXml(
             siteMappings,
             routeConfigurationService,

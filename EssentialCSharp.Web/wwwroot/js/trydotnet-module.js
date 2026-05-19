@@ -17,6 +17,38 @@ const ERROR_MESSAGES = {
     fetchFailed: 'Could not load the listing source code. Please try again.',
 };
 
+function getAppInsights() {
+    if (typeof window.ecsGetAppInsights === 'function') {
+        return window.ecsGetAppInsights();
+    }
+    return null;
+}
+
+function getCorrelationContext() {
+    if (typeof window.ecsGetCorrelationContext === 'function') {
+        return window.ecsGetCorrelationContext();
+    }
+    return null;
+}
+
+function trackTryEvent(name, properties = {}, measurements = {}) {
+    const appInsights = getAppInsights();
+    if (!appInsights || typeof appInsights.trackEvent !== 'function') {
+        // No-op when the SDK is unavailable (consent denied, or SDK still loading).
+        // Known limitation: if consent is granted but the CDN script hasn't finished
+        // downloading yet, TryCodeRunnerRequested/TryCodeRunnerCompleted for a run
+        // started during that window may be dropped or mismatched.  This is accepted
+        // as a low-frequency edge case for v1.
+        return;
+    }
+
+    try {
+        appInsights.trackEvent({ name }, properties, measurements);
+    } catch (error) {
+        console.warn('Failed to track Try telemetry event:', error);
+    }
+}
+
 /**
  * Races a promise against a timeout. Rejects with the given message if the
  * timeout fires first.
@@ -283,7 +315,8 @@ export function useTryDotNet() {
         const configuration = {
             hostOrigin: hostOrigin,
             trydotnetOrigin: getTryDotNetOrigin(),
-            enableLogging: false
+            enableLogging: false,
+            correlationContext: getCorrelationContext()
         };
 
         session = await withTimeout(
@@ -353,12 +386,31 @@ export function useTryDotNet() {
         codeRunnerOutput.value = 'Running...';
         codeRunnerOutputError.value = false;
         isRunning.value = true;
+        const startedAt = performance.now();
+        const listingInfo = currentListingInfo.value;
+        const eventProperties = listingInfo
+            ? {
+                chapter: String(listingInfo.chapter),
+                listing: String(listingInfo.listing),
+                listingId: `${listingInfo.chapter}.${listingInfo.listing}`
+            }
+            : {};
+
+        trackTryEvent('TryCodeRunnerRequested', eventProperties);
 
         try {
             await withTimeout(session.run(), RUN_TIMEOUT, ERROR_MESSAGES.runTimeout);
+            const durationMs = Math.round(performance.now() - startedAt);
+            trackTryEvent('TryCodeRunnerCompleted', { ...eventProperties, success: 'true' }, { durationMs });
         } catch (error) {
             codeRunnerOutput.value = error.message;
             codeRunnerOutputError.value = true;
+            const durationMs = Math.round(performance.now() - startedAt);
+            trackTryEvent(
+                'TryCodeRunnerCompleted',
+                { ...eventProperties, success: 'false', errorType: error?.name ?? 'Error' },
+                { durationMs }
+            );
         } finally {
             isRunning.value = false;
         }
@@ -470,6 +522,10 @@ export function useTryDotNet() {
         codeRunnerOutputError.value = false;
 
         const listingKey = `${chapter}.${listing}`;
+        trackTryEvent(
+            'TryCodeRunnerOpened',
+            { chapter: String(chapter), listing: String(listing), listingId: listingKey }
+        );
 
         try {
             // Load the library if not already loaded

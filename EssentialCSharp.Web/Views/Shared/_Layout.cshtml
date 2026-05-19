@@ -1,14 +1,17 @@
 @using EssentialCSharp.Web.Extensions
 @using System.Globalization
+@using System.Security.Claims
 @using EssentialCSharp.Web.Services
 @using IntelliTect.Multitool
 @using EssentialCSharp.Common
 @using Microsoft.AspNetCore.Identity
 @using EssentialCSharp.Web.Areas.Identity.Data
 @using Microsoft.Extensions.Configuration
+@using Microsoft.Extensions.Options
 @inject ISiteMappingService _SiteMappings
 @inject SignInManager<EssentialCSharpWebUser> SignInManager
 @inject IConfiguration Configuration
+@inject IOptions<CaptchaOptions> _CaptchaOptions
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -59,6 +62,16 @@
     <meta name="theme-color" content="#ffffff">
     <!-- Cookie Consent Manager - Load before analytics -->
     <script src="~/js/consent-manager.js" asp-append-version="true"></script>
+    <script src="~/js/appinsights-manager.js" asp-append-version="true"></script>
+    @{
+        string? authUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    }
+    @if (!string.IsNullOrEmpty(authUserId))
+    {
+        // Scoped to a <meta> tag rather than a window global to avoid exposing the stable
+        // user GUID to third-party scripts that enumerate window properties.
+        <meta name="ecs-auth-user-id" content="@authUserId" />
+    }
     
     <!-- Microsoft Clarity - Will be activated based on consent -->
     <script type="text/javascript">
@@ -152,6 +165,7 @@
     <main id="site-layout" class="layout">
         <div id="sidebarContainer" class="background-grey-lighten-2"></div>
         <div class="container my-5 pb-5">
+            <div id="page-share-host"></div>
             <div id="page-nav-host"></div>
             @RenderBody()
         </div>
@@ -170,7 +184,7 @@
                 <a target="_blank" rel="noreferrer noopener" href="https://intellitect.com/about/privacy-policy/">Privacy</a>
             </div>
             <div class="col-12 col-md-auto align-self-end p-2">
-                <a href="javascript:void(0)" onclick="openConsentPreferences()">Cookie Preferences</a>
+                <button type="button" class="btn btn-link p-0 align-baseline" onclick="openConsentPreferences()">Cookie Preferences</button>
             </div>
             <div class="col-12 col-md-auto align-self-end p-2"><a asp-route="TermsOfService">Terms Of Service</a></div>
         </div>
@@ -189,6 +203,10 @@
             var buildLabel = ReleaseDateAttribute.GetReleaseDate() is DateTime date
                 ? TimeZoneInfo.ConvertTimeFromUtc(date, TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time")).ToString("d MMM, yyyy h:mm:ss tt", CultureInfo.InvariantCulture)
                 : null;
+            var chatCaptchaSiteKey = !string.IsNullOrWhiteSpace(_CaptchaOptions.Value.SecretKey)
+                && !string.IsNullOrWhiteSpace(_CaptchaOptions.Value.SiteKey)
+                ? _CaptchaOptions.Value.SiteKey
+                : null;
         }
         window.PERCENT_COMPLETE = @Json.Serialize(percentComplete);
         window.PREVIOUS_PAGE = @Json.Serialize(ViewBag.PreviousPage);
@@ -197,8 +215,10 @@
         window.REFERRAL_ID = @Json.Serialize(ViewBag.ReferralId);
         window.IS_AUTHENTICATED = @Json.Serialize(SignInManager.IsSignedIn(User));
         window.TRYDOTNET_ORIGIN = @Json.Serialize(Configuration["TryDotNet:Origin"]);
+        window.APPLICATIONINSIGHTS_CONNECTION_STRING = @Json.Serialize(Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]);
         window.BUILD_LABEL = @Json.Serialize(buildLabel);
         window.ENABLE_CHAT_WIDGET = @Json.Serialize(!Context.Request.Path.StartsWithSegments("/Identity"));
+        window.HCAPTCHA_SITE_KEY = @Json.Serialize(chatCaptchaSiteKey);
     </script>
     <script src="~/dist/assets/site-shell.js" type="module" asp-append-version="true"></script>
 </body>

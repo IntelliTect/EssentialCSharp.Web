@@ -21,7 +21,6 @@ internal sealed partial class McpRateLimiterPolicy : IRateLimiterPolicy<string>
         if (httpContext.User.Identity?.IsAuthenticated == true)
         {
             string userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? httpContext.User.Identity?.Name
                 ?? "unknown-user";
 
             return RateLimitPartition.GetTokenBucketLimiter(

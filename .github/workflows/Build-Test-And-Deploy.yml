@@ -149,12 +149,13 @@ jobs:
     needs: [deploy-development]
     concurrency:
       group: deploy-production
-      cancel-in-progress: false
+      cancel-in-progress: true
     environment:
       name: "Production"
     permissions:
       id-token: write
       contents: write  # needed for git deploy tag
+      actions: write
 
     steps:
       - uses: actions/checkout@v6
@@ -230,6 +231,63 @@ jobs:
           # --retry-all-errors ensures HTTP 5xx (cold-start 503s) also trigger retries
           curl --fail --retry 10 --retry-delay 15 --retry-all-errors --max-time 30 "https://$FQDN/health"
 
+      - name: Cancel pending deployment workflow runs
+        uses: actions/github-script@v9
+        with:
+          script: |
+            // Cancel pending workflow runs queued from earlier commits.
+            // Uses context.workflow instead of hardcoded filename for resilience.
+            let totalCancelledCount = 0;
+            let page = 1;
+            
+            try {
+              while (true) {
+                const { data } = await github.rest.actions.listWorkflowRuns({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  workflow_id: context.workflow,
+                  status: 'queued',
+                  per_page: 100,
+                  page: page
+                });
+                const runs = data.workflow_runs;
+                
+                if (runs.length === 0) {
+                  break;
+                }
+                
+                for (const run of runs) {
+                  if (run.id === context.runId) {
+                    core.debug(`Skipping current run #${run.id}`);
+                    continue;
+                  }
+                  
+                  try {
+                    core.info(`Cancelling queued run #${run.id} (commit: ${run.head_sha.substring(0, 7)}, branch: ${run.head_branch}, created: ${run.created_at})`);
+                    await github.rest.actions.cancelWorkflowRun({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      run_id: run.id
+                    });
+                    totalCancelledCount++;
+                  } catch (error) {
+                    core.warning(`Failed to cancel run #${run.id}: ${error.message}`);
+                  }
+                }
+                
+                // Last page has fewer results than requested (pagination)
+                if (runs.length < 100) {
+                  break;
+                }
+                page++;
+              }
+            } catch (error) {
+              core.warning(`Failed to list workflow runs: ${error.message}`);
+              core.info('Continuing with deployment despite cancellation script error');
+            }
+            
+            core.info(`Cancelled ${totalCancelledCount} pending workflow run(s)`);
+
       - name: Tag commit as deployed
         run: |
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -246,3 +304,4 @@ jobs:
             az logout
             az cache purge
             az account clear
+

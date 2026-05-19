@@ -12,16 +12,18 @@ namespace EssentialCSharp.Chat.Common.Services;
 /// <summary>
 /// Service for handling AI chat completions using the OpenAI Responses API
 /// </summary>
-public partial class AIChatService
+public partial class AIChatService : IChatCompletionService
 {
     private readonly AIOptions _Options;
     private readonly AzureOpenAIClient _AzureClient;
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-    private readonly OpenAIResponseClient _ResponseClient;
+    private readonly ResponsesClient _ResponseClient;
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     private readonly AISearchService _SearchService;
     private readonly ILogger<AIChatService> _Logger;
     private readonly FrozenSet<string> _AllowedMcpTools;
+    public bool IsAvailable => true;
+    public bool SupportsContextualSearch => true;
 
     public AIChatService(IOptions<AIOptions> options, AISearchService searchService, AzureOpenAIClient azureClient, ILogger<AIChatService> logger)
     {
@@ -34,7 +36,7 @@ public partial class AIChatService
         _AzureClient = azureClient;
 
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        _ResponseClient = _AzureClient.GetOpenAIResponseClient(_Options.ChatDeploymentName);
+        _ResponseClient = _AzureClient.GetResponsesClient();
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     }
 
@@ -47,8 +49,8 @@ public partial class AIChatService
     /// <param name="tools">Optional tools for the AI to use</param>
     /// <param name="reasoningEffortLevel">Optional reasoning effort level for reasoning models</param>
     /// <param name="enableContextualSearch">Enable vector search for contextual information</param>
-    /// <param name="endUserId">Authenticated end-user identifier. Currently reserved for forwarding
-    /// to Azure OpenAI for abuse monitoring once the SDK exposes <c>ResponseCreationOptions.User</c>.</param>
+    /// <param name="endUserId">Forwarded to Azure OpenAI for abuse monitoring and Microsoft Defender
+    /// prompt-shield correlation via <c>CreateResponseOptions.EndUserId</c>.</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The AI response text and response ID for conversation continuity</returns>
     public async Task<(string response, string responseId)> GetChatCompletion(
@@ -78,8 +80,8 @@ public partial class AIChatService
     /// <param name="tools">Optional tools for the AI to use</param>
     /// <param name="reasoningEffortLevel">Optional reasoning effort level for reasoning models</param>
     /// <param name="enableContextualSearch">Enable vector search for contextual information</param>
-    /// <param name="endUserId">Authenticated end-user identifier. Currently reserved for forwarding
-    /// to Azure OpenAI for abuse monitoring once the SDK exposes <c>ResponseCreationOptions.User</c>.</param>
+    /// <param name="endUserId">Forwarded to Azure OpenAI for abuse monitoring and Microsoft Defender
+    /// prompt-shield correlation via <c>CreateResponseOptions.EndUserId</c>.</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>An async enumerable of response text chunks and final response ID</returns>
     public async IAsyncEnumerable<(string text, string? responseId)> GetChatCompletionStream(
@@ -100,12 +102,10 @@ public partial class AIChatService
 
         // Create the streaming response using the Responses API
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        List<ResponseItem> responseItems = [ResponseItem.CreateUserMessageItem(enrichedPrompt)];
+        responseOptions.InputItems.Clear();
+        responseOptions.InputItems.Add(ResponseItem.CreateUserMessageItem(enrichedPrompt));
+        var streamingUpdates = _ResponseClient.CreateResponseStreamingAsync(responseOptions, cancellationToken);
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        var streamingUpdates = _ResponseClient.CreateResponseStreamingAsync(
-            responseItems,
-            options: responseOptions,
-            cancellationToken: cancellationToken);
 
         await foreach (var result in ProcessStreamingUpdatesAsync(streamingUpdates, responseOptions, mcpClient, toolCallDepth: 0, endUserId: endUserId, cancellationToken: cancellationToken))
         {
@@ -181,7 +181,7 @@ public partial class AIChatService
     private async IAsyncEnumerable<(string text, string? responseId)> ProcessStreamingUpdatesAsync(
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         IAsyncEnumerable<StreamingResponseUpdate> streamingUpdates,
-        ResponseCreationOptions responseOptions,
+        CreateResponseOptions responseOptions,
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         McpClient? mcpClient,
         int toolCallDepth = 0,
@@ -247,7 +247,10 @@ public partial class AIChatService
                 outputItems.Add(await ExecuteSingleToolCallAsync(functionCallItem, toolCallDepth, endUserId, mcpClient, cancellationToken));
             }
 
-            var continuationStream = _ResponseClient.CreateResponseStreamingAsync(outputItems, continuationOptions, cancellationToken);
+            continuationOptions.InputItems.Clear();
+            foreach (var outputItem in outputItems)
+                continuationOptions.InputItems.Add(outputItem);
+            var continuationStream = _ResponseClient.CreateResponseStreamingAsync(continuationOptions, cancellationToken);
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
             await foreach (var result in ProcessStreamingUpdatesAsync(continuationStream, continuationOptions, mcpClient, toolCallDepth + 1, endUserId, cancellationToken))
@@ -338,7 +341,7 @@ public partial class AIChatService
     /// Creates response options with optional features
     /// </summary>
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-    private async Task<ResponseCreationOptions> CreateResponseOptionsAsync(
+    private async Task<CreateResponseOptions> CreateResponseOptionsAsync(
         string? systemPrompt = null,
         string? previousResponseId = null,
         IEnumerable<ResponseTool>? tools = null,
@@ -348,8 +351,9 @@ public partial class AIChatService
         CancellationToken cancellationToken = default
         )
     {
-        var options = new ResponseCreationOptions();
+        var options = new CreateResponseOptions();
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        options.Model = _Options.ChatDeploymentName;
 
         // Set the system prompt via Instructions — this is stateless across turns when using previous_response_id,
         // preventing accumulation of system messages in the conversation context.
@@ -423,7 +427,7 @@ public partial class AIChatService
     private async Task<(string response, string responseId)> GetChatCompletionCore(
         string prompt,
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        ResponseCreationOptions responseOptions,
+        CreateResponseOptions responseOptions,
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         McpClient? mcpClient = null,
         string? endUserId = null,
@@ -436,13 +440,13 @@ public partial class AIChatService
         const int MaxToolCallIterations = 10;
         for (int iteration = 0; iteration < MaxToolCallIterations; iteration++)
         {
-            ClientResult<OpenAIResponse> response;
+            ClientResult<ResponseResult> response;
             try
             {
-                response = await _ResponseClient.CreateResponseAsync(
-                    responseItems,
-                    options: responseOptions,
-                    cancellationToken: cancellationToken);
+                responseOptions.InputItems.Clear();
+                foreach (var responseItem in responseItems)
+                    responseOptions.InputItems.Add(responseItem);
+                response = await _ResponseClient.CreateResponseAsync(responseOptions, cancellationToken);
             }
             catch (ClientResultException ex) when (IsContextLengthError(ex))
             {
@@ -532,16 +536,16 @@ public partial class AIChatService
 
     /// <summary>
     /// Returns a clone of <paramref name="source"/> with
-    /// <see cref="ResponseCreationOptions.PreviousResponseId"/> replaced.
+    /// <see cref="CreateResponseOptions.PreviousResponseId"/> replaced.
     /// All behavior-affecting properties are copied so that tool-call continuation legs
     /// produce identical generation behavior to the initial leg.
     /// </summary>
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-    private static ResponseCreationOptions CloneOptionsWithPreviousResponseId(
-        ResponseCreationOptions source,
+    private static CreateResponseOptions CloneOptionsWithPreviousResponseId(
+        CreateResponseOptions source,
         string? previousResponseId)
     {
-        var clone = new ResponseCreationOptions
+        var clone = new CreateResponseOptions
         {
             Instructions = source.Instructions,
             PreviousResponseId = previousResponseId,

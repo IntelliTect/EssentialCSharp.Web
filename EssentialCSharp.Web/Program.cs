@@ -64,9 +64,27 @@ public partial class Program
         // Health probe paths excluded from tracing unconditionally — applies to both
         // manual instrumentation and Azure Monitor's auto-instrumentation.
         builder.Services.Configure<AspNetCoreTraceInstrumentationOptions>(options =>
+        {
             options.Filter = ctx =>
                 !ctx.Request.Path.StartsWithSegments("/health")
-                && !ctx.Request.Path.StartsWithSegments("/alive"));
+                && !ctx.Request.Path.StartsWithSegments("/alive");
+            // EnrichWithHttpResponse fires after the authentication middleware has run,
+            // so HttpContext.User is populated and IsAuthenticated is reliable.
+            options.EnrichWithHttpResponse = (activity, response) =>
+            {
+                var user = response.HttpContext.User;
+                if (user?.Identity?.IsAuthenticated != true)
+                {
+                    return;
+                }
+
+                string? userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!string.IsNullOrWhiteSpace(userId))
+                {
+                    activity.SetTag("enduser.id", userId);
+                }
+            };
+        });
 
         var otel = builder.Services.AddOpenTelemetry()
             .WithMetrics(metrics =>
@@ -117,29 +135,11 @@ public partial class Program
             c.Timeout = TimeSpan.FromSeconds(3);
         });
 
+        builder.Services.AddTrustedForwardedHeaders(builder.Configuration, builder.Environment);
 
-
-        builder.Services.Configure<ForwardedHeadersOptions>(options =>
-        {
-            options.ForwardedHeaders =
-                ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
-
-            // Only loopback proxies are allowed by default.
-            // Clear that restriction because forwarders are enabled by explicit 
-            // configuration.
-            options.KnownIPNetworks.Clear();
-            options.KnownProxies.Clear();
-        });
 
         ConfigurationManager configuration = builder.Configuration;
         string connectionString = builder.Configuration.GetConnectionString("EssentialCSharpWebContextConnection") ?? throw new InvalidOperationException("Connection string 'EssentialCSharpWebContextConnection' not found.");
-
-        // Create a logger that's accessible throughout the entire method
-        var loggerFactory = LoggerFactory.Create(loggingBuilder =>
-            loggingBuilder.AddConsole().SetMinimumLevel(LogLevel.Information));
-        var initialLogger = loggerFactory.CreateLogger<Program>();
-        if (profilerSkippedUnsupportedPlatform)
-            LogSkippingUnsupportedAzureMonitorProfiler(initialLogger, RuntimeInformation.OSDescription);
 
         builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure(5)));
 
@@ -268,11 +268,8 @@ public partial class Program
         builder.Services.AddSingleton<IBookToolQueryService, BookToolQueryService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
 
-        // Add AI Chat services
-        if (!builder.Environment.IsDevelopment())
-        {
-            builder.Services.AddAzureOpenAIServices(configuration);
-        }
+        // Add AI Chat services using configuration-driven backend selection.
+        builder.Services.AddConfiguredChatServices(configuration);
 
         // MCP server — always enabled, authenticated via opaque DB-backed tokens.
         builder.Services.AddScoped<McpApiTokenService>();
@@ -322,7 +319,7 @@ public partial class Program
                     return RateLimitPartition.GetNoLimiter("mcp-transport");
 
                 var partitionKey = httpContext.User.Identity?.IsAuthenticated == true
-                    ? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "unknown-user"
+                    ? httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown-user"
                     : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip";
 
                 return RateLimitPartition.GetFixedWindowLimiter(
@@ -340,7 +337,7 @@ public partial class Program
             {
                 // Partitioned per-user (when authenticated) or per-IP (anonymous)
                 var partitionKey = httpContext.User.Identity?.IsAuthenticated == true
-                    ? $"chat-user:{httpContext.User.Identity.Name ?? "unknown-user"}"
+                    ? $"chat-user:{httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown-user"}"
                     : $"chat-ip:{httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip"}";
 
                 return RateLimitPartition.GetFixedWindowLimiter(
@@ -377,7 +374,6 @@ public partial class Program
                     Dictionary<string, object> errorResponse = new()
                     {
                         ["error"] = "Rate limit exceeded. Please wait before sending another message.",
-                        ["requiresCaptcha"] = true,
                         ["statusCode"] = 429
                     };
                     if (retryAfterSeconds is int retryAfter)
@@ -436,13 +432,27 @@ public partial class Program
              });
         }
 
-        loggerFactory.Dispose();
-
         WebApplication app = builder.Build();
+
+        if (profilerSkippedUnsupportedPlatform)
+            LogSkippingUnsupportedAzureMonitorProfiler(
+                app.Services.GetRequiredService<ILogger<Program>>(),
+                RuntimeInformation.OSDescription);
 
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
         {
+            SiteSettings siteSettings = app.Services.GetRequiredService<IOptions<SiteSettings>>().Value;
+            if (!Uri.TryCreate(siteSettings.BaseUrl, UriKind.Absolute, out Uri? configuredBaseUri))
+            {
+                throw new InvalidOperationException($"Invalid {SiteSettings.SectionName}:{nameof(SiteSettings.BaseUrl)} value: '{siteSettings.BaseUrl}'.");
+            }
+            string apexHost = configuredBaseUri.Host.StartsWith("www.", StringComparison.OrdinalIgnoreCase)
+                ? configuredBaseUri.Host[4..]
+                : configuredBaseUri.Host;
+            string wwwHost = $"www.{apexHost}";
+            string redirectAuthority = new UriBuilder(configuredBaseUri) { Host = apexHost }.Uri.GetLeftPart(UriPartial.Authority);
+
             app.UseExceptionHandler(exceptionApp =>
             {
                 exceptionApp.Run(async context =>
@@ -491,11 +501,11 @@ public partial class Program
 
             string csp = string.Join("; ",
                 $"default-src 'self'",
-                $"script-src 'self' 'unsafe-inline' cdn.jsdelivr.net www.clarity.ms www.googletagmanager.com https://hcaptcha.com https://*.hcaptcha.com{tryDotNetSources}",
+                $"script-src 'self' 'unsafe-inline' cdn.jsdelivr.net www.clarity.ms www.googletagmanager.com js.monitor.azure.com https://hcaptcha.com https://*.hcaptcha.com{tryDotNetSources}",
                 $"style-src 'self' 'unsafe-inline' cdnjs.cloudflare.com fonts.googleapis.com https://hcaptcha.com https://*.hcaptcha.com",
                 $"font-src 'self' fonts.gstatic.com cdnjs.cloudflare.com",
                 $"img-src 'self' data: https:",
-                $"connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://api.pwnedpasswords.com https://*.algolia.net https://*.algolianet.com https://*.google-analytics.com https://*.clarity.ms{tryDotNetSources}",
+                $"connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://api.pwnedpasswords.com https://*.algolia.net https://*.algolianet.com https://*.google-analytics.com https://*.clarity.ms https://*.in.applicationinsights.azure.com{GetApplicationInsightsCspSources(app.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"], app.Logger)}{tryDotNetSources}",
                 $"frame-src https://hcaptcha.com https://*.hcaptcha.com https://newassets.hcaptcha.com{tryDotNetSources}",
                 $"worker-src blob:",
                 $"frame-ancestors 'none'",
@@ -506,6 +516,19 @@ public partial class Program
             app.UseSecurityHeadersMiddleware(new SecurityHeadersBuilder()
                 .AddDefaultSecurePolicy()
                 .AddContentSecurityPolicy(csp));
+
+            // Redirect configured www host to configured apex host (permanent 301).
+            // Must be after UseForwardedHeaders so the Host header reflects the real hostname.
+            app.Use(async (context, next) =>
+            {
+                if (string.Equals(context.Request.Host.Host, wwwHost, StringComparison.OrdinalIgnoreCase))
+                {
+                    string redirectUrl = $"{redirectAuthority}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
+                    context.Response.Redirect(redirectUrl, permanent: true);
+                    return;
+                }
+                await next(context);
+            });
         }
         else
         {
@@ -605,16 +628,6 @@ public partial class Program
             LogSitemapValidationFailed(logger, ex);
             // Continue startup even if sitemap validation fails
         }
-        catch (ArgumentException ex)
-        {
-            LogSitemapValidationFailed(logger, ex);
-            // Continue startup even if sitemap validation fails
-        }
-        catch (FormatException ex)
-        {
-            LogSitemapValidationFailed(logger, ex);
-            // Continue startup even if sitemap validation fails
-        }
 
         app.Run();
     }
@@ -639,4 +652,51 @@ public partial class Program
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Azure Monitor profiler is not supported on this platform ({Platform}). Skipping profiler registration and continuing with Azure Monitor telemetry export.")]
     private static partial void LogSkippingUnsupportedAzureMonitorProfiler(ILogger<Program> logger, string platform);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Application Insights connection string has a non-HTTPS or unparseable IngestionEndpoint value ({Endpoint}); omitting from CSP connect-src.")]
+    private static partial void LogInvalidApplicationInsightsIngestionEndpoint(ILogger logger, string? endpoint);
+
+    private static string GetApplicationInsightsCspSources(string? connectionString, ILogger? logger = null)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            return string.Empty;
+        }
+
+        string? ingestionEndpoint = GetConnectionStringValue(connectionString, "IngestionEndpoint");
+        if (string.IsNullOrWhiteSpace(ingestionEndpoint)
+            || !Uri.TryCreate(ingestionEndpoint, UriKind.Absolute, out Uri? ingestionUri)
+            || ingestionUri.Scheme != Uri.UriSchemeHttps)
+        {
+            if (logger is not null)
+            {
+                LogInvalidApplicationInsightsIngestionEndpoint(logger, ingestionEndpoint);
+            }
+            return string.Empty;
+        }
+
+        return $" {ingestionUri.GetLeftPart(UriPartial.Authority)}";
+    }
+
+    private static string? GetConnectionStringValue(string connectionString, string key)
+    {
+        foreach (string segment in connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            int separatorIndex = segment.IndexOf('=');
+            if (separatorIndex <= 0)
+            {
+                continue;
+            }
+
+            string currentKey = segment[..separatorIndex];
+            if (!currentKey.Equals(key, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            return segment[(separatorIndex + 1)..].Trim('"');
+        }
+
+        return null;
+    }
 }
