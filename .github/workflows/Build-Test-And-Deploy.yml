@@ -78,7 +78,7 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           dockerfile: EssentialCSharp.Web/Dockerfile
           cache-dir: buildkit-cache
-          skip-extraction: ${{ steps.buildkit-cache.outputs.cache-hit }}
+          skip-extraction: false
 
       # Only build for dev registry — prod gets the image via az acr import in deploy-production
       - name: Build Container Image
@@ -91,9 +91,7 @@ jobs:
           secrets: |
             "nuget_pat=${{ secrets.AZURE_DEVOPS_PAT }}"
           outputs: type=docker,dest=${{ github.workspace }}/essentialcsharpwebimage.tar
-          cache-from: |
-            type=gha,scope=essentialcsharpweb-main
-            type=gha,scope=essentialcsharpweb-deploy
+          cache-from: type=gha,scope=essentialcsharpweb-main
           cache-to: type=gha,mode=max,scope=essentialcsharpweb-main
 
       - name: Upload artifact
