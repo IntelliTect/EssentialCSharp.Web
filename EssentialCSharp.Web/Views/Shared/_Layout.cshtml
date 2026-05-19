@@ -158,6 +158,7 @@
     <main id="site-layout" class="layout">
         <div id="sidebarContainer" class="background-grey-lighten-2"></div>
         <div class="container my-5 pb-5">
+            <div id="page-share-host"></div>
             <div id="page-nav-host"></div>
             @RenderBody()
         </div>
@@ -176,7 +177,7 @@
                 <a target="_blank" rel="noreferrer noopener" href="https://intellitect.com/about/privacy-policy/">Privacy</a>
             </div>
             <div class="col-12 col-md-auto align-self-end p-2">
-                <a href="javascript:void(0)" onclick="openConsentPreferences()">Cookie Preferences</a>
+                <button type="button" class="btn btn-link p-0 align-baseline" onclick="openConsentPreferences()">Cookie Preferences</button>
             </div>
             <div class="col-12 col-md-auto align-self-end p-2"><a asp-route="TermsOfService">Terms Of Service</a></div>
         </div>

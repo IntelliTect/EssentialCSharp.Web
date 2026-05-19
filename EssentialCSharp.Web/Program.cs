@@ -140,13 +140,6 @@ public partial class Program
         ConfigurationManager configuration = builder.Configuration;
         string connectionString = builder.Configuration.GetConnectionString("EssentialCSharpWebContextConnection") ?? throw new InvalidOperationException("Connection string 'EssentialCSharpWebContextConnection' not found.");
 
-        // Create a logger that's accessible throughout the entire method
-        var loggerFactory = LoggerFactory.Create(loggingBuilder =>
-            loggingBuilder.AddConsole().SetMinimumLevel(LogLevel.Information));
-        var initialLogger = loggerFactory.CreateLogger<Program>();
-        if (profilerSkippedUnsupportedPlatform)
-            LogSkippingUnsupportedAzureMonitorProfiler(initialLogger, RuntimeInformation.OSDescription);
-
         builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure(5)));
 
         // Must be registered before AddDataProtection(): hosted services start in registration
@@ -274,11 +267,8 @@ public partial class Program
         builder.Services.AddSingleton<IBookToolQueryService, BookToolQueryService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
 
-        // Add AI Chat services
-        if (!builder.Environment.IsDevelopment())
-        {
-            builder.Services.AddAzureOpenAIServices(configuration);
-        }
+        // Add AI Chat services using configuration-driven backend selection.
+        builder.Services.AddConfiguredChatServices(configuration);
 
         // MCP server — always enabled, authenticated via opaque DB-backed tokens.
         builder.Services.AddScoped<McpApiTokenService>();
@@ -441,9 +431,12 @@ public partial class Program
              });
         }
 
-        loggerFactory.Dispose();
-
         WebApplication app = builder.Build();
+
+        if (profilerSkippedUnsupportedPlatform)
+            LogSkippingUnsupportedAzureMonitorProfiler(
+                app.Services.GetRequiredService<ILogger<Program>>(),
+                RuntimeInformation.OSDescription);
 
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())

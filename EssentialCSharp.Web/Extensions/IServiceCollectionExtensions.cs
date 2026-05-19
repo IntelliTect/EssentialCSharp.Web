@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using System.Net.Sockets;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.HttpOverrides;
 
@@ -49,7 +48,7 @@ public static class IServiceCollectionExtensions
 
             foreach (var cidr in trustedProxyCidrs)
             {
-                if (!TryParseCidr(cidr, out var network))
+                if (string.IsNullOrWhiteSpace(cidr) || !System.Net.IPNetwork.TryParse(cidr.Trim(), out var network))
                     throw new InvalidOperationException($"Invalid ForwardedHeaders:TrustedProxyCidrs entry '{cidr}'. Use CIDR notation, e.g. '10.0.0.0/8'.");
 
                 options.KnownIPNetworks.Add(network);
@@ -63,31 +62,5 @@ public static class IServiceCollectionExtensions
                 options.KnownProxies.Add(proxyAddress);
             }
         });
-    }
-
-    private static bool TryParseCidr(string cidr, out System.Net.IPNetwork network)
-    {
-        network = default!;
-        if (string.IsNullOrWhiteSpace(cidr))
-            return false;
-
-        string[] parts = cidr.Split('/', 2, StringSplitOptions.TrimEntries);
-        if (parts.Length != 2
-            || !IPAddress.TryParse(parts[0], out var networkAddress)
-            || !int.TryParse(parts[1], out var prefixLength))
-            return false;
-
-        int maxPrefixLength = networkAddress.AddressFamily switch
-        {
-            AddressFamily.InterNetwork => 32,
-            AddressFamily.InterNetworkV6 => 128,
-            _ => -1
-        };
-
-        if (maxPrefixLength < 0 || prefixLength < 0 || prefixLength > maxPrefixLength)
-            return false;
-
-        network = new System.Net.IPNetwork(networkAddress, prefixLength);
-        return true;
     }
 }
