@@ -62,30 +62,23 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
+        id: buildx
 
-      - name: Cache npm packages for BuildKit
+      - name: Restore BuildKit cache mounts
         uses: actions/cache@v5
+        id: buildkit-cache
         with:
-          path: npm-cache
-          key: ${{ runner.os }}-buildkit-npm-${{ hashFiles('EssentialCSharp.Web/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-buildkit-npm-
-
-      - name: Cache NuGet packages for BuildKit
-        uses: actions/cache@v5
-        with:
-          path: nuget-buildkit-cache
-          key: ${{ runner.os }}-buildkit-nuget-${{ hashFiles('Directory.Packages.props', '**/packages.lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-buildkit-nuget-
+          path: buildkit-cache
+          key: buildkit-cache-${{ hashFiles('EssentialCSharp.Web/Dockerfile') }}
+          restore-keys: buildkit-cache-
 
       - name: Inject BuildKit cache mounts
         uses: reproducible-containers/buildkit-cache-dance@v3
         with:
-          cache-map: |
-            "npm-cache": "/root/.npm"
-            "nuget-buildkit-cache": "/root/.nuget/packages"
-          skip-extraction: false
+          builder: ${{ steps.buildx.outputs.name }}
+          dockerfile: EssentialCSharp.Web/Dockerfile
+          cache-dir: buildkit-cache
+          skip-extraction: ${{ steps.buildkit-cache.outputs.cache-hit }}
 
       # Only build for dev registry — prod gets the image via az acr import in deploy-production
       - name: Build Container Image
