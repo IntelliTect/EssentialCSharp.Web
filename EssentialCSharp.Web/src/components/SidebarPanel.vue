@@ -42,7 +42,7 @@ function isActivePath(paths) {
                 <div class="list-group list-group-flush d-md-none mb-3">
                     <a
                         v-for="navLink in navLinks"
-                        :key="navLink.href"
+                        :key="navLink.key"
                         :href="navLink.href"
                         class="list-group-item list-group-item-action"
                         :class="{ active: isActivePath(navLink.activePaths) }"
