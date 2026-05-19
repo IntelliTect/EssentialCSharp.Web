@@ -1,3 +1,6 @@
+**/.buildkit-cache
+**/npm-cache
+**/nuget-buildkit-cache
 **/.classpath
 **/.dockerignore
 **/.env
