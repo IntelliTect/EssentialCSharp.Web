@@ -89,7 +89,7 @@ jobs:
         id: buildkit-cache
         with:
           path: buildkit-cache
-          key: buildkit-cache-${{ hashFiles('EssentialCSharp.Web/Dockerfile') }}
+          key: buildkit-cache-${{ hashFiles('EssentialCSharp.Web/Dockerfile', 'Directory.Packages.props', '**/*.csproj', 'EssentialCSharp.Web/package-lock.json') }}
           restore-keys: buildkit-cache-
 
       - name: Inject BuildKit cache mounts
