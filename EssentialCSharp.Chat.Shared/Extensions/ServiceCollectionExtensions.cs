@@ -6,6 +6,7 @@ using EssentialCSharp.Chat.Common.Services;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Npgsql;
@@ -15,6 +16,7 @@ namespace EssentialCSharp.Chat.Common.Extensions;
 public static class ServiceCollectionExtensions
 {
     private static readonly string[] _PostgresScopes = ["https://ossrdbms-aad.database.windows.net/.default"];
+    private const string LocalChatHttpClientName = "LocalAIChat";
 
     /// <summary>
     /// Adds Azure OpenAI and related AI services to the service collection using Managed Identity
@@ -82,6 +84,82 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<AIChatService>();
         services.AddSingleton<MarkdownChunkingService>();
 
+        return services;
+    }
+
+    /// <summary>
+    /// Registers chat services using configuration-driven backend selection.
+    /// This method never throws for missing or partial AI configuration; it falls back to
+    /// <see cref="UnavailableChatService"/> so the app can continue running.
+    /// </summary>
+    public static IServiceCollection AddConfiguredChatServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<AIOptions>(configuration.GetSection("AIOptions"));
+
+        var aiOptions = configuration.GetSection("AIOptions").Get<AIOptions>() ?? new AIOptions();
+        string? postgresConnectionString = configuration.GetConnectionString("PostgresVectorStore");
+
+        bool hasAzureEndpoint = !string.IsNullOrWhiteSpace(aiOptions.Endpoint);
+        bool hasAzureChatDeployment = !string.IsNullOrWhiteSpace(aiOptions.ChatDeploymentName);
+        bool hasAzureVectorDeployment = !string.IsNullOrWhiteSpace(aiOptions.VectorGenerationDeploymentName);
+        bool hasAzureConfig = hasAzureEndpoint && hasAzureChatDeployment && hasAzureVectorDeployment
+            && IsValidNpgsqlConnectionString(postgresConnectionString);
+
+        string localEndpoint = ResolveLocalEndpoint(aiOptions, configuration);
+        bool hasLocalConfig = !string.IsNullOrWhiteSpace(localEndpoint)
+            && !string.IsNullOrWhiteSpace(aiOptions.LocalChatModel);
+
+        if (hasAzureConfig)
+        {
+            // Pre-validate endpoint URI to avoid exceptions in AddAzureOpenAIServices for
+            // non-empty but invalid endpoint values.
+            if (!Uri.TryCreate(aiOptions.Endpoint, UriKind.Absolute, out var azureUri)
+                || azureUri.Scheme != Uri.UriSchemeHttps)
+            {
+                Console.Error.WriteLine("[AI] Azure endpoint must be a valid https URI. Falling back to local/unavailable.");
+            }
+            else
+            {
+                services.AddAzureOpenAIServices(aiOptions, postgresConnectionString!);
+                // Bind EmbeddingRetry from config so operator appsettings/env overrides are honored.
+                // The AIOptions overload of AddAzureOpenAIServices only registers validation, not config binding.
+                services.AddOptions<EmbeddingRetryOptions>()
+                    .Bind(configuration.GetSection(EmbeddingRetryOptions.SectionPath));
+                services.AddSingleton<IChatCompletionService>(provider => provider.GetRequiredService<AIChatService>());
+                Console.WriteLine("[AI] Selected backend: Azure/Foundry.");
+                return services;
+            }
+        }
+
+        if (hasLocalConfig)
+        {
+            if (!Uri.TryCreate(localEndpoint, UriKind.Absolute, out var localEndpointUri)
+                || (localEndpointUri.Scheme != Uri.UriSchemeHttp && localEndpointUri.Scheme != Uri.UriSchemeHttps))
+            {
+                services.AddSingleton<IChatCompletionService, UnavailableChatService>();
+                Console.Error.WriteLine("[AI] Local backend selected but LocalEndpoint is invalid. Falling back to unavailable backend.");
+                return services;
+            }
+
+#pragma warning disable EXTEXP0001
+            services.AddHttpClient(LocalChatHttpClientName, client =>
+            {
+                client.BaseAddress = localEndpointUri;
+                client.Timeout = TimeSpan.FromSeconds(120);
+            })
+            // Disable the global standard resilience handler (set by ConfigureHttpClientDefaults
+            // in Program.cs). Its default attempt timeout (30s) and total timeout (90s) would
+            // cut off long local-LLM completions. We set HttpClient.Timeout directly instead.
+            // Retries are also wrong for LLM calls (non-idempotent, partial responses).
+            .RemoveAllResilienceHandlers();
+#pragma warning restore EXTEXP0001
+            services.AddSingleton<IChatCompletionService, LocalChatService>();
+            Console.WriteLine("[AI] Selected backend: Local (Ollama/OpenAI-compatible).");
+            return services;
+        }
+
+        services.AddSingleton<IChatCompletionService, UnavailableChatService>();
+        Console.WriteLine("[AI] Selected backend: Unavailable (missing or invalid AI configuration).");
         return services;
     }
 
@@ -196,6 +274,36 @@ public static class ServiceCollectionExtensions
 #pragma warning restore SKEXP0010
 
         return services;
+    }
+
+    private static string ResolveLocalEndpoint(AIOptions options, IConfiguration configuration)
+    {
+        if (!string.IsNullOrWhiteSpace(options.LocalEndpoint))
+        {
+            return options.LocalEndpoint!;
+        }
+
+        return configuration.GetConnectionString("ollama-chat") ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Returns true if <paramref name="connectionString"/> can be parsed by
+    /// <see cref="NpgsqlConnectionStringBuilder"/> and resolves to a non-empty Host.
+    /// Rejects null, empty, and placeholder strings like "your-postgres-connection-string-here".
+    /// </summary>
+    private static bool IsValidNpgsqlConnectionString(string? connectionString)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+            return false;
+        try
+        {
+            var builder = new NpgsqlConnectionStringBuilder(connectionString);
+            return !string.IsNullOrWhiteSpace(builder.Host);
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
     }
 
 }

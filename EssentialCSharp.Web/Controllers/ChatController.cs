@@ -18,17 +18,17 @@ namespace EssentialCSharp.Web.Controllers;
 [IgnoreAntiforgeryToken]
 public partial class ChatController : ControllerBase
 {
-    private readonly AIChatService _AIChatService;
+    private readonly IChatCompletionService _ChatService;
     private readonly ResponseIdValidationService _ResponseIdValidationService;
     private readonly ICaptchaService _CaptchaService;
     private readonly CaptchaOptions _CaptchaOptions;
     private readonly ILogger<ChatController> _Logger;
 
-    public ChatController(ILogger<ChatController> logger, AIChatService aiChatService,
+    public ChatController(ILogger<ChatController> logger, IChatCompletionService chatService,
         ResponseIdValidationService responseIdValidationService,
         ICaptchaService captchaService, IOptions<CaptchaOptions> captchaOptions)
     {
-        _AIChatService = aiChatService;
+        _ChatService = chatService;
         _ResponseIdValidationService = responseIdValidationService;
         _CaptchaService = captchaService;
         _CaptchaOptions = captchaOptions.Value;
@@ -87,9 +87,15 @@ public partial class ChatController : ControllerBase
         if (!_ResponseIdValidationService.ValidateResponseId(userId, previousResponseId))
             return BadRequest(new { error = "Invalid conversation context." });
 
+        if (!_ChatService.IsAvailable)
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "Chat service unavailable", errorCode = "chat_unavailable" });
+
+        if (request.EnableContextualSearch && !_ChatService.SupportsContextualSearch)
+            return BadRequest(new { error = "Contextual search is not supported by the selected chat backend.", errorCode = "contextual_search_unsupported" });
+
         try
         {
-            var (response, responseId) = await _AIChatService.GetChatCompletion(
+            var (response, responseId) = await _ChatService.GetChatCompletion(
                 prompt: request.Message,
                 previousResponseId: previousResponseId,
                 enableContextualSearch: request.EnableContextualSearch,
@@ -108,6 +114,10 @@ public partial class ChatController : ControllerBase
         catch (ConversationContextLimitExceededException)
         {
             return BadRequest(new { error = "This conversation has grown too long. Please start a new one.", errorCode = "context_limit_exceeded" });
+        }
+        catch (ChatBackendUnavailableException)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "Chat service unavailable", errorCode = "chat_unavailable" });
         }
     }
 
@@ -155,13 +165,29 @@ public partial class ChatController : ControllerBase
             return;
         }
 
+        if (!_ChatService.IsAvailable)
+        {
+            Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+            Response.ContentType = "application/json";
+            await Response.WriteAsJsonAsync(new { error = "Chat service unavailable", errorCode = "chat_unavailable" }, cancellationToken);
+            return;
+        }
+
+        if (request.EnableContextualSearch && !_ChatService.SupportsContextualSearch)
+        {
+            Response.StatusCode = StatusCodes.Status400BadRequest;
+            Response.ContentType = "application/json";
+            await Response.WriteAsJsonAsync(new { error = "Contextual search is not supported by the selected chat backend.", errorCode = "contextual_search_unsupported" }, cancellationToken);
+            return;
+        }
+
         Response.ContentType = "text/event-stream";
         Response.Headers.CacheControl = "no-cache";
         Response.Headers.Connection = "keep-alive";
 
         try
         {
-            await foreach (var (text, responseId) in _AIChatService.GetChatCompletionStream(
+            await foreach (var (text, responseId) in _ChatService.GetChatCompletionStream(
                 prompt: request.Message,
                 previousResponseId: previousResponseId,
                 enableContextualSearch: request.EnableContextualSearch,
@@ -245,6 +271,26 @@ public partial class ChatController : ControllerBase
                     // ObjectDisposedException on abrupt client disconnect — swallow expected
                     // transport/disconnect exceptions to avoid masking the original exception.
                 }
+            }
+        }
+        catch (ChatBackendUnavailableException ex) when (!Response.HasStarted)
+        {
+            LogChatStreamErrorBeforeResponseStarted(_Logger, ex, User.Identity?.Name);
+            Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+            Response.ContentType = "application/json";
+            await Response.WriteAsJsonAsync(new { error = "Chat service unavailable", errorCode = "chat_unavailable" }, cancellationToken);
+        }
+        catch (ChatBackendUnavailableException ex)
+        {
+            LogChatStreamErrorMidStream(_Logger, ex, User.Identity?.Name);
+            try
+            {
+                await Response.WriteAsync("data: {\"type\":\"error\",\"message\":\"Chat service unavailable\",\"errorCode\":\"chat_unavailable\"}\n\n", CancellationToken.None);
+                await Response.Body.FlushAsync(CancellationToken.None);
+            }
+            catch (Exception writeException) when (writeException is IOException or OperationCanceledException or ObjectDisposedException)
+            {
+                // Best-effort write to an already-streaming response.
             }
         }
         catch (Exception ex) when (!Response.HasStarted)

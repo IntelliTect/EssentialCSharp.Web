@@ -12,7 +12,7 @@ namespace EssentialCSharp.Chat.Common.Services;
 /// <summary>
 /// Service for handling AI chat completions using the OpenAI Responses API
 /// </summary>
-public partial class AIChatService
+public partial class AIChatService : IChatCompletionService
 {
     private readonly AIOptions _Options;
     private readonly AzureOpenAIClient _AzureClient;
@@ -22,6 +22,8 @@ public partial class AIChatService
     private readonly AISearchService _SearchService;
     private readonly ILogger<AIChatService> _Logger;
     private readonly FrozenSet<string> _AllowedMcpTools;
+    public bool IsAvailable => true;
+    public bool SupportsContextualSearch => true;
 
     public AIChatService(IOptions<AIOptions> options, AISearchService searchService, AzureOpenAIClient azureClient, ILogger<AIChatService> logger)
     {
