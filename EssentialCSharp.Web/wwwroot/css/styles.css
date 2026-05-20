@@ -786,6 +786,49 @@ details > summary::-webkit-details-marker {
   padding-left: 1em;
 }
 
+/* CSP inline-style replacements */
+.mcp-setup-container {
+  max-width: 900px;
+}
+
+.mcp-tool-summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.password-strength-progress {
+  height: 6px;
+}
+
+.password-strength-bar-initial {
+  width: 0;
+}
+
+.guideline-icon {
+  padding-right: 10px;
+}
+
+.guideline-color-do-not,
+.guideline-color-avoid {
+  color: #ff0000;
+}
+
+.guideline-color-consider {
+  color: #7a7a7a;
+}
+
+.guideline-color-do {
+  color: #63E6BE;
+}
+
+.intellitect-logo-img {
+  height: 75px;
+}
+
+.ecs-book-cover-img {
+  height: 450px;
+}
+
 /* Home Page Styles */
 
 .quote {
@@ -1079,6 +1122,12 @@ button.accept-policy {
 }
 
 /* Reduced motion support */
+
+/* Guidelines Icon Styles */
+.guideline-icon {
+  color: var(--guideline-color);
+  padding-right: 10px;
+}
 @media (prefers-reduced-motion: reduce) {
     .captcha-modal-overlay,
     .captcha-modal-card {

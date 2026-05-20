@@ -9,7 +9,7 @@
     bool isSignedIn = SignInManager.IsSignedIn(User);
 }
 
-<div class="container py-4" style="max-width:900px">
+<div class="container py-4 mcp-setup-container">
 
     
     <div class="mb-5">
@@ -267,7 +267,7 @@
         @foreach (var tool in Model)
         {
             <details class="card mb-2">
-                <summary class="card-header d-flex align-items-center gap-2" style="cursor:pointer;list-style:none">
+                <summary class="card-header d-flex align-items-center gap-2 mcp-tool-summary">
                     <span class="details-chevron">&#9656;</span>
                     <span class="font-monospace fw-semibold">@tool.Name</span>
                     <span class="text-muted small ms-auto">@tool.Title</span>
