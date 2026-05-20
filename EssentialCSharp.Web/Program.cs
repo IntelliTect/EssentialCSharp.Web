@@ -509,6 +509,7 @@ public partial class Program
                 $"default-src 'self'",
                 $"script-src 'self' 'unsafe-inline' cdn.jsdelivr.net www.clarity.ms www.googletagmanager.com js.monitor.azure.com https://hcaptcha.com https://*.hcaptcha.com{tryDotNetSources}",
                 $"style-src 'self' cdnjs.cloudflare.com fonts.googleapis.com https://hcaptcha.com https://*.hcaptcha.com",
+                $"style-src-attr 'unsafe-inline'",
                 $"font-src 'self' fonts.gstatic.com cdnjs.cloudflare.com",
                 $"img-src 'self' data: https:",
                 $"connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://api.pwnedpasswords.com https://*.algolia.net https://*.algolianet.com https://*.google-analytics.com https://*.clarity.ms https://*.in.applicationinsights.azure.com{GetApplicationInsightsCspSources(app.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"], app.Logger)}{tryDotNetSources}",
