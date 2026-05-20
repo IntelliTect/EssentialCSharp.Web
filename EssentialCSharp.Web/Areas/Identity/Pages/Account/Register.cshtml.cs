@@ -110,8 +110,12 @@ public partial class RegisterModel(
             }
             if (captchaResult.Outcome == CaptchaValidationOutcome.Invalid)
             {
-                HCaptchaResult? response = captchaResult.Response;
-                ArgumentNullException.ThrowIfNull(response);
+                if (captchaResult.Response is not HCaptchaResult response)
+                {
+                    LogHCaptchaInvalidOutcomeMissingResponse(logger);
+                    ModelState.AddModelError(string.Empty, "Captcha verification is temporarily unavailable. Please try again later.");
+                    return Page();
+                }
 
                 switch (response.ErrorCodes?.Length)
                 {
@@ -160,7 +164,7 @@ public partial class RegisterModel(
                                         ModelState.AddModelError(string.Empty, "Captcha verification is temporarily unavailable. Please try again later.");
                                         return Page();
                                     default:
-                                        LogHCaptchaUnknownErrorCode(logger, details?.ErrorCode);
+                                        LogHCaptchaUnknownErrorCode(logger, details.ErrorCode);
                                         ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
                                         return Page();
                                 }
@@ -172,6 +176,10 @@ public partial class RegisterModel(
                         }
                 }
             }
+
+            LogHCaptchaUnhandledOutcome(logger, captchaResult.Outcome.ToString());
+            ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
+            return Page();
         }
 
         EssentialCSharpWebUser user = CreateUser();
@@ -276,4 +284,10 @@ public partial class RegisterModel(
 
     [LoggerMessage(Level = LogLevel.Error, Message = "HCaptcha returned unrecognized error code: {ErrorCode}")]
     private static partial void LogHCaptchaUnrecognizedErrorCode(ILogger<RegisterModel> logger, string errorCode);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "HCaptcha invalid outcome did not include response payload")]
+    private static partial void LogHCaptchaInvalidOutcomeMissingResponse(ILogger<RegisterModel> logger);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "HCaptcha returned unhandled non-proceeding outcome: {Outcome}")]
+    private static partial void LogHCaptchaUnhandledOutcome(ILogger<RegisterModel> logger, string outcome);
 }

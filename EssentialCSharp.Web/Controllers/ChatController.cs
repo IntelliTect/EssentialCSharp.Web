@@ -302,20 +302,15 @@ public partial class ChatController : ControllerBase
     {
         return captchaValidation.Outcome switch
         {
-            CaptchaValidationOutcome.Disabled => LogAndReturn503(),
-            CaptchaValidationOutcome.Unavailable => LogAndReturn503(),
+            CaptchaValidationOutcome.Disabled or CaptchaValidationOutcome.Unavailable => LogAndReturn503(),
             CaptchaValidationOutcome.Invalid => LogInvalidAndReturn403(),
             _ => StatusCode(403, new { error = "Human verification required.", errorCode = "captcha_failed" })
         };
 
         IActionResult LogAndReturn503()
         {
-            if (captchaValidation.Outcome == CaptchaValidationOutcome.Disabled)
-                LogCaptchaConfigurationMissing(_Logger);
-            else
-                LogCaptchaServiceUnavailable(_Logger);
-
-            return StatusCode(503, new { error = "Human verification is temporarily unavailable. Please try again later.", errorCode = "captcha_unavailable" });
+            LogCaptchaUnavailable(captchaValidation.Outcome);
+            return StatusCode(503, CaptchaUnavailableResponseBody);
         }
 
         IActionResult LogInvalidAndReturn403()
@@ -331,13 +326,9 @@ public partial class ChatController : ControllerBase
         {
             case CaptchaValidationOutcome.Disabled:
             case CaptchaValidationOutcome.Unavailable:
-                if (captchaValidation.Outcome == CaptchaValidationOutcome.Disabled)
-                    LogCaptchaConfigurationMissing(_Logger);
-                else
-                    LogCaptchaServiceUnavailable(_Logger);
-
+                LogCaptchaUnavailable(captchaValidation.Outcome);
                 Response.StatusCode = 503;
-                await Response.WriteAsJsonAsync(new { error = "Human verification is temporarily unavailable. Please try again later.", errorCode = "captcha_unavailable" }, cancellationToken);
+                await Response.WriteAsJsonAsync(CaptchaUnavailableResponseBody, cancellationToken);
                 break;
 
             case CaptchaValidationOutcome.Invalid:
@@ -351,6 +342,17 @@ public partial class ChatController : ControllerBase
                 await Response.WriteAsJsonAsync(new { error = "Human verification required.", errorCode = "captcha_failed" }, cancellationToken);
                 break;
         }
+    }
+
+    private static object CaptchaUnavailableResponseBody =>
+        new { error = "Human verification is temporarily unavailable. Please try again later.", errorCode = "captcha_unavailable" };
+
+    private void LogCaptchaUnavailable(CaptchaValidationOutcome outcome)
+    {
+        if (outcome == CaptchaValidationOutcome.Disabled)
+            LogCaptchaConfigurationMissing(_Logger);
+        else
+            LogCaptchaServiceUnavailable(_Logger);
     }
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "hCaptcha service unavailable during chat request — failing closed (503)")]

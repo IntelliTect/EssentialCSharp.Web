@@ -6,6 +6,9 @@ namespace EssentialCSharp.Web.Services;
 public sealed class CaptchaValidationService(ICaptchaService captchaService, IOptions<CaptchaOptions> optionsAccessor) : ICaptchaValidationService
 {
     private CaptchaOptions Options { get; } = optionsAccessor.Value;
+    private bool IsCaptchaConfigurationComplete =>
+        !string.IsNullOrWhiteSpace(Options.SecretKey) &&
+        !string.IsNullOrWhiteSpace(Options.SiteKey);
 
     public Task<CaptchaValidationResult> ValidateAsync(string? response, CancellationToken cancellationToken = default)
         => ValidateAsync(response, remoteIp: null, cancellationToken);
@@ -22,7 +25,7 @@ public sealed class CaptchaValidationService(ICaptchaService captchaService, IOp
     /// </remarks>
     public async Task<CaptchaValidationResult> ValidateAsync(string? response, string? remoteIp, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(Options.SecretKey) || string.IsNullOrWhiteSpace(Options.SiteKey))
+        if (!IsCaptchaConfigurationComplete)
             return new CaptchaValidationResult(CaptchaValidationOutcome.Disabled, null);
 
         if (string.IsNullOrWhiteSpace(response))
