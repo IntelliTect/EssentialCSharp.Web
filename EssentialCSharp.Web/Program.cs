@@ -548,9 +548,9 @@ public partial class Program
             Predicate = r => r.Tags.Contains("live")
         }).DisableRateLimiting();
 
-        if (app.Environment.IsDevelopment())
+        if (!app.Environment.IsDevelopment())
         {
-        app.UseHttpsRedirection();
+            app.UseHttpsRedirection();
         }
         app.UseStaticFiles();
 
