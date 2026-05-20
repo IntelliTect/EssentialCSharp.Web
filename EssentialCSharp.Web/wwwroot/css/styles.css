@@ -796,12 +796,43 @@ details > summary::-webkit-details-marker {
   list-style: none;
 }
 
+.details-chevron {
+  display: inline-block;
+  transition: transform 0.2s ease;
+  color: var(--bs-secondary-color, #6c757d);
+  font-size: .75rem;
+}
+
+details[open] > summary .details-chevron {
+  transform: rotate(90deg);
+}
+
 .password-strength-progress {
   height: 6px;
 }
 
 .password-strength-bar-initial {
   width: 0;
+}
+
+.password-strength-width-20 {
+  width: 20%;
+}
+
+.password-strength-width-40 {
+  width: 40%;
+}
+
+.password-strength-width-60 {
+  width: 60%;
+}
+
+.password-strength-width-80 {
+  width: 80%;
+}
+
+.password-strength-width-100 {
+  width: 100%;
 }
 
 .guideline-icon {
@@ -1123,11 +1154,6 @@ button.accept-policy {
 
 /* Reduced motion support */
 
-/* Guidelines Icon Styles */
-.guideline-icon {
-  color: var(--guideline-color);
-  padding-right: 10px;
-}
 @media (prefers-reduced-motion: reduce) {
     .captcha-modal-overlay,
     .captcha-modal-card {

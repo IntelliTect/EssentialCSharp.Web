@@ -380,17 +380,6 @@
 </div>
 
 @section Scripts {
-    <style>
-        .details-chevron {
-            display: inline-block;
-            transition: transform 0.2s ease;
-            color: var(--bs-secondary-color, #6c757d);
-            font-size: .75rem;
-        }
-        details[open] > summary .details-chevron {
-            transform: rotate(90deg);
-        }
-    </style>
     <script>
         function toggleAllTools(btn) {
             const details = document.querySelectorAll('#tools details');
