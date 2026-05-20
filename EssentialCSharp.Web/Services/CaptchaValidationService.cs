@@ -10,6 +10,16 @@ public sealed class CaptchaValidationService(ICaptchaService captchaService, IOp
     public Task<CaptchaValidationResult> ValidateAsync(string? response, CancellationToken cancellationToken = default)
         => ValidateAsync(response, remoteIp: null, cancellationToken);
 
+    /// <summary>
+    /// Validates a captcha response.
+    /// </summary>
+    /// <remarks>
+    /// IMPORTANT: Both <see cref="CaptchaOptions.SecretKey"/> and <see cref="CaptchaOptions.SiteKey"/> must be configured
+    /// (non-empty) for captcha validation to be enabled. If either key is missing, the validation is marked as
+    /// <see cref="CaptchaValidationOutcome.Disabled"/> and the captcha service is not invoked. This is intentional:
+    /// HCaptcha requires both keys to function properly, and partial configuration (one key set, one missing)
+    /// indicates a deployment configuration error that should be detected early.
+    /// </remarks>
     public async Task<CaptchaValidationResult> ValidateAsync(string? response, string? remoteIp, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(Options.SecretKey) || string.IsNullOrWhiteSpace(Options.SiteKey))

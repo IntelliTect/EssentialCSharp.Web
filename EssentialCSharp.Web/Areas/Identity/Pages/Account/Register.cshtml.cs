@@ -92,6 +92,12 @@ public partial class RegisterModel(
         CaptchaValidationResult captchaResult = await captchaValidationService.ValidateAsync(hCaptcha_response, HttpContext.Connection.RemoteIpAddress?.ToString());
         if (!captchaResult.ShouldProceed)
         {
+            if (captchaResult.Outcome == CaptchaValidationOutcome.Disabled)
+            {
+                LogHCaptchaDisabledWarning(logger);
+                ModelState.AddModelError(string.Empty, "Captcha verification is not configured. Please contact support.");
+                return Page();
+            }
             if (captchaResult.Outcome == CaptchaValidationOutcome.MissingToken)
             {
                 ModelState.AddModelError(string.Empty, HCaptchaErrorDetails.GetValue(HCaptchaErrorDetails.MissingInputResponse).FriendlyDescription);
@@ -105,14 +111,7 @@ public partial class RegisterModel(
             if (captchaResult.Outcome == CaptchaValidationOutcome.Invalid)
             {
                 HCaptchaResult? response = captchaResult.Response;
-                // The JSON should also return a field "success" as true
-                // https://docs.hcaptcha.com/#verify-the-user-response-server-side
-                if (response is null)
-                {
-                    LogHCaptchaNullErrorCodes(logger);
-                    ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
-                    return Page();
-                }
+                ArgumentNullException.ThrowIfNull(response);
 
                 switch (response.ErrorCodes?.Length)
                 {
@@ -134,6 +133,13 @@ public partial class RegisterModel(
                             }
                             if (HCaptchaErrorDetails.TryGetValue(response.ErrorCodes.Single(), out HCaptchaErrorDetails? details))
                             {
+                                if (details is null)
+                                {
+                                    LogHCaptchaNullErrorCodes(logger);
+                                    ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
+                                    return Page();
+                                }
+
                                 switch (details.ErrorCode)
                                 {
                                     case HCaptchaErrorDetails.MissingInputResponse:
@@ -246,6 +252,9 @@ public partial class RegisterModel(
 
     [LoggerMessage(Level = LogLevel.Information, Message = "User created a new account with password.")]
     private static partial void LogUserCreatedWithPassword(ILogger<RegisterModel> logger);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Captcha is disabled in configuration")]
+    private static partial void LogHCaptchaDisabledWarning(ILogger<RegisterModel> logger);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "HCaptcha determined the passcode is not valid with zero error codes")]
     private static partial void LogHCaptchaNoErrorCodes(ILogger<RegisterModel> logger);

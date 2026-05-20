@@ -46,24 +46,7 @@ public partial class ChatController : ControllerBase
         CaptchaValidationResult captchaValidation = await _CaptchaValidationService.ValidateAsync(request.CaptchaResponse, HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
         if (!captchaValidation.ShouldProceed)
         {
-            if (captchaValidation.Outcome == CaptchaValidationOutcome.Disabled)
-            {
-                LogCaptchaConfigurationMissing(_Logger);
-                return StatusCode(503, new { error = "Human verification is temporarily unavailable. Please try again later.", errorCode = "captcha_unavailable" });
-            }
-
-            if (captchaValidation.Outcome == CaptchaValidationOutcome.Unavailable)
-            {
-                LogCaptchaServiceUnavailable(_Logger);
-                return StatusCode(503, new { error = "Human verification is temporarily unavailable. Please try again later.", errorCode = "captcha_unavailable" });
-            }
-
-            if (captchaValidation.Outcome == CaptchaValidationOutcome.Invalid)
-            {
-                LogCaptchaValidationFailed(_Logger, string.Join(',', captchaValidation.Response?.ErrorCodes ?? []));
-            }
-
-            return StatusCode(403, new { error = "Human verification required.", errorCode = "captcha_failed" });
+            return HandleCaptchaValidationFailure(captchaValidation);
         }
 
         var previousResponseId = string.IsNullOrWhiteSpace(request.PreviousResponseId)
@@ -129,29 +112,7 @@ public partial class ChatController : ControllerBase
         CaptchaValidationResult captchaValidation = await _CaptchaValidationService.ValidateAsync(request.CaptchaResponse, HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
         if (!captchaValidation.ShouldProceed)
         {
-            if (captchaValidation.Outcome == CaptchaValidationOutcome.Disabled)
-            {
-                LogCaptchaConfigurationMissing(_Logger);
-                Response.StatusCode = 503;
-                await Response.WriteAsJsonAsync(new { error = "Human verification is temporarily unavailable. Please try again later.", errorCode = "captcha_unavailable" }, cancellationToken);
-                return;
-            }
-
-            if (captchaValidation.Outcome == CaptchaValidationOutcome.Unavailable)
-            {
-                LogCaptchaServiceUnavailable(_Logger);
-                Response.StatusCode = 503;
-                await Response.WriteAsJsonAsync(new { error = "Human verification is temporarily unavailable. Please try again later.", errorCode = "captcha_unavailable" }, cancellationToken);
-                return;
-            }
-
-            if (captchaValidation.Outcome == CaptchaValidationOutcome.Invalid)
-            {
-                LogCaptchaValidationFailed(_Logger, string.Join(',', captchaValidation.Response?.ErrorCodes ?? []));
-            }
-
-            Response.StatusCode = 403;
-            await Response.WriteAsJsonAsync(new { error = "Human verification required.", errorCode = "captcha_failed" }, cancellationToken);
+            await HandleCaptchaValidationFailureAsync(captchaValidation, cancellationToken);
             return;
         }
 
@@ -334,6 +295,61 @@ public partial class ChatController : ControllerBase
                 // ObjectDisposedException on abrupt client disconnect — swallow expected
                 // transport/disconnect exceptions to avoid masking the original exception.
             }
+        }
+    }
+
+    private IActionResult HandleCaptchaValidationFailure(CaptchaValidationResult captchaValidation)
+    {
+        return captchaValidation.Outcome switch
+        {
+            CaptchaValidationOutcome.Disabled => LogAndReturn503(),
+            CaptchaValidationOutcome.Unavailable => LogAndReturn503(),
+            CaptchaValidationOutcome.Invalid => LogInvalidAndReturn403(),
+            _ => StatusCode(403, new { error = "Human verification required.", errorCode = "captcha_failed" })
+        };
+
+        IActionResult LogAndReturn503()
+        {
+            if (captchaValidation.Outcome == CaptchaValidationOutcome.Disabled)
+                LogCaptchaConfigurationMissing(_Logger);
+            else
+                LogCaptchaServiceUnavailable(_Logger);
+
+            return StatusCode(503, new { error = "Human verification is temporarily unavailable. Please try again later.", errorCode = "captcha_unavailable" });
+        }
+
+        IActionResult LogInvalidAndReturn403()
+        {
+            LogCaptchaValidationFailed(_Logger, string.Join(',', captchaValidation.Response?.ErrorCodes ?? []));
+            return StatusCode(403, new { error = "Human verification required.", errorCode = "captcha_failed" });
+        }
+    }
+
+    private async Task HandleCaptchaValidationFailureAsync(CaptchaValidationResult captchaValidation, CancellationToken cancellationToken)
+    {
+        switch (captchaValidation.Outcome)
+        {
+            case CaptchaValidationOutcome.Disabled:
+            case CaptchaValidationOutcome.Unavailable:
+                if (captchaValidation.Outcome == CaptchaValidationOutcome.Disabled)
+                    LogCaptchaConfigurationMissing(_Logger);
+                else
+                    LogCaptchaServiceUnavailable(_Logger);
+
+                Response.StatusCode = 503;
+                await Response.WriteAsJsonAsync(new { error = "Human verification is temporarily unavailable. Please try again later.", errorCode = "captcha_unavailable" }, cancellationToken);
+                break;
+
+            case CaptchaValidationOutcome.Invalid:
+                LogCaptchaValidationFailed(_Logger, string.Join(',', captchaValidation.Response?.ErrorCodes ?? []));
+                Response.StatusCode = 403;
+                await Response.WriteAsJsonAsync(new { error = "Human verification required.", errorCode = "captcha_failed" }, cancellationToken);
+                break;
+
+            default:
+                Response.StatusCode = 403;
+                await Response.WriteAsJsonAsync(new { error = "Human verification required.", errorCode = "captcha_failed" }, cancellationToken);
+                break;
         }
     }
 

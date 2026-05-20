@@ -106,9 +106,6 @@ public class CaptchaValidationServiceTests
     {
         public int CallCount { get; private set; }
 
-        public Task<HCaptchaResult?> VerifyAsync(string secret, string response, string sitekey, CancellationToken cancellationToken = default)
-            => throw new NotSupportedException();
-
         public Task<HCaptchaResult?> VerifyAsync(string? response, CancellationToken cancellationToken = default)
             => VerifyAsync(response, remoteIp: null, cancellationToken);
 
