@@ -74,6 +74,10 @@ public partial class CaptchaService(IHttpClientFactory clientFactory, IOptions<C
             res.EnsureSuccessStatusCode();
             return JsonSerializer.Deserialize<HCaptchaResult>(await res.Content.ReadAsStringAsync(cancellationToken));
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
         {
             LogSiteverifyFailed(logger, ex);

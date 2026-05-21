@@ -62,5 +62,6 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.15.2" />
     <PackageVersion Include="DotnetSitemapGenerator" Version="2.0.0" />
+    <PackageVersion Include="OpenAI" Version="2.10.0" />
   </ItemGroup>
 </Project>

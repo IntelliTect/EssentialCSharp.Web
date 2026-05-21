@@ -1,0 +1,1 @@
+Running tests from D:\copilot-worktrees\EssentialCSharp.Web\benjaminmichaelis-super-giggle\EssentialCSharp.Web.Tests\bin\Release\net10.0\EssentialCSharp.Web.Tests.dll (net10.0|x64)
