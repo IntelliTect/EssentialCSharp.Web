@@ -344,8 +344,11 @@ public partial class ChatController : ControllerBase
         }
     }
 
-    private static object CaptchaUnavailableResponseBody =>
-        new { error = "Human verification is temporarily unavailable. Please try again later.", errorCode = "captcha_unavailable" };
+    private static readonly object CaptchaUnavailableResponseBody = new
+    {
+        error = "Human verification is temporarily unavailable. Please try again later.",
+        errorCode = "captcha_unavailable"
+    };
 
     private void LogCaptchaUnavailable(CaptchaValidationOutcome outcome)
     {
