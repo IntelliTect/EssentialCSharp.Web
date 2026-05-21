@@ -21,7 +21,7 @@
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.5.0" />
     <!-- TODO: update to stable release when Azure.Monitor.OpenTelemetry.Profiler reaches GA -->
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.Profiler" Version="1.0.1-beta.1" />
-    <PackageVersion Include="TUnit" Version="1.45.8" />
+    <PackageVersion Include="TUnit" Version="1.45.22" />
     <PackageVersion Include="TUnit.AspNetCore" Version="1.45.8" />
     <PackageVersion Include="EssentialCSharp.Shared.Models" Version="$(ToolingPackagesVersion)" />
     <PackageVersion Include="HtmlAgilityPack" Version="1.12.4" />
