@@ -80,6 +80,12 @@ jobs:
           cache-dir: buildkit-cache
           skip-extraction: false
 
+      - name: Write IndexNow key verification file
+        if: env.INDEXNOW_API_KEY != ''
+        env:
+          INDEXNOW_API_KEY: ${{ secrets.INDEXNOW_API_KEY }}
+        run: printf '%s' "$INDEXNOW_API_KEY" > "EssentialCSharp.Web/wwwroot/$INDEXNOW_API_KEY.txt"
+
       # Only build for dev registry — prod gets the image via az acr import in deploy-production
       - name: Build Container Image
         if: github.event_name != 'pull_request_target' && github.event_name != 'pull_request'
@@ -312,6 +318,49 @@ jobs:
           # -f allows re-tagging the same SHA on workflow re-runs
           git tag -f "deployed/prod/${{ github.sha }}"
           git push origin "deployed/prod/${{ github.sha }}" --force
+
+      - name: Notify IndexNow of Sitemap Update
+        continue-on-error: true
+        env:
+          INDEXNOW_API_KEY: ${{ secrets.INDEXNOW_API_KEY }}
+        run: |
+          # IndexNow Protocol: Notifies search engines (Bing, Yandex, Naver) of content updates.
+          # See: https://www.indexnow.org/documentation
+          #
+          # Domain ownership is verified via a key file hosted at:
+          #   https://essentialcsharp.com/{key}.txt  (served from wwwroot/{key}.txt)
+          # The file must contain exactly the key value. Without it, submissions return HTTP 403.
+          #
+          # We fetch the live sitemap (app is confirmed up after smoke test) and extract all <loc>
+          # URLs to submit as actual content URLs per the IndexNow spec.
+
+          # Fetch the live sitemap and extract all <loc> URLs into a newline-delimited list
+          SITEMAP=$(curl -sf "https://essentialcsharp.com/sitemap.xml")
+          if [ -z "$SITEMAP" ]; then
+            echo "::warning::Could not fetch sitemap; skipping IndexNow submission."
+            exit 0
+          fi
+
+          # Build a JSON array from <loc>...</loc> entries
+          URL_ARRAY=$(echo "$SITEMAP" \
+            | grep -oP '(?<=<loc>)[^<]+' \
+            | jq -Rn '[inputs]')
+
+          URL_COUNT=$(echo "$URL_ARRAY" | jq 'length')
+          echo "Submitting $URL_COUNT URLs to IndexNow..."
+
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST https://api.indexnow.org/indexnow \
+            -H "Content-Type: application/json; charset=utf-8" \
+            -d "{
+              \"host\": \"essentialcsharp.com\",
+              \"key\": \"$INDEXNOW_API_KEY\",
+              \"urlList\": $URL_ARRAY
+            }")
+
+          echo "IndexNow response: HTTP $RESPONSE"
+          if [ "$RESPONSE" != "200" ] && [ "$RESPONSE" != "202" ]; then
+            echo "::warning::IndexNow submission returned HTTP $RESPONSE (200/202 = success, 202 = key validation pending)."
+          fi
 
       - name: Logout of Azure CLI
         if: always()
