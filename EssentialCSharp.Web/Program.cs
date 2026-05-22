@@ -481,7 +481,12 @@ public partial class Program
                     }
                 });
             });
-            app.UseForwardedHeaders();
+            // Skip manual UseForwardedHeaders when ASPNETCORE_FORWARDEDHEADERS_ENABLED=true;
+            // the built-in startup filter already called it before this pipeline runs.
+            if (!string.Equals(app.Configuration["ASPNETCORE_FORWARDEDHEADERS_ENABLED"], "true", StringComparison.OrdinalIgnoreCase))
+            {
+                app.UseForwardedHeaders();
+            }
 
             // Build dynamic CSP — TryDotNet origin comes from runtime config
             string? tryDotNetOrigin = app.Configuration["TryDotNet:Origin"];
@@ -532,7 +537,10 @@ public partial class Program
         else
         {
             app.UseDeveloperExceptionPage();
-            app.UseForwardedHeaders();
+            if (!string.Equals(app.Configuration["ASPNETCORE_FORWARDEDHEADERS_ENABLED"], "true", StringComparison.OrdinalIgnoreCase))
+            {
+                app.UseForwardedHeaders();
+            }
         }
 
         app.MapHealthChecks("/health").DisableRateLimiting();
