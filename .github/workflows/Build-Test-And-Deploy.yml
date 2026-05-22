@@ -92,7 +92,7 @@ jobs:
             "nuget_pat=${{ secrets.AZURE_DEVOPS_PAT }}"
           outputs: type=docker,dest=${{ github.workspace }}/essentialcsharpwebimage.tar
           cache-from: type=gha,scope=essentialcsharpweb-main
-          cache-to: type=gha,mode=min,scope=essentialcsharpweb-main
+          cache-to: type=gha,mode=max,scope=essentialcsharpweb-main
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
