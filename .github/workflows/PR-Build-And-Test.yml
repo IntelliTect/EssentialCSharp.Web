@@ -109,5 +109,5 @@ jobs:
           cache-from: |
             type=gha,scope=essentialcsharpweb-main
             type=gha,scope=essentialcsharpweb-pr
-          cache-to: type=gha,mode=max,scope=essentialcsharpweb-pr
+          cache-to: type=gha,mode=min,scope=essentialcsharpweb-pr
           build-args: ACCESS_TO_NUGET_FEED=false
