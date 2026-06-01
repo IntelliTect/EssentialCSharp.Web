@@ -278,14 +278,15 @@ public partial class ChatController : ControllerBase
             LogChatStreamErrorBeforeResponseStarted(_Logger, ex, User.Identity?.Name);
             Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
             Response.ContentType = "application/json";
-            await Response.WriteAsJsonAsync(new { error = "Chat service unavailable", errorCode = "chat_unavailable" }, cancellationToken);
+            await Response.WriteAsJsonAsync(new { error = ex.Message, errorCode = ex.ErrorCode }, cancellationToken);
         }
         catch (ChatBackendUnavailableException ex)
         {
             LogChatStreamErrorMidStream(_Logger, ex, User.Identity?.Name);
             try
             {
-                await Response.WriteAsync("data: {\"type\":\"error\",\"message\":\"Chat service unavailable\",\"errorCode\":\"chat_unavailable\"}\n\n", CancellationToken.None);
+                var eventData = JsonSerializer.Serialize(new { type = "error", message = ex.Message, errorCode = ex.ErrorCode });
+                await Response.WriteAsync($"data: {eventData}\n\n", CancellationToken.None);
                 await Response.Body.FlushAsync(CancellationToken.None);
             }
             catch (Exception writeException) when (writeException is IOException or OperationCanceledException or ObjectDisposedException)

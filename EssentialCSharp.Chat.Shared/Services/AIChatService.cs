@@ -251,17 +251,20 @@ public partial class AIChatService : IChatCompletionService
             else if (update is StreamingResponseErrorUpdate errorUpdate)
             {
                 throw new ChatBackendUnavailableException(
-                    $"Streaming response error: {errorUpdate.Code ?? "unknown"} - {errorUpdate.Message ?? "no message provided"}");
+                    $"Streaming response error: {errorUpdate.Code ?? "unknown"} - {errorUpdate.Message ?? "no message provided"}",
+                    errorCode: "stream_response_error");
             }
             else if (update is StreamingResponseFailedUpdate failedUpdate)
             {
                 throw new ChatBackendUnavailableException(
-                    BuildStreamingTerminalFailureMessage(failedUpdate.Response, "failed"));
+                    BuildStreamingTerminalFailureMessage(failedUpdate.Response, "failed"),
+                    errorCode: "stream_response_failed");
             }
             else if (update is StreamingResponseIncompleteUpdate incompleteUpdate)
             {
                 throw new ChatBackendUnavailableException(
-                    BuildStreamingTerminalFailureMessage(incompleteUpdate.Response, "incomplete"));
+                    BuildStreamingTerminalFailureMessage(incompleteUpdate.Response, "incomplete"),
+                    errorCode: "stream_response_incomplete");
             }
             // StreamingResponseCompletedUpdate: ResponseId already emitted above — no-op.
         }
