@@ -250,18 +250,39 @@ public partial class AIChatService : IChatCompletionService
             }
             else if (update is StreamingResponseErrorUpdate errorUpdate)
             {
+                LogStreamingResponseErrorUpdate(
+                    _Logger,
+                    currentLegResponseId,
+                    errorUpdate.Code ?? "unknown",
+                    errorUpdate.Message ?? "no message provided");
                 throw new ChatBackendUnavailableException(
                     $"Streaming response error: {errorUpdate.Code ?? "unknown"} - {errorUpdate.Message ?? "no message provided"}",
                     errorCode: "stream_response_error");
             }
             else if (update is StreamingResponseFailedUpdate failedUpdate)
             {
+                LogStreamingResponseTerminalUpdate(
+                    _Logger,
+                    "failed",
+                    failedUpdate.Response.Id,
+                    failedUpdate.Response.Status?.ToString(),
+                    failedUpdate.Response.Error?.Code.ToString(),
+                    failedUpdate.Response.Error?.Message,
+                    failedUpdate.Response.IncompleteStatusDetails?.Reason?.ToString());
                 throw new ChatBackendUnavailableException(
                     BuildStreamingTerminalFailureMessage(failedUpdate.Response, "failed"),
                     errorCode: "stream_response_failed");
             }
             else if (update is StreamingResponseIncompleteUpdate incompleteUpdate)
             {
+                LogStreamingResponseTerminalUpdate(
+                    _Logger,
+                    "incomplete",
+                    incompleteUpdate.Response.Id,
+                    incompleteUpdate.Response.Status?.ToString(),
+                    incompleteUpdate.Response.Error?.Code.ToString(),
+                    incompleteUpdate.Response.Error?.Message,
+                    incompleteUpdate.Response.IncompleteStatusDetails?.Reason?.ToString());
                 throw new ChatBackendUnavailableException(
                     BuildStreamingTerminalFailureMessage(incompleteUpdate.Response, "incomplete"),
                     errorCode: "stream_response_incomplete");
@@ -674,6 +695,27 @@ public partial class AIChatService : IChatCompletionService
 
     [LoggerMessage(Level = LogLevel.Information, Message = "AI contextual search performed for prompt enrichment")]
     private static partial void LogContextualSearchPerformed(ILogger logger);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Streaming response error update received: responseId={ResponseId} code={Code} message={Message}")]
+    private static partial void LogStreamingResponseErrorUpdate(
+        ILogger logger,
+        string? responseId,
+        string code,
+        string message);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Streaming response terminal update: updateType={UpdateType} responseId={ResponseId} status={Status} errorCode={ErrorCode} errorMessage={ErrorMessage} incompleteReason={IncompleteReason}")]
+    private static partial void LogStreamingResponseTerminalUpdate(
+        ILogger logger,
+        string updateType,
+        string? responseId,
+        string? status,
+        string? errorCode,
+        string? errorMessage,
+        string? incompleteReason);
 
     /// <summary>
     /// Returns <c>true</c> when the API error indicates the conversation context window was exceeded.
