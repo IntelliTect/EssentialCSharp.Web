@@ -194,6 +194,7 @@ public partial class AIChatService : IChatCompletionService
         string? currentLegResponseId = null;
         var textPartsWithDelta = new HashSet<string>(StringComparer.Ordinal);
         var refusalPartsWithDelta = new HashSet<string>(StringComparer.Ordinal);
+        var streamUpdateTypes = new List<string>(capacity: 64);
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         List<FunctionCallResponseItem>? pendingFunctionCalls = null;
 
@@ -202,6 +203,9 @@ public partial class AIChatService : IChatCompletionService
         // separate helper that puts try/catch only around MoveNextAsync.
         await foreach (var update in RethrowContextLengthErrors(streamingUpdates, responseOptions.PreviousResponseId, cancellationToken))
         {
+            var updateType = update.GetType().Name;
+            streamUpdateTypes.Add(updateType);
+
             if (update is StreamingResponseCreatedUpdate created)
             {
                 // Emit the response ID early so the controller can record ownership
@@ -254,7 +258,8 @@ public partial class AIChatService : IChatCompletionService
                     _Logger,
                     currentLegResponseId,
                     errorUpdate.Code ?? "unknown",
-                    errorUpdate.Message ?? "no message provided");
+                    errorUpdate.Message ?? "no message provided",
+                    BuildRecentUpdateSequence(streamUpdateTypes));
                 throw new ChatBackendUnavailableException(
                     $"Streaming response error: {errorUpdate.Code ?? "unknown"} - {errorUpdate.Message ?? "no message provided"}",
                     errorCode: "stream_response_error");
@@ -268,7 +273,8 @@ public partial class AIChatService : IChatCompletionService
                     failedUpdate.Response.Status?.ToString(),
                     failedUpdate.Response.Error?.Code.ToString(),
                     failedUpdate.Response.Error?.Message,
-                    failedUpdate.Response.IncompleteStatusDetails?.Reason?.ToString());
+                    failedUpdate.Response.IncompleteStatusDetails?.Reason?.ToString(),
+                    BuildRecentUpdateSequence(streamUpdateTypes));
                 throw new ChatBackendUnavailableException(
                     BuildStreamingTerminalFailureMessage(failedUpdate.Response, "failed"),
                     errorCode: "stream_response_failed");
@@ -282,7 +288,8 @@ public partial class AIChatService : IChatCompletionService
                     incompleteUpdate.Response.Status?.ToString(),
                     incompleteUpdate.Response.Error?.Code.ToString(),
                     incompleteUpdate.Response.Error?.Message,
-                    incompleteUpdate.Response.IncompleteStatusDetails?.Reason?.ToString());
+                    incompleteUpdate.Response.IncompleteStatusDetails?.Reason?.ToString(),
+                    BuildRecentUpdateSequence(streamUpdateTypes));
                 throw new ChatBackendUnavailableException(
                     BuildStreamingTerminalFailureMessage(incompleteUpdate.Response, "incomplete"),
                     errorCode: "stream_response_incomplete");
@@ -676,6 +683,15 @@ public partial class AIChatService : IChatCompletionService
 
         return $"Streaming response ended with status '{terminalStatus}'.";
     }
+
+    private static string BuildRecentUpdateSequence(List<string> streamUpdateTypes)
+    {
+        const int MaxUpdatesToInclude = 40;
+        int count = streamUpdateTypes.Count;
+        if (count <= MaxUpdatesToInclude)
+            return string.Join(" -> ", streamUpdateTypes);
+        return $"... -> {string.Join(" -> ", streamUpdateTypes.Skip(count - MaxUpdatesToInclude))}";
+    }
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
     [LoggerMessage(Level = LogLevel.Information, Message = "AI tool call invoked: tool={ToolName} iteration={Iteration} user={EndUserId}")]
@@ -698,16 +714,17 @@ public partial class AIChatService : IChatCompletionService
 
     [LoggerMessage(
         Level = LogLevel.Warning,
-        Message = "Streaming response error update received: responseId={ResponseId} code={Code} message={Message}")]
+        Message = "Streaming response error update received: responseId={ResponseId} code={Code} message={Message} updateSequence={UpdateSequence}")]
     private static partial void LogStreamingResponseErrorUpdate(
         ILogger logger,
         string? responseId,
         string code,
-        string message);
+        string message,
+        string updateSequence);
 
     [LoggerMessage(
         Level = LogLevel.Warning,
-        Message = "Streaming response terminal update: updateType={UpdateType} responseId={ResponseId} status={Status} errorCode={ErrorCode} errorMessage={ErrorMessage} incompleteReason={IncompleteReason}")]
+        Message = "Streaming response terminal update: updateType={UpdateType} responseId={ResponseId} status={Status} errorCode={ErrorCode} errorMessage={ErrorMessage} incompleteReason={IncompleteReason} updateSequence={UpdateSequence}")]
     private static partial void LogStreamingResponseTerminalUpdate(
         ILogger logger,
         string updateType,
@@ -715,7 +732,8 @@ public partial class AIChatService : IChatCompletionService
         string? status,
         string? errorCode,
         string? errorMessage,
-        string? incompleteReason);
+        string? incompleteReason,
+        string updateSequence);
 
     /// <summary>
     /// Returns <c>true</c> when the API error indicates the conversation context window was exceeded.
