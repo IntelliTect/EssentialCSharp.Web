@@ -248,6 +248,21 @@ public partial class AIChatService : IChatCompletionService
                 if (!refusalPartsWithDelta.Contains(refusalPartKey) && !string.IsNullOrEmpty(refusalDoneUpdate.Refusal))
                     yield return (refusalDoneUpdate.Refusal, null);
             }
+            else if (update is StreamingResponseErrorUpdate errorUpdate)
+            {
+                throw new ChatBackendUnavailableException(
+                    $"Streaming response error: {errorUpdate.Code ?? "unknown"} - {errorUpdate.Message ?? "no message provided"}");
+            }
+            else if (update is StreamingResponseFailedUpdate failedUpdate)
+            {
+                throw new ChatBackendUnavailableException(
+                    BuildStreamingTerminalFailureMessage(failedUpdate.Response, "failed"));
+            }
+            else if (update is StreamingResponseIncompleteUpdate incompleteUpdate)
+            {
+                throw new ChatBackendUnavailableException(
+                    BuildStreamingTerminalFailureMessage(incompleteUpdate.Response, "incomplete"));
+            }
             // StreamingResponseCompletedUpdate: ResponseId already emitted above — no-op.
         }
 
@@ -622,6 +637,22 @@ public partial class AIChatService : IChatCompletionService
         }
         return arguments;
     }
+
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+    private static string BuildStreamingTerminalFailureMessage(ResponseResult response, string terminalStatus)
+    {
+        if (!string.IsNullOrWhiteSpace(response.Error?.Message))
+            return $"Streaming response {terminalStatus}: {response.Error.Message}";
+
+        if (response.IncompleteStatusDetails?.Reason is { } reason)
+            return $"Streaming response {terminalStatus}: {reason}";
+
+        if (response.Status is { } status)
+            return $"Streaming response ended with status '{status}'.";
+
+        return $"Streaming response ended with status '{terminalStatus}'.";
+    }
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
     [LoggerMessage(Level = LogLevel.Information, Message = "AI tool call invoked: tool={ToolName} iteration={Iteration} user={EndUserId}")]
     private static partial void LogMcpToolCallInvoked(ILogger logger, string toolName, int iteration, string? endUserId);
