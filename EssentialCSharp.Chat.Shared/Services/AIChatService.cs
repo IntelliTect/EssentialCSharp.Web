@@ -192,6 +192,8 @@ public partial class AIChatService : IChatCompletionService
         // Track this leg's response ID so tool-call continuations chain from it,
         // ensuring the model's context includes the user's message + reasoning.
         string? currentLegResponseId = null;
+        var textPartsWithDelta = new HashSet<string>(StringComparer.Ordinal);
+        var refusalPartsWithDelta = new HashSet<string>(StringComparer.Ordinal);
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         List<FunctionCallResponseItem>? pendingFunctionCalls = null;
 
@@ -223,7 +225,43 @@ public partial class AIChatService : IChatCompletionService
             }
             else if (update is StreamingResponseOutputTextDeltaUpdate deltaUpdate)
             {
+                textPartsWithDelta.Add($"{deltaUpdate.ItemId}:{deltaUpdate.OutputIndex}:{deltaUpdate.ContentIndex}");
                 yield return (deltaUpdate.Delta.ToString(), null);
+            }
+            else if (update is StreamingResponseOutputTextDoneUpdate doneUpdate)
+            {
+                // Some SDK/server combinations emit only TextDone (no deltas) for a content part.
+                // Emit Done text when no delta was seen for that same part to avoid duplicates.
+                string textPartKey = $"{doneUpdate.ItemId}:{doneUpdate.OutputIndex}:{doneUpdate.ContentIndex}";
+                if (!textPartsWithDelta.Contains(textPartKey) && !string.IsNullOrEmpty(doneUpdate.Text))
+                    yield return (doneUpdate.Text, null);
+            }
+            else if (update is StreamingResponseRefusalDeltaUpdate refusalDeltaUpdate)
+            {
+                refusalPartsWithDelta.Add($"{refusalDeltaUpdate.ItemId}:{refusalDeltaUpdate.OutputIndex}:{refusalDeltaUpdate.ContentIndex}");
+                yield return (refusalDeltaUpdate.Delta.ToString(), null);
+            }
+            else if (update is StreamingResponseRefusalDoneUpdate refusalDoneUpdate)
+            {
+                // Refusal content can also arrive as done-only events.
+                string refusalPartKey = $"{refusalDoneUpdate.ItemId}:{refusalDoneUpdate.OutputIndex}:{refusalDoneUpdate.ContentIndex}";
+                if (!refusalPartsWithDelta.Contains(refusalPartKey) && !string.IsNullOrEmpty(refusalDoneUpdate.Refusal))
+                    yield return (refusalDoneUpdate.Refusal, null);
+            }
+            else if (update is StreamingResponseErrorUpdate errorUpdate)
+            {
+                throw new ChatBackendUnavailableException(
+                    $"Streaming response error: {errorUpdate.Code ?? "unknown"} - {errorUpdate.Message ?? "no message provided"}");
+            }
+            else if (update is StreamingResponseFailedUpdate failedUpdate)
+            {
+                throw new ChatBackendUnavailableException(
+                    BuildStreamingTerminalFailureMessage(failedUpdate.Response, "failed"));
+            }
+            else if (update is StreamingResponseIncompleteUpdate incompleteUpdate)
+            {
+                throw new ChatBackendUnavailableException(
+                    BuildStreamingTerminalFailureMessage(incompleteUpdate.Response, "incomplete"));
             }
             // StreamingResponseCompletedUpdate: ResponseId already emitted above — no-op.
         }
@@ -599,6 +637,22 @@ public partial class AIChatService : IChatCompletionService
         }
         return arguments;
     }
+
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+    private static string BuildStreamingTerminalFailureMessage(ResponseResult response, string terminalStatus)
+    {
+        if (!string.IsNullOrWhiteSpace(response.Error?.Message))
+            return $"Streaming response {terminalStatus}: {response.Error.Message}";
+
+        if (response.IncompleteStatusDetails?.Reason is { } reason)
+            return $"Streaming response {terminalStatus}: {reason}";
+
+        if (response.Status is { } status)
+            return $"Streaming response ended with status '{status}'.";
+
+        return $"Streaming response ended with status '{terminalStatus}'.";
+    }
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
     [LoggerMessage(Level = LogLevel.Information, Message = "AI tool call invoked: tool={ToolName} iteration={Iteration} user={EndUserId}")]
     private static partial void LogMcpToolCallInvoked(ILogger logger, string toolName, int iteration, string? endUserId);
