@@ -102,6 +102,7 @@ public partial class AIChatService : IChatCompletionService
 
         // Create the streaming response using the Responses API
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        responseOptions.StreamingEnabled = true;
         responseOptions.InputItems.Clear();
         responseOptions.InputItems.Add(ResponseItem.CreateUserMessageItem(enrichedPrompt));
         var streamingUpdates = _ResponseClient.CreateResponseStreamingAsync(responseOptions, cancellationToken);
@@ -560,6 +561,7 @@ public partial class AIChatService : IChatCompletionService
             Temperature = source.Temperature,
             TopP = source.TopP,
             ServiceTier = source.ServiceTier,
+            StreamingEnabled = source.StreamingEnabled,
         };
         foreach (var tool in source.Tools)
             clone.Tools.Add(tool);
