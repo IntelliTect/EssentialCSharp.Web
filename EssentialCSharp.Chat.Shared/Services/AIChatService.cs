@@ -192,6 +192,7 @@ public partial class AIChatService : IChatCompletionService
         // Track this leg's response ID so tool-call continuations chain from it,
         // ensuring the model's context includes the user's message + reasoning.
         string? currentLegResponseId = null;
+        var textPartsWithDelta = new HashSet<string>(StringComparer.Ordinal);
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         List<FunctionCallResponseItem>? pendingFunctionCalls = null;
 
@@ -223,7 +224,16 @@ public partial class AIChatService : IChatCompletionService
             }
             else if (update is StreamingResponseOutputTextDeltaUpdate deltaUpdate)
             {
+                textPartsWithDelta.Add($"{deltaUpdate.ItemId}:{deltaUpdate.OutputIndex}:{deltaUpdate.ContentIndex}");
                 yield return (deltaUpdate.Delta.ToString(), null);
+            }
+            else if (update is StreamingResponseOutputTextDoneUpdate doneUpdate)
+            {
+                // Some SDK/server combinations emit only TextDone (no deltas) for a content part.
+                // Emit Done text when no delta was seen for that same part to avoid duplicates.
+                string textPartKey = $"{doneUpdate.ItemId}:{doneUpdate.OutputIndex}:{doneUpdate.ContentIndex}";
+                if (!textPartsWithDelta.Contains(textPartKey) && !string.IsNullOrEmpty(doneUpdate.Text))
+                    yield return (doneUpdate.Text, null);
             }
             // StreamingResponseCompletedUpdate: ResponseId already emitted above — no-op.
         }
