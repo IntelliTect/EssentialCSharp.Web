@@ -193,6 +193,7 @@ public partial class AIChatService : IChatCompletionService
         // ensuring the model's context includes the user's message + reasoning.
         string? currentLegResponseId = null;
         var textPartsWithDelta = new HashSet<string>(StringComparer.Ordinal);
+        var refusalPartsWithDelta = new HashSet<string>(StringComparer.Ordinal);
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         List<FunctionCallResponseItem>? pendingFunctionCalls = null;
 
@@ -234,6 +235,18 @@ public partial class AIChatService : IChatCompletionService
                 string textPartKey = $"{doneUpdate.ItemId}:{doneUpdate.OutputIndex}:{doneUpdate.ContentIndex}";
                 if (!textPartsWithDelta.Contains(textPartKey) && !string.IsNullOrEmpty(doneUpdate.Text))
                     yield return (doneUpdate.Text, null);
+            }
+            else if (update is StreamingResponseRefusalDeltaUpdate refusalDeltaUpdate)
+            {
+                refusalPartsWithDelta.Add($"{refusalDeltaUpdate.ItemId}:{refusalDeltaUpdate.OutputIndex}:{refusalDeltaUpdate.ContentIndex}");
+                yield return (refusalDeltaUpdate.Delta.ToString(), null);
+            }
+            else if (update is StreamingResponseRefusalDoneUpdate refusalDoneUpdate)
+            {
+                // Refusal content can also arrive as done-only events.
+                string refusalPartKey = $"{refusalDoneUpdate.ItemId}:{refusalDoneUpdate.OutputIndex}:{refusalDoneUpdate.ContentIndex}";
+                if (!refusalPartsWithDelta.Contains(refusalPartKey) && !string.IsNullOrEmpty(refusalDoneUpdate.Refusal))
+                    yield return (refusalDoneUpdate.Refusal, null);
             }
             // StreamingResponseCompletedUpdate: ResponseId already emitted above — no-op.
         }
