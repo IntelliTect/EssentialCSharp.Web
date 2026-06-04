@@ -19,11 +19,17 @@
         const string imageUrl = "https://essentialcsharp.com/images/icon.png";
         const string description = "Accelerate your development knowledge with C# expert Mark Michaelis and Benjamin Michaelis' free, online comprehensive C# tutorial and reference that is updated through C# 11.0";
         string title = $"Essential C#{(string.IsNullOrEmpty(ViewBag.PageTitle) ? string.Empty : $": {ViewBag.PageTitle}")}";
+        string canonicalPath = $"{Context.Request.PathBase}{Context.Request.Path}";
+        if (string.IsNullOrEmpty(canonicalPath))
+        {
+            canonicalPath = "/";
+        }
+        string canonicalUrl = $"{Context.Request.Scheme}://{Context.Request.Host}{canonicalPath}";
     }
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://essentialcsharp.com/" />
+    <meta property="og:url" content="@canonicalUrl" />
     <meta property="og:image:secure_url" content="@imageUrl" />
     <meta property="og:image" content="@imageUrl" />
     <meta name="twitter:image" content="@imageUrl" />
@@ -100,6 +106,7 @@
     <script src="~/js/hcaptcha-form.js" asp-append-version="true"></script>
     <!-- hCaptcha Script -->
     <script src="https://js.hcaptcha.com/1/api.js?render=explicit&onload=ecsOnHcaptchaLoad" async defer></script>
+    <link rel="canonical" href="@canonicalUrl" />
     @await RenderSectionAsync("HeadAppend", required: false)
 </head>
 <body>

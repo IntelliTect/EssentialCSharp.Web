@@ -137,6 +137,7 @@ public partial class Program
 
         builder.Services.AddTrustedForwardedHeaders(builder.Configuration, builder.Environment);
 
+
         ConfigurationManager configuration = builder.Configuration;
         string connectionString = builder.Configuration.GetConnectionString("EssentialCSharpWebContextConnection") ?? throw new InvalidOperationException("Connection string 'EssentialCSharpWebContextConnection' not found.");
 
