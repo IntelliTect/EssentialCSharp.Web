@@ -145,7 +145,6 @@ jobs:
           CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
           RESOURCEGROUP: ${{ vars.RESOURCEGROUP }}
         run: |
-          az extension add --name containerapp --upgrade --only-show-errors
           az containerapp update \
             --name "$CONTAINER_APP_NAME" \
             --resource-group "$RESOURCEGROUP" \
@@ -214,7 +213,6 @@ jobs:
           CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
           RESOURCEGROUP: ${{ vars.RESOURCEGROUP }}
         run: |
-          az extension add --name containerapp --upgrade --only-show-errors
           az containerapp update \
             --name "$CONTAINER_APP_NAME" \
             --resource-group "$RESOURCEGROUP" \
