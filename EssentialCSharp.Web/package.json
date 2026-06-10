@@ -18,7 +18,7 @@
     "jquery": "4.0.0",
     "marked": "18.0.4",
     "vue": "3.5.35",
-    "vuetify": "4.1.0"
+    "vuetify": "4.1.1"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "6.0.7",
