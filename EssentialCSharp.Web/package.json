@@ -16,7 +16,7 @@
     "@zxcvbn-ts/language-en": "^3.0.2",
     "dompurify": "3.4.8",
     "jquery": "4.0.0",
-    "marked": "18.0.4",
+    "marked": "18.0.5",
     "vue": "3.5.35",
     "vuetify": "4.1.0"
   },
