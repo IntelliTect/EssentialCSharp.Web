@@ -37,7 +37,7 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.9" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.9" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.6.0" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.7.0" />
     <PackageVersion Include="Microsoft.SemanticKernel" Version="1.77.0" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.PgVector" Version="1.74.0-preview" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.300" />
