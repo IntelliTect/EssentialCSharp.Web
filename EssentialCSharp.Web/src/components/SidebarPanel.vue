@@ -1,35 +1,11 @@
 <script setup>
 import { inject } from "vue";
 import TocTree from "./TocTree.vue";
+import { NAVIGATION_LINKS } from "../constants/routes.js";
 
 const shell = inject("shell");
 const currentPath = window.location.pathname.toLowerCase();
-const navLinks = [
-    {
-        href: "/home",
-        iconClass: "fas fa-home me-2",
-        label: "Home",
-        activePaths: ["/", "/home"]
-    },
-    {
-        href: "/about",
-        iconClass: "fas fa-book me-2",
-        label: "About",
-        activePaths: ["/about"]
-    },
-    {
-        href: "/guidelines",
-        iconClass: "fas fa-code me-2",
-        label: "Guidelines",
-        activePaths: ["/guidelines"]
-    },
-    {
-        href: "/announcements",
-        iconClass: "fas fa-bullhorn me-2",
-        label: "Announcements",
-        activePaths: ["/announcements"]
-    }
-];
+const navLinks = NAVIGATION_LINKS;
 
 function isActivePath(paths) {
     return paths.includes(currentPath);
@@ -66,7 +42,7 @@ function isActivePath(paths) {
                 <div class="list-group list-group-flush d-md-none mb-3">
                     <a
                         v-for="navLink in navLinks"
-                        :key="navLink.href"
+                        :key="navLink.key"
                         :href="navLink.href"
                         class="list-group-item list-group-item-action"
                         :class="{ active: isActivePath(navLink.activePaths) }"
