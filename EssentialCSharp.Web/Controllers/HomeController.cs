@@ -12,8 +12,18 @@ using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Controllers;
 
-public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment hostingEnvironment, ISiteMappingService siteMappingService, IHttpContextAccessor httpContextAccessor, IRouteConfigurationService routeConfigurationService, IOptions<SiteSettings> siteSettings) : BaseController(routeConfigurationService, httpContextAccessor)
+public partial class HomeController(ILogger<HomeController> logger, IWebHostEnvironment hostingEnvironment, ISiteMappingService siteMappingService, IHttpContextAccessor httpContextAccessor, IRouteConfigurationService routeConfigurationService, IOptions<SiteSettings> siteSettings) : BaseController(routeConfigurationService, httpContextAccessor)
 {
+    // Keep this map in sync with files that materially affect each route's rendered content.
+    private static readonly IReadOnlyDictionary<string, string[]> StaticRouteContentFiles = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["/home"] = ["Views\\Home\\Home.cshtml", "Models\\AnnouncementCatalog.cs"],
+        ["/about"] = ["Views\\Home\\About.cshtml"],
+        ["/announcements"] = ["Views\\Home\\Announcements.cshtml", "Models\\AnnouncementCatalog.cs"],
+        ["/termsofservice"] = ["Views\\Home\\TermsOfService.cshtml"],
+        ["/guidelines"] = ["Views\\Home\\Guidelines.cshtml", "Guidelines\\guidelines.json"]
+    };
+
     [EnableRateLimiting("content")]
     public IActionResult Index()
     {
@@ -95,9 +105,52 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
     [EnableRateLimiting("content")]
     public IActionResult SitemapXml()
     {
-        SitemapXmlHelpers.GenerateSitemapXml(siteMappingService.SiteMappings, RouteConfigurationService, siteSettings.Value.BaseUrl, out var nodes);
+        SitemapXmlHelpers.GenerateSitemapXml(
+            siteMappingService.SiteMappings,
+            RouteConfigurationService,
+            siteSettings.Value.BaseUrl,
+            GetStaticRouteLastModifiedDates(),
+            out var nodes);
         return new SitemapProvider().CreateSitemap(new SitemapModel(nodes));
     }
+
+    private Dictionary<string, DateTime> GetStaticRouteLastModifiedDates()
+    {
+        var routeLastModifiedDates = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+        foreach ((var route, var sourceFiles) in StaticRouteContentFiles)
+        {
+            DateTime? maxLastModified = null;
+            foreach (var sourceFile in sourceFiles)
+            {
+                var sourceFilePath = Path.Join(hostingEnvironment.ContentRootPath, sourceFile);
+                if (!System.IO.File.Exists(sourceFilePath))
+                {
+                    LogSitemapMappedFileMissing(logger, route, sourceFilePath);
+                    continue;
+                }
+
+                var sourceFileLastWriteTime = System.IO.File.GetLastWriteTimeUtc(sourceFilePath);
+                if (sourceFileLastWriteTime <= DateTime.UnixEpoch)
+                {
+                    continue;
+                }
+
+                maxLastModified = maxLastModified is null
+                    ? sourceFileLastWriteTime
+                    : sourceFileLastWriteTime > maxLastModified.Value ? sourceFileLastWriteTime : maxLastModified.Value;
+            }
+
+            if (maxLastModified is DateTime routeLastModified)
+            {
+                routeLastModifiedDates[route] = routeLastModified;
+            }
+        }
+
+        return routeLastModifiedDates;
+    }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Sitemap mapped file missing for route {Route}: {FilePath}")]
+    private static partial void LogSitemapMappedFileMissing(ILogger<HomeController> logger, string route, string filePath);
 
     private string FlipPage(int currentChapter, int currentPage, bool next)
     {
