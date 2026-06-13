@@ -26,18 +26,13 @@ COPY EssentialCSharp.Chat.Tests/EssentialCSharp.Chat.Tests.csproj ./EssentialCSh
 COPY EssentialCSharp.Chat/EssentialCSharp.Chat.csproj ./EssentialCSharp.Chat/
 COPY EssentialCSharp.Web.Tests/EssentialCSharp.Web.Tests.csproj ./EssentialCSharp.Web.Tests/
 COPY EssentialCSharp.Web/EssentialCSharp.Web.csproj ./EssentialCSharp.Web/
-RUN --mount=type=secret,id=nuget_pat,required=false \
+RUN mkdir -p /root/.nuget/NuGet
+RUN --mount=type=secret,id=nuget_config,required=false,target=/root/.nuget/NuGet/NuGet.Config \
     --mount=type=cache,id=essentialcsharp-web-nuget,target=/root/.nuget/packages \
-    if [ "$ACCESS_TO_NUGET_FEED" = "true" ] && [ ! -s /run/secrets/nuget_pat ]; then \
-      echo "ERROR: ACCESS_TO_NUGET_FEED=true but nuget_pat secret is missing or empty" >&2; exit 1; \
+    if [ "$ACCESS_TO_NUGET_FEED" = "true" ] && [ ! -s /root/.nuget/NuGet/NuGet.Config ]; then \
+      echo "ERROR: ACCESS_TO_NUGET_FEED=true but nuget_config secret is missing or empty" >&2; exit 1; \
     fi && \
-    if [ "$ACCESS_TO_NUGET_FEED" = "true" ]; then \
-      mkdir -p /root/.nuget/NuGet && \
-      printf '<?xml version="1.0" encoding="utf-8"?>\n<configuration>\n  <packageSourceCredentials>\n    <EssentialCSharp>\n      <add key="Username" value="az" />\n      <add key="ClearTextPassword" value="%s" />\n    </EssentialCSharp>\n  </packageSourceCredentials>\n</configuration>\n' \
-        "$(cat /run/secrets/nuget_pat)" > /root/.nuget/NuGet/NuGet.Config; \
-    fi && \
-    dotnet restore "EssentialCSharp.Web.slnx" -p:AccessToNugetFeed=$ACCESS_TO_NUGET_FEED && \
-    rm -f /root/.nuget/NuGet/NuGet.Config
+    dotnet restore "EssentialCSharp.Web.slnx" -p:AccessToNugetFeed=$ACCESS_TO_NUGET_FEED
 COPY . .
 COPY --from=frontend-build /frontend/EssentialCSharp.Web/wwwroot/dist ./EssentialCSharp.Web/wwwroot/dist
 RUN --mount=type=cache,id=essentialcsharp-web-nuget,target=/root/.nuget/packages \

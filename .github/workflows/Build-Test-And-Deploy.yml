@@ -80,6 +80,14 @@ jobs:
           cache-dir: buildkit-cache
           skip-extraction: false
 
+      - name: Generate Docker NuGet credentials config
+        env:
+          NUGET_FEED_TOKEN: ${{ secrets.AZURE_DEVOPS_PAT }}
+        run: |
+          mkdir -p "${RUNNER_TEMP}/nuget"
+          bash scripts/nuget/emit-creds-config.sh > "${RUNNER_TEMP}/nuget/NuGet.Config"
+          chmod 600 "${RUNNER_TEMP}/nuget/NuGet.Config"
+
       # Only build for dev registry — prod gets the image via az acr import in deploy-production
       - name: Build Container Image
         if: github.event_name != 'pull_request_target' && github.event_name != 'pull_request'
@@ -88,11 +96,15 @@ jobs:
           tags: ${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb:${{ github.sha }},${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb:latest
           file: ./EssentialCSharp.Web/Dockerfile
           context: .
-          secrets: |
-            "nuget_pat=${{ secrets.AZURE_DEVOPS_PAT }}"
+          secret-files: |
+            "nuget_config=${{ runner.temp }}/nuget/NuGet.Config"
           outputs: type=docker,dest=${{ github.workspace }}/essentialcsharpwebimage.tar
           cache-from: type=gha,scope=essentialcsharpweb-main
           cache-to: type=gha,mode=max,scope=essentialcsharpweb-main
+
+      - name: Remove Docker NuGet credentials config
+        if: always()
+        run: rm -f "${RUNNER_TEMP}/nuget/NuGet.Config"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -321,4 +333,3 @@ jobs:
             az logout
             az cache purge
             az account clear
-
