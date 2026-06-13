@@ -15,6 +15,7 @@ using EssentialCSharp.Web.Services.Referrals;
 using EssentialCSharp.Web.Tools;
 using Mailjet.Client;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -450,7 +451,6 @@ public partial class Program
                 ? configuredBaseUri.Host[4..]
                 : configuredBaseUri.Host;
             string wwwHost = $"www.{apexHost}";
-            string redirectAuthority = new UriBuilder(configuredBaseUri) { Host = apexHost }.Uri.GetLeftPart(UriPartial.Authority);
 
             app.UseExceptionHandler(exceptionApp =>
             {
@@ -527,8 +527,16 @@ public partial class Program
             {
                 if (string.Equals(context.Request.Host.Host, wwwHost, StringComparison.OrdinalIgnoreCase))
                 {
-                    string redirectUrl = $"{redirectAuthority}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
-                    context.Response.Redirect(redirectUrl, permanent: true);
+                    HostString redirectHost = configuredBaseUri.IsDefaultPort
+                        ? new HostString(apexHost)
+                        : new HostString(apexHost, configuredBaseUri.Port);
+                    string redirectTarget = UriHelper.BuildAbsolute(
+                        configuredBaseUri.Scheme,
+                        redirectHost,
+                        context.Request.PathBase,
+                        context.Request.Path,
+                        context.Request.QueryString);
+                    context.Response.Redirect(redirectTarget, permanent: true);
                     return;
                 }
                 await next(context);
