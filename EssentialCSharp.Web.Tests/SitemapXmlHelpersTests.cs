@@ -288,6 +288,72 @@ public class SitemapXmlHelpersTests : IntegrationTestBase
         await Assert.That(siteMappingNode.LastModificationDate).IsNull();
     }
 
+    [Test]
+    public async Task GenerateSitemapXml_GuidelinesRoute_HasHighPriority()
+    {
+        // Arrange
+        var siteMappings = new List<SiteMapping>();
+        var baseUrl = "https://test.example.com/";
+
+        // Act
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        SitemapXmlHelpers.GenerateSitemapXml(
+            siteMappings,
+            routeConfigurationService,
+            baseUrl,
+            out var nodes);
+
+        // Assert — /guidelines should have priority 0.9 (higher than default 0.5)
+        var guidelinesNode = nodes.FirstOrDefault(n => n.Url.Contains("/guidelines", StringComparison.OrdinalIgnoreCase));
+        await Assert.That(guidelinesNode).IsNotNull();
+        await Assert.That(guidelinesNode!.Priority).IsEqualTo(0.9M);
+        await Assert.That(guidelinesNode.ChangeFrequency).IsEqualTo(ChangeFrequency.Monthly);
+    }
+
+    [Test]
+    public async Task GenerateSitemapXml_TermsOfServiceRoute_HasYearlyFrequencyAndLowPriority()
+    {
+        // Arrange
+        var siteMappings = new List<SiteMapping>();
+        var baseUrl = "https://test.example.com/";
+
+        // Act
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        SitemapXmlHelpers.GenerateSitemapXml(
+            siteMappings,
+            routeConfigurationService,
+            baseUrl,
+            out var nodes);
+
+        // Assert — /termsofservice changes rarely (Yearly) and has low priority (0.2)
+        var tosNode = nodes.FirstOrDefault(n => n.Url.Contains("/termsofservice", StringComparison.OrdinalIgnoreCase));
+        await Assert.That(tosNode).IsNotNull();
+        await Assert.That(tosNode!.Priority).IsEqualTo(0.2M);
+        await Assert.That(tosNode.ChangeFrequency).IsEqualTo(ChangeFrequency.Yearly);
+    }
+
+    [Test]
+    public async Task GenerateSitemapXml_UnknownRoute_UsesDefaultSeoValues()
+    {
+        // Arrange
+        var siteMappings = new List<SiteMapping> { CreateSiteMapping(1, 1, true, "test-page-unknown-route") };
+        var baseUrl = "https://test.example.com/";
+
+        // Act
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        SitemapXmlHelpers.GenerateSitemapXml(
+            siteMappings,
+            routeConfigurationService,
+            baseUrl,
+            out var nodes);
+
+        // Assert — content pages without specific config get default SEO values
+        var contentNode = nodes.FirstOrDefault(n => n.Url.Contains("test-page-unknown-route", StringComparison.OrdinalIgnoreCase));
+        await Assert.That(contentNode).IsNotNull();
+        await Assert.That(contentNode!.Priority).IsEqualTo(0.5M);
+        await Assert.That(contentNode.ChangeFrequency).IsEqualTo(ChangeFrequency.Monthly);
+    }
+
     private static SiteMapping CreateSiteMapping(
         int chapterNumber,
         int pageNumber,
