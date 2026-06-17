@@ -15,7 +15,7 @@ COPY EssentialCSharp.Web/src ./src
 COPY EssentialCSharp.Web/wwwroot/js ./wwwroot/js
 RUN npm run build
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0.300 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.301 AS build
 ARG ACCESS_TO_NUGET_FEED=true
 ENV ACCESS_TO_NUGET_FEED=$ACCESS_TO_NUGET_FEED
 WORKDIR /src
