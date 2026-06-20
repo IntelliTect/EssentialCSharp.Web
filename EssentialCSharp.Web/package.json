@@ -14,7 +14,7 @@
     "@zxcvbn-ts/core": "^3.0.4",
     "@zxcvbn-ts/language-common": "^4.1.2",
     "@zxcvbn-ts/language-en": "^3.0.2",
-    "dompurify": "3.4.10",
+    "dompurify": "3.4.11",
     "jquery": "4.0.0",
     "marked": "18.0.5",
     "vue": "3.5.38",
