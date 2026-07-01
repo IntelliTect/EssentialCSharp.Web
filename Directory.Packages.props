@@ -2,7 +2,7 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
-    <ToolingPackagesVersion>1.1.1.19185</ToolingPackagesVersion>
+    <ToolingPackagesVersion>1.1.1.19220</ToolingPackagesVersion>
     <AccessToNugetFeed Condition="'$(AccessToNugetFeed)' == ''">false</AccessToNugetFeed>
     <!-- Enable NuGet vulnerability audit on public nuget.org feed. Restrict to nuget.org's service index
          to avoid NU1900 errors when the private Azure DevOps feed is unavailable (e.g. CI without credentials). -->
