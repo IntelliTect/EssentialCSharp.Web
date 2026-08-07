@@ -205,7 +205,8 @@ public partial class AIChatService : IChatCompletionService
         {
             var updateType = update.GetType().Name;
             streamUpdateTypes.Add(updateType);
-
+            if (streamUpdateTypes.Count > 40)
+                streamUpdateTypes.RemoveAt(0);
             if (update is StreamingResponseCreatedUpdate created)
             {
                 // Emit the response ID early so the controller can record ownership
