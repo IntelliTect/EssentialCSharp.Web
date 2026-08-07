@@ -51,6 +51,7 @@ public partial class Program
         string? appInsightsConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
         bool useAzureMonitor = !string.IsNullOrWhiteSpace(appInsightsConnectionString);
         bool useOtlp = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
+        bool profilerSupportedPlatform = OperatingSystem.IsWindows() || OperatingSystem.IsLinux();
 
         builder.Logging.AddOpenTelemetry(logging =>
         {
@@ -91,7 +92,13 @@ public partial class Program
             });
 
         if (useAzureMonitor)
-            otel.UseAzureMonitor().AddAzureMonitorProfiler();
+        {
+            // Azure Monitor export is supported cross-platform, but the profiler currently only
+            // supports Windows and Linux.
+            var azureMonitor = otel.UseAzureMonitor();
+            if (profilerSupportedPlatform)
+                azureMonitor.AddAzureMonitorProfiler();
+        }
         else if (useOtlp)
             otel.UseOtlpExporter();
 
