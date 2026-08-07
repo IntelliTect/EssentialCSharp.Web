@@ -5,6 +5,11 @@
 (function () {
     const SDK_URL = "https://js.monitor.azure.com/scripts/b/ai.3.gbl.min.js";
     const CONSENT_EVENT = "ecs:consent-changed";
+    const DistributedTracingModes = {
+        AI: 0,
+        AI_AND_W3C: 1,
+        W3C: 2
+    };
 
     let appInsights = null;
     let sdkLoadPromise = null;
@@ -13,6 +18,25 @@
     function getConnectionString() {
         const value = window.APPLICATIONINSIGHTS_CONNECTION_STRING;
         return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+    }
+
+    function getTryDotNetOrigin() {
+        const value = window.TRYDOTNET_ORIGIN;
+        return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+    }
+
+    function getCorrelationHeaderDomains() {
+        const domains = [window.location.hostname];
+        const tryDotNetOrigin = getTryDotNetOrigin();
+        if (tryDotNetOrigin) {
+            try {
+                domains.push(new URL(tryDotNetOrigin).hostname);
+            } catch (error) {
+                console.warn("Ignoring invalid TryDotNet origin for App Insights correlation:", error);
+            }
+        }
+
+        return Array.from(new Set(domains.filter(Boolean)));
     }
 
     function hasAnalyticsConsent() {
@@ -113,7 +137,11 @@
         const instance = new window.Microsoft.ApplicationInsights.ApplicationInsights({
             config: {
                 connectionString,
-                disableAjaxTracking: true, // avoid duplicate/debatable dependency telemetry from browser fetch/XHR
+                disableAjaxTracking: false,
+                disableFetchTracking: false,
+                distributedTracingMode: DistributedTracingModes.W3C,
+                correlationHeaderDomains: getCorrelationHeaderDomains(),
+                enableCorsCorrelation: true,
                 disableTelemetry: false
             }
         });
