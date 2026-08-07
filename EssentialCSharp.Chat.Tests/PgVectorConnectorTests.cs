@@ -1,5 +1,5 @@
 using EssentialCSharp.Chat.Common.Models;
-using Microsoft.SemanticKernel.Connectors.PgVector;
+using CommunityToolkit.VectorData.PgVector;
 
 namespace EssentialCSharp.Chat.Tests;
 
@@ -7,7 +7,7 @@ public class PgVectorConnectorTests
 {
     /// <summary>
     /// Verifies the runtime vector-data API shape is compatible with the currently resolved
-    /// Semantic Kernel connector assemblies. If this fails with MissingMethodException
+    /// CommunityToolkit connector assemblies. If this fails with MissingMethodException
     /// (for example on VectorSearchOptions<T>.get_OldFilter()), package versions are out of sync.
     /// </summary>
     [Test]
