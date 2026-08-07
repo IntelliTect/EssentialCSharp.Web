@@ -1,0 +1,50 @@
+name: macOS Build and Test EssentialCSharp.Web
+
+on:
+  pull_request:
+    branches: ["main"]
+  merge_group:
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up .NET Core
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "26"
+          cache: npm
+          cache-dependency-path: EssentialCSharp.Web/package-lock.json
+
+      - name: Set up dependency caching for faster builds
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.nuget/packages
+            ${{ github.workspace }}/**/obj/project.assets.json
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+            ${{ runner.os }}-nuget-
+
+      - name: Restore with dotnet
+        run: dotnet restore /p:AccessToNugetFeed=false
+
+      - name: Install npm dependencies
+        working-directory: EssentialCSharp.Web
+        run: npm ci
+
+      - name: Build with dotnet
+        run: dotnet build --configuration Release --no-restore /p:AccessToNugetFeed=false
+
+      - name: Run .NET Tests
+        run: dotnet test --no-build --configuration Release
