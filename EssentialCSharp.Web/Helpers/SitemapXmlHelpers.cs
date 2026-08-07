@@ -1,4 +1,5 @@
 using DotnetSitemapGenerator;
+using EssentialCSharp.Web.Constants;
 using EssentialCSharp.Web.Services;
 
 namespace EssentialCSharp.Web.Helpers;
@@ -71,26 +72,22 @@ public static class SitemapXmlHelpers
 
     private static ChangeFrequency GetChangeFrequencyForRoute(string route)
     {
-        return route.ToLowerInvariant() switch
+        if (RouteConstants.SeoMetadata.RouteConfig.TryGetValue(route, out var config))
         {
-            "/termsofservice" => ChangeFrequency.Yearly,
-            "/announcements" => ChangeFrequency.Monthly,
-            "/guidelines" => ChangeFrequency.Monthly,
-            _ => ChangeFrequency.Monthly
-        };
+            return config.Frequency;
+        }
+
+        return ChangeFrequency.Monthly;
     }
 
     private static decimal GetPriorityForRoute(string route)
     {
-        return route.ToLowerInvariant() switch
+        if (RouteConstants.SeoMetadata.RouteConfig.TryGetValue(route, out var config))
         {
-            "/home" => 0.5M,
-            "/about" => 0.5M,
-            "/announcements" => 0.5M,
-            "/guidelines" => 0.9M,
-            "/termsofservice" => 0.2M,
-            _ => 0.5M
-        };
+            return config.Priority;
+        }
+
+        return 0.5M;
     }
 
 }

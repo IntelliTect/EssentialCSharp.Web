@@ -1,4 +1,5 @@
 using DotnetSitemapGenerator;
+using EssentialCSharp.Web.Constants;
 using EssentialCSharp.Web.Extensions;
 using EssentialCSharp.Web.Helpers;
 using EssentialCSharp.Web.Models;
@@ -48,7 +49,7 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
         }
     }
 
-    [Route("/TermsOfService",
+    [Route(RouteConstants.StaticPages.TermsOfService,
        Name = "TermsOfService")]
     public IActionResult TermsOfService()
     {
@@ -56,27 +57,27 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
         return View();
     }
 
-    [Route("/Announcements", Name = "Announcements")]
+    [Route(RouteConstants.StaticPages.Announcements, Name = "Announcements")]
     public IActionResult Announcements()
     {
         ViewBag.PageTitle = "Announcements";
         return View();
     }
 
-    [Route("/about", Name = "about")]
+    [Route(RouteConstants.StaticPages.About, Name = "about")]
     public IActionResult About()
     {
         ViewBag.PageTitle = "About";
         return View();
     }
 
-    [Route("/home", Name = "home")]
+    [Route(RouteConstants.StaticPages.Home, Name = "home")]
     public IActionResult Home()
     {
         return View();
     }
 
-    [Route("/guidelines", Name = "guidelines")]
+    [Route(RouteConstants.StaticPages.Guidelines, Name = "guidelines")]
     public IActionResult Guidelines()
     {
         ViewBag.PageTitle = "Coding Guidelines";
