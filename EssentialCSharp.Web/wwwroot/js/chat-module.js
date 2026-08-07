@@ -12,6 +12,17 @@ const errorIconClassByType = {
     'connection-error': 'fas fa-plug'
 };
 
+function getTraceHeaders() {
+    const headers = {};
+    if (typeof window.ecsGetCorrelationContext === 'function') {
+        const traceparent = window.ecsGetCorrelationContext();
+        if (typeof traceparent === 'string' && traceparent.length > 0) {
+            headers.traceparent = traceparent;
+        }
+    }
+    return headers;
+}
+
 // hCaptcha integration — invisible widget renders once and is reused across messages.
 // When HCAPTCHA_SITE_KEY is null (dev / captcha not configured), all captcha calls are no-ops.
 const captchaSiteKey = window.HCAPTCHA_SITE_KEY || null;
@@ -338,6 +349,7 @@ export function useChatWidget() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    ...getTraceHeaders()
                 },
                 body: JSON.stringify(requestBody)
             });
