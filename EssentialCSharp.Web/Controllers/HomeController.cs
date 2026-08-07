@@ -17,11 +17,11 @@ public partial class HomeController(ILogger<HomeController> logger, IWebHostEnvi
     // Keep this map in sync with files that materially affect each route's rendered content.
     private static readonly IReadOnlyDictionary<string, string[]> StaticRouteContentFiles = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
     {
-        ["/home"] = ["Views\\Home\\Home.cshtml", "Models\\AnnouncementCatalog.cs"],
-        ["/about"] = ["Views\\Home\\About.cshtml"],
-        ["/announcements"] = ["Views\\Home\\Announcements.cshtml", "Models\\AnnouncementCatalog.cs"],
-        ["/termsofservice"] = ["Views\\Home\\TermsOfService.cshtml"],
-        ["/guidelines"] = ["Views\\Home\\Guidelines.cshtml", "Guidelines\\guidelines.json"]
+        ["/home"] = [Path.Combine("Views", "Home", "Home.cshtml"), Path.Combine("Models", "AnnouncementCatalog.cs")],
+        ["/about"] = [Path.Combine("Views", "Home", "About.cshtml")],
+        ["/announcements"] = [Path.Combine("Views", "Home", "Announcements.cshtml"), Path.Combine("Models", "AnnouncementCatalog.cs")],
+        ["/termsofservice"] = [Path.Combine("Views", "Home", "TermsOfService.cshtml")],
+        ["/guidelines"] = [Path.Combine("Views", "Home", "Guidelines.cshtml"), Path.Combine("Guidelines", "guidelines.json")]
     };
 
     [EnableRateLimiting("content")]
