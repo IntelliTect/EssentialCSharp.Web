@@ -12,11 +12,11 @@
 import { zxcvbn, zxcvbnOptions } from '@zxcvbn-ts/core';
 
 const SCORE_CONFIG = [
-    { label: 'Very weak', barClass: 'bg-danger',            width: 20 },
-    { label: 'Weak',      barClass: 'bg-warning text-dark', width: 40 },
-    { label: 'Fair',      barClass: 'bg-info text-dark',    width: 60 },
-    { label: 'Strong',    barClass: 'bg-primary',           width: 80 },
-    { label: 'Very strong', barClass: 'bg-success',         width: 100 },
+    { label: 'Very weak', barClass: 'bg-danger',            width: 20, widthClass: 'password-strength-width-20' },
+    { label: 'Weak',      barClass: 'bg-warning text-dark', width: 40, widthClass: 'password-strength-width-40' },
+    { label: 'Fair',      barClass: 'bg-info text-dark',    width: 60, widthClass: 'password-strength-width-60' },
+    { label: 'Strong',    barClass: 'bg-primary',           width: 80, widthClass: 'password-strength-width-80' },
+    { label: 'Very strong', barClass: 'bg-success',         width: 100, widthClass: 'password-strength-width-100' },
 ];
 
 let zxcvbnReady = false;
@@ -87,8 +87,7 @@ function updateMeter(container, score, feedback, crackTimesDisplay) {
     const crackTimeEl = container.querySelector('.password-strength-cracktime');
 
     // Reset bar classes
-    bar.className = 'progress-bar password-strength-bar ' + config.barClass;
-    bar.style.width = config.width + '%';
+    bar.className = `progress-bar password-strength-bar ${config.barClass} ${config.widthClass}`;
 
     // Update aria
     const progressEl = container.querySelector('.progress');
@@ -126,8 +125,7 @@ function updateMeter(container, score, feedback, crackTimesDisplay) {
 
 function clearMeter(container) {
     const bar = container.querySelector('.password-strength-bar');
-    bar.className = 'progress-bar password-strength-bar';
-    bar.style.width = '0';
+    bar.className = 'progress-bar password-strength-bar password-strength-bar-initial';
     container.querySelector('.progress').setAttribute('aria-valuenow', '0');
     container.querySelector('.password-strength-label').textContent = '';
     const warningEl = container.querySelector('.password-strength-warning');
