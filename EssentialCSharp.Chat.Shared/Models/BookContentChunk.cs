@@ -64,6 +64,6 @@ public sealed class BookContentChunk
     /// Use CosineSimilarity distance function since we are using text-embedding-3 (https://platform.openai.com/docs/guides/embeddings#which-distance-function-should-i-use)
     /// Postgres supports only Hnsw: https://learn.microsoft.com/en-us/semantic-kernel/concepts/vector-store-connectors/out-of-the-box-connectors/postgres-connector?pivots=programming-language-csharp&WT.mc_id=8B97120A00B57354
     /// </summary>
-    [VectorStoreVector(Dimensions: 1536, DistanceFunction = DistanceFunction.CosineSimilarity, IndexKind = IndexKind.Hnsw)]
+    [VectorStoreVector(dimensions: 1536, DistanceFunction = DistanceFunction.CosineSimilarity, IndexKind = IndexKind.Hnsw)]
     public ReadOnlyMemory<float>? TextEmbedding { get; set; }
 }
