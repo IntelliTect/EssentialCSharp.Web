@@ -35,7 +35,7 @@
     <!-- Pinned to 5.0.0: Microsoft.VisualStudio.Web.CodeGeneration.Design 10.0.2 has an exact (= 5.0.0) dependency
          constraint on the Microsoft.CodeAnalysis.* family; bumping causes NU1608 restore errors. -->
     <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="5.0.0" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.6.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
     <!-- Override transitive SQLitePCLRaw.lib.e_sqlite3 pulled in by Microsoft.EntityFrameworkCore.Sqlite; the
          patched version isn't in EF Core 10.0.10 yet (fix targeted for a later EF Core servicing release per
