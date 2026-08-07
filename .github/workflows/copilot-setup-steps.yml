@@ -18,10 +18,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up .NET Core
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
           source-url: https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json
@@ -29,12 +29,12 @@ jobs:
           NUGET_AUTH_TOKEN: ${{ secrets.AZURE_DEVOPS_PAT }}
 
       - name: Set up Node.js for frontend development
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: '24'
 
       - name: Set up dependency caching for faster builds
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         id: nuget-cache
         with:
           path: |

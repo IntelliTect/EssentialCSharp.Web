@@ -56,6 +56,13 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
         return View();
     }
 
+    [Route("/cookie-policy", Name = "CookiePolicy")]
+    public IActionResult CookiePolicy()
+    {
+        ViewBag.PageTitle = "Cookie Policy";
+        return View();
+    }
+
     [Route("/Announcements", Name = "Announcements")]
     public IActionResult Announcements()
     {

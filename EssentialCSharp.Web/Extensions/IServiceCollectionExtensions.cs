@@ -18,6 +18,12 @@ public static class IServiceCollectionExtensions
 
     public static void AddTrustedForwardedHeaders(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
     {
+        // When ASPNETCORE_FORWARDEDHEADERS_ENABLED=true (recommended for Azure Container Apps),
+        // ASP.NET Core's built-in startup filter handles ForwardedHeaders with all proxies trusted.
+        // Skip manual configuration to avoid a conflicting no-trusted-proxies throw on startup.
+        if (string.Equals(configuration["ASPNETCORE_FORWARDEDHEADERS_ENABLED"], "true", StringComparison.OrdinalIgnoreCase))
+            return;
+
         services.Configure<ForwardedHeadersOptions>(options =>
         {
             options.ForwardedHeaders =
@@ -37,7 +43,8 @@ public static class IServiceCollectionExtensions
                 {
                     throw new InvalidOperationException(
                         "Forwarded headers are enabled but no trusted proxies are configured. " +
-                        "Set ForwardedHeaders:TrustedProxyCidrs or ForwardedHeaders:TrustedProxies.");
+                        "Set ForwardedHeaders:TrustedProxyCidrs or ForwardedHeaders:TrustedProxies, " +
+                        "or set ASPNETCORE_FORWARDEDHEADERS_ENABLED=true for platform-managed proxies (e.g. Azure Container Apps).");
                 }
                 return;
             }

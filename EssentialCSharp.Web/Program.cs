@@ -136,6 +136,10 @@ public partial class Program
         });
 
         builder.Services.AddTrustedForwardedHeaders(builder.Configuration, builder.Environment);
+        builder.Services.AddHttpsRedirection(options =>
+        {
+            options.HttpsPort = 443;
+        });
 
 
         ConfigurationManager configuration = builder.Configuration;
@@ -482,7 +486,12 @@ public partial class Program
                     }
                 });
             });
-            app.UseForwardedHeaders();
+            // Skip manual UseForwardedHeaders when ASPNETCORE_FORWARDEDHEADERS_ENABLED=true;
+            // the built-in startup filter already called it before this pipeline runs.
+            if (!string.Equals(app.Configuration["ASPNETCORE_FORWARDEDHEADERS_ENABLED"], "true", StringComparison.OrdinalIgnoreCase))
+            {
+                app.UseForwardedHeaders();
+            }
 
             // Build dynamic CSP — TryDotNet origin comes from runtime config
             string? tryDotNetOrigin = app.Configuration["TryDotNet:Origin"];
@@ -533,7 +542,10 @@ public partial class Program
         else
         {
             app.UseDeveloperExceptionPage();
-            app.UseForwardedHeaders();
+            if (!string.Equals(app.Configuration["ASPNETCORE_FORWARDEDHEADERS_ENABLED"], "true", StringComparison.OrdinalIgnoreCase))
+            {
+                app.UseForwardedHeaders();
+            }
         }
 
         app.MapHealthChecks("/health").DisableRateLimiting();
@@ -542,9 +554,9 @@ public partial class Program
             Predicate = r => r.Tags.Contains("live")
         }).DisableRateLimiting();
 
-        if (app.Environment.IsDevelopment())
+        if (!app.Environment.IsDevelopment())
         {
-        app.UseHttpsRedirection();
+            app.UseHttpsRedirection();
         }
         app.UseStaticFiles();
 
@@ -556,28 +568,13 @@ public partial class Program
 
         app.UseAuthentication();
 
+        // /mcp uses a named non-default scheme. Normalize the principal before
+        // rate limiting so valid MCP requests partition by MCP user while
+        // missing/invalid bearer requests fall back to the anonymous/IP bucket
+        // instead of inheriting the site's cookie principal.
         app.UseWhen(
             context => context.Request.Path.StartsWithSegments("/mcp"),
-            branch => branch.Use(async (context, next) =>
-            {
-                // /mcp uses a named non-default scheme. Normalize the principal before
-                // rate limiting so valid MCP requests partition by MCP user while
-                // missing/invalid bearer requests fall back to the anonymous/IP bucket
-                // instead of inheriting the site's cookie principal.
-                McpApiTokenService.ResolvedMcpApiToken? resolvedToken = null;
-                if (McpBearerAuthentication.TryGetRawToken(context.Request, out string? rawToken))
-                {
-                    var tokenService = context.RequestServices.GetRequiredService<McpApiTokenService>();
-                    resolvedToken = await tokenService.ResolveValidTokenAsync(rawToken, context.RequestAborted);
-                    McpBearerAuthentication.StoreResolution(context, resolvedToken);
-                }
-
-                context.User = resolvedToken is not null
-                    ? McpBearerAuthentication.CreatePrincipal(resolvedToken.UserId)
-                    : new ClaimsPrincipal(new ClaimsIdentity());
-
-                await next(context);
-            }));
+            branch => branch.UseMiddleware<McpTokenNormalizationMiddleware>());
 
         app.UseRateLimiter();
 

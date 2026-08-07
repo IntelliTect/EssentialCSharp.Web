@@ -102,6 +102,7 @@ public partial class AIChatService : IChatCompletionService
 
         // Create the streaming response using the Responses API
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        responseOptions.StreamingEnabled = true;
         responseOptions.InputItems.Clear();
         responseOptions.InputItems.Add(ResponseItem.CreateUserMessageItem(enrichedPrompt));
         var streamingUpdates = _ResponseClient.CreateResponseStreamingAsync(responseOptions, cancellationToken);
@@ -191,6 +192,9 @@ public partial class AIChatService : IChatCompletionService
         // Track this leg's response ID so tool-call continuations chain from it,
         // ensuring the model's context includes the user's message + reasoning.
         string? currentLegResponseId = null;
+        var textPartsWithDelta = new HashSet<string>(StringComparer.Ordinal);
+        var refusalPartsWithDelta = new HashSet<string>(StringComparer.Ordinal);
+        var streamUpdateTypes = new List<string>(capacity: 64);
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         List<FunctionCallResponseItem>? pendingFunctionCalls = null;
 
@@ -199,6 +203,10 @@ public partial class AIChatService : IChatCompletionService
         // separate helper that puts try/catch only around MoveNextAsync.
         await foreach (var update in RethrowContextLengthErrors(streamingUpdates, responseOptions.PreviousResponseId, cancellationToken))
         {
+            var updateType = update.GetType().Name;
+            streamUpdateTypes.Add(updateType);
+            if (streamUpdateTypes.Count > 40)
+                streamUpdateTypes.RemoveAt(0);
             if (update is StreamingResponseCreatedUpdate created)
             {
                 // Emit the response ID early so the controller can record ownership
@@ -222,7 +230,70 @@ public partial class AIChatService : IChatCompletionService
             }
             else if (update is StreamingResponseOutputTextDeltaUpdate deltaUpdate)
             {
+                textPartsWithDelta.Add($"{deltaUpdate.ItemId}:{deltaUpdate.OutputIndex}:{deltaUpdate.ContentIndex}");
                 yield return (deltaUpdate.Delta.ToString(), null);
+            }
+            else if (update is StreamingResponseOutputTextDoneUpdate doneUpdate)
+            {
+                // Some SDK/server combinations emit only TextDone (no deltas) for a content part.
+                // Emit Done text when no delta was seen for that same part to avoid duplicates.
+                string textPartKey = $"{doneUpdate.ItemId}:{doneUpdate.OutputIndex}:{doneUpdate.ContentIndex}";
+                if (!textPartsWithDelta.Contains(textPartKey) && !string.IsNullOrEmpty(doneUpdate.Text))
+                    yield return (doneUpdate.Text, null);
+            }
+            else if (update is StreamingResponseRefusalDeltaUpdate refusalDeltaUpdate)
+            {
+                refusalPartsWithDelta.Add($"{refusalDeltaUpdate.ItemId}:{refusalDeltaUpdate.OutputIndex}:{refusalDeltaUpdate.ContentIndex}");
+                yield return (refusalDeltaUpdate.Delta.ToString(), null);
+            }
+            else if (update is StreamingResponseRefusalDoneUpdate refusalDoneUpdate)
+            {
+                // Refusal content can also arrive as done-only events.
+                string refusalPartKey = $"{refusalDoneUpdate.ItemId}:{refusalDoneUpdate.OutputIndex}:{refusalDoneUpdate.ContentIndex}";
+                if (!refusalPartsWithDelta.Contains(refusalPartKey) && !string.IsNullOrEmpty(refusalDoneUpdate.Refusal))
+                    yield return (refusalDoneUpdate.Refusal, null);
+            }
+            else if (update is StreamingResponseErrorUpdate errorUpdate)
+            {
+                LogStreamingResponseErrorUpdate(
+                    _Logger,
+                    currentLegResponseId,
+                    errorUpdate.Code ?? "unknown",
+                    errorUpdate.Message ?? "no message provided",
+                    BuildRecentUpdateSequence(streamUpdateTypes));
+                throw new ChatBackendUnavailableException(
+                    $"Streaming response error: {errorUpdate.Code ?? "unknown"} - {errorUpdate.Message ?? "no message provided"}",
+                    errorCode: "stream_response_error");
+            }
+            else if (update is StreamingResponseFailedUpdate failedUpdate)
+            {
+                LogStreamingResponseTerminalUpdate(
+                    _Logger,
+                    "failed",
+                    failedUpdate.Response.Id,
+                    failedUpdate.Response.Status?.ToString(),
+                    failedUpdate.Response.Error?.Code.ToString(),
+                    failedUpdate.Response.Error?.Message,
+                    failedUpdate.Response.IncompleteStatusDetails?.Reason?.ToString(),
+                    BuildRecentUpdateSequence(streamUpdateTypes));
+                throw new ChatBackendUnavailableException(
+                    BuildStreamingTerminalFailureMessage(failedUpdate.Response, "failed"),
+                    errorCode: "stream_response_failed");
+            }
+            else if (update is StreamingResponseIncompleteUpdate incompleteUpdate)
+            {
+                LogStreamingResponseTerminalUpdate(
+                    _Logger,
+                    "incomplete",
+                    incompleteUpdate.Response.Id,
+                    incompleteUpdate.Response.Status?.ToString(),
+                    incompleteUpdate.Response.Error?.Code.ToString(),
+                    incompleteUpdate.Response.Error?.Message,
+                    incompleteUpdate.Response.IncompleteStatusDetails?.Reason?.ToString(),
+                    BuildRecentUpdateSequence(streamUpdateTypes));
+                throw new ChatBackendUnavailableException(
+                    BuildStreamingTerminalFailureMessage(incompleteUpdate.Response, "incomplete"),
+                    errorCode: "stream_response_incomplete");
             }
             // StreamingResponseCompletedUpdate: ResponseId already emitted above — no-op.
         }
@@ -560,6 +631,7 @@ public partial class AIChatService : IChatCompletionService
             Temperature = source.Temperature,
             TopP = source.TopP,
             ServiceTier = source.ServiceTier,
+            StreamingEnabled = source.StreamingEnabled,
         };
         foreach (var tool in source.Tools)
             clone.Tools.Add(tool);
@@ -598,6 +670,31 @@ public partial class AIChatService : IChatCompletionService
         return arguments;
     }
 
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+    private static string BuildStreamingTerminalFailureMessage(ResponseResult response, string terminalStatus)
+    {
+        if (!string.IsNullOrWhiteSpace(response.Error?.Message))
+            return $"Streaming response {terminalStatus}: {response.Error.Message}";
+
+        if (response.IncompleteStatusDetails?.Reason is { } reason)
+            return $"Streaming response {terminalStatus}: {reason}";
+
+        if (response.Status is { } status)
+            return $"Streaming response ended with status '{status}'.";
+
+        return $"Streaming response ended with status '{terminalStatus}'.";
+    }
+
+    private static string BuildRecentUpdateSequence(List<string> streamUpdateTypes)
+    {
+        const int MaxUpdatesToInclude = 40;
+        int count = streamUpdateTypes.Count;
+        if (count <= MaxUpdatesToInclude)
+            return string.Join(" -> ", streamUpdateTypes);
+        return $"... -> {string.Join(" -> ", streamUpdateTypes.Skip(count - MaxUpdatesToInclude))}";
+    }
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
     [LoggerMessage(Level = LogLevel.Information, Message = "AI tool call invoked: tool={ToolName} iteration={Iteration} user={EndUserId}")]
     private static partial void LogMcpToolCallInvoked(ILogger logger, string toolName, int iteration, string? endUserId);
 
@@ -615,6 +712,29 @@ public partial class AIChatService : IChatCompletionService
 
     [LoggerMessage(Level = LogLevel.Information, Message = "AI contextual search performed for prompt enrichment")]
     private static partial void LogContextualSearchPerformed(ILogger logger);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Streaming response error update received: responseId={ResponseId} code={Code} message={Message} updateSequence={UpdateSequence}")]
+    private static partial void LogStreamingResponseErrorUpdate(
+        ILogger logger,
+        string? responseId,
+        string code,
+        string message,
+        string updateSequence);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Streaming response terminal update: updateType={UpdateType} responseId={ResponseId} status={Status} errorCode={ErrorCode} errorMessage={ErrorMessage} incompleteReason={IncompleteReason} updateSequence={UpdateSequence}")]
+    private static partial void LogStreamingResponseTerminalUpdate(
+        ILogger logger,
+        string updateType,
+        string? responseId,
+        string? status,
+        string? errorCode,
+        string? errorMessage,
+        string? incompleteReason,
+        string updateSequence);
 
     /// <summary>
     /// Returns <c>true</c> when the API error indicates the conversation context window was exceeded.
