@@ -12,16 +12,18 @@ namespace EssentialCSharp.Chat.Common.Services;
 /// <summary>
 /// Service for handling AI chat completions using the OpenAI Responses API
 /// </summary>
-public partial class AIChatService
+public partial class AIChatService : IChatCompletionService
 {
     private readonly AIOptions _Options;
     private readonly AzureOpenAIClient _AzureClient;
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-    private readonly OpenAIResponseClient _ResponseClient;
+    private readonly ResponsesClient _ResponseClient;
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     private readonly AISearchService _SearchService;
     private readonly ILogger<AIChatService> _Logger;
     private readonly FrozenSet<string> _AllowedMcpTools;
+    public bool IsAvailable => true;
+    public bool SupportsContextualSearch => true;
 
     public AIChatService(IOptions<AIOptions> options, AISearchService searchService, AzureOpenAIClient azureClient, ILogger<AIChatService> logger)
     {
@@ -34,7 +36,7 @@ public partial class AIChatService
         _AzureClient = azureClient;
 
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        _ResponseClient = _AzureClient.GetOpenAIResponseClient(_Options.ChatDeploymentName);
+        _ResponseClient = _AzureClient.GetResponsesClient();
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     }
 
@@ -47,8 +49,8 @@ public partial class AIChatService
     /// <param name="tools">Optional tools for the AI to use</param>
     /// <param name="reasoningEffortLevel">Optional reasoning effort level for reasoning models</param>
     /// <param name="enableContextualSearch">Enable vector search for contextual information</param>
-    /// <param name="endUserId">Authenticated end-user identifier. Currently reserved for forwarding
-    /// to Azure OpenAI for abuse monitoring once the SDK exposes <c>ResponseCreationOptions.User</c>.</param>
+    /// <param name="endUserId">Forwarded to Azure OpenAI for abuse monitoring and Microsoft Defender
+    /// prompt-shield correlation via <c>CreateResponseOptions.EndUserId</c>.</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The AI response text and response ID for conversation continuity</returns>
     public async Task<(string response, string responseId)> GetChatCompletion(
@@ -78,8 +80,8 @@ public partial class AIChatService
     /// <param name="tools">Optional tools for the AI to use</param>
     /// <param name="reasoningEffortLevel">Optional reasoning effort level for reasoning models</param>
     /// <param name="enableContextualSearch">Enable vector search for contextual information</param>
-    /// <param name="endUserId">Authenticated end-user identifier. Currently reserved for forwarding
-    /// to Azure OpenAI for abuse monitoring once the SDK exposes <c>ResponseCreationOptions.User</c>.</param>
+    /// <param name="endUserId">Forwarded to Azure OpenAI for abuse monitoring and Microsoft Defender
+    /// prompt-shield correlation via <c>CreateResponseOptions.EndUserId</c>.</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>An async enumerable of response text chunks and final response ID</returns>
     public async IAsyncEnumerable<(string text, string? responseId)> GetChatCompletionStream(
@@ -100,12 +102,11 @@ public partial class AIChatService
 
         // Create the streaming response using the Responses API
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        List<ResponseItem> responseItems = [ResponseItem.CreateUserMessageItem(enrichedPrompt)];
+        responseOptions.StreamingEnabled = true;
+        responseOptions.InputItems.Clear();
+        responseOptions.InputItems.Add(ResponseItem.CreateUserMessageItem(enrichedPrompt));
+        var streamingUpdates = _ResponseClient.CreateResponseStreamingAsync(responseOptions, cancellationToken);
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        var streamingUpdates = _ResponseClient.CreateResponseStreamingAsync(
-            responseItems,
-            options: responseOptions,
-            cancellationToken: cancellationToken);
 
         await foreach (var result in ProcessStreamingUpdatesAsync(streamingUpdates, responseOptions, mcpClient, toolCallDepth: 0, endUserId: endUserId, cancellationToken: cancellationToken))
         {
@@ -181,7 +182,7 @@ public partial class AIChatService
     private async IAsyncEnumerable<(string text, string? responseId)> ProcessStreamingUpdatesAsync(
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         IAsyncEnumerable<StreamingResponseUpdate> streamingUpdates,
-        ResponseCreationOptions responseOptions,
+        CreateResponseOptions responseOptions,
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         McpClient? mcpClient,
         int toolCallDepth = 0,
@@ -191,6 +192,9 @@ public partial class AIChatService
         // Track this leg's response ID so tool-call continuations chain from it,
         // ensuring the model's context includes the user's message + reasoning.
         string? currentLegResponseId = null;
+        var textPartsWithDelta = new HashSet<string>(StringComparer.Ordinal);
+        var refusalPartsWithDelta = new HashSet<string>(StringComparer.Ordinal);
+        var streamUpdateTypes = new List<string>(capacity: 64);
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         List<FunctionCallResponseItem>? pendingFunctionCalls = null;
 
@@ -199,6 +203,10 @@ public partial class AIChatService
         // separate helper that puts try/catch only around MoveNextAsync.
         await foreach (var update in RethrowContextLengthErrors(streamingUpdates, responseOptions.PreviousResponseId, cancellationToken))
         {
+            var updateType = update.GetType().Name;
+            streamUpdateTypes.Add(updateType);
+            if (streamUpdateTypes.Count > 40)
+                streamUpdateTypes.RemoveAt(0);
             if (update is StreamingResponseCreatedUpdate created)
             {
                 // Emit the response ID early so the controller can record ownership
@@ -222,7 +230,70 @@ public partial class AIChatService
             }
             else if (update is StreamingResponseOutputTextDeltaUpdate deltaUpdate)
             {
+                textPartsWithDelta.Add($"{deltaUpdate.ItemId}:{deltaUpdate.OutputIndex}:{deltaUpdate.ContentIndex}");
                 yield return (deltaUpdate.Delta.ToString(), null);
+            }
+            else if (update is StreamingResponseOutputTextDoneUpdate doneUpdate)
+            {
+                // Some SDK/server combinations emit only TextDone (no deltas) for a content part.
+                // Emit Done text when no delta was seen for that same part to avoid duplicates.
+                string textPartKey = $"{doneUpdate.ItemId}:{doneUpdate.OutputIndex}:{doneUpdate.ContentIndex}";
+                if (!textPartsWithDelta.Contains(textPartKey) && !string.IsNullOrEmpty(doneUpdate.Text))
+                    yield return (doneUpdate.Text, null);
+            }
+            else if (update is StreamingResponseRefusalDeltaUpdate refusalDeltaUpdate)
+            {
+                refusalPartsWithDelta.Add($"{refusalDeltaUpdate.ItemId}:{refusalDeltaUpdate.OutputIndex}:{refusalDeltaUpdate.ContentIndex}");
+                yield return (refusalDeltaUpdate.Delta.ToString(), null);
+            }
+            else if (update is StreamingResponseRefusalDoneUpdate refusalDoneUpdate)
+            {
+                // Refusal content can also arrive as done-only events.
+                string refusalPartKey = $"{refusalDoneUpdate.ItemId}:{refusalDoneUpdate.OutputIndex}:{refusalDoneUpdate.ContentIndex}";
+                if (!refusalPartsWithDelta.Contains(refusalPartKey) && !string.IsNullOrEmpty(refusalDoneUpdate.Refusal))
+                    yield return (refusalDoneUpdate.Refusal, null);
+            }
+            else if (update is StreamingResponseErrorUpdate errorUpdate)
+            {
+                LogStreamingResponseErrorUpdate(
+                    _Logger,
+                    currentLegResponseId,
+                    errorUpdate.Code ?? "unknown",
+                    errorUpdate.Message ?? "no message provided",
+                    BuildRecentUpdateSequence(streamUpdateTypes));
+                throw new ChatBackendUnavailableException(
+                    $"Streaming response error: {errorUpdate.Code ?? "unknown"} - {errorUpdate.Message ?? "no message provided"}",
+                    errorCode: "stream_response_error");
+            }
+            else if (update is StreamingResponseFailedUpdate failedUpdate)
+            {
+                LogStreamingResponseTerminalUpdate(
+                    _Logger,
+                    "failed",
+                    failedUpdate.Response.Id,
+                    failedUpdate.Response.Status?.ToString(),
+                    failedUpdate.Response.Error?.Code.ToString(),
+                    failedUpdate.Response.Error?.Message,
+                    failedUpdate.Response.IncompleteStatusDetails?.Reason?.ToString(),
+                    BuildRecentUpdateSequence(streamUpdateTypes));
+                throw new ChatBackendUnavailableException(
+                    BuildStreamingTerminalFailureMessage(failedUpdate.Response, "failed"),
+                    errorCode: "stream_response_failed");
+            }
+            else if (update is StreamingResponseIncompleteUpdate incompleteUpdate)
+            {
+                LogStreamingResponseTerminalUpdate(
+                    _Logger,
+                    "incomplete",
+                    incompleteUpdate.Response.Id,
+                    incompleteUpdate.Response.Status?.ToString(),
+                    incompleteUpdate.Response.Error?.Code.ToString(),
+                    incompleteUpdate.Response.Error?.Message,
+                    incompleteUpdate.Response.IncompleteStatusDetails?.Reason?.ToString(),
+                    BuildRecentUpdateSequence(streamUpdateTypes));
+                throw new ChatBackendUnavailableException(
+                    BuildStreamingTerminalFailureMessage(incompleteUpdate.Response, "incomplete"),
+                    errorCode: "stream_response_incomplete");
             }
             // StreamingResponseCompletedUpdate: ResponseId already emitted above — no-op.
         }
@@ -247,7 +318,10 @@ public partial class AIChatService
                 outputItems.Add(await ExecuteSingleToolCallAsync(functionCallItem, toolCallDepth, endUserId, mcpClient, cancellationToken));
             }
 
-            var continuationStream = _ResponseClient.CreateResponseStreamingAsync(outputItems, continuationOptions, cancellationToken);
+            continuationOptions.InputItems.Clear();
+            foreach (var outputItem in outputItems)
+                continuationOptions.InputItems.Add(outputItem);
+            var continuationStream = _ResponseClient.CreateResponseStreamingAsync(continuationOptions, cancellationToken);
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
             await foreach (var result in ProcessStreamingUpdatesAsync(continuationStream, continuationOptions, mcpClient, toolCallDepth + 1, endUserId, cancellationToken))
@@ -338,7 +412,7 @@ public partial class AIChatService
     /// Creates response options with optional features
     /// </summary>
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-    private async Task<ResponseCreationOptions> CreateResponseOptionsAsync(
+    private async Task<CreateResponseOptions> CreateResponseOptionsAsync(
         string? systemPrompt = null,
         string? previousResponseId = null,
         IEnumerable<ResponseTool>? tools = null,
@@ -348,8 +422,9 @@ public partial class AIChatService
         CancellationToken cancellationToken = default
         )
     {
-        var options = new ResponseCreationOptions();
+        var options = new CreateResponseOptions();
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        options.Model = _Options.ChatDeploymentName;
 
         // Set the system prompt via Instructions — this is stateless across turns when using previous_response_id,
         // preventing accumulation of system messages in the conversation context.
@@ -423,7 +498,7 @@ public partial class AIChatService
     private async Task<(string response, string responseId)> GetChatCompletionCore(
         string prompt,
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        ResponseCreationOptions responseOptions,
+        CreateResponseOptions responseOptions,
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         McpClient? mcpClient = null,
         string? endUserId = null,
@@ -436,13 +511,13 @@ public partial class AIChatService
         const int MaxToolCallIterations = 10;
         for (int iteration = 0; iteration < MaxToolCallIterations; iteration++)
         {
-            ClientResult<OpenAIResponse> response;
+            ClientResult<ResponseResult> response;
             try
             {
-                response = await _ResponseClient.CreateResponseAsync(
-                    responseItems,
-                    options: responseOptions,
-                    cancellationToken: cancellationToken);
+                responseOptions.InputItems.Clear();
+                foreach (var responseItem in responseItems)
+                    responseOptions.InputItems.Add(responseItem);
+                response = await _ResponseClient.CreateResponseAsync(responseOptions, cancellationToken);
             }
             catch (ClientResultException ex) when (IsContextLengthError(ex))
             {
@@ -532,16 +607,16 @@ public partial class AIChatService
 
     /// <summary>
     /// Returns a clone of <paramref name="source"/> with
-    /// <see cref="ResponseCreationOptions.PreviousResponseId"/> replaced.
+    /// <see cref="CreateResponseOptions.PreviousResponseId"/> replaced.
     /// All behavior-affecting properties are copied so that tool-call continuation legs
     /// produce identical generation behavior to the initial leg.
     /// </summary>
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-    private static ResponseCreationOptions CloneOptionsWithPreviousResponseId(
-        ResponseCreationOptions source,
+    private static CreateResponseOptions CloneOptionsWithPreviousResponseId(
+        CreateResponseOptions source,
         string? previousResponseId)
     {
-        var clone = new ResponseCreationOptions
+        var clone = new CreateResponseOptions
         {
             Instructions = source.Instructions,
             PreviousResponseId = previousResponseId,
@@ -556,6 +631,7 @@ public partial class AIChatService
             Temperature = source.Temperature,
             TopP = source.TopP,
             ServiceTier = source.ServiceTier,
+            StreamingEnabled = source.StreamingEnabled,
         };
         foreach (var tool in source.Tools)
             clone.Tools.Add(tool);
@@ -594,6 +670,31 @@ public partial class AIChatService
         return arguments;
     }
 
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+    private static string BuildStreamingTerminalFailureMessage(ResponseResult response, string terminalStatus)
+    {
+        if (!string.IsNullOrWhiteSpace(response.Error?.Message))
+            return $"Streaming response {terminalStatus}: {response.Error.Message}";
+
+        if (response.IncompleteStatusDetails?.Reason is { } reason)
+            return $"Streaming response {terminalStatus}: {reason}";
+
+        if (response.Status is { } status)
+            return $"Streaming response ended with status '{status}'.";
+
+        return $"Streaming response ended with status '{terminalStatus}'.";
+    }
+
+    private static string BuildRecentUpdateSequence(List<string> streamUpdateTypes)
+    {
+        const int MaxUpdatesToInclude = 40;
+        int count = streamUpdateTypes.Count;
+        if (count <= MaxUpdatesToInclude)
+            return string.Join(" -> ", streamUpdateTypes);
+        return $"... -> {string.Join(" -> ", streamUpdateTypes.Skip(count - MaxUpdatesToInclude))}";
+    }
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
     [LoggerMessage(Level = LogLevel.Information, Message = "AI tool call invoked: tool={ToolName} iteration={Iteration} user={EndUserId}")]
     private static partial void LogMcpToolCallInvoked(ILogger logger, string toolName, int iteration, string? endUserId);
 
@@ -611,6 +712,29 @@ public partial class AIChatService
 
     [LoggerMessage(Level = LogLevel.Information, Message = "AI contextual search performed for prompt enrichment")]
     private static partial void LogContextualSearchPerformed(ILogger logger);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Streaming response error update received: responseId={ResponseId} code={Code} message={Message} updateSequence={UpdateSequence}")]
+    private static partial void LogStreamingResponseErrorUpdate(
+        ILogger logger,
+        string? responseId,
+        string code,
+        string message,
+        string updateSequence);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Streaming response terminal update: updateType={UpdateType} responseId={ResponseId} status={Status} errorCode={ErrorCode} errorMessage={ErrorMessage} incompleteReason={IncompleteReason} updateSequence={UpdateSequence}")]
+    private static partial void LogStreamingResponseTerminalUpdate(
+        ILogger logger,
+        string updateType,
+        string? responseId,
+        string? status,
+        string? errorCode,
+        string? errorMessage,
+        string? incompleteReason,
+        string updateSequence);
 
     /// <summary>
     /// Returns <c>true</c> when the API error indicates the conversation context window was exceeded.

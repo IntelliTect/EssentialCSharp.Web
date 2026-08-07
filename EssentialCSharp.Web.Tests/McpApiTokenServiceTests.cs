@@ -1,13 +1,10 @@
 using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace EssentialCSharp.Web.Tests;
 
-[NotInParallel("McpTests")]
-[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
-public class McpApiTokenServiceTests(WebApplicationFactory factory)
+public class McpApiTokenServiceTests : IntegrationTestBase
 {
     private readonly List<IServiceScope> _scopes = [];
 
@@ -21,8 +18,8 @@ public class McpApiTokenServiceTests(WebApplicationFactory factory)
 
     private async Task<(string UserId, McpApiTokenService TokenService)> ArrangeAsync(string prefix)
     {
-        string userId = await McpTestHelper.CreateUserAsync(factory, prefix);
-        var scope = factory.Services.CreateScope();
+        string userId = await McpTestHelper.CreateUserAsync(Factory, prefix);
+        var scope = Factory.Services.CreateScope();
         _scopes.Add(scope);
         var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
         return (userId, tokenService);
@@ -30,7 +27,7 @@ public class McpApiTokenServiceTests(WebApplicationFactory factory)
 
     private async Task<McpApiTokenService> FillToLimitAsync(string userId)
     {
-        var scope = factory.Services.CreateScope();
+        var scope = Factory.Services.CreateScope();
         _scopes.Add(scope);
         var tokenService = scope.ServiceProvider.GetRequiredService<McpApiTokenService>();
         for (int i = 0; i < McpApiTokenService.MaxTokensPerUser; i++)

@@ -2,9 +2,7 @@ using System.Net;
 
 namespace EssentialCSharp.Web.Tests;
 
-[NotInParallel("FunctionalTests")]
-[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
-public class FunctionalTests(WebApplicationFactory factory)
+public class FunctionalTests : IntegrationTestBase
 {
     [Test]
     [Arguments("/")]
@@ -15,8 +13,8 @@ public class FunctionalTests(WebApplicationFactory factory)
     [Arguments("/alive")]
     public async Task WhenTheApplicationStarts_ItCanLoadLoadPages(string relativeUrl)
     {
-        HttpClient client = factory.CreateClient();
-        using HttpResponseMessage response = await client.GetAsync(relativeUrl);
+        using HttpClient client = CreateClientWithoutAutoRedirect();
+        using HttpResponseMessage response = await GetFollowingGetRedirectsAsync(client, relativeUrl);
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
@@ -31,8 +29,8 @@ public class FunctionalTests(WebApplicationFactory factory)
     [Arguments("/about?someOtherParam=value")]
     public async Task WhenPagesAreAccessed_TheyReturnHtml(string relativeUrl)
     {
-        HttpClient client = factory.CreateClient();
-        using HttpResponseMessage response = await client.GetAsync(relativeUrl);
+        using HttpClient client = CreateClientWithoutAutoRedirect();
+        using HttpResponseMessage response = await GetFollowingGetRedirectsAsync(client, relativeUrl);
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
 
@@ -47,8 +45,8 @@ public class FunctionalTests(WebApplicationFactory factory)
     [Test]
     public async Task WhenTheApplicationStarts_NonExistingPage_GivesCorrectStatusCode()
     {
-        HttpClient client = factory.CreateClient();
-        using HttpResponseMessage response = await client.GetAsync("/non-existing-page1234");
+        using HttpClient client = CreateClientWithoutAutoRedirect();
+        using HttpResponseMessage response = await GetFollowingGetRedirectsAsync(client, "/non-existing-page1234");
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
 

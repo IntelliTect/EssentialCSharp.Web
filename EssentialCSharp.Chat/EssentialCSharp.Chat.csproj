@@ -20,7 +20,7 @@
     <ItemGroup>
     <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" />
     <PackageReference Include="Microsoft.SemanticKernel" />
-    <PackageReference Include="Microsoft.SemanticKernel.Connectors.PgVector" />
+    <PackageReference Include="CommunityToolkit.VectorData.PgVector" />
     <PackageReference Include="ModelContextProtocol" />
     <PackageReference Include="IntelliTect.Multitool" />
     <PackageReference Include="System.CommandLine" />

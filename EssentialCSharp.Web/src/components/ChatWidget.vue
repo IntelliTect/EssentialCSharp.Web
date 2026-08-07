@@ -11,6 +11,7 @@ const {
     isTyping,
     chatMessagesEl,
     chatInputField,
+    captchaSiteKey,
     openChatDialog,
     closeChatDialog,
     clearChatHistory,
@@ -23,6 +24,18 @@ const {
 
 <template>
     <div class="chat-widget">
+        <!--
+            Invisible hCaptcha container: lives outside the v-if dialog so the widget
+            persists across open/close cycles and only needs to be initialized once.
+            Renders only when captcha is configured (HCAPTCHA_SITE_KEY is non-null).
+        -->
+        <div
+            v-if="captchaSiteKey"
+            id="chat-captcha-container"
+            class="visually-hidden"
+            aria-hidden="true"
+        />
+
         <button
             class="chat-button elevation-6"
             :class="{ 'chat-button--active': showChatDialog }"
@@ -189,6 +202,13 @@ const {
                             Type your question and press Enter or click send. Maximum 500 characters.
                         </div>
                     </form>
+                    <!-- hCaptcha legal disclosure required for invisible mode -->
+                    <p v-if="captchaSiteKey" class="captcha-notice small text-muted mt-1">
+                        Protected by hCaptcha —
+                        <a href="https://www.hcaptcha.com/privacy" target="_blank" rel="noopener noreferrer">Privacy</a>
+                        &amp;
+                        <a href="https://www.hcaptcha.com/terms" target="_blank" rel="noopener noreferrer">Terms</a>
+                    </p>
                 </div>
             </div>
         </div>

@@ -4,14 +4,13 @@ using EssentialCSharp.Web.Models;
 
 namespace EssentialCSharp.Web.Tests;
 
-[ClassDataSource<WebApplicationFactory>(Shared = SharedType.PerClass)]
-public class ListingSourceCodeControllerTests(WebApplicationFactory factory)
+public class ListingSourceCodeControllerTests : IntegrationTestBase
 {
     [Test]
     public async Task GetListing_WithValidChapterAndListing_Returns200WithContent()
     {
         // Arrange
-        HttpClient client = factory.CreateClient();
+        HttpClient client = Factory.CreateClient();
 
         // Act
         using HttpResponseMessage response = await client.GetAsync("/api/ListingSourceCode/chapter/1/listing/1");
@@ -35,7 +34,7 @@ public class ListingSourceCodeControllerTests(WebApplicationFactory factory)
     public async Task GetListing_WithInvalidChapter_Returns404()
     {
         // Arrange
-        HttpClient client = factory.CreateClient();
+        HttpClient client = Factory.CreateClient();
 
         // Act
         using HttpResponseMessage response = await client.GetAsync("/api/ListingSourceCode/chapter/999/listing/1");
@@ -48,7 +47,7 @@ public class ListingSourceCodeControllerTests(WebApplicationFactory factory)
     public async Task GetListing_WithInvalidListing_Returns404()
     {
         // Arrange
-        HttpClient client = factory.CreateClient();
+        HttpClient client = Factory.CreateClient();
 
         // Act
         using HttpResponseMessage response = await client.GetAsync("/api/ListingSourceCode/chapter/1/listing/999");
@@ -61,7 +60,7 @@ public class ListingSourceCodeControllerTests(WebApplicationFactory factory)
     public async Task GetListingsByChapter_WithValidChapter_ReturnsMultipleListings()
     {
         // Arrange
-        HttpClient client = factory.CreateClient();
+        HttpClient client = Factory.CreateClient();
 
         // Act
         using HttpResponseMessage response = await client.GetAsync("/api/ListingSourceCode/chapter/1");
@@ -92,7 +91,7 @@ public class ListingSourceCodeControllerTests(WebApplicationFactory factory)
     public async Task GetListingsByChapter_WithInvalidChapter_ReturnsEmptyList()
     {
         // Arrange
-        HttpClient client = factory.CreateClient();
+        HttpClient client = Factory.CreateClient();
 
         // Act
         using HttpResponseMessage response = await client.GetAsync("/api/ListingSourceCode/chapter/999");

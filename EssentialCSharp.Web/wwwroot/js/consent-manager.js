@@ -8,15 +8,11 @@ class ConsentManager {
     constructor() {
         this.COOKIE_NAME = 'essential-csharp-consent';
         this.COOKIE_DURATION = 365; // days
-        this.CONSENT_VERSION = '2'; // Bump this to re-prompt all users when consent terms change
+        this.CONSENT_VERSION = '3'; // Bump this to re-prompt all users when consent terms change
         this.consentState = {
             analytics_storage: 'denied',
-            ad_storage: 'denied',
-            ad_user_data: 'denied',
-            ad_personalization: 'denied',
             functionality_storage: 'granted', // Always granted for essential functionality
-            security_storage: 'granted', // Always granted for security
-            personalization_storage: 'denied'
+            security_storage: 'granted' // Always granted for security
         };
         
         this.init();
@@ -28,14 +24,14 @@ class ConsentManager {
         // Load saved consent preferences (signals GA if already consented)
         this.loadConsentPreferences();
 
-        // Always send Clarity the current consent state (denied by default for new visitors).
-        // Clarity's polyfill queues this call and delivers it when the script loads.
         this.updateClarityConsent();
         
         // Show banner if no valid consent stored
         if (this.shouldShowConsentBanner()) {
             this.showConsentBanner();
         }
+
+        this.notifyConsentChanged();
     }
 
     initGoogleConsentMode() {
@@ -60,8 +56,7 @@ class ConsentManager {
                 // Validate and only apply known consent properties for security.
                 // Exclude functionality_storage and security_storage — always essential, never user-overrideable.
                 const validConsentKeys = [
-                    'analytics_storage', 'ad_storage', 'ad_user_data', 
-                    'ad_personalization', 'personalization_storage'
+                    'analytics_storage'
                 ];
                 
                 const validatedPreferences = {};
@@ -73,7 +68,7 @@ class ConsentManager {
                 });
                 
                 this.consentState = { ...this.consentState, ...validatedPreferences };
-                this.updateConsentMode();
+                this.updateConsentMode({ skipNotify: true });
             } catch (e) {
                 // Malformed cookie — delete it so the banner is shown again
                 console.warn('Failed to parse consent preferences', e);
@@ -108,7 +103,7 @@ class ConsentManager {
             <div class="consent-banner-content">
                 <div class="consent-banner-text">
                     <h3>Cookie Preferences</h3>
-                    <p>We use cookies to improve your experience and analyze website usage. See our <a href="https://intellitect.com/about/privacy-policy/" target="_blank" rel="noopener noreferrer">Privacy Policy</a> for details.</p>
+                    <p>We use essential cookies to keep the site secure and optional analytics cookies to understand site usage. See our <a href="/cookie-policy">Cookie Policy</a> and <a href="https://intellitect.com/about/privacy-policy/" target="_blank" rel="noopener noreferrer">Privacy Policy</a> for details.</p>
                 </div>
                 <div class="consent-banner-actions">
                     <button id="consent-reject-all" class="btn btn-outline-secondary me-2">Reject All</button>
@@ -133,22 +128,13 @@ class ConsentManager {
                         <span class="consent-slider"></span>
                         <div class="consent-info">
                             <strong>Analytics Cookies</strong>
-                            <p>Help us understand how you use our site to improve your experience.</p>
-                        </div>
-                    </label>
-                </div>
-                <div class="consent-category">
-                    <label class="consent-switch">
-                        <input type="checkbox" id="consent-advertising">
-                        <span class="consent-slider"></span>
-                        <div class="consent-info">
-                            <strong>Google Signals</strong>
-                            <p>Allows Google to associate your visit with your Google account for analytics modeling and cross-site measurement. No advertisements are served on this site, but Google may use this data across its services.</p>
+                            <p>Help us understand how you use the site through Google Analytics, Microsoft Clarity, and Azure Application Insights. We do not use advertising or personalization cookies.</p>
                         </div>
                     </label>
                 </div>
                 <div class="consent-actions">
                     <button id="consent-save-preferences" class="btn btn-primary">Save Preferences</button>
+                    <button id="consent-withdraw-consent" class="btn btn-outline-secondary ms-2" type="button">Withdraw Consent</button>
                 </div>
             </div>
         `;
@@ -175,29 +161,32 @@ class ConsentManager {
         banner.querySelector('#consent-save-preferences').addEventListener('click', () => {
             this.saveCustomPreferences();
         });
+
+        banner.querySelector('#consent-withdraw-consent').addEventListener('click', () => {
+            this.revokeAllConsent();
+        });
     }
 
     showCustomizeOptions() {
         const details = document.getElementById('consent-details');
         if (details) {
+            const isExpanded = details.style.display !== 'none' && details.style.display !== '';
+            if (isExpanded) {
+                details.style.display = 'none';
+                return;
+            }
             details.style.display = 'block';
             
             // Load current preferences into checkboxes
             document.getElementById('consent-analytics').checked = 
                 this.consentState.analytics_storage === 'granted';
-            document.getElementById('consent-advertising').checked = 
-                this.consentState.ad_storage === 'granted';
         }
     }
 
     acceptAllConsent() {
         this.consentState = {
             ...this.consentState,
-            analytics_storage: 'granted',
-            ad_storage: 'granted',
-            ad_user_data: 'granted',
-            ad_personalization: 'granted',
-            personalization_storage: 'granted'
+            analytics_storage: 'granted'
         };
         
         this.saveConsentAndClose();
@@ -206,11 +195,7 @@ class ConsentManager {
     rejectAllConsent() {
         this.consentState = {
             ...this.consentState,
-            analytics_storage: 'denied',
-            ad_storage: 'denied',
-            ad_user_data: 'denied',
-            ad_personalization: 'denied',
-            personalization_storage: 'denied'
+            analytics_storage: 'denied'
         };
         
         this.saveConsentAndClose();
@@ -218,15 +203,10 @@ class ConsentManager {
 
     saveCustomPreferences() {
         const analyticsChecked = document.getElementById('consent-analytics').checked;
-        const advertisingChecked = document.getElementById('consent-advertising').checked;
         
         this.consentState = {
             ...this.consentState,
-            analytics_storage: analyticsChecked ? 'granted' : 'denied',
-            ad_storage: advertisingChecked ? 'granted' : 'denied',
-            ad_user_data: advertisingChecked ? 'granted' : 'denied',
-            ad_personalization: advertisingChecked ? 'granted' : 'denied',
-            personalization_storage: advertisingChecked ? 'granted' : 'denied'
+            analytics_storage: analyticsChecked ? 'granted' : 'denied'
         };
         
         this.saveConsentAndClose();
@@ -251,13 +231,16 @@ class ConsentManager {
         this.removeConsentBanner();
     }
 
-    updateConsentMode() {
+    updateConsentMode({ skipNotify = false } = {}) {
         if (window.gtag) {
             try {
                 window.gtag('consent', 'update', this.consentState);
             } catch (error) {
                 console.warn('Failed to update Google Consent Mode:', error);
             }
+        }
+        if (!skipNotify) {
+            this.notifyConsentChanged();
         }
     }
 
@@ -266,7 +249,6 @@ class ConsentManager {
         if (window.clarity) {
             try {
                 window.clarity('consentv2', {
-                    ad_storage: this.consentState.ad_storage,
                     analytics_storage: this.consentState.analytics_storage
                 });
             } catch (error) {
@@ -424,8 +406,18 @@ class ConsentManager {
         return this.consentState.analytics_storage === 'granted';
     }
 
+    getConsentState() {
+        return { ...this.consentState };
+    }
+
     hasAdvertisingConsent() {
-        return this.consentState.ad_storage === 'granted';
+        return false;
+    }
+
+    notifyConsentChanged() {
+        window.dispatchEvent(new CustomEvent('ecs:consent-changed', {
+            detail: { consentState: { ...this.consentState } }
+        }));
     }
 
     // Method to revoke consent (useful for "forget me" functionality)
@@ -437,8 +429,8 @@ class ConsentManager {
     }
 
     clearTrackingCookies() {
-        // Clear common tracking cookies (Google Analytics and Microsoft Clarity)
-        const trackingCookies = ['_ga', '_gid', '_gat', '_clck', '_clsk', 'CLID', 'ANONCHK', 'MR', 'MUID', 'SM'];
+        // Clear common tracking cookies (Google Analytics, Microsoft Clarity, and App Insights)
+        const trackingCookies = ['_ga', '_gid', '_gat', '_clck', '_clsk', 'CLID', 'ANONCHK', 'MR', 'MUID', 'SM', 'ai_user', 'ai_session'];
         const expired = 'expires=Thu, 01 Jan 1970 00:00:00 GMT';
         const hostname = window.location.hostname;
         // Build candidate domains: exact host plus progressively shorter parent domains.
@@ -476,4 +468,11 @@ window.openConsentPreferences = function() {
     if (window.consentManager) {
         window.consentManager.openConsentPreferences();
     }
+};
+
+window.getEcsConsentState = function() {
+    if (window.consentManager && typeof window.consentManager.getConsentState === 'function') {
+        return window.consentManager.getConsentState();
+    }
+    return null;
 };

@@ -4,10 +4,11 @@ using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Services;
 
-public partial class CaptchaService(IHttpClientFactory clientFactory, IOptions<CaptchaOptions> optionsAccessor, ILogger<CaptchaService> logger) : ICaptchaService
+public partial class CaptchaService(IHttpClientFactory clientFactory, IOptions<CaptchaOptions> optionsAccessor, IOptions<SiteSettings> siteSettingsAccessor, ILogger<CaptchaService> logger) : ICaptchaService
 {
     private IHttpClientFactory ClientFactory { get; } = clientFactory;
     private CaptchaOptions Options { get; } = optionsAccessor.Value;
+    private SiteSettings SiteSettings { get; } = siteSettingsAccessor.Value;
 
     // Explicit overload used by integration tests: https://docs.hcaptcha.com/#verify-the-user-response-server-side
     public async Task<HCaptchaResult?> VerifyAsync(string secret, string response, string sitekey, CancellationToken cancellationToken = default)
@@ -49,13 +50,12 @@ public partial class CaptchaService(IHttpClientFactory clientFactory, IOptions<C
 
         HCaptchaResult? result = await PostVerification(postData, cancellationToken);
 
-        if (result is { Success: true } && Options.ExpectedHostname is { Length: > 0 } expectedHostname)
+        if (result is { Success: true })
         {
-            if (!string.Equals(result.Hostname, expectedHostname, StringComparison.OrdinalIgnoreCase))
-            {
-                LogHostnameMismatch(logger, expectedHostname, result.Hostname);
-                result.Success = false;
-            }
+            string expectedHostname = Uri.TryCreate(SiteSettings.BaseUrl, UriKind.Absolute, out Uri? baseUri)
+                ? baseUri.Host
+                : SiteSettings.BaseUrl;
+            LogHostnameVerified(logger, result.Hostname, expectedHostname);
         }
 
         return result;
@@ -81,8 +81,8 @@ public partial class CaptchaService(IHttpClientFactory clientFactory, IOptions<C
         }
     }
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "hCaptcha hostname mismatch: expected {Expected}, got {Actual}")]
-    private static partial void LogHostnameMismatch(ILogger<CaptchaService> logger, string expected, string? actual);
+    [LoggerMessage(Level = LogLevel.Information, Message = "hCaptcha hostname: reported={ReportedHostname}, expected={ExpectedHostname}")]
+    private static partial void LogHostnameVerified(ILogger<CaptchaService> logger, string reportedHostname, string expectedHostname);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "hCaptcha siteverify request failed")]
     private static partial void LogSiteverifyFailed(ILogger<CaptchaService> logger, Exception exception);

@@ -26,10 +26,4 @@ public class CaptchaOptions
     /// </summary>
     public string JavaScriptUrl { get; set; } = "https://js.hcaptcha.com/1/api.js";
 
-    /// <summary>
-    /// If set, the hostname returned in the hCaptcha siteverify response is compared against this value.
-    /// Set to null (default) to skip hostname validation — required when using test keys or in development.
-    /// In production, set to the canonical hostname (e.g., "essentialcsharp.com").
-    /// </summary>
-    public string? ExpectedHostname { get; set; }
 }

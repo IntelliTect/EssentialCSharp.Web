@@ -136,13 +136,13 @@ public sealed partial class BookContentTool
             explanations).ToMcpString();
     }
 
-    [McpServerTool(Title = "Get Navigation Context", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false, UseStructuredContent = true),
+    [McpServerTool(Title = "Get Navigation Context", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false, UseStructuredContent = true, OutputSchemaType = typeof(NavigationContextToolResult)),
      Description("Get the navigation context for a book section: its breadcrumb path, the previous and next sections, its parent section, and its sibling sections. Useful for understanding where a section sits in the book's structure.")]
     public NavigationContextToolResult GetNavigationContext(
         [Description("The section slug/key (e.g., 'hello-world'). Use GetChapterSections to get valid slugs.")] string sectionKey) =>
         _bookToolQueryService.GetNavigationContext(sectionKey);
 
-    [McpServerTool(Title = "Get Chapter Summary", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false, UseStructuredContent = true),
+    [McpServerTool(Title = "Get Chapter Summary", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false, UseStructuredContent = true, OutputSchemaType = typeof(ChapterSummaryToolResult)),
      Description("Get a structural overview of a book chapter: its top-level section headings in reading order, and the coding guidelines associated with that chapter. Useful for understanding what a chapter covers before diving in.")]
     public ChapterSummaryToolResult GetChapterSummary(
         [Description("The chapter number (e.g., 5 for Chapter 5).")] int chapter) =>

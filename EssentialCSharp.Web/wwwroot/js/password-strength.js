@@ -9,7 +9,7 @@
  *   data-min-length            — Minimum password length enforced server-side (from PasswordRequirementOptions)
  */
 
-import { zxcvbn, zxcvbnOptions } from '@zxcvbn-ts/core';
+import { ZxcvbnFactory } from '@zxcvbn-ts/core';
 
 const SCORE_CONFIG = [
     { label: 'Very weak', barClass: 'bg-danger',            width: 20 },
@@ -21,6 +21,7 @@ const SCORE_CONFIG = [
 
 let zxcvbnReady = false;
 let zxcvbnLoadPromise = null;
+let zxcvbn = null;
 
 async function ensureZxcvbn() {
     if (zxcvbnReady) return;
@@ -32,7 +33,7 @@ async function ensureZxcvbn() {
     }
     try {
         const [zxcvbnCommon, zxcvbnEn] = await zxcvbnLoadPromise;
-        zxcvbnOptions.setOptions({
+        zxcvbn = new ZxcvbnFactory({
             translations: zxcvbnEn.translations,
             graphs: zxcvbnCommon.adjacencyGraphs,
             dictionary: { ...zxcvbnCommon.dictionary, ...zxcvbnEn.dictionary },
@@ -281,7 +282,7 @@ function initMeter(container) {
         // Guard against stale result if the user kept typing during the initial load
         if (password !== passwordInput.value) return;
         const userInputs = getUserInputValues(userInputFieldIds);
-        const result = zxcvbn(password, userInputs);
+        const result = zxcvbn.check(password, userInputs);
 
         // Render zxcvbn result immediately; HIBP check runs asynchronously below.
         if (hibpWarningActive) {

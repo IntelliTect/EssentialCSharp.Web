@@ -1,5 +1,14 @@
 namespace EssentialCSharp.Web.Models;
 
+public sealed record SearchBookContentMatchResult(
+    double Score,
+    int? ChapterNumber,
+    string? Heading,
+    string ChunkText);
+
+public sealed record SearchBookContentResult(
+    IReadOnlyList<SearchBookContentMatchResult> Matches);
+
 public sealed record BookTocItemResult(
     string Key,
     string Title,

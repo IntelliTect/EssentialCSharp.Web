@@ -29,31 +29,40 @@ public sealed class BookSearchTool
         _bookToolQueryService = bookToolQueryService;
     }
 
-    [McpServerTool(Title = "Search Book Content", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
+    [McpServerTool(Title = "Search Book Content", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false, UseStructuredContent = true, OutputSchemaType = typeof(SearchBookContentResult)),
      Description("Search the Essential C# book content using semantic vector search. Returns relevant text chunks with chapter and heading context. Use this to find information about C# programming concepts covered in the book.")]
-    public async Task<string> SearchBookContent(
+    public async Task<CallToolResult> SearchBookContent(
         [Description("The search query describing the C# concept or topic to find in the book.")] string query,
         [Description("Number of results to return (1–10). Use a higher value for broad topics or comprehensive research; lower for quick lookups.")] int maxResults = AISearchService.DefaultSearchTop,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(query))
         {
-            return "Query must not be empty.";
+            return McpToolResultFactory.CreateError("Query must not be empty.");
         }
         if (query.Length > 500)
         {
-            return "Query is too long (maximum 500 characters).";
+            return McpToolResultFactory.CreateError("Query is too long (maximum 500 characters).");
         }
 
         if (_SearchService is null)
         {
-            return "Book search is not available in this environment (AI services are not configured).";
+            return McpToolResultFactory.CreateError("Book search is not available in this environment (AI services are not configured).");
         }
 
-        List<SearchBookContentMatchTextResult> matches = (await _SearchService.ExecuteVectorSearch(
-                query,
-                top: maxResults,
-                cancellationToken: cancellationToken))
+        var rawResults = await _SearchService.ExecuteVectorSearch(
+            query,
+            top: maxResults,
+            cancellationToken: cancellationToken);
+
+        if (rawResults.Count == 0)
+        {
+            return McpToolResultFactory.CreateHybridResult(
+                "No results found for the given query.",
+                new SearchBookContentResult([]));
+        }
+
+        List<SearchBookContentMatchTextResult> textMatches = rawResults
             .Select(result => new SearchBookContentMatchTextResult(
                 result.Score ?? 0,
                 result.Record.ChapterNumber,
@@ -61,25 +70,31 @@ public sealed class BookSearchTool
                 result.Record.ChunkText))
             .ToList();
 
-        if (matches.Count == 0)
-        {
-            return "No results found for the given query.";
-        }
+        SearchBookContentResult structuredResult = new(
+            rawResults
+                .Select(result => new SearchBookContentMatchResult(
+                    result.Score ?? 0,
+                    result.Record.ChapterNumber,
+                    result.Record.Heading,
+                    result.Record.ChunkText))
+                .ToList());
 
-        return new SearchBookContentTextResult(matches).ToMcpString();
+        return McpToolResultFactory.CreateHybridResult(
+            new SearchBookContentTextResult(textMatches).ToMcpString(),
+            structuredResult);
     }
 
-    [McpServerTool(Title = "Get Chapter List", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false, UseStructuredContent = true),
+    [McpServerTool(Title = "Get Chapter List", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false, UseStructuredContent = true, OutputSchemaType = typeof(ChapterListToolResult)),
      Description("Get the table of contents for the Essential C# book, listing all chapters and their sections with navigation links.")]
     public ChapterListToolResult GetChapterList() => _bookToolQueryService.GetChapterList();
 
-    [McpServerTool(Title = "Get Chapter Sections", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false, UseStructuredContent = true),
+    [McpServerTool(Title = "Get Chapter Sections", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false, UseStructuredContent = true, OutputSchemaType = typeof(ChapterSectionsToolResult)),
      Description("Get all sections and subsections in a specific chapter of the Essential C# book, in reading order. Returns each section's heading, slug, anchor link, and indent level. Use the returned slugs with other tools like GetSectionContent or GetNavigationContext.")]
     public ChapterSectionsToolResult GetChapterSections(
         [Description("The chapter number (e.g., 5 for Chapter 5).")] int chapter) =>
         _bookToolQueryService.GetChapterSections(chapter);
 
-    [McpServerTool(Title = "Get Direct Content URL", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false, UseStructuredContent = true),
+    [McpServerTool(Title = "Get Direct Content URL", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false, UseStructuredContent = true, OutputSchemaType = typeof(BookSectionReferenceResult)),
      Description("Get the canonical deep-link URL and section metadata for a specific book section or subsection. Use this to include precise references in responses.")]
     public BookSectionReferenceResult GetDirectContentUrl(
         [Description("The section slug/key (e.g., 'hello-world'). Use GetChapterSections or GetChapterList to find valid slugs.")] string sectionKey) =>

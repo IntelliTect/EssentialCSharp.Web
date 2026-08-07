@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, provide, reactive, watch } from "vue";
 import HeaderStatus from "./components/HeaderStatus.vue";
 import SidebarPanel from "./components/SidebarPanel.vue";
 import PageNavigation from "./components/PageNavigation.vue";
+import PageShareAction from "./components/PageShareAction.vue";
 import SnackbarMessage from "./components/SnackbarMessage.vue";
 import ChatWidget from "./components/ChatWidget.vue";
 import CodeRunnerModal from "./components/CodeRunnerModal.vue";
@@ -72,6 +73,10 @@ watch(() => shell.smallScreen, updateLayoutClasses);
 
     <Teleport to="#page-nav-host">
         <PageNavigation />
+    </Teleport>
+
+    <Teleport to="#page-share-host">
+        <PageShareAction />
     </Teleport>
 
     <Teleport to="#snackbar-host">

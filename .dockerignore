@@ -1,3 +1,5 @@
+**/.buildkit-cache
+**/buildkit-cache
 **/.classpath
 **/.dockerignore
 **/.env

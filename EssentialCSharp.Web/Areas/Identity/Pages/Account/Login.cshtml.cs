@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
@@ -68,7 +68,9 @@ public partial class LoginModel(SignInManager<EssentialCSharpWebUser> signInMana
         returnUrl ??= Url.Content("~/");
 
         string? captchaToken = Request.Form[CaptchaOptions.HttpPostResponseKeyName];
+
         HCaptchaResult? captchaResult = await captchaService.VerifyAsync(captchaToken, HttpContext.Connection.RemoteIpAddress?.ToString());
+
         if (captchaResult?.Success != true)
         {
             ModelState.AddModelError(string.Empty, "Human verification failed. Please try again.");

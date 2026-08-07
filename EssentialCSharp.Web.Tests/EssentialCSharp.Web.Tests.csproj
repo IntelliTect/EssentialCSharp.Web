@@ -10,9 +10,12 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <!-- Pin transitive SQLitePCLRaw to a patched version; fixes GHSA-2m69-gcr7-jv3q (see Directory.Packages.props for details) -->
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" />
     <PackageReference Include="Moq" />
     <PackageReference Include="Moq.AutoMock" />
     <PackageReference Include="TUnit" />
+    <PackageReference Include="TUnit.AspNetCore" />
     <PackageReference Include="Newtonsoft.Json" />
   </ItemGroup>
 

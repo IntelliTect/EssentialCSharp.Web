@@ -10,5 +10,9 @@ public class ChatMessageRequest
     [StringLength(200)]
     public string? PreviousResponseId { get; set; }
     public bool EnableContextualSearch { get; set; } = true;
-    public string? CaptchaResponse { get; set; } // For future captcha implementation
+    /// <summary>
+    /// hCaptcha token obtained from the client-side invisible widget.
+    /// Required when <c>CaptchaOptions.SecretKey</c> is configured; ignored otherwise.
+    /// </summary>
+    public string? CaptchaResponse { get; set; }
 }

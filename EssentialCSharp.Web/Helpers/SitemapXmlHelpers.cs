@@ -32,12 +32,9 @@ public static class SitemapXmlHelpers
             }
         };
 
-        // Add routes dynamically discovered from controllers
-        var allRoutes = routeConfigurationService.GetStaticRoutes();
+        // Add routes dynamically discovered from controllers (only indexable routes)
+        var allRoutes = routeConfigurationService.GetIndexableRoutes();
         var controllerRoutes = allRoutes
-            .Where(route => !route.Contains("error", StringComparison.OrdinalIgnoreCase))
-            .Where(route => !route.Contains("index", StringComparison.OrdinalIgnoreCase))
-            .Where(route => !route.Contains("identity", StringComparison.OrdinalIgnoreCase))
             .Where(route => !IsSitemapRoute(route))
             .Select(route => $"/{route}")
             .ToList();
