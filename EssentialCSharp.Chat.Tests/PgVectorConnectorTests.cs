@@ -6,13 +6,12 @@ namespace EssentialCSharp.Chat.Tests;
 public class PgVectorConnectorTests
 {
     /// <summary>
-    /// Verifies that PostgresVectorStore.GetCollection does not throw a TypeLoadException,
-    /// which would indicate a version mismatch between Microsoft.SemanticKernel core and
-    /// Microsoft.SemanticKernel.Connectors.PgVector (e.g., missing vtable slots on
-    /// internal types like PostgresModelBuilder).
+    /// Verifies the runtime vector-data API shape is compatible with the currently resolved
+    /// Semantic Kernel connector assemblies. If this fails with MissingMethodException
+    /// (for example on VectorSearchOptions<T>.get_OldFilter()), package versions are out of sync.
     /// </summary>
     [Test]
-    public async Task GetCollection_WithBookContentChunk_DoesNotThrowTypeLoadException()
+    public async Task GetCollection_WithBookContentChunk_RuntimeVectorDataApiShapeIsCompatible()
     {
         // Arrange — no real DB connection is needed; connections are only opened for actual queries
 #pragma warning disable SKEXP0010 // PostgresVectorStore is experimental
@@ -24,5 +23,20 @@ public class PgVectorConnectorTests
 
         // Assert
         await Assert.That(collection).IsNotNull();
+
+        // Drive the same vector-search path used in production so binary-incompatible package
+        // combinations fail in tests before deployment.
+        await using var enumerator = collection
+            .SearchAsync(
+                new ReadOnlyMemory<float>(new float[1536]),
+                1,
+                options: new Microsoft.Extensions.VectorData.VectorSearchOptions<BookContentChunk>
+                {
+                    VectorProperty = x => x.TextEmbedding
+                },
+                cancellationToken: CancellationToken.None)
+            .GetAsyncEnumerator();
+
+        await Assert.ThrowsAsync<Exception>(async () => await enumerator.MoveNextAsync().AsTask());
     }
 }
