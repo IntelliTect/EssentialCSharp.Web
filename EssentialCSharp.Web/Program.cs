@@ -563,28 +563,13 @@ public partial class Program
 
         app.UseAuthentication();
 
+        // /mcp uses a named non-default scheme. Normalize the principal before
+        // rate limiting so valid MCP requests partition by MCP user while
+        // missing/invalid bearer requests fall back to the anonymous/IP bucket
+        // instead of inheriting the site's cookie principal.
         app.UseWhen(
             context => context.Request.Path.StartsWithSegments("/mcp"),
-            branch => branch.Use(async (context, next) =>
-            {
-                // /mcp uses a named non-default scheme. Normalize the principal before
-                // rate limiting so valid MCP requests partition by MCP user while
-                // missing/invalid bearer requests fall back to the anonymous/IP bucket
-                // instead of inheriting the site's cookie principal.
-                McpApiTokenService.ResolvedMcpApiToken? resolvedToken = null;
-                if (McpBearerAuthentication.TryGetRawToken(context.Request, out string? rawToken))
-                {
-                    var tokenService = context.RequestServices.GetRequiredService<McpApiTokenService>();
-                    resolvedToken = await tokenService.ResolveValidTokenAsync(rawToken, context.RequestAborted);
-                    McpBearerAuthentication.StoreResolution(context, resolvedToken);
-                }
-
-                context.User = resolvedToken is not null
-                    ? McpBearerAuthentication.CreatePrincipal(resolvedToken.UserId)
-                    : new ClaimsPrincipal(new ClaimsIdentity());
-
-                await next(context);
-            }));
+            branch => branch.UseMiddleware<McpTokenNormalizationMiddleware>());
 
         app.UseRateLimiter();
 
