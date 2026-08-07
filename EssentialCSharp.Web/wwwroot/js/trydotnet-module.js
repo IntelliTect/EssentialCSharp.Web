@@ -250,10 +250,9 @@ export function useTryDotNet() {
         try {
             // Check the actual script endpoint rather than the bare origin,
             // which may not have a handler and would return 404.
-            const res = await fetch(`${origin}/api/trydotnet.min.js`, {
+            await fetch(`${origin}/api/trydotnet.min.js`, {
                 method: 'HEAD',
                 mode: 'no-cors',
-                headers: getTraceHeaders(),
                 signal: controller.signal,
             });
             // mode: 'no-cors' gives an opaque response (status 0), which is fine
