@@ -170,6 +170,11 @@ class ConsentManager {
     showCustomizeOptions() {
         const details = document.getElementById('consent-details');
         if (details) {
+            const isExpanded = details.style.display !== 'none' && details.style.display !== '';
+            if (isExpanded) {
+                details.style.display = 'none';
+                return;
+            }
             details.style.display = 'block';
             
             // Load current preferences into checkboxes
