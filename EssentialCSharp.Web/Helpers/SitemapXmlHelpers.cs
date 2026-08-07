@@ -18,18 +18,37 @@ public static class SitemapXmlHelpers
         }
     }
 
-    public static void GenerateSitemapXml(IEnumerable<SiteMapping> siteMappings, IRouteConfigurationService routeConfigurationService, string baseUrl, out List<SitemapNode> nodes)
+    public static void GenerateSitemapXml(
+        IEnumerable<SiteMapping> siteMappings,
+        IRouteConfigurationService routeConfigurationService,
+        string baseUrl,
+        out List<SitemapNode> nodes) =>
+        GenerateSitemapXml(siteMappings, routeConfigurationService, baseUrl, staticRouteLastModifiedDates: null, out nodes);
+
+    public static void GenerateSitemapXml(
+        IEnumerable<SiteMapping> siteMappings,
+        IRouteConfigurationService routeConfigurationService,
+        string baseUrl,
+        IReadOnlyDictionary<string, DateTime>? staticRouteLastModifiedDates,
+        out List<SitemapNode> nodes)
     {
         // Routes should end up with leading slash
         baseUrl = baseUrl.TrimEnd('/');
 
         // Start with the root URL — no LastModificationDate: it doesn't change per-request
+        var rootNode = new SitemapNode($"{baseUrl}/")
+        {
+            ChangeFrequency = ChangeFrequency.Daily,
+            Priority = 1.0M
+        };
+
+        if (TryGetRouteLastModified(staticRouteLastModifiedDates, "/home") is DateTime homeLastModified)
+        {
+            rootNode.LastModificationDate = homeLastModified;
+        }
+
         nodes = new() {
-            new($"{baseUrl}/")
-            {
-                ChangeFrequency = ChangeFrequency.Daily,
-                Priority = 1.0M
-            }
+            rootNode
         };
 
         // Add routes dynamically discovered from controllers (only indexable routes)
@@ -41,11 +60,18 @@ public static class SitemapXmlHelpers
 
         foreach (var route in controllerRoutes)
         {
-            nodes.Add(new($"{baseUrl}{route}")
+            var node = new SitemapNode($"{baseUrl}{route}")
             {
                 ChangeFrequency = GetChangeFrequencyForRoute(route),
                 Priority = GetPriorityForRoute(route)
-            });
+            };
+
+            if (TryGetRouteLastModified(staticRouteLastModifiedDates, route) is DateTime routeLastModified)
+            {
+                node.LastModificationDate = routeLastModified;
+            }
+
+            nodes.Add(node);
         }
 
         // Add site mappings from content
@@ -64,6 +90,28 @@ public static class SitemapXmlHelpers
 
             return node;
         }));
+    }
+
+    private static DateTime? TryGetRouteLastModified(IReadOnlyDictionary<string, DateTime>? staticRouteLastModifiedDates, string route)
+    {
+        if (staticRouteLastModifiedDates is null)
+        {
+            return null;
+        }
+
+        var normalizedRoute = NormalizeRoute(route);
+        return staticRouteLastModifiedDates.TryGetValue(normalizedRoute, out var lastModified) ? lastModified : null;
+    }
+
+    private static string NormalizeRoute(string route)
+    {
+        route = route.Trim();
+        if (route == "/")
+        {
+            return route;
+        }
+
+        return $"/{route.TrimStart('/').ToLowerInvariant()}";
     }
 
     private static bool IsSitemapRoute(string route) =>
