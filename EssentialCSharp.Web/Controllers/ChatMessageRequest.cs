@@ -14,6 +14,5 @@ public class ChatMessageRequest
     /// hCaptcha token obtained from the client-side invisible widget.
     /// Required when <c>CaptchaOptions.SecretKey</c> is configured; ignored otherwise.
     /// </summary>
-    [StringLength(2000)]
     public string? CaptchaResponse { get; set; }
 }
