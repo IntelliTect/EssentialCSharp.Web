@@ -12,7 +12,10 @@ This guide will help you set up your local development environment for working o
 For basic browsing and UI development, no secrets are needed. The database connection and HCaptcha test keys are already configured in `appsettings.Development.json`.
 
 1. Clone the repository.
-2. (Optional) If you have access to the private NuGet feed, set `<AccessToNugetFeed>true</AccessToNugetFeed>` in [Directory.Packages.props](../Directory.Packages.props) to include internal packages. Without this, the app runs with placeholder content but security audits still function.
+2. Configure the package feed in [Directory.Packages.props](../Directory.Packages.props):
+   - Leave `<AccessToNugetFeed>false</AccessToNugetFeed>` (the default) when you do not have Azure DevOps feed access. Public packages restore from nuget.org, internal content packages are excluded, and the app uses placeholder content.
+   - Set `<AccessToNugetFeed>true</AccessToNugetFeed>` only when you have authenticated access to the private Azure DevOps feed and need the internal content packages.
+   - When troubleshooting package restore or SDK version issues, set it to `false` first to isolate public NuGet dependencies and avoid private-feed authentication errors.
 3. Run the project.
 
 > **Tip:** Use the [dotnet secret manager](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets#set-a-secret) for any secrets below:

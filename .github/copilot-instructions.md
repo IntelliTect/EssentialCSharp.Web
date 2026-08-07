@@ -145,6 +145,22 @@ docker-compose up --build
 
 ## Configuration & Environment Setup
 
+### NuGet Feed Selection
+
+`Directory.Packages.props` defaults `AccessToNugetFeed` to `false`. Keep it disabled for contributors without Azure DevOps feed access or when troubleshooting public dependency resolution:
+
+```xml
+<AccessToNugetFeed>false</AccessToNugetFeed>
+```
+
+Set it to `true` only after authenticating to the private Azure DevOps feed. This enables the internal `ContentFeedNuget` package and production content; with the value set to `false`, the web project copies placeholder content instead:
+
+```xml
+<AccessToNugetFeed>true</AccessToNugetFeed>
+```
+
+If restore reports private-feed authentication or connectivity errors, set the value back to `false` before investigating public package versions.
+
 ### Required Secrets (Use dotnet user-secrets)
 ```bash
 # Email configuration

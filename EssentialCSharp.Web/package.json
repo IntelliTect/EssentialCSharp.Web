@@ -14,14 +14,14 @@
     "@zxcvbn-ts/core": "^4.1.2",
     "@zxcvbn-ts/language-common": "^4.1.2",
     "@zxcvbn-ts/language-en": "^4.1.1",
-    "dompurify": "3.4.10",
+    "dompurify": "3.4.12",
     "jquery": "4.0.0",
     "marked": "18.0.5",
-    "vue": "3.5.38",
+    "vue": "3.5.40",
     "vuetify": "4.1.2"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "6.0.7",
-    "vite": "8.0.16"
+    "vite": "8.2.0"
   }
 }
