@@ -71,11 +71,11 @@ public partial class LocalChatService : IChatCompletionService, IDisposable
         }
         catch (HttpRequestException ex)
         {
-            throw new ChatBackendUnavailableException("Local AI backend is unavailable.", ex);
+            throw new ChatBackendUnavailableException("Local AI backend is unavailable.", innerException: ex);
         }
         catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
-            throw new ChatBackendUnavailableException("Local AI backend timed out.", ex);
+            throw new ChatBackendUnavailableException("Local AI backend timed out.", innerException: ex);
         }
 
         using (response)
@@ -87,15 +87,15 @@ public partial class LocalChatService : IChatCompletionService, IDisposable
             }
             catch (HttpRequestException ex)
             {
-                throw new ChatBackendUnavailableException("Local AI backend is unavailable while reading response.", ex);
+                throw new ChatBackendUnavailableException("Local AI backend is unavailable while reading response.", innerException: ex);
             }
             catch (IOException ex)
             {
-                throw new ChatBackendUnavailableException("Local AI backend connection closed while reading response.", ex);
+                throw new ChatBackendUnavailableException("Local AI backend connection closed while reading response.", innerException: ex);
             }
             catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
             {
-                throw new ChatBackendUnavailableException("Local AI backend timed out while reading response.", ex);
+                throw new ChatBackendUnavailableException("Local AI backend timed out while reading response.", innerException: ex);
             }
 
             if (!response.IsSuccessStatusCode)
@@ -117,7 +117,7 @@ public partial class LocalChatService : IChatCompletionService, IDisposable
             }
             catch (Exception ex) when (ex is JsonException || ex is InvalidOperationException || ex is NotSupportedException)
             {
-                throw new ChatBackendUnavailableException("Local AI backend returned an invalid response.", ex);
+                throw new ChatBackendUnavailableException("Local AI backend returned an invalid response.", innerException: ex);
             }
         }
     }
