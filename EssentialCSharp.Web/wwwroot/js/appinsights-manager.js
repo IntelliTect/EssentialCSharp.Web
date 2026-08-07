@@ -20,6 +20,11 @@
         return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
     }
 
+    function getAppId() {
+        const value = window.APPLICATIONINSIGHTS_APP_ID;
+        return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+    }
+
     function getTryDotNetOrigin() {
         const value = window.TRYDOTNET_ORIGIN;
         return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
@@ -137,9 +142,12 @@
         const instance = new window.Microsoft.ApplicationInsights.ApplicationInsights({
             config: {
                 connectionString,
+                appId: getAppId(),
                 disableAjaxTracking: false,
                 disableFetchTracking: false,
                 distributedTracingMode: DistributedTracingModes.W3C,
+                // Restrict correlation headers to the app's own origins so the browser trace
+                // continues across the main site and the Try iframe without leaking headers to unrelated hosts.
                 correlationHeaderDomains: getCorrelationHeaderDomains(),
                 enableCorsCorrelation: true,
                 disableTelemetry: false
