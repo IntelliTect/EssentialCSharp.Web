@@ -12,7 +12,7 @@ using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Controllers;
 
-public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment hostingEnvironment, ISiteMappingService siteMappingService, IHttpContextAccessor httpContextAccessor, IRouteConfigurationService routeConfigurationService, IOptions<SiteSettings> siteSettings) : BaseController(routeConfigurationService, httpContextAccessor)
+public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment hostingEnvironment, ISiteMappingService siteMappingService, IHttpContextAccessor httpContextAccessor, IRouteConfigurationService routeConfigurationService, IOptions<SiteSettings> siteSettings, IWordCountService wordCountService) : BaseController(routeConfigurationService, httpContextAccessor)
 {
     [EnableRateLimiting("content")]
     public IActionResult Index()
@@ -40,6 +40,11 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
             ViewBag.PreviousPage = FlipPage(siteMapping.ChapterNumber, siteMapping.PageNumber, false);
             ViewBag.HeadContents = headHtml;
             ViewBag.Contents = html;
+            ViewBag.PageWordCount = wordCountService.GetPageWordCount(siteMapping.PrimaryKey);
+            ViewBag.ChapterWordCount = wordCountService.GetChapterWordCount(siteMapping.ChapterNumber);
+            ViewBag.WordsBeforePage = wordCountService.GetWordsBeforePage(siteMapping.PrimaryKey);
+            ViewBag.ChapterStartWords = wordCountService.GetChapterStartWords(siteMapping.PrimaryKey);
+            ViewBag.BookWordCount = wordCountService.GetBookWordCount();
             return View();
         }
         else
