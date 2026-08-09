@@ -194,6 +194,7 @@
         window.IS_AUTHENTICATED = @Json.Serialize(SignInManager.IsSignedIn(User));
         window.TRYDOTNET_ORIGIN = @Json.Serialize(Configuration["TryDotNet:Origin"]);
         window.APPLICATIONINSIGHTS_CONNECTION_STRING = @Json.Serialize(Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]);
+        window.APPLICATIONINSIGHTS_APP_ID = @Json.Serialize(Configuration["APPLICATIONINSIGHTS_APP_ID"]);
         window.BUILD_LABEL = @Json.Serialize(buildLabel);
         window.ENABLE_CHAT_WIDGET = @Json.Serialize(!Context.Request.Path.StartsWithSegments("/Identity"));
         window.HCAPTCHA_SITE_KEY = @Json.Serialize(chatCaptchaSiteKey);
