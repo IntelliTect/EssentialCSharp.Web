@@ -1,5 +1,6 @@
 <script setup>
 import { computed, inject } from "vue";
+import ReadingTimeRemaining from "./ReadingTimeRemaining.vue";
 
 const shell = inject("shell");
 const progressLabel = computed(() => `${Math.round(shell.percentComplete)}% complete`);
@@ -28,5 +29,6 @@ const progressLabel = computed(() => `${Math.round(shell.percentComplete)}% comp
                 :style="{ width: `${shell.percentComplete}%` }"
             ></div>
         </div>
+        <ReadingTimeRemaining />
     </div>
 </template>
