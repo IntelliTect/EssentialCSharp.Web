@@ -34,16 +34,17 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
             string headHtml = doc.DocumentNode.Element("html").Element("head").InnerHtml;
             string html = doc.DocumentNode.Element("html").Element("body").InnerHtml;
 
+            string pageKey = siteMapping.Keys.FirstOrDefault() ?? siteMapping.PrimaryKey ?? string.Empty;
             ViewBag.PageTitle = siteMapping.IndentLevel is 0 ? siteMapping.ChapterTitle + " " + siteMapping.RawHeading : siteMapping.RawHeading;
             ViewBag.NextPage = FlipPage(siteMapping!.ChapterNumber, siteMapping.PageNumber, true);
-            ViewBag.CurrentPageKey = siteMapping.PrimaryKey;
+            ViewBag.CurrentPageKey = pageKey;
             ViewBag.PreviousPage = FlipPage(siteMapping.ChapterNumber, siteMapping.PageNumber, false);
             ViewBag.HeadContents = headHtml;
             ViewBag.Contents = html;
-            ViewBag.PageWordCount = wordCountService.GetPageWordCount(siteMapping.PrimaryKey);
+            ViewBag.PageWordCount = wordCountService.GetPageWordCount(pageKey);
             ViewBag.ChapterWordCount = wordCountService.GetChapterWordCount(siteMapping.ChapterNumber);
-            ViewBag.WordsBeforePage = wordCountService.GetWordsBeforePage(siteMapping.PrimaryKey);
-            ViewBag.ChapterStartWords = wordCountService.GetChapterStartWords(siteMapping.PrimaryKey);
+            ViewBag.WordsBeforePage = wordCountService.GetWordsBeforePage(pageKey);
+            ViewBag.ChapterStartWords = wordCountService.GetChapterStartWords(pageKey);
             ViewBag.BookWordCount = wordCountService.GetBookWordCount();
             return View();
         }
