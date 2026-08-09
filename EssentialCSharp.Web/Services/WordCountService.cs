@@ -43,8 +43,8 @@ public class WordCountService : IWordCountService
 
         foreach (SiteMapping mapping in orderedMappings)
         {
-            string pageKey = mapping.PrimaryKey;
-            if (_pageWordCounts.ContainsKey(pageKey))
+            string? pageKey = mapping.Keys.FirstOrDefault() ?? mapping.PrimaryKey;
+            if (pageKey is null || _pageWordCounts.ContainsKey(pageKey))
             {
                 // Multiple anchors on the same page; skip duplicates (already counted).
                 continue;
