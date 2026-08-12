@@ -48,7 +48,7 @@
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.8.0" />
     <PackageVersion Include="Microsoft.SemanticKernel" Version="1.79.0" />
     <PackageVersion Include="CommunityToolkit.VectorData.PgVector" Version="1.0.0" />
-    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.301" />
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.400" />
     <!-- Pin to patched versions; NuGet.Protocol 6.12.5+ fixes GHSA-g4vj-cjjj-v7hg (pulled in by Microsoft.VisualStudio.Web.CodeGeneration.Design) -->
     <PackageVersion Include="NuGet.Packaging" Version="7.6.0" />
     <PackageVersion Include="NuGet.Protocol" Version="7.6.0" />
