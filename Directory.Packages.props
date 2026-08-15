@@ -22,8 +22,8 @@
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.6.0" />
     <!-- TODO: update to stable release when Azure.Monitor.OpenTelemetry.Profiler reaches GA -->
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.Profiler" Version="1.0.1-beta.7" />
-    <PackageVersion Include="TUnit" Version="1.64.13" />
-    <PackageVersion Include="TUnit.AspNetCore" Version="1.64.13" />
+    <PackageVersion Include="TUnit" Version="1.65.0" />
+    <PackageVersion Include="TUnit.AspNetCore" Version="1.65.0" />
     <PackageVersion Include="EssentialCSharp.Shared.Models" Version="$(ToolingPackagesVersion)" />
     <PackageVersion Include="HtmlAgilityPack" Version="1.12.4" />
     <PackageVersion Include="IntelliTect.Multitool" Version="2.1.0" />
@@ -32,7 +32,7 @@
     <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.10" />
     <PackageVersion Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.10" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.11" />
     <!-- Pinned to 5.0.0: Microsoft.VisualStudio.Web.CodeGeneration.Design 10.0.2 has an exact (= 5.0.0) dependency
          constraint on the Microsoft.CodeAnalysis.* family; bumping causes NU1608 restore errors. -->
     <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="5.0.0" />
