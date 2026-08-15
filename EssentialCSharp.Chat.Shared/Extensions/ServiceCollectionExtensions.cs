@@ -53,6 +53,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(provider =>
             new AzureOpenAIClient(endpoint, credential));
 
+        // Register the resolved credential so AIChatService can build its ResponsesClient
+        // directly, bypassing the binary-incompatible AzureOpenAIClient.GetResponsesClient().
+        services.AddSingleton(credential);
+
         services.AddAzureOpenAIChatCompletion(
             aiOptions.ChatDeploymentName,
             aiOptions.Endpoint,
