@@ -31,8 +31,8 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
             string filePath = Path.Join(hostingEnvironment.ContentRootPath, Path.Join(siteMapping.PagePath));
             HtmlDocument doc = new();
             doc.Load(filePath);
-            string headHtml = doc.DocumentNode.Element("html").Element("head").InnerHtml;
-            string html = doc.DocumentNode.Element("html").Element("body").InnerHtml;
+            string headHtml = doc.DocumentNode.Element("html")?.Element("head")?.InnerHtml ?? string.Empty;
+            string html = doc.DocumentNode.Element("html")?.Element("body")?.InnerHtml ?? string.Empty;
 
             ViewBag.PageTitle = siteMapping.IndentLevel is 0 ? siteMapping.ChapterTitle + " " + siteMapping.RawHeading : siteMapping.RawHeading;
             ViewBag.NextPage = FlipPage(siteMapping!.ChapterNumber, siteMapping.PageNumber, true);
