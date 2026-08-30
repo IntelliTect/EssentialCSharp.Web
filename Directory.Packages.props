@@ -36,7 +36,7 @@
     <!-- Pinned to 5.0.0: Microsoft.VisualStudio.Web.CodeGeneration.Design 10.0.2 has an exact (= 5.0.0) dependency
          constraint on the Microsoft.CodeAnalysis.* family; bumping causes NU1608 restore errors. -->
     <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="5.0.0" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.11" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.11" />
