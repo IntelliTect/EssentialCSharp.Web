@@ -198,6 +198,12 @@
         window.BUILD_LABEL = @Json.Serialize(buildLabel);
         window.ENABLE_CHAT_WIDGET = @Json.Serialize(!Context.Request.Path.StartsWithSegments("/Identity"));
         window.HCAPTCHA_SITE_KEY = @Json.Serialize(chatCaptchaSiteKey);
+        window.CURRENT_PAGE_KEY = @Json.Serialize(ViewBag.CurrentPageKey);
+        window.PAGE_WORD_COUNT = @Json.Serialize(ViewBag.PageWordCount ?? 0);
+        window.CHAPTER_WORD_COUNT = @Json.Serialize(ViewBag.ChapterWordCount ?? 0);
+        window.WORDS_BEFORE_PAGE = @Json.Serialize(ViewBag.WordsBeforePage ?? 0);
+        window.CHAPTER_START_WORDS = @Json.Serialize(ViewBag.ChapterStartWords ?? 0);
+        window.BOOK_WORD_COUNT = @Json.Serialize(ViewBag.BookWordCount ?? 0);
     </script>
     <script src="~/dist/assets/site-shell.js" type="module" asp-append-version="true"></script>
 </body>
