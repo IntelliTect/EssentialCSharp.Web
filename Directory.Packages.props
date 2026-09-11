@@ -40,7 +40,7 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.12" />
-    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.9.0" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.10.0" />
     <PackageVersion Include="Microsoft.SemanticKernel" Version="1.80.1" />
     <PackageVersion Include="CommunityToolkit.VectorData.PgVector" Version="1.0.1" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.400" />
