@@ -35,9 +35,54 @@ ViewData["ActivePage"] = ManageNavPages.Index;
             </div>
             <button id="update-profile-button" type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
         </form>
+
+        <hr class="mt-4" />
+        <h4>Reading Speed</h4>
+        <p class="text-muted small">
+            Essential C# tracks your reading speed to estimate how long chapters and the book will take you.
+            Resetting clears all recorded data and returns to the default estimate.
+        </p>
+        <button id="reset-reading-speed-button" type="button" class="btn btn-outline-danger"
+                data-confirm="Reset your reading speed? This cannot be undone.">
+            Reset reading speed
+        </button>
+        <div id="reset-reading-status" class="mt-2 small" style="display:none;"></div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const btn = document.getElementById('reset-reading-speed-button');
+            const status = document.getElementById('reset-reading-status');
+            if (!btn) return;
+
+            btn.addEventListener('click', async function () {
+                if (!confirm(btn.dataset.confirm)) return;
+
+                btn.disabled = true;
+                status.style.display = '';
+                status.textContent = 'Resetting…';
+                status.className = 'mt-2 small text-muted';
+
+                try {
+                    const res = await fetch('/api/reading/reset', { method: 'POST' });
+                    if (res.ok) {
+                        try { localStorage.removeItem('readingProfile'); } catch {}
+                        status.textContent = 'Reading speed reset successfully.';
+                        status.className = 'mt-2 small text-success';
+                    } else {
+                        status.textContent = 'Reset failed. Please try again.';
+                        status.className = 'mt-2 small text-danger';
+                        btn.disabled = false;
+                    }
+                } catch {
+                    status.textContent = 'Network error. Please try again.';
+                    status.className = 'mt-2 small text-danger';
+                    btn.disabled = false;
+                }
+            });
+        })();
+    </script>
 }
