@@ -15,6 +15,7 @@ permissions:
 jobs:
   copilot-setup-steps:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
     steps:
@@ -31,7 +32,9 @@ jobs:
       - name: Set up Node.js for frontend development
         uses: actions/setup-node@v7
         with:
-          node-version: '24'
+          node-version-file: EssentialCSharp.Web/.nvmrc
+          cache: npm
+          cache-dependency-path: EssentialCSharp.Web/package-lock.json
 
       - name: Set up dependency caching for faster builds
         uses: actions/cache@v6
@@ -61,8 +64,16 @@ jobs:
       - name: Restore with dotnet
         run: dotnet restore
 
+      - name: Install npm dependencies
+        working-directory: EssentialCSharp.Web
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: EssentialCSharp.Web
+        run: npm run build
+
       - name: Build with dotnet
-        run: dotnet build -p:ContinuousIntegrationBuild=True -p:ReleaseDateAttribute=True --configuration Release --no-restore
+        run: dotnet build -p:ContinuousIntegrationBuild=True -p:ReleaseDateAttribute=True -p:SkipFrontendBuild=true --configuration Release --no-restore
 
       - name: Run .NET Tests
         run: dotnet test --no-build --configuration Release

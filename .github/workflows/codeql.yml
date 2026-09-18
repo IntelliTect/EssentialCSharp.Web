@@ -5,14 +5,19 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  merge_group:
   schedule:
     - cron: '21 15 * * 5'
+
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   analyze-csharp:
     name: Analyze C# (CodeQL)
     runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
-    timeout-minutes: ${{ (matrix.language == 'swift' && 120) || 360 }}
+    timeout-minutes: 60
     permissions:
       actions: read
       contents: read
@@ -36,6 +41,8 @@ jobs:
 
     - name: Set up .NET Core
       uses: actions/setup-dotnet@v6
+      with:
+        global-json-file: global.json
 
     - name: Set up dependency caching for faster builds
       uses: actions/cache@v6
@@ -52,7 +59,7 @@ jobs:
     - name: Restore with dotnet
       run: |
            dotnet restore /p:AccessToNugetFeed=false
-           dotnet build --configuration Release --no-restore --no-incremental /p:AccessToNugetFeed=false
+           dotnet build --configuration Release --no-restore --no-incremental /p:AccessToNugetFeed=false /p:SkipFrontendBuild=true
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
@@ -62,7 +69,7 @@ jobs:
   analyze-non-compiled-languages:
     name: Analyze Non-Compiled Languages (CodeQL)
     runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
-    timeout-minutes: ${{ (matrix.language == 'swift' && 120) || 360 }}
+    timeout-minutes: 30
     permissions:
       actions: read
       contents: read
