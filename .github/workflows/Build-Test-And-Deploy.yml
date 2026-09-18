@@ -190,6 +190,16 @@ jobs:
       - name: Build .NET
         run: dotnet build --configuration Release --no-restore /p:AccessToNugetFeed=false /p:SkipFrontendBuild=true
 
+      - name: Restore local .NET tools
+        if: matrix.collect_coverage
+        run: dotnet tool restore
+
+      - name: Check for pending EF Core model changes
+        if: matrix.collect_coverage
+        run: dotnet tool run dotnet-ef -- migrations has-pending-model-changes --project EssentialCSharp.Web --configuration Release --no-build
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+
       - name: Expose GitHub Actions Runtime
         if: matrix.collect_coverage
         uses: actions/github-script@v9
@@ -212,46 +222,6 @@ jobs:
         with:
           trx-file-path: '${{ runner.temp }}/*.trx'
           output-directory: '${{ runner.temp }}/vsplaylists'
-
-  ef-core-model-validation:
-    name: Validate EF Core model
-    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
-    needs: pr-build-and-test
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v6
-        with:
-          global-json-file: global.json
-
-      - name: Set up NuGet cache
-        uses: actions/cache@v6
-        with:
-          path: |
-            ~/.nuget/packages
-            ${{ github.workspace }}/**/obj/project.assets.json
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-            ${{ runner.os }}-nuget-
-
-      - name: Restore .NET dependencies
-        run: dotnet restore /p:AccessToNugetFeed=false
-
-      - name: Restore local .NET tools
-        run: dotnet tool restore
-
-      - name: Build .NET
-        run: dotnet build --configuration Release --no-restore /p:AccessToNugetFeed=false /p:SkipFrontendBuild=true
-
-      - name: Check for pending EF Core model changes
-        run: dotnet tool run dotnet-ef -- migrations has-pending-model-changes --project EssentialCSharp.Web --configuration Release --no-build
-        env:
-          ASPNETCORE_ENVIRONMENT: Development
 
   container-validation:
     name: Build container image
