@@ -6,12 +6,12 @@ on:
   workflow_dispatch:
 
 permissions:
-  id-token: write
   contents: read
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     environment: "BuildAndUploadImage"
 
     steps:
@@ -28,9 +28,19 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version-file: EssentialCSharp.Web/.nvmrc
           cache: npm
           cache-dependency-path: EssentialCSharp.Web/package-lock.json
+
+      - name: Verify Node version matches the Docker build
+        shell: bash
+        run: |
+          expected_node_version="$(tr -d '[:space:]' < EssentialCSharp.Web/.nvmrc)"
+          docker_node_version="$(sed -nE 's/^FROM node:([0-9]+)-.*/\1/p' EssentialCSharp.Web/Dockerfile | head -n 1)"
+          if [[ "$expected_node_version" != "$docker_node_version" ]]; then
+            echo "::error::EssentialCSharp.Web/.nvmrc specifies Node $expected_node_version, but the Dockerfile uses Node $docker_node_version."
+            exit 1
+          fi
 
       - name: Set up dependency caching for faster builds
         uses: actions/cache@v6
@@ -47,8 +57,16 @@ jobs:
       - name: Restore with dotnet
         run: dotnet restore
 
+      - name: Install npm dependencies
+        working-directory: EssentialCSharp.Web
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: EssentialCSharp.Web
+        run: npm run build
+
       - name: Build with dotnet
-        run: dotnet build -p:ContinuousIntegrationBuild=True -p:ReleaseDateAttribute=True --configuration Release --no-restore
+        run: dotnet build -p:ContinuousIntegrationBuild=True -p:ReleaseDateAttribute=True -p:SkipFrontendBuild=true --configuration Release --no-restore
 
       - name: Expose GitHub Actions Runtime
         uses: actions/github-script@v9
@@ -115,6 +133,7 @@ jobs:
   deploy-development:
     if: github.event_name != 'pull_request_target' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     needs: build-and-test
     concurrency:
       group: deploy-development
@@ -174,6 +193,7 @@ jobs:
   deploy-production:
     if: github.event_name != 'pull_request_target' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     needs: [deploy-development]
     concurrency:
       group: deploy-production
