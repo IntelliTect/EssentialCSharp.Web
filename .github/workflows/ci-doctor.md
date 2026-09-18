@@ -6,7 +6,7 @@ description: |
 
 on:
   workflow_run:
-    workflows: ["CI"]
+    workflows: ["Build, Test, and Deploy EssentialCSharp.Web"]
     types: [completed]
     branches: [main]
 
