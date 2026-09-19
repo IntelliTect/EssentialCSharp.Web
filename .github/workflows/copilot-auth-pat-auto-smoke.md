@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  copilot-requests: none
 
 timeout-minutes: 5
 model: auto
