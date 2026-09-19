@@ -14,6 +14,7 @@ if: ${{ github.event.workflow_run.conclusion == 'failure' }}
 
 permissions:
   actions: read
+  copilot-requests: write
   contents: read
   issues: read
   pull-requests: read
@@ -25,6 +26,8 @@ safe-outputs:
 
 timeout-minutes: 10
 source: githubnext/agentics/workflows/ci-doctor.md@4bc8419fad05e6b032741cbfd189986700bcf71c
+# Avoid the auto alias, which requires a model-catalog request during agent startup.
+model: gpt-5.6
 ---
 
 # CI Failure Doctor
