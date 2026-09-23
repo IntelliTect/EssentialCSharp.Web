@@ -29,7 +29,7 @@ jobs:
           - windows-latest
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
 
       - name: Verify Node version matches the Docker build
         shell: bash
@@ -65,7 +65,7 @@ jobs:
     environment: "BuildAndUploadImage"
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
 
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v6
@@ -173,7 +173,7 @@ jobs:
             collect_coverage: false
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v6
@@ -238,7 +238,7 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -348,7 +348,7 @@ jobs:
       actions: write
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
