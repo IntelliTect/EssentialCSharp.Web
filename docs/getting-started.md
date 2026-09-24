@@ -16,7 +16,26 @@ For basic browsing and UI development, no secrets are needed. The database conne
    - Leave `<AccessToNugetFeed>false</AccessToNugetFeed>` (the default) when you do not have Azure DevOps feed access. Public packages restore from nuget.org, internal content packages are excluded, and the app uses placeholder content.
    - Set `<AccessToNugetFeed>true</AccessToNugetFeed>` only when you have authenticated access to the private Azure DevOps feed and need the internal content packages.
    - When troubleshooting package restore or SDK version issues, set it to `false` first to isolate public NuGet dependencies and avoid private-feed authentication errors.
-3. Run the project.
+3. Restore the solution:
+
+   ```bash
+   dotnet restore
+   ```
+
+4. Start the web application:
+
+   ```bash
+   dotnet run --project EssentialCSharp.Web
+   ```
+
+   The development site is then available at the URL printed by ASP.NET Core.
+
+To build and test the solution without starting the application:
+
+```bash
+dotnet build --configuration Release --no-restore
+dotnet test --configuration Release --no-build
+```
 
 > **Tip:** Use the [dotnet secret manager](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets#set-a-secret) for any secrets below:
 > `dotnet user-secrets set "<Key>" "<Value>" --project EssentialCSharp.Web`
