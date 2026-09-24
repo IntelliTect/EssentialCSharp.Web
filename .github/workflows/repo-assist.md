@@ -45,7 +45,14 @@ if: needs.pre_activation.outputs.check_result == 'success'
 
 timeout-minutes: 60
 
-permissions: read-all
+permissions:
+  actions: read
+  contents: read
+  copilot-requests: write
+  discussions: read
+  issues: read
+  pull-requests: read
+  security-events: read
 
 network:
   allowed:
@@ -291,6 +298,8 @@ steps:
       EOF
 
 source: githubnext/agentics/workflows/repo-assist.md@4bc8419fad05e6b032741cbfd189986700bcf71c
+# Use a concrete model because the auto alias is unavailable to this organization.
+model: gpt-5.6
 ---
 
 # Repo Assist
