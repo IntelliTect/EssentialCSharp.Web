@@ -288,6 +288,88 @@ public class SitemapXmlHelpersTests : IntegrationTestBase
         await Assert.That(siteMappingNode.LastModificationDate).IsNull();
     }
 
+    [Test]
+    public async Task GenerateSitemapXml_UsesLastModifiedDateFromStaticRouteLookup()
+    {
+        // Arrange
+        var baseUrl = "https://test.example.com/";
+        var homeLastModified = new DateTime(2025, 1, 2, 3, 4, 5, DateTimeKind.Utc);
+        var staticRouteLastModifiedDates = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["/home"] = homeLastModified
+        };
+        var siteMappings = new List<SiteMapping>();
+
+        // Act
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        SitemapXmlHelpers.GenerateSitemapXml(
+            siteMappings,
+            routeConfigurationService,
+            baseUrl,
+            staticRouteLastModifiedDates,
+            out var nodes);
+
+        // Assert
+        var homeNode = nodes.First(node => node.Url.EndsWith("/home", StringComparison.OrdinalIgnoreCase));
+        await Assert.That(homeNode.LastModificationDate).IsEqualTo(homeLastModified);
+    }
+
+    [Test]
+    public async Task GenerateSitemapXml_AppliesLastModifiedDateForAllMappedStaticRoutes()
+    {
+        // Arrange
+        var baseUrl = "https://test.example.com/";
+        var staticRouteLastModifiedDates = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["/home"] = new DateTime(2025, 1, 2, 3, 4, 5, DateTimeKind.Utc),
+            ["/about"] = new DateTime(2025, 2, 3, 4, 5, 6, DateTimeKind.Utc),
+            ["/guidelines"] = new DateTime(2025, 3, 4, 5, 6, 7, DateTimeKind.Utc)
+        };
+        var siteMappings = new List<SiteMapping>();
+
+        // Act
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        SitemapXmlHelpers.GenerateSitemapXml(
+            siteMappings,
+            routeConfigurationService,
+            baseUrl,
+            staticRouteLastModifiedDates,
+            out var nodes);
+
+        // Assert
+        foreach ((var route, var expectedLastModified) in staticRouteLastModifiedDates)
+        {
+            var routeNode = nodes.First(node => node.Url.EndsWith(route, StringComparison.OrdinalIgnoreCase));
+            await Assert.That(routeNode.LastModificationDate).IsEqualTo(expectedLastModified);
+        }
+    }
+
+    [Test]
+    public async Task GenerateSitemapXml_UsesHomeLastModifiedDateForRootNode()
+    {
+        // Arrange
+        var baseUrl = "https://test.example.com/";
+        var homeLastModified = new DateTime(2025, 2, 3, 4, 5, 6, DateTimeKind.Utc);
+        var staticRouteLastModifiedDates = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["/home"] = homeLastModified
+        };
+        var siteMappings = new List<SiteMapping>();
+
+        // Act
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        SitemapXmlHelpers.GenerateSitemapXml(
+            siteMappings,
+            routeConfigurationService,
+            baseUrl,
+            staticRouteLastModifiedDates,
+            out var nodes);
+
+        // Assert
+        var rootNode = nodes.First(node => node.Url == baseUrl);
+        await Assert.That(rootNode.LastModificationDate).IsEqualTo(homeLastModified);
+    }
+
     private static SiteMapping CreateSiteMapping(
         int chapterNumber,
         int pageNumber,
