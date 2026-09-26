@@ -270,6 +270,7 @@ public partial class Program
         builder.Services.AddSingleton<IRouteConfigurationService, RouteConfigurationService>();
         builder.Services.AddSingleton<IListingSourceCodeService, ListingSourceCodeService>();
         builder.Services.AddSingleton<IBookToolQueryService, BookToolQueryService>();
+        builder.Services.AddSingleton<IWordCountService, WordCountService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
 
         // Add AI Chat services using configuration-driven backend selection.
