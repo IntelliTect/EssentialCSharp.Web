@@ -150,6 +150,38 @@ public class SitemapXmlHelpersTests : IntegrationTestBase
     }
 
     [Test]
+    public async Task GenerateSitemapXml_UsesExpectedMetadataForStaticRoutes()
+    {
+        // Arrange
+        var baseUrl = "https://test.example.com/";
+
+        // Act
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        SitemapXmlHelpers.GenerateSitemapXml(
+            [],
+            routeConfigurationService,
+            baseUrl,
+            out var nodes);
+
+        var routeMetadata = nodes
+            .Where(node => node.Url.EndsWith("/guidelines", StringComparison.OrdinalIgnoreCase)
+                || node.Url.EndsWith("/announcements", StringComparison.OrdinalIgnoreCase)
+                || node.Url.EndsWith("/termsofservice", StringComparison.OrdinalIgnoreCase))
+            .ToDictionary(node => node.Url[(node.Url.LastIndexOf('/') + 1)..], StringComparer.OrdinalIgnoreCase);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(routeMetadata["guidelines"].ChangeFrequency).IsEqualTo(ChangeFrequency.Monthly);
+            await Assert.That(routeMetadata["guidelines"].Priority).IsEqualTo(0.9M);
+            await Assert.That(routeMetadata["announcements"].ChangeFrequency).IsEqualTo(ChangeFrequency.Monthly);
+            await Assert.That(routeMetadata["announcements"].Priority).IsEqualTo(0.5M);
+            await Assert.That(routeMetadata["termsofservice"].ChangeFrequency).IsEqualTo(ChangeFrequency.Yearly);
+            await Assert.That(routeMetadata["termsofservice"].Priority).IsEqualTo(0.2M);
+        }
+    }
+
+    [Test]
     public async Task GenerateSitemapXml_IncludesSiteMappingsMarkedForXml()
     {
         // Arrange
