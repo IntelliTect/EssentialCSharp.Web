@@ -16,7 +16,29 @@ For basic browsing and UI development, no secrets are needed. The database conne
    - Leave `<AccessToNugetFeed>false</AccessToNugetFeed>` (the default) when you do not have Azure DevOps feed access. Public packages restore from nuget.org, internal content packages are excluded, and the app uses placeholder content.
    - Set `<AccessToNugetFeed>true</AccessToNugetFeed>` only when you have authenticated access to the private Azure DevOps feed and need the internal content packages.
    - When troubleshooting package restore or SDK version issues, set it to `false` first to isolate public NuGet dependencies and avoid private-feed authentication errors.
-3. Run the project.
+3. Restore and build the solution:
+
+   ```bash
+   dotnet restore
+   dotnet build --configuration Debug --no-restore
+   ```
+
+4. Install and build the frontend assets:
+
+   ```bash
+   npm ci --prefix EssentialCSharp.Web
+   npm run build --prefix EssentialCSharp.Web
+   ```
+
+5. Start the web application:
+
+   ```bash
+   dotnet run --project EssentialCSharp.Web
+   ```
+
+   Open the HTTPS URL printed by the application (typically `https://localhost:7184`).
+
+> **Database note:** The Development connection string targets SQL Server on `localhost`. Start a local SQL Server instance, or override `ConnectionStrings__EssentialCSharpWebContextConnection` before running the application.
 
 > **Tip:** Use the [dotnet secret manager](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets#set-a-secret) for any secrets below:
 > `dotnet user-secrets set "<Key>" "<Value>" --project EssentialCSharp.Web`
