@@ -12,6 +12,8 @@ public static class SiteMappingListExtensions
     /// <returns>If found, the site mapping that matches the key, otherwise null.</returns>
     public static SiteMapping? Find(this IList<SiteMapping> siteMappings, string? key)
     {
+        ArgumentNullException.ThrowIfNull(siteMappings);
+
         if (string.IsNullOrWhiteSpace(key))
         {
             return siteMappings.FirstOrDefault();
@@ -28,6 +30,8 @@ public static class SiteMappingListExtensions
     /// <returns>Returns a formatted double for use as the percent complete.</returns>
     public static string? FindPercentComplete(this IList<SiteMapping> siteMappings, string? key)
     {
+        ArgumentNullException.ThrowIfNull(siteMappings);
+
         if (key is null)
         {
             return null;
