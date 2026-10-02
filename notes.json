@@ -2,11 +2,48 @@
   "version": 1,
   "cursors": {
     "labelling_after": null,
-    "investigation_after": 346
+    "investigation_after": 579
   },
-  "issues": [],
+  "issues": [
+    {
+      "number": 494,
+      "state": "awaiting_clarification",
+      "updated_at": "2026-10-02",
+      "note": "Requested graphic placement, dimensions, format, and replacement scope."
+    },
+    {
+      "number": 579,
+      "state": "awaiting_clarification",
+      "updated_at": "2026-10-02",
+      "note": "Requested logo scope, placement, and approved artwork."
+    }
+  ],
   "fixes": [],
-  "checks": [],
+  "checks": [
+    {
+      "area": "dependencies",
+      "checked_at": "2026-10-02",
+      "result": "No actionable dependency update identified.",
+      "follow_up": null
+    },
+    {
+      "area": "code",
+      "checked_at": "2026-10-02",
+      "result": "No clearly beneficial low-risk improvement identified without duplicating open PR work.",
+      "follow_up": null
+    }
+  ],
   "completed_actions": [],
-  "priorities": []
+  "priorities": [
+    {
+      "task": 2,
+      "item": "1065",
+      "note": "Revisit after maintainers choose a content-safety provider and streaming moderation policy."
+    },
+    {
+      "task": 2,
+      "item": "602",
+      "note": "Continue oldest-issue triage after clarification requests on 494 and 579."
+    }
+  ]
 }
