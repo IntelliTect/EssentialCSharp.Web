@@ -1,5 +1,6 @@
 <script setup>
 import { inject } from "vue";
+import ReadingTimeRemaining from "./ReadingTimeRemaining.vue";
 
 const shell = inject("shell");
 </script>
@@ -16,5 +17,6 @@ const shell = inject("shell");
         <div v-if="shell.isContentPage" class="page-menu menu-progress text-light">
             <span>{{ shell.percentComplete }}%</span>
         </div>
+        <ReadingTimeRemaining />
     </div>
 </template>
