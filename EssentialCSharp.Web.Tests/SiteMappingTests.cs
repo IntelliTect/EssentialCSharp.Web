@@ -60,6 +60,13 @@ public class SiteMappingTests
     }
 
     [Test]
+    public async Task Find_NullSiteMappings_ThrowsArgumentNullException()
+    {
+        await Assert.That(() => ((IList<SiteMapping>)null!).Find("hello-world"))
+            .Throws<ArgumentNullException>();
+    }
+
+    [Test]
     public async Task FindCSyntaxFundamentalsWithSpacesReturnsCorrectSiteMap()
     {
         SiteMapping? foundSiteMap = GetSiteMap().Find("C# Syntax Fundamentals");
@@ -93,6 +100,13 @@ public class SiteMappingTests
 
         // Assert
         await Assert.That(percent).IsNull();
+    }
+
+    [Test]
+    public async Task FindPercentComplete_NullSiteMappings_ThrowsArgumentNullException()
+    {
+        await Assert.That(() => ((IList<SiteMapping>)null!).FindPercentComplete("hello-world"))
+            .Throws<ArgumentNullException>();
     }
 
     [Test]
