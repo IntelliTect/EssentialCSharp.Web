@@ -270,7 +270,7 @@ public partial class AIChatService : IChatCompletionService
         // Wrap the raw stream to convert context-length API errors to our domain exception.
         // C# does not allow yield inside a try/catch, so error remapping is done in a
         // separate helper that puts try/catch only around MoveNextAsync.
-        await foreach (var update in RethrowContextLengthErrors(streamingUpdates, responseOptions.PreviousResponseId, cancellationToken))
+        await foreach (var update in RethrowKnownResponseErrors(streamingUpdates, responseOptions.PreviousResponseId, endUserId, cancellationToken))
         {
             var updateType = update.GetType().Name;
             streamUpdateTypes.Add(updateType);
@@ -324,25 +324,41 @@ public partial class AIChatService : IChatCompletionService
             }
             else if (update is StreamingResponseErrorUpdate errorUpdate)
             {
+                string errorCode = errorUpdate.Code ?? "unknown";
+                string errorMessage = errorUpdate.Message ?? "no message provided";
+                if (ChatContentFilterErrorClassifier.IsContentFilterFailure(errorCode, null, errorMessage))
+                {
+                    LogChatResponseBlocked(_Logger, endUserId);
+                    throw new ChatContentFilteredException();
+                }
+
                 LogStreamingResponseErrorUpdate(
                     _Logger,
                     currentLegResponseId,
-                    errorUpdate.Code ?? "unknown",
-                    errorUpdate.Message ?? "no message provided",
+                    errorCode,
+                    errorMessage,
                     BuildRecentUpdateSequence(streamUpdateTypes));
                 throw new ChatBackendUnavailableException(
-                    $"Streaming response error: {errorUpdate.Code ?? "unknown"} - {errorUpdate.Message ?? "no message provided"}",
+                    $"Streaming response error: {errorCode} - {errorMessage}",
                     errorCode: "stream_response_error");
             }
             else if (update is StreamingResponseFailedUpdate failedUpdate)
             {
+                string? errorCode = failedUpdate.Response.Error?.Code.ToString();
+                string? errorMessage = failedUpdate.Response.Error?.Message;
+                if (ChatContentFilterErrorClassifier.IsContentFilterFailure(errorCode, null, errorMessage))
+                {
+                    LogChatResponseBlocked(_Logger, endUserId);
+                    throw new ChatContentFilteredException();
+                }
+
                 LogStreamingResponseTerminalUpdate(
                     _Logger,
                     "failed",
                     failedUpdate.Response.Id,
                     failedUpdate.Response.Status?.ToString(),
-                    failedUpdate.Response.Error?.Code.ToString(),
-                    failedUpdate.Response.Error?.Message,
+                    errorCode,
+                    errorMessage,
                     failedUpdate.Response.IncompleteStatusDetails?.Reason?.ToString(),
                     BuildRecentUpdateSequence(streamUpdateTypes));
                 throw new ChatBackendUnavailableException(
@@ -351,14 +367,23 @@ public partial class AIChatService : IChatCompletionService
             }
             else if (update is StreamingResponseIncompleteUpdate incompleteUpdate)
             {
+                string? errorCode = incompleteUpdate.Response.Error?.Code.ToString();
+                string? errorMessage = incompleteUpdate.Response.Error?.Message;
+                string? incompleteReason = incompleteUpdate.Response.IncompleteStatusDetails?.Reason?.ToString();
+                if (ChatContentFilterErrorClassifier.IsContentFilterFailure(errorCode, incompleteReason, errorMessage))
+                {
+                    LogChatResponseBlocked(_Logger, endUserId);
+                    throw new ChatContentFilteredException();
+                }
+
                 LogStreamingResponseTerminalUpdate(
                     _Logger,
                     "incomplete",
                     incompleteUpdate.Response.Id,
                     incompleteUpdate.Response.Status?.ToString(),
-                    incompleteUpdate.Response.Error?.Code.ToString(),
-                    incompleteUpdate.Response.Error?.Message,
-                    incompleteUpdate.Response.IncompleteStatusDetails?.Reason?.ToString(),
+                    errorCode,
+                    errorMessage,
+                    incompleteReason,
                     BuildRecentUpdateSequence(streamUpdateTypes));
                 throw new ChatBackendUnavailableException(
                     BuildStreamingTerminalFailureMessage(incompleteUpdate.Response, "incomplete"),
@@ -401,8 +426,7 @@ public partial class AIChatService : IChatCompletionService
     }
 
     /// <summary>
-    /// Wraps a streaming response enumerable to remap <see cref="ClientResultException"/>
-    /// context-length errors to <see cref="ConversationContextLimitExceededException"/>.
+    /// Wraps a streaming response enumerable to remap known provider errors to domain exceptions.
     /// <para>
     /// C# prohibits <c>yield return</c> inside a <c>try</c> block with a <c>catch</c> clause
     /// (CS1626). By putting the <c>try/catch</c> only around <c>MoveNextAsync</c> and the
@@ -410,9 +434,10 @@ public partial class AIChatService : IChatCompletionService
     /// </para>
     /// </summary>
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-    private static async IAsyncEnumerable<StreamingResponseUpdate> RethrowContextLengthErrors(
+    private async IAsyncEnumerable<StreamingResponseUpdate> RethrowKnownResponseErrors(
         IAsyncEnumerable<StreamingResponseUpdate> source,
         string? previousResponseId,
+        string? endUserId,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await using var enumerator = source.GetAsyncEnumerator(cancellationToken);
@@ -422,6 +447,11 @@ public partial class AIChatService : IChatCompletionService
             try { hasNext = await enumerator.MoveNextAsync(); }
             catch (ClientResultException ex) when (IsContextLengthError(ex))
             { throw new ConversationContextLimitExceededException(previousResponseId, ex); }
+            catch (ClientResultException ex) when (IsContentFilterError(ex))
+            {
+                LogChatResponseBlocked(_Logger, endUserId);
+                throw new ChatContentFilteredException(ex);
+            }
 
             if (!hasNext) break;
             yield return enumerator.Current; // yield return is outside try/catch — valid
@@ -591,6 +621,11 @@ public partial class AIChatService : IChatCompletionService
             catch (ClientResultException ex) when (IsContextLengthError(ex))
             {
                 throw new ConversationContextLimitExceededException(responseOptions.PreviousResponseId, ex);
+            }
+            catch (ClientResultException ex) when (IsContentFilterError(ex))
+            {
+                LogChatResponseBlocked(_Logger, endUserId);
+                throw new ChatContentFilteredException(ex);
             }
 
             string responseId = response.Value.Id;
@@ -826,6 +861,19 @@ public partial class AIChatService : IChatCompletionService
                ex.Message.Contains("token_limit_exceeded", StringComparison.OrdinalIgnoreCase);
     }
 
+    private static bool IsContentFilterError(ClientResultException ex)
+    {
+        if (ex.Status is not (400 or 403))
+            return false;
+
+        string? responseBody = ex.GetRawResponse()?.Content?.ToString();
+        return ChatContentFilterErrorClassifier.ContainsContentFilterErrorCode(responseBody) ||
+               ChatContentFilterErrorClassifier.IsContentFilterFailure(
+                   TryExtractErrorCode(ex),
+                   reason: null,
+                   ex.Message);
+    }
+
     /// <summary>
     /// Attempts to extract the <c>error.code</c> field from the raw JSON response body.
     /// Returns <c>null</c> on any parse failure — this is best-effort.
@@ -849,4 +897,9 @@ public partial class AIChatService : IChatCompletionService
         }
         return null;
     }
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Azure chat response blocked by the configured content safety policy for user {EndUserId}")]
+    private static partial void LogChatResponseBlocked(ILogger logger, string? endUserId);
 }

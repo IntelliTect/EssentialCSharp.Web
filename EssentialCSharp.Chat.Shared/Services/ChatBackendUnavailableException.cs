@@ -13,3 +13,11 @@ public class ChatBackendUnavailableException : Exception
         ErrorCode = string.IsNullOrWhiteSpace(errorCode) ? "chat_unavailable" : errorCode;
     }
 }
+
+public sealed class ChatContentFilteredException : Exception
+{
+    public ChatContentFilteredException(Exception? innerException = null)
+        : base("The chat response was blocked by the configured content safety policy.", innerException)
+    {
+    }
+}
