@@ -45,12 +45,21 @@ steps:
     with:
       fetch-depth: 0
       persist-credentials: false
+  - name: Set up .NET
+    uses: actions/setup-dotnet@v6
+    with:
+      global-json-file: global.json
+  - name: Set up Node.js
+    uses: actions/setup-node@v7
+    with:
+      node-version-file: EssentialCSharp.Web/.nvmrc
   - name: Build and run app in background
     run: |
-      # This step should set up the runtime environment for your app, 
-      # including installing any necessary dependencies, and it should
-      # start your app in the background (e.g., using `&` at the end of the command).
-      echo "Building and running the app in background..."
+      dotnet restore EssentialCSharp.Web.slnx -p:AccessToNugetFeed=false
+      npm ci --prefix EssentialCSharp.Web
+      npm run build --prefix EssentialCSharp.Web
+      dotnet build EssentialCSharp.Web.slnx --configuration Release --no-restore -p:AccessToNugetFeed=false -p:SkipFrontendBuild=true
+      ASPNETCORE_URLS=http://127.0.0.1:3000 dotnet run --project EssentialCSharp.Web/EssentialCSharp.Web.csproj --configuration Release --no-build --no-launch-profile > /tmp/essentialcsharp-web.log 2>&1 &
 source: githubnext/agentics/workflows/accessibility-review.md@5d11aa2a05ce2c943c085acb7b12b583f83ed375
 # Use a concrete model because the auto alias is unavailable to this organization.
 model: gpt-5.6
@@ -70,15 +79,6 @@ additional information about WCAG 2.2.
 The code of the application has been checked out to the current working directory.
 
 Steps:
-
-0. Read the markdown corresponding to the workflow file under `.github/workflows/accessibility-review.md`. 
-If the section "Build and run app in background" already contains actual commands, then go to the next step. If it 
-still contains a placeholder, then:  
-   a. Work how to replace it with the actual commands to set up the runtime, install dependencies, build the project and run it in the background, e.g., using `&` at the end of the command.
-   b. Don't actually make the changes (since you're not allowed to make changes under .github/workflows), but rather create a discussion showing the exact changes that are needed to the workflow file. Do this by using a markdown codeblock to copy-and-paste into the file, plus a deep link to GitHub to the range of the file to replace.
-   c. In the discussion body mention that the user must (1) make these changes manually and (2) then run "gh aw compile" to compile the workflow file using GitHub Agentic Workflows (https://github.com/github/gh-aw).
-   d. Also instruct them to remove this section from the markdown. 
-   e. Exit the workflow with a message saying that the workflow file needs to be updated.
 
 1. Use the Playwright MCP tool to browse to `localhost:3000`. Review the website for accessibility problems by navigating around, clicking
   links, pressing keys, taking snapshots and/or screenshots to review, etc. using the appropriate Playwright MCP commands.
