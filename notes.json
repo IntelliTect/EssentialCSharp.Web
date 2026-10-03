@@ -2,7 +2,7 @@
   "version": 1,
   "cursors": {
     "labelling_after": null,
-    "investigation_after": 579
+    "investigation_after": 602
   },
   "issues": [
     {
@@ -16,6 +16,12 @@
       "state": "awaiting_clarification",
       "updated_at": "2026-10-02",
       "note": "Requested logo scope, placement, and approved artwork."
+    },
+    {
+      "number": 602,
+      "state": "awaiting_clarification",
+      "updated_at": "2026-10-03",
+      "note": "Requested target content prefix, redirect policy, affected generated links, and rollout constraints."
     }
   ],
   "fixes": [],
@@ -28,8 +34,14 @@
     },
     {
       "area": "code",
-      "checked_at": "2026-10-02",
-      "result": "No clearly beneficial low-risk improvement identified without duplicating open PR work.",
+      "checked_at": "2026-10-03",
+      "result": "No unaddressed low-risk improvement identified; open Repo Assist PRs cover the clear candidates.",
+      "follow_up": null
+    },
+    {
+      "area": "qa",
+      "checked_at": "2026-10-03",
+      "result": "Release build and frontend build passed; 149 of 151 web tests passed, with hCaptcha and Pwned Password external-service tests failing in the runner.",
       "follow_up": null
     }
   ],
@@ -43,7 +55,7 @@
     {
       "task": 2,
       "item": "602",
-      "note": "Continue oldest-issue triage after clarification requests on 494 and 579."
+      "note": "Awaiting URL contract clarification before investigating the breaking content-slug migration further."
     }
   ]
 }
