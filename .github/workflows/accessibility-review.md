@@ -51,7 +51,7 @@ steps:
       # including installing any necessary dependencies, and it should
       # start your app in the background (e.g., using `&` at the end of the command).
       echo "Building and running the app in background..."
-source: githubnext/agentics/workflows/accessibility-review.md@4bc8419fad05e6b032741cbfd189986700bcf71c
+source: githubnext/agentics/workflows/accessibility-review.md@5d11aa2a05ce2c943c085acb7b12b583f83ed375
 # Use a concrete model because the auto alias is unavailable to this organization.
 model: gpt-5.6
 ---

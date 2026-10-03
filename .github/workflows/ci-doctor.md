@@ -25,7 +25,7 @@ safe-outputs:
   add-comment:
 
 timeout-minutes: 10
-source: githubnext/agentics/workflows/ci-doctor.md@4bc8419fad05e6b032741cbfd189986700bcf71c
+source: githubnext/agentics/workflows/ci-doctor.md@5d11aa2a05ce2c943c085acb7b12b583f83ed375
 # Avoid the auto alias, which requires a model-catalog request during agent startup.
 model: gpt-5.6
 ---
