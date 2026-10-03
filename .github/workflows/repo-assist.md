@@ -85,9 +85,7 @@ tools:
   repo-memory:
     max-file-size: 65536
     max-patch-size: 65536
-    # Allows the one-time removal of five legacy memory files plus notes.json.
-    # The validation script below still enforces exactly one persisted file.
-    max-file-count: 6
+    max-file-count: 1
     format-json: true
     allowed-extensions: [".json"]
     validation:
@@ -97,10 +95,8 @@ tools:
         const path = require("node:path");
         const fail = message => { throw new Error(`notes.json: ${message}`); };
         const notesPath = path.join(memoryRoot, "notes.json");
-        for (const legacyFile of ["memory.json", "state.json"]) {
-          fs.rmSync(path.join(memoryRoot, legacyFile), { force: true });
-        }
-        const memoryEntries = fs.readdirSync(memoryRoot, { withFileTypes: true });
+        // memoryRoot is a git clone of the memory branch, so ignore its .git metadata.
+        const memoryEntries = fs.readdirSync(memoryRoot, { withFileTypes: true }).filter(entry => entry.name !== ".git");
         if (memoryEntries.length !== 1 || !memoryEntries[0].isFile() || memoryEntries[0].name !== "notes.json") {
           fail("must be the only file in repo memory");
         }
