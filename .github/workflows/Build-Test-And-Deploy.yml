@@ -287,6 +287,8 @@ jobs:
       contents: read
 
     steps:
+      - uses: actions/checkout@v7.0.1
+
       - name: Azure Login
         uses: azure/login@v3
         with:
@@ -312,6 +314,13 @@ jobs:
 
       - name: Push Image to Dev Container Registry
         run: docker push --all-tags ${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb
+
+      - name: Run database migrations
+        env:
+          MIGRATION_IMAGE: ${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb:${{ github.sha }}
+          MIGRATION_JOB_NAME: ${{ vars.MIGRATION_JOB_NAME }}
+          RESOURCEGROUP: ${{ vars.RESOURCEGROUP }}
+        run: bash scripts/run-ef-migration-job.sh
 
       - name: Deploy to Container App
         env:
@@ -339,7 +348,7 @@ jobs:
     needs: [deploy-development]
     concurrency:
       group: deploy-production
-      cancel-in-progress: true
+      cancel-in-progress: false
     environment:
       name: "Production"
     permissions:
@@ -381,6 +390,13 @@ jobs:
             exit 1
           fi
           echo "digest=$DIGEST" >> $GITHUB_OUTPUT
+
+      - name: Run database migrations
+        env:
+          MIGRATION_IMAGE: ${{ vars.PRODCONTAINER_REGISTRY }}/essentialcsharpweb@${{ steps.import.outputs.digest }}
+          MIGRATION_JOB_NAME: ${{ vars.MIGRATION_JOB_NAME }}
+          RESOURCEGROUP: ${{ vars.RESOURCEGROUP }}
+        run: bash scripts/run-ef-migration-job.sh
 
       - name: Deploy to Container App
         env:
