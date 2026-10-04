@@ -326,7 +326,7 @@ public partial class AIChatService : IChatCompletionService
             {
                 string errorCode = errorUpdate.Code ?? "unknown";
                 string errorMessage = errorUpdate.Message ?? "no message provided";
-                if (ChatContentFilterErrorClassifier.IsContentFilterFailure(errorCode, null, errorMessage))
+                if (IsContentFilterFailure(errorCode, null, errorMessage))
                 {
                     LogChatResponseBlocked(_Logger, endUserId);
                     throw new ChatContentFilteredException();
@@ -346,7 +346,7 @@ public partial class AIChatService : IChatCompletionService
             {
                 string? errorCode = failedUpdate.Response.Error?.Code.ToString();
                 string? errorMessage = failedUpdate.Response.Error?.Message;
-                if (ChatContentFilterErrorClassifier.IsContentFilterFailure(errorCode, null, errorMessage))
+                if (IsContentFilterFailure(errorCode, null, errorMessage))
                 {
                     LogChatResponseBlocked(_Logger, endUserId);
                     throw new ChatContentFilteredException();
@@ -370,7 +370,7 @@ public partial class AIChatService : IChatCompletionService
                 string? errorCode = incompleteUpdate.Response.Error?.Code.ToString();
                 string? errorMessage = incompleteUpdate.Response.Error?.Message;
                 string? incompleteReason = incompleteUpdate.Response.IncompleteStatusDetails?.Reason?.ToString();
-                if (ChatContentFilterErrorClassifier.IsContentFilterFailure(errorCode, incompleteReason, errorMessage))
+                if (IsContentFilterFailure(errorCode, incompleteReason, errorMessage))
                 {
                     LogChatResponseBlocked(_Logger, endUserId);
                     throw new ChatContentFilteredException();
@@ -867,11 +867,78 @@ public partial class AIChatService : IChatCompletionService
             return false;
 
         string? responseBody = ex.GetRawResponse()?.Content?.ToString();
-        return ChatContentFilterErrorClassifier.ContainsContentFilterErrorCode(responseBody) ||
-               ChatContentFilterErrorClassifier.IsContentFilterFailure(
+        return ContainsContentFilterErrorCode(responseBody) ||
+               IsContentFilterFailure(
                    TryExtractErrorCode(ex),
                    reason: null,
                    ex.Message);
+    }
+
+    private static bool IsContentFilterFailure(string? code, string? reason, string? message) =>
+        IsContentFilterCode(code) ||
+        IsContentFilterCode(reason) ||
+        (message is not null &&
+            (message.Contains("content_filter", StringComparison.OrdinalIgnoreCase) ||
+             message.Contains("content filter", StringComparison.OrdinalIgnoreCase) ||
+             message.Contains("ResponsibleAIPolicyViolation", StringComparison.OrdinalIgnoreCase) ||
+             message.Contains("content policy violation", StringComparison.OrdinalIgnoreCase)));
+
+    private static bool IsContentFilterCode(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
+
+        string normalized = string.Concat(value.Where(char.IsLetterOrDigit));
+        return normalized.Equals("contentfilter", StringComparison.OrdinalIgnoreCase) ||
+               normalized.Equals("contentfiltererror", StringComparison.OrdinalIgnoreCase) ||
+               normalized.Equals("contentfiltered", StringComparison.OrdinalIgnoreCase) ||
+               normalized.Equals("responsibleaipolicyviolation", StringComparison.OrdinalIgnoreCase) ||
+               normalized.Equals("contentpolicyviolation", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool ContainsContentFilterErrorCode(string? responseBody)
+    {
+        if (string.IsNullOrWhiteSpace(responseBody))
+            return false;
+
+        try
+        {
+            using var document = System.Text.Json.JsonDocument.Parse(responseBody);
+            return ContainsContentFilterErrorCode(document.RootElement);
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static bool ContainsContentFilterErrorCode(System.Text.Json.JsonElement element)
+    {
+        if (element.ValueKind == System.Text.Json.JsonValueKind.Object)
+        {
+            foreach (var property in element.EnumerateObject())
+            {
+                if (property.Name.Equals("code", StringComparison.OrdinalIgnoreCase) &&
+                    property.Value.ValueKind == System.Text.Json.JsonValueKind.String &&
+                    IsContentFilterCode(property.Value.GetString()))
+                {
+                    return true;
+                }
+
+                if (ContainsContentFilterErrorCode(property.Value))
+                    return true;
+            }
+        }
+        else if (element.ValueKind == System.Text.Json.JsonValueKind.Array)
+        {
+            foreach (var item in element.EnumerateArray())
+            {
+                if (ContainsContentFilterErrorCode(item))
+                    return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
