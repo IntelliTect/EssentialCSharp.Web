@@ -315,13 +315,6 @@ jobs:
       - name: Push Image to Dev Container Registry
         run: docker push --all-tags ${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb
 
-      - name: Run database migrations
-        env:
-          MIGRATION_IMAGE: ${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb:${{ github.sha }}
-          MIGRATION_JOB_NAME: ${{ vars.MIGRATION_JOB_NAME }}
-          RESOURCEGROUP: ${{ vars.RESOURCEGROUP }}
-        run: bash scripts/run-ef-migration-job.sh
-
       - name: Deploy to Container App
         env:
           CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}

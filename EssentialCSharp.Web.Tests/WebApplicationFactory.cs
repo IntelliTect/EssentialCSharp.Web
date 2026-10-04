@@ -39,6 +39,12 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
         {
             RemoveSingleOrNone(
                 services,
+                descriptor => descriptor.ServiceType == typeof(IHostedService) &&
+                    descriptor.ImplementationType == typeof(DatabaseMigrationService),
+                nameof(DatabaseMigrationService));
+
+            RemoveSingleOrNone(
+                services,
                 descriptor => descriptor.ServiceType ==
                     typeof(IDbContextOptionsConfiguration<EssentialCSharpWebContext>),
                 "IDbContextOptionsConfiguration<EssentialCSharpWebContext>");

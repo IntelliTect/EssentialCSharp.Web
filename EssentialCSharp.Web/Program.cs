@@ -147,6 +147,12 @@ public partial class Program
 
         builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure(5)));
 
+        if (builder.Environment.IsDevelopment())
+        {
+            // Must run before DataProtectionHostedService, which reads DataProtectionKeys.
+            builder.Services.AddHostedService<DatabaseMigrationService>();
+        }
+
         // Data Protection — persist keys to SQL Server so they survive container restarts.
         // SetApplicationName ensures the discriminator is stable across container hostname changes.
         var dpBuilder = builder.Services.AddDataProtection()
