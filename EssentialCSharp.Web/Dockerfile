@@ -41,7 +41,7 @@ RUN --mount=type=cache,id=essentialcsharp-web-nuget,target=/root/.nuget/packages
     dotnet publish "EssentialCSharp.Web.slnx" -c Release -p:PublishDir=/app/publish -p:UseAppHost=false -p:SkipFrontendBuild=true --no-build
 RUN --mount=type=cache,id=essentialcsharp-web-nuget,target=/root/.nuget/packages \
     dotnet tool restore && \
-    ASPNETCORE_ENVIRONMENT=Development dotnet ef migrations bundle \
+    ASPNETCORE_ENVIRONMENT=Development SkipFrontendBuild=true dotnet ef migrations bundle \
       --project EssentialCSharp.Web \
       --startup-project EssentialCSharp.Web \
       --configuration Release \
