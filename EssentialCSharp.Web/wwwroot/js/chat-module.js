@@ -7,6 +7,7 @@ const errorIconClassByType = {
     'rate-limit': 'fas fa-clock',
     'auth-error': 'fas fa-lock',
     'captcha-error': 'fas fa-shield-alt',
+    'content-filtered': 'fas fa-shield-alt',
     'validation-error': 'fas fa-exclamation-circle',
     'network-error': 'fas fa-wifi',
     'connection-error': 'fas fa-plug'
@@ -381,6 +382,17 @@ export function useChatWidget() {
                     // Handle validation errors
                     const errorData = await response.json();
                     throw new Error(errorData.error || 'Bad request');
+                } else if (response.status === 422) {
+                    let errorData = null;
+                    try {
+                        errorData = await response.json();
+                    } catch (e) {
+                        // Use the generic request error below when the response is not JSON.
+                    }
+                    if (errorData?.errorCode === 'content_filtered') {
+                        throw new Error('content-filtered');
+                    }
+                    throw new Error('The request could not be processed.');
                 }
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -391,58 +403,72 @@ export function useChatWidget() {
             let assistantMessage = '';
             let assistantMessageIndex = -1;
             let hasStartedStreaming = false;
+            let pendingResponseId = null;
+            let pendingLine = '';
 
             while (true) {
                 const { done, value } = await reader.read();
-                if (done) break;
-
-                const chunk = decoder.decode(value);
-                const lines = chunk.split('\n');
+                const chunk = value === undefined
+                    ? decoder.decode()
+                    : decoder.decode(value, { stream: !done });
+                const lines = (pendingLine + chunk).split('\n');
+                pendingLine = done ? '' : lines.pop() || '';
 
                 for (const line of lines) {
                     if (line.startsWith('data: ')) {
                         const data = line.slice(6);
                         if (data === '[DONE]') {
                             isTyping.value = false;
+                            if (pendingResponseId) {
+                                lastResponseId.value = pendingResponseId;
+                            }
                             // Save final state
                             saveChatHistory();
                             continue;
                         }
 
+                        let parsed;
                         try {
-                            const parsed = JSON.parse(data);
-                            if (parsed.type === 'text' && parsed.data) {
-                                // If this is the first chunk, hide typing indicator and add assistant message
-                                if (!hasStartedStreaming) {
-                                    isTyping.value = false;
-                                    chatMessages.value.push({
-                                        role: 'assistant',
-                                        content: '',
-                                        timestamp: new Date().toISOString()
-                                    });
-                                    assistantMessageIndex = chatMessages.value.length - 1;
-                                    hasStartedStreaming = true;
-                                }
-                                
-                                assistantMessage += parsed.data;
-                                chatMessages.value[assistantMessageIndex].content = assistantMessage;
-
-                                // Scroll to bottom
-                                nextTick(() => {
-                                    if (chatMessagesEl.value) {
-                                        chatMessagesEl.value.scrollTop = chatMessagesEl.value.scrollHeight;
-                                    }
-                                });
-                            }
-                            // Store responseId for conversation continuity
-                            else if (parsed.type === 'responseId' && parsed.data) {
-                                lastResponseId.value = parsed.data;
-                            }
+                            parsed = JSON.parse(data);
                         } catch (e) {
                             console.warn('Failed to parse SSE data:', data);
+                            continue;
+                        }
+
+                        if (parsed.type === 'text' && parsed.data) {
+                            // If this is the first chunk, hide typing indicator and add assistant message
+                            if (!hasStartedStreaming) {
+                                isTyping.value = false;
+                                chatMessages.value.push({
+                                    role: 'assistant',
+                                    content: '',
+                                    timestamp: new Date().toISOString()
+                                });
+                                assistantMessageIndex = chatMessages.value.length - 1;
+                                hasStartedStreaming = true;
+                            }
+
+                            assistantMessage += parsed.data;
+                            chatMessages.value[assistantMessageIndex].content = assistantMessage;
+
+                            // Scroll to bottom
+                            nextTick(() => {
+                                if (chatMessagesEl.value) {
+                                    chatMessagesEl.value.scrollTop = chatMessagesEl.value.scrollHeight;
+                                }
+                            });
+                        } else if (parsed.type === 'responseId' && parsed.data) {
+                            pendingResponseId = parsed.data;
+                        } else if (parsed.type === 'error' && parsed.errorCode === 'content_filtered') {
+                            if (assistantMessageIndex >= 0) {
+                                chatMessages.value.splice(assistantMessageIndex, 1);
+                            }
+                            throw new Error('content-filtered');
                         }
                     }
                 }
+
+                if (done) break;
             }
 
         } catch (error) {
@@ -462,6 +488,9 @@ export function useChatWidget() {
                 errorMessage = 'You must be logged in to use the chat feature. Please log in and try again.';
                 errorType = 'auth-error';
                 isAuthenticated.value = false; // Update auth state
+            } else if (error.message === 'content-filtered') {
+                errorMessage = 'This request could not be completed because it did not meet the content safety policy. Please try a different message.';
+                errorType = 'content-filtered';
             } else if (error.message?.startsWith('captcha-')) {
                 errorMessage = error.message.includes('captcha-unavailable')
                     ? 'Human verification is temporarily unavailable. Please try again later.'
