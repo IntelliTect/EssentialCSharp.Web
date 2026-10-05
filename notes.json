@@ -2,7 +2,7 @@
   "version": 1,
   "cursors": {
     "labelling_after": null,
-    "investigation_after": 602
+    "investigation_after": 1133
   },
   "issues": [
     {
@@ -34,24 +34,19 @@
     },
     {
       "area": "code",
-      "checked_at": "2026-10-03",
+      "checked_at": "2026-10-05",
       "result": "No unaddressed low-risk improvement identified; open Repo Assist PRs cover the clear candidates.",
       "follow_up": null
     },
     {
       "area": "qa",
-      "checked_at": "2026-10-03",
-      "result": "Release build and frontend build passed; 149 of 151 web tests passed, with hCaptcha and Pwned Password external-service tests failing in the runner.",
+      "checked_at": "2026-10-05",
+      "result": "Current open migration PR #1455 reports successful release, frontend, and cross-platform build checks; Docker/Terraform validation remains environment-dependent.",
       "follow_up": null
     }
   ],
   "completed_actions": [],
   "priorities": [
-    {
-      "task": 2,
-      "item": "1065",
-      "note": "Revisit after maintainers choose a content-safety provider and streaming moderation policy."
-    },
     {
       "task": 2,
       "item": "602",
