@@ -36,25 +36,46 @@ public partial class AIChatService : IChatCompletionService
     private const string AzureApiVersion = "2025-04-01-preview";
 
     public AIChatService(IOptions<AIOptions> options, AISearchService searchService, TokenCredential credential, ILogger<AIChatService> logger)
+        : this(options, searchService, CreateResponseClient(options.Value, credential), logger)
+    {
+    }
+
+    /// <summary>
+    /// Creates the chat service with a preconfigured Responses API client.
+    /// </summary>
+    /// <remarks>
+    /// This overload supports callers that own Responses API client configuration.
+    /// </remarks>
+    public AIChatService(
+        IOptions<AIOptions> options,
+        AISearchService searchService,
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        ResponsesClient responseClient,
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        ILogger<AIChatService> logger)
     {
         _Options = options.Value;
         _SearchService = searchService;
         _Logger = logger;
         _AllowedMcpTools = _Options.AllowedMcpTools.ToFrozenSet(StringComparer.Ordinal);
+        _ResponseClient = responseClient;
+    }
 
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+    private static ResponsesClient CreateResponseClient(AIOptions options, TokenCredential credential)
+    {
         // Build an Azure-authenticated ResponsesClient directly, targeting the deployment endpoint.
         // The endpoint is: {AzureEndpoint}/openai/deployments/{ChatDeploymentName}
         // ResponsesClient appends "/responses" to produce the full Azure REST path.
         var deploymentEndpoint = new Uri(
-            $"{_Options.Endpoint.TrimEnd('/')}/openai/deployments/{_Options.ChatDeploymentName}");
+            $"{options.Endpoint.TrimEnd('/')}/openai/deployments/{options.ChatDeploymentName}");
 
         var responsesOptions = new ResponsesClientOptions { Endpoint = deploymentEndpoint };
         responsesOptions.AddPolicy(new ApiVersionPipelinePolicy(AzureApiVersion), PipelinePosition.PerCall);
 
         var tokenProvider = new AzureCogServicesTokenProvider(credential);
         var bearerPolicy = new BearerTokenPolicy(tokenProvider, AzureCognitiveServicesScope);
-        _ResponseClient = new ResponsesClient(bearerPolicy, responsesOptions);
+        return new ResponsesClient(bearerPolicy, responsesOptions);
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     }
 
@@ -628,10 +649,20 @@ public partial class AIChatService : IChatCompletionService
                 throw new ChatContentFilteredException(ex);
             }
 
-            string responseId = response.Value.Id;
+            var responseResult = response.Value;
+            if (IsContentFilterFailure(
+                    code: null,
+                    reason: responseResult.IncompleteStatusDetails?.Reason?.ToString(),
+                    message: null))
+            {
+                LogChatResponseBlocked(_Logger, endUserId);
+                throw new ChatContentFilteredException();
+            }
+
+            string responseId = responseResult.Id;
 
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-            var functionCalls = response.Value.OutputItems.OfType<FunctionCallResponseItem>().ToList();
+            var functionCalls = responseResult.OutputItems.OfType<FunctionCallResponseItem>().ToList();
 
             if (functionCalls.Count > 0 && mcpClient != null)
             {
@@ -685,7 +716,7 @@ public partial class AIChatService : IChatCompletionService
                 continue;
             }
 
-            var assistantMessage = response.Value.OutputItems
+            var assistantMessage = responseResult.OutputItems
                 .OfType<MessageResponseItem>()
                 .FirstOrDefault(m => m.Role == MessageRole.Assistant &&
                                      !string.IsNullOrEmpty(m.Content?.FirstOrDefault()?.Text));
