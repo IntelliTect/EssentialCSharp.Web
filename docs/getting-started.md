@@ -40,6 +40,19 @@ For basic browsing and UI development, no secrets are needed. The database conne
 
 > **Database note:** The Development connection string targets SQL Server on `localhost`. Start a local SQL Server instance, or override `ConnectionStrings__EssentialCSharpWebContextConnection` before running the application.
 
+### Database migrations
+
+When `ASPNETCORE_ENVIRONMENT` is `Development` (local runs), the web application applies EF Core migrations on startup. Deployed environments (the Azure Dev app runs as `Staging`) do not; they use the migration bundle below. For local development, make sure the database connection is configured and SQL Server is available before running the app. You can also apply migrations manually with the repository's local tools:
+
+```bash
+dotnet tool restore
+dotnet tool run dotnet-ef -- database update --project EssentialCSharp.Web
+```
+
+For both Azure deployments (Dev and Prod), the pipeline builds a Linux EF migration bundle into the web image and runs it as a manual Azure Container Apps Job before updating the web app. The job uses the environment's Key Vault-backed SQL connection configuration. A failed migration prevents the app update, but the database is not automatically rolled back. Because the migration runs while the current app may still be serving requests, breaking or long-running schema changes can cause errors or downtime; review generated migrations before deployment.
+
+The `Development` and `Production` GitHub Environments each need a `MIGRATION_JOB_NAME` variable set to the corresponding Terraform output (`dev_web_migration_job_name` or `prod_web_migration_job_name` from the Azure Resource Management root module).
+
 > **Tip:** Use the [dotnet secret manager](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets#set-a-secret) for any secrets below:
 > `dotnet user-secrets set "<Key>" "<Value>" --project EssentialCSharp.Web`
 
