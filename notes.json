@@ -2,7 +2,7 @@
   "version": 1,
   "cursors": {
     "labelling_after": null,
-    "investigation_after": 1476
+    "investigation_after": 1480
   },
   "issues": [
     {
@@ -27,7 +27,7 @@
       "number": 1476,
       "state": "commented",
       "updated_at": "2026-10-07",
-      "note": "Diagnosed run 37664320630: container restore cannot find ContentFeedNuget 1.1.1.19488; build/tests passed. Commented and labelled bug/needs investigation."
+      "note": "Diagnosed the CI failure as unavailable ContentFeedNuget 1.1.1.19488; labelled bug/needs investigation and found no repository-side fix without feed correction."
     }
   ],
   "fixes": [],
@@ -53,7 +53,7 @@
     {
       "area": "qa",
       "checked_at": "2026-10-07",
-      "result": "No duplicate testing improvement identified; existing Repo Assist testing PRs cover the actionable gaps. Current CI run passed .NET build/tests; only container restore failed.",
+      "result": "No duplicate testing improvement identified; existing Repo Assist PRs cover the actionable gaps. #1466 was already fixed on main and no new fix PR was created.",
       "follow_up": "Review open testing PRs #1404, #1409, #1429, and #1439."
     },
     {
