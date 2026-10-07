@@ -2,7 +2,7 @@
   "version": 1,
   "cursors": {
     "labelling_after": null,
-    "investigation_after": 1471
+    "investigation_after": 1476
   },
   "issues": [
     {
@@ -22,6 +22,12 @@
       "state": "awaiting_clarification",
       "updated_at": "2026-10-03",
       "note": "Requested target content prefix, redirect policy, affected generated links, and rollout constraints."
+    },
+    {
+      "number": 1476,
+      "state": "commented",
+      "updated_at": "2026-10-07",
+      "note": "Diagnosed run 37664320630: container restore cannot find ContentFeedNuget 1.1.1.19488; build/tests passed. Commented and labelled bug/needs investigation."
     }
   ],
   "fixes": [],
@@ -39,16 +45,22 @@
       "follow_up": null
     },
     {
-      "area": "qa",
-      "checked_at": "2026-10-07",
-      "result": "Full solution Release build and frontend Vite build passed. Chat tests passed 31/31; web tests passed 152/154, with two external-service integration failures.",
-      "follow_up": "Captcha and HaveIBeenPwned integration tests require reachable external services."
-    },
-    {
       "area": "repo_assist_prs",
       "checked_at": "2026-10-07",
       "result": "Reviewed six open Repo Assist PRs. No failing checks requiring updates; PR #1409 remains dirty after the existing rebase request, and #1404 has a maintainer review request awaiting branch work.",
       "follow_up": null
+    },
+    {
+      "area": "qa",
+      "checked_at": "2026-10-07",
+      "result": "No duplicate testing improvement identified; existing Repo Assist testing PRs cover the actionable gaps. Current CI run passed .NET build/tests; only container restore failed.",
+      "follow_up": "Review open testing PRs #1404, #1409, #1429, and #1439."
+    },
+    {
+      "area": "performance",
+      "checked_at": "2026-10-07",
+      "result": "No duplicate measurable performance improvement identified; related-section lookup indexing remains covered by open #1416.",
+      "follow_up": "Review/merge #1416."
     }
   ],
   "completed_actions": [],
@@ -62,6 +74,11 @@
       "task": 2,
       "item": "602",
       "note": "Awaiting URL contract clarification before investigating the breaking content-slug migration further."
+    },
+    {
+      "task": 2,
+      "item": "1476",
+      "note": "Container image restore is blocked by private feed version skew: requested ContentFeedNuget 1.1.1.19488, newest visible 1.1.1.19478."
     }
   ]
 }
