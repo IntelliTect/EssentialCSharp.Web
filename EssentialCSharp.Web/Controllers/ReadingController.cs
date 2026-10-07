@@ -182,20 +182,19 @@ public partial class ReadingController(
             await context.SaveChangesAsync(cancellationToken);
 
             // Trim ReadingActivity to the newest 500 rows for this user.
-            // We do this after SaveChanges so the new rows are visible in the sub-query.
-            await context.Database.ExecuteSqlRawAsync(
-                """
-                DELETE FROM [ReadingActivities]
-                WHERE [UserId] = {0}
-                  AND [Id] NOT IN (
-                    SELECT TOP ({1}) [Id]
-                    FROM [ReadingActivities]
-                    WHERE [UserId] = {0}
-                    ORDER BY [RecordedAtUtc] DESC
-                  )
-                """,
-                [userId, MaxReadingActivityRowsPerUser],
-                cancellationToken);
+            // Use EF's provider-translated delete so retention works across supported databases.
+            IQueryable<int> retainedActivityIds = context.ReadingActivities
+                .Where(activity => activity.UserId == userId)
+                .OrderByDescending(activity => activity.RecordedAtUtc)
+                .ThenByDescending(activity => activity.Id)
+                .Take(MaxReadingActivityRowsPerUser)
+                .Select(activity => activity.Id);
+
+            await context.ReadingActivities
+                .Where(activity =>
+                    activity.UserId == userId &&
+                    !retainedActivityIds.Contains(activity.Id))
+                .ExecuteDeleteAsync(cancellationToken);
 
             await transaction.CommitAsync(cancellationToken);
         }

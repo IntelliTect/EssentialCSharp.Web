@@ -17,12 +17,19 @@ public class WordCountServiceTests
         return (tempDir, filePath);
     }
 
-    private static SiteMapping MakeMapping(string key, string contentRoot, string relativePath, int chapter, int page, int order = 1)
+    private static SiteMapping MakeMapping(
+        string key,
+        string contentRoot,
+        string relativePath,
+        int chapter,
+        int page,
+        int order = 1,
+        string[]? keys = null)
     {
         // PagePath is relative to contentRoot as individual path segments.
         string[] segments = relativePath.Split('/', '\\').Where(s => s.Length > 0).ToArray();
         return new SiteMapping(
-            keys: [key],
+            keys: keys?.ToList() ?? [key],
             primaryKey: key,
             pagePath: segments,
             chapterNumber: chapter,
@@ -223,6 +230,42 @@ public class WordCountServiceTests
 
             await Assert.That(service.GetWordsBeforePage("p1")).IsEqualTo(0); // first page
             await Assert.That(service.GetWordsBeforePage("p2")).IsEqualTo(2); // 2 words from p1
+        }
+        finally
+        {
+            Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    [Test]
+    public async Task DuplicatePageMappings_CountOnceAndShareWordOffsetsAcrossAllKeys()
+    {
+        string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            File.WriteAllText(Path.Combine(tempDir, "a.html"), "<html><body><p>one two three</p></body></html>");
+            File.WriteAllText(Path.Combine(tempDir, "b.html"), "<html><body><p>four five</p></body></html>");
+
+            SiteMapping[] mappings =
+            [
+                MakeMapping("page-one", tempDir, "a.html", 1, 1, keys: ["page-one", "page-one-alias"]),
+                MakeMapping("page-one-heading", tempDir, ".\\a.html", 1, 1, order: 2),
+                MakeMapping("page-two", tempDir, "b.html", 1, 2),
+            ];
+            (WordCountService service, _) = CreateService(mappings, tempDir);
+
+            await Assert.That(service.GetPageWordCount("page-one")).IsEqualTo(3);
+            await Assert.That(service.GetPageWordCount("page-one-alias")).IsEqualTo(3);
+            await Assert.That(service.GetPageWordCount("page-one-heading")).IsEqualTo(3);
+            await Assert.That(service.GetWordsBeforePage("page-one")).IsEqualTo(0);
+            await Assert.That(service.GetWordsBeforePage("page-one-alias")).IsEqualTo(0);
+            await Assert.That(service.GetWordsBeforePage("page-one-heading")).IsEqualTo(0);
+            await Assert.That(service.GetChapterStartWords("page-one-alias")).IsEqualTo(0);
+            await Assert.That(service.GetWordsBeforePage("page-two")).IsEqualTo(3);
+            await Assert.That(service.GetChapterStartWords("page-two")).IsEqualTo(3);
+            await Assert.That(service.GetChapterWordCount(1)).IsEqualTo(5);
+            await Assert.That(service.GetBookWordCount()).IsEqualTo(5);
         }
         finally
         {

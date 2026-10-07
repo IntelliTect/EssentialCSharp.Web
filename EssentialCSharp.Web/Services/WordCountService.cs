@@ -22,6 +22,7 @@ public class WordCountService : IWordCountService
     private readonly Dictionary<string, int> _wordsBeforePage;
     private readonly Dictionary<string, int> _chapterStartWords;
     private readonly IReadOnlyList<ChapterWordCount> _chapterWordCountList;
+    private readonly Dictionary<string, PageWordData> _pagesByPath;
 
     public WordCountService(ISiteMappingService siteMappingService, IWebHostEnvironment hostingEnvironment)
     {
@@ -29,6 +30,8 @@ public class WordCountService : IWordCountService
         _chapterWordCounts = [];
         _wordsBeforePage = [];
         _chapterStartWords = [];
+        _pagesByPath = new Dictionary<string, PageWordData>(
+            OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
 
         // Walk mappings in canonical reading order: chapter → page → order-on-page.
         IEnumerable<SiteMapping> orderedMappings = siteMappingService.SiteMappings
@@ -43,10 +46,13 @@ public class WordCountService : IWordCountService
 
         foreach (SiteMapping mapping in orderedMappings)
         {
-            string? pageKey = mapping.Keys.FirstOrDefault() ?? mapping.PrimaryKey;
-            if (pageKey is null || _pageWordCounts.ContainsKey(pageKey))
+            string filePath = Path.GetFullPath(Path.Join(
+                hostingEnvironment.ContentRootPath,
+                Path.Join(mapping.PagePath)));
+
+            if (_pagesByPath.TryGetValue(filePath, out PageWordData? existingPage))
             {
-                // Multiple anchors on the same page; skip duplicates (already counted).
+                MapKeys(mapping, existingPage);
                 continue;
             }
 
@@ -62,10 +68,10 @@ public class WordCountService : IWordCountService
                 chapterWords = 0;
             }
 
-            int words = CountProseWords(hostingEnvironment.ContentRootPath, mapping.PagePath);
-            _pageWordCounts[pageKey] = words;
-            _wordsBeforePage[pageKey] = bookWords;
-            _chapterStartWords[pageKey] = chapterWords;
+            int words = CountProseWords(filePath);
+            PageWordData page = new(words, bookWords, chapterWords);
+            _pagesByPath[filePath] = page;
+            MapKeys(mapping, page);
 
             bookWords += words;
             chapterWords += words;
@@ -103,9 +109,29 @@ public class WordCountService : IWordCountService
 
     // ---
 
-    private static int CountProseWords(string contentRoot, string[] pagePath)
+    private void MapKeys(SiteMapping mapping, PageWordData page)
     {
-        string filePath = Path.Join(contentRoot, Path.Join(pagePath));
+        IEnumerable<string> pageKeys = (mapping.Keys ?? [])
+            .Append(mapping.PrimaryKey)
+            .Where(key => !string.IsNullOrWhiteSpace(key))
+            .Distinct(StringComparer.Ordinal);
+
+        foreach (string pageKey in pageKeys)
+        {
+            // Keep the first mapping for a route key if the sitemap contains a collision.
+            if (_pageWordCounts.ContainsKey(pageKey))
+            {
+                continue;
+            }
+
+            _pageWordCounts[pageKey] = page.WordCount;
+            _wordsBeforePage[pageKey] = page.WordsBeforePage;
+            _chapterStartWords[pageKey] = page.ChapterStartWords;
+        }
+    }
+
+    private static int CountProseWords(string filePath)
+    {
         if (!File.Exists(filePath))
         {
             return 0;
@@ -151,4 +177,6 @@ public class WordCountService : IWordCountService
         }
         return count;
     }
+
+    private sealed record PageWordData(int WordCount, int WordsBeforePage, int ChapterStartWords);
 }

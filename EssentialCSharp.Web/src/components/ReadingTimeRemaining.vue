@@ -1,6 +1,7 @@
 <script setup>
 import { computed, inject } from "vue";
 import { useReadingTracker } from "../composables/useReadingTracker.js";
+import { getDocumentScrollFraction } from "../utils/readingProgress.js";
 
 const shell = inject("shell");
 
@@ -16,20 +17,11 @@ const wordsBeforePage = window.WORDS_BEFORE_PAGE ?? 0;
 
 const { wpm, activeSeconds } = useReadingTracker();
 
-// Live scroll fraction from the page.
-function getScrollFraction() {
-    const main = document.querySelector("main") ?? document.documentElement;
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
-    const scrollable = main.scrollHeight - main.clientHeight;
-    if (scrollable <= 0) return 1;
-    return Math.min(1, Math.max(0, scrollTop / scrollable));
-}
-
 // Recomputed every second via activeSeconds dependency.
 const scrollFraction = computed(() => {
     // Reference activeSeconds so Vue re-evaluates as the timer ticks.
     void activeSeconds.value;
-    return getScrollFraction();
+    return getDocumentScrollFraction();
 });
 
 const wordsReadOnPage = computed(() => Math.round(pageWordCount * scrollFraction.value));

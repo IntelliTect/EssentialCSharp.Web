@@ -14,6 +14,7 @@
  */
 
 import { ref, onMounted, onBeforeUnmount, readonly } from "vue";
+import { getDocumentScrollFraction } from "../utils/readingProgress.js";
 
 // ----- Constants -----
 const IDLE_THRESHOLD_S = 300; // 5 minutes
@@ -67,13 +68,17 @@ async function fetchServerProfile() {
     }
 }
 
-async function postSession(intervals) {
+async function postSession(intervals, { keepalive = false } = {}) {
     if (!intervals || intervals.length === 0) return null;
     try {
         const res = await fetch("/api/reading/session", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(intervals)
+            headers: {
+                "Content-Type": "application/json",
+                "RequestVerificationToken": document.querySelector('meta[name="csrf-token"]')?.content ?? ""
+            },
+            body: JSON.stringify(intervals),
+            keepalive
         });
         if (!res.ok) return null;
         return await res.json();
@@ -108,14 +113,6 @@ export function useReadingTracker() {
 
     // ----- Scroll fraction -----
 
-    function getScrollFraction() {
-        const main = document.querySelector("main") ?? document.documentElement;
-        const scrollTop = window.scrollY || document.documentElement.scrollTop;
-        const scrollable = main.scrollHeight - main.clientHeight;
-        if (scrollable <= 0) return 1;
-        return Math.min(1, Math.max(0, scrollTop / scrollable));
-    }
-
     // ----- State machine -----
 
     function markActivity() {
@@ -145,7 +142,7 @@ export function useReadingTracker() {
 
     function onScroll() {
         markActivity();
-        const fraction = getScrollFraction();
+        const fraction = getDocumentScrollFraction();
         if (fraction > maxScrollFraction) {
             maxScrollFraction = fraction;
         }
@@ -168,7 +165,7 @@ export function useReadingTracker() {
 
     // ----- Flush (send data on navigation away / unmount) -----
 
-    async function flush() {
+    async function flush({ keepalive = false } = {}) {
         if (!pageKey || activeSeconds.value <= 0 || pageWordCount <= 0) return;
 
         const wordsRead = Math.round(pageWordCount * maxScrollFraction);
@@ -184,7 +181,7 @@ export function useReadingTracker() {
         };
 
         if (isAuthenticated) {
-            const updated = await postSession([interval]);
+            const updated = await postSession([interval], { keepalive });
             if (updated) {
                 serverProfile = updated;
                 if (updated.wpm) {
@@ -224,15 +221,21 @@ export function useReadingTracker() {
         }
 
         // Upload local aggregate as a synthetic interval.
-        if (local.totalWords > 0 && local.totalActiveSeconds > 0) {
-            await postSession([{
-                pageKey: "__localStorage_sync__",
-                activeSeconds: local.totalActiveSeconds,
-                wordsRead: local.totalWords,
-                completed: false
-            }]);
-        }
+        if (local.totalWords <= 0 || local.totalActiveSeconds <= 0) return;
+
+        const uploaded = await postSession([{
+            pageKey: "__localStorage_sync__",
+            activeSeconds: local.totalActiveSeconds,
+            wordsRead: local.totalWords,
+            completed: false
+        }]);
+        if (!uploaded) return;
+
         clearLocalProfile();
+    }
+
+    function onBeforeUnload() {
+        void flush({ keepalive: true });
     }
 
     // ----- Init -----
@@ -264,13 +267,13 @@ export function useReadingTracker() {
         document.addEventListener("visibilitychange", onVisibilityChange);
         document.addEventListener("mousemove", onMousemove, { passive: true });
         document.addEventListener("keydown", markActivity);
-        document.addEventListener("scroll", onScroll, { passive: true });
+        window.addEventListener("scroll", onScroll, { passive: true });
         document.addEventListener("touchstart", markActivity, { passive: true });
         document.addEventListener("pointerdown", markActivity);
         window.addEventListener("focus", markActivity);
 
         // Flush on page navigation (SPA or classical).
-        window.addEventListener("beforeunload", flush);
+        window.addEventListener("beforeunload", onBeforeUnload);
     });
 
     onBeforeUnmount(async () => {
@@ -279,11 +282,11 @@ export function useReadingTracker() {
         document.removeEventListener("visibilitychange", onVisibilityChange);
         document.removeEventListener("mousemove", onMousemove);
         document.removeEventListener("keydown", markActivity);
-        document.removeEventListener("scroll", onScroll);
+        window.removeEventListener("scroll", onScroll);
         document.removeEventListener("touchstart", markActivity);
         document.removeEventListener("pointerdown", markActivity);
         window.removeEventListener("focus", markActivity);
-        window.removeEventListener("beforeunload", flush);
+        window.removeEventListener("beforeunload", onBeforeUnload);
 
         await flush();
     });
