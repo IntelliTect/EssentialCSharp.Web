@@ -46,7 +46,7 @@ ViewData["ActivePage"] = ManageNavPages.Index;
                 data-confirm="Reset your reading speed? This cannot be undone.">
             Reset reading speed
         </button>
-        <div id="reset-reading-status" class="mt-2 small" style="display:none;"></div>
+        <div id="reset-reading-status" class="mt-2 small" role="status" aria-live="polite" aria-atomic="true" style="display:none;"></div>
     </div>
 </div>
 
@@ -67,7 +67,12 @@ ViewData["ActivePage"] = ManageNavPages.Index;
                 status.className = 'mt-2 small text-muted';
 
                 try {
-                    const res = await fetch('/api/reading/reset', { method: 'POST' });
+                    const res = await fetch('/api/reading/reset', {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': document.querySelector('meta[name="csrf-token"]')?.content ?? ''
+                        }
+                    });
                     if (res.ok) {
                         try { localStorage.removeItem('readingProfile'); } catch {}
                         status.textContent = 'Reading speed reset successfully.';
