@@ -272,6 +272,7 @@ public partial class Program
         builder.Services.AddSingleton<IRouteConfigurationService, RouteConfigurationService>();
         builder.Services.AddSingleton<IListingSourceCodeService, ListingSourceCodeService>();
         builder.Services.AddSingleton<IBookToolQueryService, BookToolQueryService>();
+        builder.Services.AddSingleton<IWordCountService, WordCountService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
 
         // Add AI Chat services using configuration-driven backend selection.
@@ -439,6 +440,9 @@ public partial class Program
         }
 
         WebApplication app = builder.Build();
+
+        // Build the page word-count cache during startup instead of on the first content request.
+        _ = app.Services.GetRequiredService<IWordCountService>();
 
         if (profilerSkippedUnsupportedPlatform)
             LogSkippingUnsupportedAzureMonitorProfiler(
