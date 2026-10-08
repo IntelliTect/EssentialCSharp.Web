@@ -46,11 +46,11 @@ steps:
       fetch-depth: 0
       persist-credentials: false
   - name: Set up .NET
-    uses: actions/setup-dotnet@v6
+    uses: actions/setup-dotnet@v6.0.0
     with:
       global-json-file: global.json
   - name: Set up Node.js
-    uses: actions/setup-node@v7
+    uses: actions/setup-node@v7.0.0
     with:
       node-version-file: EssentialCSharp.Web/.nvmrc
   - name: Build and run app in background
