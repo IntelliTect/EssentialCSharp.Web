@@ -40,6 +40,7 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
             ViewBag.PreviousPage = FlipPage(siteMapping.ChapterNumber, siteMapping.PageNumber, false);
             ViewBag.HeadContents = headHtml;
             ViewBag.Contents = html;
+            ViewBag.NeedsPageHeading = doc.DocumentNode.SelectSingleNode("//body//h1") is null;
             return View();
         }
         else
