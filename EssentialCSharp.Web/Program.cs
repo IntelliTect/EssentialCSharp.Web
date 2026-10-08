@@ -441,6 +441,9 @@ public partial class Program
 
         WebApplication app = builder.Build();
 
+        // Build the page word-count cache during startup instead of on the first content request.
+        _ = app.Services.GetRequiredService<IWordCountService>();
+
         if (profilerSkippedUnsupportedPlatform)
             LogSkippingUnsupportedAzureMonitorProfiler(
                 app.Services.GetRequiredService<ILogger<Program>>(),

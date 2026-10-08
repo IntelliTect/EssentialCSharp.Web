@@ -109,6 +109,24 @@ public class ReadingControllerTests : IntegrationTestBase
     }
 
     [Test]
+    public async Task PostSession_SmallSlowInterval_UsesAtLeastOneClampedSecond()
+    {
+        string userId = await CreateUserWithBaselineProfileAsync();
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+        using var request = CreateSessionRequest(
+            [new ReadingController.ReadingIntervalDto("tiny-slow-page", 300, 1, false)]);
+
+        using HttpResponseMessage response = await client.SendAsync(request);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        UserReadingProfile profile = await GetProfileAsync(userId);
+        await Assert.That(profile.TotalWordsRead).IsEqualTo(1201L);
+        await Assert.That(profile.TotalActiveSeconds).IsEqualTo(362L);
+        ReadingActivity activity = await GetSingleActivityAsync(userId);
+        await Assert.That(activity.WordsRead).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task PostSession_NormalInterval_AddsUnmodifiedWordsAndTimeToPersistedProfile()
     {
         string userId = await CreateUserWithBaselineProfileAsync();
@@ -130,6 +148,74 @@ public class ReadingControllerTests : IntegrationTestBase
         await Assert.That(activity.WordsRead).IsEqualTo(180);
         await Assert.That(activity.ActiveSeconds).IsEqualTo(60);
         await Assert.That(activity.Completed).IsTrue();
+    }
+
+    [Test]
+    public async Task PostSession_RejectsMoreThanMaximumIntervalBatch()
+    {
+        string userId = await CreateUserWithBaselineProfileAsync();
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+        ReadingController.ReadingIntervalDto[] intervals = Enumerable
+            .Range(0, 51)
+            .Select(index => new ReadingController.ReadingIntervalDto($"page-{index}", 60, 100, false))
+            .ToArray();
+        using var request = CreateSessionRequest(intervals);
+
+        using HttpResponseMessage response = await client.SendAsync(request);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+        UserReadingProfile profile = await GetProfileAsync(userId);
+        await Assert.That(profile.TotalWordsRead).IsEqualTo(1200L);
+        await Assert.That(profile.TotalActiveSeconds).IsEqualTo(360L);
+        await Assert.That(await GetActivityCountAsync(userId)).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task PostSession_ConcurrentRequests_PreserveBothAggregateIncrements()
+    {
+        string userId = await CreateUserWithBaselineProfileAsync();
+        using HttpClient firstClient = await CreateAuthenticatedClientAsync(userId);
+        using HttpClient secondClient = await CreateAuthenticatedClientAsync(userId);
+        using HttpRequestMessage firstRequest = CreateSessionRequest(
+            [new ReadingController.ReadingIntervalDto("first-page", 60, 100, false)]);
+        using HttpRequestMessage secondRequest = CreateSessionRequest(
+            [new ReadingController.ReadingIntervalDto("second-page", 60, 100, false)]);
+
+        Task<HttpResponseMessage> firstTask = firstClient.SendAsync(firstRequest);
+        Task<HttpResponseMessage> secondTask = secondClient.SendAsync(secondRequest);
+        using HttpResponseMessage firstResponse = await firstTask;
+        using HttpResponseMessage secondResponse = await secondTask;
+
+        await Assert.That(firstResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(secondResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        UserReadingProfile profile = await GetProfileAsync(userId);
+        await Assert.That(profile.TotalWordsRead).IsEqualTo(1400L);
+        await Assert.That(profile.TotalActiveSeconds).IsEqualTo(480L);
+        await Assert.That(await GetActivityCountAsync(userId)).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task PostSession_ConcurrentFirstRequests_CreateOneProfileAndPreserveBothIncrements()
+    {
+        string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-first-session");
+        using HttpClient firstClient = await CreateAuthenticatedClientAsync(userId);
+        using HttpClient secondClient = await CreateAuthenticatedClientAsync(userId);
+        using HttpRequestMessage firstRequest = CreateSessionRequest(
+            [new ReadingController.ReadingIntervalDto("first-page", 60, 100, false)]);
+        using HttpRequestMessage secondRequest = CreateSessionRequest(
+            [new ReadingController.ReadingIntervalDto("second-page", 60, 100, false)]);
+
+        Task<HttpResponseMessage> firstTask = firstClient.SendAsync(firstRequest);
+        Task<HttpResponseMessage> secondTask = secondClient.SendAsync(secondRequest);
+        using HttpResponseMessage firstResponse = await firstTask;
+        using HttpResponseMessage secondResponse = await secondTask;
+
+        await Assert.That(firstResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(secondResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        UserReadingProfile profile = await GetProfileAsync(userId);
+        await Assert.That(profile.TotalWordsRead).IsEqualTo(200L);
+        await Assert.That(profile.TotalActiveSeconds).IsEqualTo(120L);
+        await Assert.That(await GetActivityCountAsync(userId)).IsEqualTo(2);
     }
 
     [Test]

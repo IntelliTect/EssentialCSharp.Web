@@ -95,13 +95,13 @@ export function useReadingTracker() {
     const activeSeconds = ref(0);
 
     // Reading state machine.
-    let state = STATE_READING;
+    let state = document.visibilityState === "visible" ? STATE_READING : STATE_HIDDEN;
     let lastActivityAt = Date.now();
     let tickIntervalId = null;
     let lastMousemoveAt = 0;
 
     // Scroll tracking.
-    let maxScrollFraction = 0;
+    let maxScrollFraction = getDocumentScrollFraction();
 
     // Page context (from window globals set by _Layout.cshtml).
     const pageKey = window.CURRENT_PAGE_KEY ?? null;
@@ -241,6 +241,20 @@ export function useReadingTracker() {
     // ----- Init -----
 
     onMounted(async () => {
+        state = document.visibilityState === "visible" ? STATE_READING : STATE_HIDDEN;
+        maxScrollFraction = Math.max(maxScrollFraction, getDocumentScrollFraction());
+
+        tickIntervalId = setInterval(tick, TICK_INTERVAL_MS);
+
+        document.addEventListener("visibilitychange", onVisibilityChange);
+        document.addEventListener("mousemove", onMousemove, { passive: true });
+        document.addEventListener("keydown", markActivity);
+        window.addEventListener("scroll", onScroll, { passive: true });
+        document.addEventListener("touchstart", markActivity, { passive: true });
+        document.addEventListener("pointerdown", markActivity);
+        window.addEventListener("focus", markActivity);
+        window.addEventListener("beforeunload", onBeforeUnload);
+
         // Load initial WPM.
         if (isAuthenticated) {
             // Try to sync localStorage first (one-time, idempotent).
@@ -259,21 +273,6 @@ export function useReadingTracker() {
                 wpm.value = localWpm;
             }
         }
-
-        // Start tick.
-        tickIntervalId = setInterval(tick, TICK_INTERVAL_MS);
-
-        // Activity listeners.
-        document.addEventListener("visibilitychange", onVisibilityChange);
-        document.addEventListener("mousemove", onMousemove, { passive: true });
-        document.addEventListener("keydown", markActivity);
-        window.addEventListener("scroll", onScroll, { passive: true });
-        document.addEventListener("touchstart", markActivity, { passive: true });
-        document.addEventListener("pointerdown", markActivity);
-        window.addEventListener("focus", markActivity);
-
-        // Flush on page navigation (SPA or classical).
-        window.addEventListener("beforeunload", onBeforeUnload);
     });
 
     onBeforeUnmount(async () => {
