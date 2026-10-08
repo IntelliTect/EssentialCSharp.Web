@@ -19,6 +19,8 @@ public partial class ReadingController(
     private const int MaxWpmHardCutoff = 900;
     private const double SlowOutlierFactor = 0.25;
     private const int MaxReadingActivityRowsPerUser = 500;
+    private const int MaxSessionIntervals = 50;
+    private const int MaxSessionRequestBytes = 32 * 1024;
 
     // High-performance logger messages (CA1848).
     [LoggerMessage(Level = LogLevel.Debug, Message = "Discarding interval for {PageKey}: {Wpm:F0} WPM exceeds hard cutoff of {Cutoff}")]
@@ -82,6 +84,7 @@ public partial class ReadingController(
 
     [HttpPost("session")]
     [Authorize]
+    [RequestSizeLimit(MaxSessionRequestBytes)]
     public async Task<IActionResult> PostSession(
         [FromBody] IEnumerable<ReadingIntervalDto> intervals,
         CancellationToken cancellationToken)
@@ -93,16 +96,21 @@ public partial class ReadingController(
             return BadRequest("intervals is required");
         }
 
-        List<ReadingIntervalDto> intervalList = intervals.ToList();
+        List<ReadingIntervalDto> intervalList = intervals.Take(MaxSessionIntervals + 1).ToList();
+        if (intervalList.Count > MaxSessionIntervals)
+        {
+            return BadRequest($"A session may contain at most {MaxSessionIntervals} intervals.");
+        }
+
         if (intervalList.Count == 0)
         {
             return Ok();
         }
 
-        // Load or create profile (used as reference WPM for outlier clamping).
+        // This read supplies the clamping reference; aggregate writes below use atomic SQL increments.
         UserReadingProfile? profile = await context.UserReadingProfiles
+            .AsNoTracking()
             .FirstOrDefaultAsync(p => p.UserId == userId, cancellationToken);
-
         double referenceWpm = profile?.DeriveWpm() ?? 0;
 
         long deltaWords = 0;
@@ -118,20 +126,19 @@ public partial class ReadingController(
 
             double intervalWpm = interval.WordsRead / (interval.ActiveSeconds / 60.0);
 
-            // Hard discard: too fast to be genuine reading.
             if (intervalWpm > MaxWpmHardCutoff)
             {
                 LogIntervalDiscarded(logger, interval.PageKey, intervalWpm, MaxWpmHardCutoff);
                 continue;
             }
 
-            // Soft clamp: interval is implausibly slow relative to reader's own rate.
             int effectiveWords = interval.WordsRead;
             int effectiveSeconds = interval.ActiveSeconds;
             if (referenceWpm > 0 && intervalWpm < SlowOutlierFactor * referenceWpm)
             {
-                // Clamp: keep the words, shrink the time so effective WPM = 0.25 × referenceWpm.
-                effectiveSeconds = (int)Math.Round(effectiveWords / (SlowOutlierFactor * referenceWpm) * 60.0);
+                effectiveSeconds = Math.Max(
+                    1,
+                    (int)Math.Ceiling(effectiveWords / (SlowOutlierFactor * referenceWpm) * 60.0));
                 LogIntervalClamped(logger, interval.PageKey, intervalWpm, effectiveSeconds);
             }
 
@@ -149,67 +156,106 @@ public partial class ReadingController(
             });
         }
 
-        // Persist inside a single transaction: insert detail rows, update aggregate, trim retention.
-        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
-        try
-        {
-            if (activities.Count > 0)
-            {
-                await context.ReadingActivities.AddRangeAsync(activities, cancellationToken);
-            }
-
-            if (deltaWords > 0 || deltaSeconds > 0)
-            {
-                if (profile is null)
-                {
-                    profile = new UserReadingProfile
-                    {
-                        UserId = userId,
-                        TotalWordsRead = deltaWords,
-                        TotalActiveSeconds = deltaSeconds,
-                        UpdatedAtUtc = DateTime.UtcNow
-                    };
-                    context.UserReadingProfiles.Add(profile);
-                }
-                else
-                {
-                    profile.TotalWordsRead += deltaWords;
-                    profile.TotalActiveSeconds += deltaSeconds;
-                    profile.UpdatedAtUtc = DateTime.UtcNow;
-                }
-            }
-
-            await context.SaveChangesAsync(cancellationToken);
-
-            // Trim ReadingActivity to the newest 500 rows for this user.
-            // Use EF's provider-translated delete so retention works across supported databases.
-            IQueryable<int> retainedActivityIds = context.ReadingActivities
-                .Where(activity => activity.UserId == userId)
-                .OrderByDescending(activity => activity.RecordedAtUtc)
-                .ThenByDescending(activity => activity.Id)
-                .Take(MaxReadingActivityRowsPerUser)
-                .Select(activity => activity.Id);
-
-            await context.ReadingActivities
-                .Where(activity =>
-                    activity.UserId == userId &&
-                    !retainedActivityIds.Contains(activity.Id))
-                .ExecuteDeleteAsync(cancellationToken);
-
-            await transaction.CommitAsync(cancellationToken);
-        }
-        catch
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            throw;
-        }
-
+        profile = await PersistSessionAsync(userId, deltaWords, deltaSeconds, activities, cancellationToken);
         return Ok(new
         {
             totalWordsRead = profile?.TotalWordsRead ?? 0,
             totalActiveSeconds = profile?.TotalActiveSeconds ?? 0,
             wpm = profile?.DeriveWpm()
         });
+    }
+
+    private async Task<UserReadingProfile?> PersistSessionAsync(
+        string userId,
+        long deltaWords,
+        long deltaSeconds,
+        List<ReadingActivity> activities,
+        CancellationToken cancellationToken)
+    {
+        for (int attempt = 0; attempt < 2; attempt++)
+        {
+            await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+            UserReadingProfile? newProfile = null;
+            bool attemptedProfileInsert = false;
+
+            try
+            {
+                if (deltaWords > 0 || deltaSeconds > 0)
+                {
+                    int updatedProfiles = await context.UserReadingProfiles
+                        .Where(p => p.UserId == userId)
+                        .ExecuteUpdateAsync(
+                            setters => setters
+                                .SetProperty(p => p.TotalWordsRead, p => p.TotalWordsRead + deltaWords)
+                                .SetProperty(p => p.TotalActiveSeconds, p => p.TotalActiveSeconds + deltaSeconds)
+                                .SetProperty(p => p.UpdatedAtUtc, DateTime.UtcNow),
+                            cancellationToken);
+
+                    if (updatedProfiles == 0)
+                    {
+                        attemptedProfileInsert = true;
+                        newProfile = new UserReadingProfile
+                        {
+                            UserId = userId,
+                            TotalWordsRead = deltaWords,
+                            TotalActiveSeconds = deltaSeconds,
+                            UpdatedAtUtc = DateTime.UtcNow
+                        };
+                        context.UserReadingProfiles.Add(newProfile);
+                        await context.SaveChangesAsync(cancellationToken);
+                    }
+                }
+
+                if (activities.Count > 0)
+                {
+                    await context.ReadingActivities.AddRangeAsync(activities, cancellationToken);
+                }
+
+                await context.SaveChangesAsync(cancellationToken);
+                await TrimReadingActivitiesAsync(userId, cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+
+                return await context.UserReadingProfiles
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.UserId == userId, cancellationToken);
+            }
+            catch (DbUpdateException) when (attempt == 0 && attemptedProfileInsert)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                context.Entry(newProfile!).State = EntityState.Detached;
+
+                // A concurrent first request may have inserted this user's profile.
+                bool profileCreatedConcurrently = await context.UserReadingProfiles
+                    .AnyAsync(p => p.UserId == userId, cancellationToken);
+                if (!profileCreatedConcurrently)
+                {
+                    throw;
+                }
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
+        }
+
+        throw new InvalidOperationException("Unable to persist the reading session after a concurrent profile insert.");
+    }
+
+    private async Task TrimReadingActivitiesAsync(string userId, CancellationToken cancellationToken)
+    {
+        IQueryable<int> retainedActivityIds = context.ReadingActivities
+            .Where(activity => activity.UserId == userId)
+            .OrderByDescending(activity => activity.RecordedAtUtc)
+            .ThenByDescending(activity => activity.Id)
+            .Take(MaxReadingActivityRowsPerUser)
+            .Select(activity => activity.Id);
+
+        await context.ReadingActivities
+            .Where(activity =>
+                activity.UserId == userId &&
+                !retainedActivityIds.Contains(activity.Id))
+            .ExecuteDeleteAsync(cancellationToken);
     }
 
     // -------------------------------------------------------------------------
