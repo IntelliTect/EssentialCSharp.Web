@@ -20,7 +20,7 @@
     {
       "number": 602,
       "state": "awaiting_clarification",
-      "updated_at": "2026-10-03",
+      "updated_at": "2026-10-02",
       "note": "Requested target content prefix, redirect policy, affected generated links, and rollout constraints."
     },
     {
@@ -34,15 +34,15 @@
   "checks": [
     {
       "area": "code",
-      "checked_at": "2026-10-05",
+      "checked_at": "2026-10-08",
       "result": "No unaddressed low-risk improvement identified; open Repo Assist PRs cover the clear candidates.",
       "follow_up": null
     },
     {
       "area": "dependencies",
-      "checked_at": "2026-10-07",
-      "result": "Updated TUnit and TUnit.AspNetCore from 1.72.16 to stable 1.73.0 on repo-assist/eng-tunit-1-73-20261007; other available updates are previews, major versions, or compatibility-pinned.",
-      "follow_up": null
+      "checked_at": "2026-10-08",
+      "result": "Stable TUnit 1.73.0 update is already prepared in open PR #1475; no duplicate dependency PR created.",
+      "follow_up": "Review and merge #1475 when ready."
     },
     {
       "area": "repo_assist_prs",
@@ -52,8 +52,8 @@
     },
     {
       "area": "qa",
-      "checked_at": "2026-10-07",
-      "result": "No duplicate testing improvement identified; existing Repo Assist PRs cover the actionable gaps. #1466 was already fixed on main and no new fix PR was created.",
+      "checked_at": "2026-10-08",
+      "result": "No duplicate testing improvement identified; existing Repo Assist PRs cover the actionable gaps.",
       "follow_up": "Review open testing PRs #1404, #1409, #1429, and #1439."
     },
     {
@@ -68,7 +68,7 @@
     {
       "task": 4,
       "item": "tunit-1.73",
-      "note": "Review and merge the focused TUnit 1.73.0 dependency update PR when created."
+      "note": "Review and merge the focused TUnit 1.73.0 dependency update PR #1475."
     },
     {
       "task": 2,
