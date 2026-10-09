@@ -27,70 +27,17 @@
       "number": 1476,
       "state": "commented",
       "updated_at": "2026-10-07",
-      "note": "Diagnosed the CI failure as unavailable ContentFeedNuget 1.1.1.19488; labelled bug/needs investigation and found no repository-side fix without feed correction."
+      "note": "CI failure is unavailable ContentFeedNuget 1.1.1.19488; no repository-side fix without feed correction."
     },
     {
       "number": 1484,
       "state": "commented",
       "updated_at": "2026-10-08",
-      "note": "Confirmed both TUnit CI attempts fail in container restore because private feed exposes ContentFeedNuget 1.1.1.19478, below requested 1.1.1.19488; no repository-side code fix."
+      "note": "Repeated TUnit CI attempts fail because private feed exposes 1.1.1.19478 below requested 1.1.1.19488."
     }
   ],
   "fixes": [],
-  "checks": [
-    {
-      "area": "code",
-      "checked_at": "2026-10-08",
-      "result": "No unaddressed low-risk improvement identified; open Repo Assist PRs cover the clear candidates.",
-      "follow_up": null
-    },
-    {
-      "area": "repo_assist_prs",
-      "checked_at": "2026-10-07",
-      "result": "Reviewed six open Repo Assist PRs. No failing checks requiring updates; PR #1409 remains dirty after the existing rebase request, and #1404 has a maintainer review request awaiting branch work.",
-      "follow_up": null
-    },
-    {
-      "area": "qa",
-      "checked_at": "2026-10-08",
-      "result": "No duplicate testing improvement identified; existing Repo Assist PRs cover the actionable gaps.",
-      "follow_up": "Review open testing PRs #1404, #1409, #1429, and #1439."
-    },
-    {
-      "area": "performance",
-      "checked_at": "2026-10-07",
-      "result": "No duplicate measurable performance improvement identified; related-section lookup indexing remains covered by open #1416.",
-      "follow_up": "Review/merge #1416."
-    },
-    {
-      "area": "dependencies",
-      "checked_at": "2026-10-08",
-      "result": "No dependency PR to create: TUnit 1.73.5 is already on main; CI failure is private ContentFeedNuget version skew.",
-      "follow_up": "Publish ContentFeedNuget 1.1.1.19488 or align ToolingPackagesVersion, then rerun CI."
-    },
-    {
-      "area": "ci",
-      "checked_at": "2026-10-08",
-      "result": "Confirmed run 37769545563 fails during container restore with NU1102 for unavailable ContentFeedNuget 1.1.1.19488; frontend and test jobs otherwise pass.",
-      "follow_up": "Maintainer/feed owner must publish the package or align the requested version."
-    }
-  ],
+  "checks": [],
   "completed_actions": [],
-  "priorities": [
-    {
-      "task": 2,
-      "item": "1484",
-      "note": "Await private-feed publication or version alignment for ContentFeedNuget >= 1.1.1.19488; no code PR is warranted."
-    },
-    {
-      "task": 2,
-      "item": "602",
-      "note": "Awaiting URL contract clarification before investigating the breaking content-slug migration further."
-    },
-    {
-      "task": 2,
-      "item": "1476",
-      "note": "Container image restore remains blocked by private feed version skew: requested ContentFeedNuget 1.1.1.19488, newest visible 1.1.1.19478."
-    }
-  ]
+  "priorities": []
 }
