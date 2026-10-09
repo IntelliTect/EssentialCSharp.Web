@@ -7,20 +7,29 @@ namespace EssentialCSharp.Web.Services;
 
 public sealed class BookToolQueryService : IBookToolQueryService
 {
-    private readonly ISiteMappingService _siteMappingService;
     private readonly IGuidelinesService _guidelinesService;
     private readonly string _siteUrl;
+    private readonly List<SiteMapping> _orderedMappings;
+    private readonly Dictionary<int, List<SiteMapping>> _mappingsByChapter;
 
     public BookToolQueryService(
         ISiteMappingService siteMappingService,
         IGuidelinesService guidelinesService,
         IOptions<SiteSettings> siteSettings)
     {
-        _siteMappingService = siteMappingService;
         _guidelinesService = guidelinesService;
         _siteUrl = string.IsNullOrWhiteSpace(siteSettings.Value.BaseUrl)
             ? "https://essentialcsharp.com"
             : siteSettings.Value.BaseUrl.TrimEnd('/');
+
+        _orderedMappings = siteMappingService.SiteMappings
+            .OrderBy(mapping => mapping.ChapterNumber)
+            .ThenBy(mapping => mapping.PageNumber)
+            .ThenBy(mapping => mapping.OrderOnPage)
+            .ToList();
+        _mappingsByChapter = _orderedMappings
+            .GroupBy(mapping => mapping.ChapterNumber)
+            .ToDictionary(group => group.Key, group => group.ToList());
     }
 
     public ChapterListToolResult GetChapterList()
@@ -196,18 +205,12 @@ public sealed class BookToolQueryService : IBookToolQueryService
         ?? throw new McpException($"Section '{sectionKey}' not found. Use GetChapterSections or GetChapterList to discover valid section slugs.");
 
     private List<SiteMapping> GetOrderedMappings() =>
-        _siteMappingService.SiteMappings
-            .OrderBy(mapping => mapping.ChapterNumber)
-            .ThenBy(mapping => mapping.PageNumber)
-            .ThenBy(mapping => mapping.OrderOnPage)
-            .ToList();
+        _orderedMappings;
 
     private List<SiteMapping> GetChapterMappings(int chapter) =>
-        _siteMappingService.SiteMappings
-            .Where(mapping => mapping.ChapterNumber == chapter)
-            .OrderBy(mapping => mapping.PageNumber)
-            .ThenBy(mapping => mapping.OrderOnPage)
-            .ToList();
+        _mappingsByChapter.TryGetValue(chapter, out List<SiteMapping>? mappings)
+            ? mappings
+            : [];
 
     private BookTocItemResult MapTocItem(SiteMappingDto item)
     {
