@@ -37,10 +37,12 @@ public class BookToolQueryServiceTests
     private static (BookToolQueryService Service, Mock<ISiteMappingService> SiteMappingServiceMock, Mock<IGuidelinesService> GuidelinesServiceMock) CreateService(
         IList<SiteMapping>? siteMappings = null,
         IReadOnlyList<GuidelineListing>? guidelines = null,
-        string? baseUrl = null)
+        string? baseUrl = null,
+        IReadOnlyList<SiteMappingDto>? tocData = null)
     {
         Mock<ISiteMappingService> siteMappingServiceMock = new();
         siteMappingServiceMock.Setup(m => m.SiteMappings).Returns(siteMappings ?? []);
+        siteMappingServiceMock.Setup(m => m.GetTocData()).Returns(tocData ?? []);
 
         Mock<IGuidelinesService> guidelinesServiceMock = new();
         guidelinesServiceMock.Setup(m => m.Guidelines).Returns(guidelines ?? []);
@@ -55,9 +57,7 @@ public class BookToolQueryServiceTests
     [Test]
     public async Task GetChapterList_ReturnsTitleAndMappedTocData()
     {
-        Mock<ISiteMappingService> siteMappingServiceMock = new();
-        siteMappingServiceMock.Setup(m => m.SiteMappings).Returns((IList<SiteMapping>)[]);
-        siteMappingServiceMock.Setup(m => m.GetTocData()).Returns(
+        (BookToolQueryService service, _, _) = CreateService(tocData:
         [
             new SiteMappingDto
             {
@@ -68,12 +68,6 @@ public class BookToolQueryServiceTests
                 Items = []
             }
         ]);
-
-        Mock<IGuidelinesService> guidelinesServiceMock = new();
-        guidelinesServiceMock.Setup(m => m.Guidelines).Returns((IReadOnlyList<GuidelineListing>)[]);
-
-        SiteSettings siteSettings = new() { BaseUrl = "https://essentialcsharp.com" };
-        BookToolQueryService service = new(siteMappingServiceMock.Object, guidelinesServiceMock.Object, Options.Create(siteSettings));
 
         ChapterListToolResult result = service.GetChapterList();
 
@@ -158,11 +152,17 @@ public class BookToolQueryServiceTests
         (BookToolQueryService service, _, _) = CreateService(mappings);
 
         NavigationContextToolResult result = service.GetNavigationContext("section-b");
+        BookSectionReferenceResult previous = result.Previous
+            ?? throw new InvalidOperationException("Expected a previous section.");
+        BookSectionReferenceResult next = result.Next
+            ?? throw new InvalidOperationException("Expected a next section.");
+        BookSectionReferenceResult parent = result.Parent
+            ?? throw new InvalidOperationException("Expected a parent section.");
 
         await Assert.That(result.Section.Key).IsEqualTo("section-b");
-        await Assert.That(result.Previous!.Key).IsEqualTo("section-a");
-        await Assert.That(result.Next!.Key).IsEqualTo("section-c");
-        await Assert.That(result.Parent!.Key).IsEqualTo("chapter-1");
+        await Assert.That(previous.Key).IsEqualTo("section-a");
+        await Assert.That(next.Key).IsEqualTo("section-c");
+        await Assert.That(parent.Key).IsEqualTo("chapter-1");
     }
 
     [Test]
