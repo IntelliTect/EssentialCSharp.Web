@@ -1,7 +1,7 @@
 {
   "version": 1,
   "cursors": {
-    "labelling_after": null,
+    "labelling_after": 1489,
     "investigation_after": 1489
   },
   "issues": [
@@ -48,6 +48,12 @@
       "area": "repo_assist_prs",
       "checked_at": "2026-10-10",
       "result": "Reviewed seven open Repo Assist PRs; no actionable failing checks or safe branch update available.",
+      "follow_up": null
+    },
+    {
+      "area": "qa",
+      "checked_at": "2026-10-10",
+      "result": "Applied bug and needs investigation labels to open CI issues #1476 and #1489.",
       "follow_up": null
     },
     {
