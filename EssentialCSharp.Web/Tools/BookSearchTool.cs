@@ -322,6 +322,18 @@ public sealed class BookSearchTool
 
         List<RelatedSectionMatchTextResult> relatedSections = [];
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { mapping.RawHeading };
+        Dictionary<int, Dictionary<string, SiteMapping>> mappingsByChapter = [];
+        foreach (SiteMapping candidate in _SiteMappingService.SiteMappings)
+        {
+            if (!mappingsByChapter.TryGetValue(candidate.ChapterNumber, out Dictionary<string, SiteMapping>? chapterMappings))
+            {
+                chapterMappings = new Dictionary<string, SiteMapping>(StringComparer.OrdinalIgnoreCase);
+                mappingsByChapter[candidate.ChapterNumber] = chapterMappings;
+            }
+
+            chapterMappings.TryAdd(candidate.RawHeading, candidate);
+        }
+
         foreach (var r in results)
         {
             string heading = r.Record.Heading ?? "";
@@ -329,9 +341,10 @@ public sealed class BookSearchTool
             if (relatedSections.Count >= maxResults) break;
 
             // Find the SiteMapping for this heading to get the link
-            SiteMapping? relatedMapping = _SiteMappingService.SiteMappings
-                .FirstOrDefault(m => m.RawHeading.Equals(heading, StringComparison.OrdinalIgnoreCase)
-                                  && m.ChapterNumber == (r.Record.ChapterNumber ?? 0));
+            SiteMapping? relatedMapping = mappingsByChapter.TryGetValue(r.Record.ChapterNumber ?? 0, out Dictionary<string, SiteMapping>? chapterMappings)
+                && chapterMappings.TryGetValue(heading, out SiteMapping? candidate)
+                ? candidate
+                : null;
 
             string link = relatedMapping is not null
                 ? $"`/{relatedMapping.Keys.FirstOrDefault() ?? relatedMapping.PrimaryKey}#{relatedMapping.AnchorId}`"
