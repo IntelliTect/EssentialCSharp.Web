@@ -2,7 +2,7 @@
   "version": 1,
   "cursors": {
     "labelling_after": 1489,
-    "investigation_after": 1489
+    "investigation_after": 796
   },
   "issues": [
     {
@@ -40,26 +40,44 @@
       "state": "commented",
       "updated_at": "2026-10-10",
       "note": "Classified the Shared.Models 1.1.1.19492 CI failure as a private-feed/dependency investigation; requested the first failed CI step and error."
+    },
+    {
+      "number": 1466,
+      "state": "resolution_recommended",
+      "updated_at": "2026-10-11",
+      "note": "Production deploy checkout is present on main; commented with evidence and recommended closure."
+    },
+    {
+      "number": 796,
+      "state": "resolution_recommended",
+      "updated_at": "2026-10-11",
+      "note": "OAuth state error was addressed by merged PR #797; commented with evidence and recommended closure."
     }
   ],
   "fixes": [],
   "checks": [
     {
-      "area": "repo_assist_prs",
+      "area": "code",
       "checked_at": "2026-10-10",
+      "result": "No new improvement submitted; existing PR #1490 covers the clearest low-risk cache optimization.",
+      "follow_up": null
+    },
+    {
+      "area": "repo_assist_prs",
+      "checked_at": "2026-10-11",
       "result": "Reviewed seven open Repo Assist PRs; no actionable failing checks or safe branch update available.",
       "follow_up": null
     },
     {
       "area": "qa",
-      "checked_at": "2026-10-10",
-      "result": "Applied bug and needs investigation labels to open CI issues #1476 and #1489.",
+      "checked_at": "2026-10-11",
+      "result": "Labelled unlabelled CI issues #1476 and #1489; verified #1466 is fixed on main and #796 is addressed by merged #797.",
       "follow_up": null
     },
     {
-      "area": "code",
-      "checked_at": "2026-10-10",
-      "result": "No new improvement submitted; existing PR #1490 covers the clearest low-risk cache optimization.",
+      "area": "build",
+      "checked_at": "2026-10-11",
+      "result": "Reviewed merged TUnit update #1488 and deployment workflow; no additional dependency, CI, or build change was justified.",
       "follow_up": null
     }
   ],
@@ -69,6 +87,16 @@
       "task": 2,
       "item": "#1489",
       "note": "Monitor for the first failing CI step and private-feed availability confirmation."
+    },
+    {
+      "task": 2,
+      "item": "#1466",
+      "note": "Maintainer should close after verifying the production checkout fix on main."
+    },
+    {
+      "task": 2,
+      "item": "#796",
+      "note": "Maintainer should close after verifying merged OAuth fix #797."
     }
   ]
 }
