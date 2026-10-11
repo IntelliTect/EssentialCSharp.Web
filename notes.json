@@ -2,7 +2,7 @@
   "version": 1,
   "cursors": {
     "labelling_after": 1489,
-    "investigation_after": 796
+    "investigation_after": 1492
   },
   "issues": [
     {
@@ -52,9 +52,24 @@
       "state": "resolution_recommended",
       "updated_at": "2026-10-11",
       "note": "OAuth state error was addressed by merged PR #797; commented with evidence and recommended closure."
+    },
+    {
+      "number": 1491,
+      "state": "commented",
+      "updated_at": "2026-10-11",
+      "note": "Traced accessibility-review ERR_CONNECTION_REFUSED to missing app readiness wait; created focused workflow fix and noted existing #1425 overlap."
     }
   ],
-  "fixes": [],
+  "fixes": [
+    {
+      "issue": 1491,
+      "pr": null,
+      "branch": "repo-assist/fix-issue-1491-accessibility-readiness",
+      "status": "open",
+      "updated_at": "2026-10-11",
+      "note": "Added a 60-second local readiness poll and startup-log failure output to accessibility-review workflow; draft PR created, with existing #1425 requiring maintainer comparison."
+    }
+  ],
   "checks": [
     {
       "area": "code",
@@ -63,26 +78,37 @@
       "follow_up": null
     },
     {
-      "area": "repo_assist_prs",
+      "area": "build",
       "checked_at": "2026-10-11",
-      "result": "Reviewed seven open Repo Assist PRs; no actionable failing checks or safe branch update available.",
+      "result": "Reviewed merged TUnit update #1488 and deployment workflow; no additional dependency, CI, or build change was justified.",
       "follow_up": null
     },
     {
       "area": "qa",
       "checked_at": "2026-10-11",
-      "result": "Labelled unlabelled CI issues #1476 and #1489; verified #1466 is fixed on main and #796 is addressed by merged #797.",
+      "result": "Investigated accessibility-review failure #1491; ERR_CONNECTION_REFUSED matches a startup race, and a readiness gate was added.",
+      "follow_up": "Compare the focused readiness change with open accessibility startup PR #1425."
+    },
+    {
+      "area": "docs",
+      "checked_at": "2026-10-11",
+      "result": "Reviewed accessibility-review workflow maintenance; added explicit startup readiness polling and log output on timeout.",
       "follow_up": null
     },
     {
-      "area": "build",
+      "area": "repo_assist_prs",
       "checked_at": "2026-10-11",
-      "result": "Reviewed merged TUnit update #1488 and deployment workflow; no additional dependency, CI, or build change was justified.",
-      "follow_up": null
+      "result": "Reviewed seven open Repo Assist PRs and identified existing accessibility startup PR #1425 while preparing the narrower #1491 readiness fix.",
+      "follow_up": "Maintainer should compare or consolidate the overlapping accessibility workflow changes."
     }
   ],
   "completed_actions": [],
   "priorities": [
+    {
+      "task": 3,
+      "item": "#1491",
+      "note": "Compare or consolidate the readiness-gate fix with existing open accessibility startup PR #1425."
+    },
     {
       "task": 2,
       "item": "#1489",
