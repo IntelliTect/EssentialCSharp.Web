@@ -2,7 +2,7 @@
   "version": 1,
   "cursors": {
     "labelling_after": 1492,
-    "investigation_after": 1492
+    "investigation_after": 1494
   },
   "issues": [
     {
@@ -64,6 +64,12 @@
       "state": "commented",
       "updated_at": "2026-10-12",
       "note": "Identified as a duplicate accessibility-review failure report; canonical investigation is #1491 and existing startup PRs #1424/#1425."
+    },
+    {
+      "number": 1494,
+      "state": "commented",
+      "updated_at": "2026-10-12",
+      "note": "CI Failure Doctor Conclusion job failed because the agent emitted no terminal safe-output action; strengthened reporting instructions and opened a draft fix PR."
     }
   ],
   "fixes": [
@@ -74,19 +80,27 @@
       "status": "open",
       "updated_at": "2026-10-11",
       "note": "Added a 60-second local readiness poll and startup-log failure output to accessibility-review workflow; draft PR created, with existing #1425 requiring maintainer comparison."
+    },
+    {
+      "issue": 1494,
+      "pr": null,
+      "branch": "repo-assist/fix-issue-1494-ci-doctor-terminal-output",
+      "status": "open",
+      "updated_at": "2026-10-12",
+      "note": "Required CI Failure Doctor to invoke exactly one terminal safe-output tool; compiled and validated ci-doctor workflow."
     }
   ],
   "checks": [
     {
       "area": "code",
       "checked_at": "2026-10-12",
-      "result": "Reviewed Program.cs, AISearchService, and project configuration; no distinct low-risk coding improvement was ready without duplicating existing PRs or expanding scope.",
+      "result": "Reviewed current application and workflow context; no separate low-risk coding improvement was justified beyond the focused CI Doctor reliability fix.",
       "follow_up": null
     },
     {
       "area": "build",
-      "checked_at": "2026-10-11",
-      "result": "Reviewed merged TUnit update #1488 and deployment workflow; no additional dependency, CI, or build change was justified.",
+      "checked_at": "2026-10-12",
+      "result": "CI Failure Doctor workflow source was strengthened and compiled with validation; no additional build or dependency investment was justified.",
       "follow_up": null
     },
     {
@@ -134,6 +148,11 @@
       "task": 2,
       "item": "#796",
       "note": "Maintainer should close after verifying merged OAuth fix #797."
+    },
+    {
+      "task": 3,
+      "item": "#1494",
+      "note": "Maintainer should review the focused CI Failure Doctor terminal-output fix."
     }
   ]
 }
