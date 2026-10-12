@@ -2,7 +2,7 @@
 description: |
   This workflow is an automated accessibility compliance checker for web applications.
   Reviews websites against WCAG 2.2 guidelines using Playwright browser automation.
-  Identifies accessibility issues and creates GitHub discussions or issues with detailed
+  Identifies accessibility issues and creates GitHub issues with detailed
   findings and remediation recommendations. Helps maintain accessibility standards
   continuously throughout the development cycle.
 
@@ -14,7 +14,6 @@ permissions:
   actions: read
   contents: read
   copilot-requests: write
-  discussions: read
   issues: read
   pull-requests: read
   security-events: read
@@ -24,9 +23,9 @@ network: defaults
 safe-outputs:
   mentions: false
   allowed-github-references: []
-  create-discussion:
+  create-issue:
     title-prefix: "[accessibility-review] "
-    category: "q-a"
+    labels: [accessibility, automation]
     max: 5
   add-comment:
     max: 5
@@ -85,7 +84,7 @@ Steps:
 
 2. Review the source code of the application to look for accessibility issues in the code.  Use the Grep, LS, Read, etc. tools.
 
-3. Use the GitHub MCP tool to create discussions for any accessibility problems you find.  Each discussion should include:
+3. Use the GitHub MCP tool to create issues for any accessibility problems you find.  Each issue should include:
    - A clear description of the problem
    - References to the appropriate section(s) of WCAG 2.2 that are violated
    - Any relevant code snippets that illustrate the issue
