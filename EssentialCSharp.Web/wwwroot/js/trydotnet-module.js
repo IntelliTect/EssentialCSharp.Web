@@ -408,6 +408,12 @@ export function useTryDotNet() {
         trackTryEvent('TryCodeRunnerRequested', eventProperties);
 
         try {
+            if (editorElement?.contentWindow) {
+                editorElement.contentWindow.postMessage({
+                    type: 'TryDotNetCorrelationContext',
+                    correlationContext: getCorrelationContext()
+                }, new URL(getTryDotNetOrigin()).origin);
+            }
             await withTimeout(session.run(), RUN_TIMEOUT, ERROR_MESSAGES.runTimeout);
             const durationMs = Math.round(performance.now() - startedAt);
             trackTryEvent('TryCodeRunnerCompleted', { ...eventProperties, success: 'true' }, { durationMs });
