@@ -106,12 +106,12 @@ class ConsentManager {
                     <p>We use essential cookies to keep the site secure and optional analytics cookies to understand site usage. See our <a href="/cookie-policy">Cookie Policy</a> and <a href="https://intellitect.com/about/privacy-policy/" target="_blank" rel="noopener noreferrer">Privacy Policy</a> for details.</p>
                 </div>
                 <div class="consent-banner-actions">
-                    <button id="consent-reject-all" class="btn btn-outline-secondary me-2">Reject All</button>
-                    <button id="consent-accept-all" class="btn btn-primary me-2">Accept All</button>
-                    <button id="consent-customize" class="btn btn-outline-primary">Customize</button>
+                    <button id="consent-reject-all" class="btn btn-outline-secondary me-2" type="button">Reject All</button>
+                    <button id="consent-accept-all" class="btn btn-primary me-2" type="button">Accept All</button>
+                    <button id="consent-customize" class="btn btn-outline-primary" type="button" aria-expanded="false" aria-controls="consent-details">Customize</button>
                 </div>
             </div>
-            <div id="consent-details" class="consent-details" style="display: none;">
+            <div id="consent-details" class="consent-details" hidden>
                 <div class="consent-category">
                     <label class="consent-switch">
                         <input type="checkbox" id="consent-essential" checked disabled>
@@ -169,16 +169,17 @@ class ConsentManager {
 
     showCustomizeOptions() {
         const details = document.getElementById('consent-details');
+        const customizeButton = document.getElementById('consent-customize');
         if (details) {
-            const isExpanded = details.style.display !== 'none' && details.style.display !== '';
+            const isExpanded = !details.hidden;
+            details.hidden = isExpanded;
+            customizeButton?.setAttribute('aria-expanded', String(!isExpanded));
             if (isExpanded) {
-                details.style.display = 'none';
                 return;
             }
-            details.style.display = 'block';
-            
+
             // Load current preferences into checkboxes
-            document.getElementById('consent-analytics').checked = 
+            document.getElementById('consent-analytics').checked =
                 this.consentState.analytics_storage === 'granted';
         }
     }
@@ -308,6 +309,10 @@ class ConsentManager {
                 display: flex;
                 gap: 10px;
                 flex-wrap: wrap;
+            }
+
+            .consent-details[hidden] {
+                display: none;
             }
 
             .consent-details {

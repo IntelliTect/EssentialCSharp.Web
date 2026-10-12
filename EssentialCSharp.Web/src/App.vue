@@ -21,6 +21,10 @@ function updateLayoutClasses() {
     siteLayout.classList.toggle("has-sidebar", Boolean(shell.sidebarShown) && !shell.smallScreen);
 }
 
+function updateSidebarToggleState() {
+    sidebarToggleButton?.setAttribute("aria-expanded", String(Boolean(shell.sidebarShown)));
+}
+
 function handleSidebarToggleClick(event) {
     event.preventDefault();
     shell.toggleSidebar();
@@ -50,6 +54,7 @@ onMounted(() => {
     document.addEventListener("click", handleCopyLinkClick);
     window.copyToClipboard = shell.copyToClipboard;
     updateLayoutClasses();
+    updateSidebarToggleState();
 });
 
 onUnmounted(() => {
@@ -58,7 +63,10 @@ onUnmounted(() => {
     delete window.copyToClipboard;
 });
 
-watch(() => shell.sidebarShown, updateLayoutClasses);
+watch(() => shell.sidebarShown, () => {
+    updateLayoutClasses();
+    updateSidebarToggleState();
+});
 watch(() => shell.smallScreen, updateLayoutClasses);
 </script>
 

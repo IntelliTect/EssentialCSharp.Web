@@ -244,6 +244,11 @@ a:hover {
   background-color: transparent;
 }
 
+.menu-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
 @media only screen and (max-width: 768px) {
   .menu-btn {
     margin-right: 4px;
@@ -557,6 +562,19 @@ a:hover {
     /*prevent body from being scrollable when sidebar is open*/
     overflow-y: hidden;
   }
+}
+
+.toc-filter-toggle {
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.toc-filter-toggle:focus-visible {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
 }
 
 .filter-input-container {
