@@ -2,9 +2,21 @@
   "version": 1,
   "cursors": {
     "labelling_after": 1496,
-    "investigation_after": 1496
+    "investigation_after": 1502
   },
   "issues": [
+    {
+      "number": 1501,
+      "state": "commented",
+      "updated_at": "2026-10-13",
+      "note": "Identified workflow_run safe-output targeting defect; created focused CI Doctor fix PR."
+    },
+    {
+      "number": 1502,
+      "state": "commented",
+      "updated_at": "2026-10-13",
+      "note": "Reproduced clean local build with HtmlAgilityPack 1.13.1; requested earliest failed CI step before package changes."
+    },
     {
       "number": 494,
       "state": "awaiting_clarification",
@@ -80,6 +92,14 @@
   ],
   "fixes": [
     {
+      "issue": 1501,
+      "pr": null,
+      "branch": "repo-assist/fix-issue-1501-ci-doctor-comment-target",
+      "status": "open",
+      "updated_at": "2026-10-13",
+      "note": "Configured add-comment target * in ci-doctor source and lock; draft PR intent accepted."
+    },
+    {
       "issue": 1491,
       "pr": null,
       "branch": "repo-assist/fix-issue-1491-accessibility-readiness",
@@ -99,15 +119,21 @@
   "checks": [
     {
       "area": "code",
-      "checked_at": "2026-10-12",
-      "result": "Reviewed current application and workflow context; no separate low-risk coding improvement was justified beyond the focused CI Doctor reliability fix.",
-      "follow_up": null
+      "checked_at": "2026-10-13",
+      "result": "Investigated HtmlAgilityPack 1.13.1 report; full solution build passed after public-feed restore, so no application compatibility fix is justified.",
+      "follow_up": "Await the failed CI run earliest meaningful error."
     },
     {
       "area": "build",
-      "checked_at": "2026-10-12",
-      "result": "CI Failure Doctor workflow source was strengthened and compiled with validation; no additional build or dependency investment was justified.",
+      "checked_at": "2026-10-13",
+      "result": "dotnet restore and Release solution build passed with AccessToNugetFeed=false; gh aw compile ci-doctor --no-emit passed with no warnings.",
       "follow_up": null
+    },
+    {
+      "area": "repo_assist_prs",
+      "checked_at": "2026-10-13",
+      "result": "Created focused draft CI Failure Doctor comment-target fix for #1501 and commented on #1501 and #1502.",
+      "follow_up": "Maintainer review remains pending for the new workflow fix."
     },
     {
       "area": "qa",
@@ -120,16 +146,20 @@
       "checked_at": "2026-10-11",
       "result": "Reviewed accessibility-review workflow maintenance; added explicit startup readiness polling and log output on timeout.",
       "follow_up": null
-    },
-    {
-      "area": "repo_assist_prs",
-      "checked_at": "2026-10-13",
-      "result": "Reviewed all seven open Repo Assist PRs and available checks/reviews; no current failing change or maintainer activity required an update.",
-      "follow_up": "Maintainer review remains pending for the open PRs."
     }
   ],
   "completed_actions": [],
   "priorities": [
+    {
+      "task": 3,
+      "item": "#1501",
+      "note": "Maintainer review is needed for the CI Failure Doctor explicit comment-target fix."
+    },
+    {
+      "task": 2,
+      "item": "#1502",
+      "note": "Confirm the earliest failed CI step before deciding whether the HtmlAgilityPack update needs action."
+    },
     {
       "task": 2,
       "item": "#1492",
