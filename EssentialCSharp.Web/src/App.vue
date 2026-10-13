@@ -22,7 +22,19 @@ function updateLayoutClasses() {
 }
 
 function updateSidebarToggleState() {
-    sidebarToggleButton?.setAttribute("aria-expanded", String(Boolean(shell.sidebarShown)));
+    if (!sidebarToggleButton) {
+        return;
+    }
+
+    const isShown = Boolean(shell.sidebarShown);
+    sidebarToggleButton.setAttribute("aria-expanded", String(isShown));
+    // #sidebar only exists while shown, so only reference it then.
+    if (isShown) {
+        sidebarToggleButton.setAttribute("aria-controls", "sidebar");
+    }
+    else {
+        sidebarToggleButton.removeAttribute("aria-controls");
+    }
 }
 
 function handleSidebarToggleClick(event) {

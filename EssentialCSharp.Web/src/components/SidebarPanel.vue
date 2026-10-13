@@ -83,7 +83,7 @@ function isActivePath(paths) {
                         type="button"
                         class="toc-filter-toggle"
                         aria-label="Filter contents"
-                        aria-controls="toc-filter"
+                        :aria-controls="shell.enableTocFilter === 'filter' ? 'toc-filter' : null"
                         :aria-expanded="shell.enableTocFilter === 'filter'"
                         @click="shell.enableTocFilter = shell.enableTocFilter === 'filter' ? 'none' : 'filter'"
                     >
@@ -99,8 +99,8 @@ function isActivePath(paths) {
                         class="filter-input"
                         placeholder="Search sections..."
                     />
-                    <button type="button" class="filter-btn" aria-label="Search sections">
-                        <i class="fa fa-search icon-light" aria-hidden="true" />
+                    <button type="button" class="filter-btn" aria-hidden="true" tabindex="-1">
+                        <i class="fa fa-search icon-light" />
                     </button>
                 </div>
             </div>
