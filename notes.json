@@ -1,8 +1,8 @@
 {
   "version": 1,
   "cursors": {
-    "labelling_after": 1492,
-    "investigation_after": 1494
+    "labelling_after": 1496,
+    "investigation_after": 1496
   },
   "issues": [
     {
@@ -70,6 +70,12 @@
       "state": "commented",
       "updated_at": "2026-10-12",
       "note": "CI Failure Doctor Conclusion job failed because the agent emitted no terminal safe-output action; strengthened reporting instructions and opened a draft fix PR."
+    },
+    {
+      "number": 1496,
+      "state": "awaiting_approval",
+      "updated_at": "2026-10-13",
+      "note": "Fallback issue contains the protected-file CI Failure Doctor fix; awaiting maintainer review."
     }
   ],
   "fixes": [
@@ -117,9 +123,9 @@
     },
     {
       "area": "repo_assist_prs",
-      "checked_at": "2026-10-11",
-      "result": "Reviewed seven open Repo Assist PRs and identified existing accessibility startup PR #1425 while preparing the narrower #1491 readiness fix.",
-      "follow_up": "Maintainer should compare or consolidate the overlapping accessibility workflow changes."
+      "checked_at": "2026-10-13",
+      "result": "Reviewed all seven open Repo Assist PRs and available checks/reviews; no current failing change or maintainer activity required an update.",
+      "follow_up": "Maintainer review remains pending for the open PRs."
     }
   ],
   "completed_actions": [],
@@ -153,6 +159,16 @@
       "task": 3,
       "item": "#1494",
       "note": "Maintainer should review the focused CI Failure Doctor terminal-output fix."
+    },
+    {
+      "task": 2,
+      "item": "#1496",
+      "note": "Maintainer review is needed for the protected-file CI Failure Doctor fallback issue."
+    },
+    {
+      "task": 2,
+      "item": "#1493",
+      "note": "Maintainer should compare the protected-file accessibility readiness fix with existing startup work."
     }
   ]
 }
