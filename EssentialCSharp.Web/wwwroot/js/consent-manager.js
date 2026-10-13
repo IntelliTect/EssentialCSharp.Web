@@ -99,10 +99,12 @@ class ConsentManager {
         const banner = document.createElement('div');
         banner.id = 'consent-banner';
         banner.className = 'consent-banner';
+        banner.setAttribute('role', 'region');
+        banner.setAttribute('aria-label', 'Cookie preferences');
         banner.innerHTML = `
             <div class="consent-banner-content">
                 <div class="consent-banner-text">
-                    <h3>Cookie Preferences</h3>
+                    <h2>Cookie Preferences</h2>
                     <p>We use essential cookies to keep the site secure and optional analytics cookies to understand site usage. See our <a href="/cookie-policy">Cookie Policy</a> and <a href="https://intellitect.com/about/privacy-policy/" target="_blank" rel="noopener noreferrer">Privacy Policy</a> for details.</p>
                 </div>
                 <div class="consent-banner-actions">
@@ -293,7 +295,7 @@ class ConsentManager {
                 gap: 20px;
             }
 
-            .consent-banner-text h3 {
+            .consent-banner-text h2 {
                 margin: 0 0 8px 0;
                 font-size: 1.2rem;
                 color: #333;
@@ -303,6 +305,12 @@ class ConsentManager {
                 margin: 0;
                 color: #666;
                 font-size: 0.95rem;
+            }
+
+            /* The site-wide "a { text-decoration: none }" leaves these links
+               distinguishable from the text only by color (WCAG 1.4.1). */
+            .consent-banner-text p a {
+                text-decoration: underline;
             }
 
             .consent-banner-actions {

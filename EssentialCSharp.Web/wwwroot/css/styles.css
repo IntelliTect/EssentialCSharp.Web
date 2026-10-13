@@ -196,6 +196,13 @@ a:hover {
   margin: 0 !important;
 }
 
+/* DocSearch's default muted gray (#969faf) is ~2.3:1 on its button and key
+   backgrounds; darken it to meet the 4.5:1 minimum (WCAG 1.4.3). */
+.DocSearch-Button,
+.DocSearch-Container {
+  --docsearch-muted-color: #4f5666;
+}
+
 .DocSearch-Container {
   font-family: system-ui, -apple-system, "Segoe UI", Arial, Helvetica, sans-serif !important;
 }
