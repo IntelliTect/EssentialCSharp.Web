@@ -42,7 +42,6 @@ public class WordCountService : IWordCountService
         int bookWords = 0;
         int currentChapter = -1;
         int chapterWords = 0;
-        int chapterBookOffset = 0; // words before first page of current chapter in book
 
         foreach (SiteMapping mapping in orderedMappings)
         {
@@ -64,7 +63,6 @@ public class WordCountService : IWordCountService
                     _chapterWordCounts[currentChapter] = chapterWords;
                 }
                 currentChapter = mapping.ChapterNumber;
-                chapterBookOffset = bookWords;
                 chapterWords = 0;
             }
 
