@@ -53,6 +53,24 @@
         return clarityLoadPromise;
     }
 
+    function clearClarityCookies() {
+        const clarityCookies = ['_clck', '_clsk', 'CLID', 'ANONCHK', 'MR', 'MUID', 'SM'];
+        const expired = 'expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        const secure = window.location.protocol === 'https:' ? ';Secure' : '';
+        const hostname = window.location.hostname;
+        const parts = hostname.split('.');
+        const domains = [hostname];
+        for (let i = 0; i < parts.length - 1; i++) {
+            domains.push('.' + parts.slice(i).join('.'));
+        }
+        clarityCookies.forEach(name => {
+            document.cookie = `${name}=;${expired};path=/${secure}`;
+            domains.forEach(domain => {
+                document.cookie = `${name}=;${expired};path=/;domain=${domain}${secure}`;
+            });
+        });
+    }
+
     function updateConsent() {
         if (typeof window.clarity === "function") {
             try {
@@ -68,6 +86,7 @@
     function syncConsentState() {
         if (!hasAnalyticsConsent()) {
             updateConsent();
+            clearClarityCookies();
             return;
         }
 

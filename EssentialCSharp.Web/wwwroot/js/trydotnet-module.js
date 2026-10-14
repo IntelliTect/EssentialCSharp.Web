@@ -31,6 +31,15 @@ function getCorrelationContext() {
     return null;
 }
 
+function getTraceHeaders() {
+    const headers = {};
+    const correlationContext = getCorrelationContext();
+    if (typeof correlationContext === 'string' && correlationContext.length > 0) {
+        headers.traceparent = correlationContext;
+    }
+    return headers;
+}
+
 function trackTryEvent(name, properties = {}, measurements = {}) {
     const appInsights = getAppInsights();
     if (!appInsights || typeof appInsights.trackEvent !== 'function') {
@@ -241,7 +250,7 @@ export function useTryDotNet() {
         try {
             // Check the actual script endpoint rather than the bare origin,
             // which may not have a handler and would return 404.
-            const res = await fetch(`${origin}/api/trydotnet.min.js`, {
+            await fetch(`${origin}/api/trydotnet.min.js`, {
                 method: 'HEAD',
                 mode: 'no-cors',
                 signal: controller.signal,
@@ -399,6 +408,12 @@ export function useTryDotNet() {
         trackTryEvent('TryCodeRunnerRequested', eventProperties);
 
         try {
+            if (editorElement?.contentWindow) {
+                editorElement.contentWindow.postMessage({
+                    type: 'TryDotNetCorrelationContext',
+                    correlationContext: getCorrelationContext()
+                }, new URL(getTryDotNetOrigin()).origin);
+            }
             await withTimeout(session.run(), RUN_TIMEOUT, ERROR_MESSAGES.runTimeout);
             const durationMs = Math.round(performance.now() - startedAt);
             trackTryEvent('TryCodeRunnerCompleted', { ...eventProperties, success: 'true' }, { durationMs });
@@ -489,7 +504,9 @@ export function useTryDotNet() {
      * @returns {Promise<string>} The listing source code (extracted snippet)
      */
     async function fetchListingCode(chapter, listing) {
-        const response = await fetch(`/api/ListingSourceCode/chapter/${chapter}/listing/${listing}`);
+        const response = await fetch(`/api/ListingSourceCode/chapter/${chapter}/listing/${listing}`, {
+            headers: getTraceHeaders()
+        });
         if (!response.ok) {
             throw new Error(ERROR_MESSAGES.fetchFailed);
         }

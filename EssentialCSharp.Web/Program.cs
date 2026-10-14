@@ -15,6 +15,7 @@ using EssentialCSharp.Web.Services.Referrals;
 using EssentialCSharp.Web.Tools;
 using Mailjet.Client;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -45,13 +46,11 @@ public partial class Program
         builder.Services.AddHealthChecks()
             .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
 
-        // OpenTelemetry — two mutually exclusive export paths:
-        //   Production:  Azure Monitor (Application Insights) via APPLICATIONINSIGHTS_CONNECTION_STRING
-        //   Local/Aspire: OTLP to Aspire Dashboard via OTEL_EXPORTER_OTLP_ENDPOINT
-        // Never both simultaneously — that would cause duplicate telemetry in App Insights.
+        // Prefer Aspire's OTLP endpoint when present; otherwise export to Azure Monitor.
+        // This keeps local traces in the dashboard even when a developer has an App Insights connection string configured.
         string? appInsightsConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
-        bool useAzureMonitor = !string.IsNullOrWhiteSpace(appInsightsConnectionString);
         bool useOtlp = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
+        bool useAzureMonitor = !useOtlp && !string.IsNullOrWhiteSpace(appInsightsConnectionString);
         bool profilerSupportedPlatform = OperatingSystem.IsWindows() || OperatingSystem.IsLinux();
         bool profilerSkippedUnsupportedPlatform = false;
 
@@ -147,9 +146,11 @@ public partial class Program
 
         builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure(5)));
 
-        // Must be registered before AddDataProtection(): hosted services start in registration
-        // order, and DataProtectionHostedService reads DataProtectionKeys during startup.
-        builder.Services.AddHostedService<DatabaseMigrationService>();
+        if (builder.Environment.IsDevelopment())
+        {
+            // Must run before DataProtectionHostedService, which reads DataProtectionKeys.
+            builder.Services.AddHostedService<DatabaseMigrationService>();
+        }
 
         // Data Protection — persist keys to SQL Server so they survive container restarts.
         // SetApplicationName ensures the discriminator is stable across container hostname changes.
@@ -455,7 +456,9 @@ public partial class Program
                 ? configuredBaseUri.Host[4..]
                 : configuredBaseUri.Host;
             string wwwHost = $"www.{apexHost}";
-            string redirectAuthority = new UriBuilder(configuredBaseUri) { Host = apexHost }.Uri.GetLeftPart(UriPartial.Authority);
+            Uri apexUri = new UriBuilder(configuredBaseUri) { Host = apexHost }.Uri;
+            string redirectScheme = apexUri.Scheme;
+            HostString redirectHost = new HostString(apexUri.Authority);
 
             app.UseExceptionHandler(exceptionApp =>
             {
@@ -532,7 +535,7 @@ public partial class Program
             {
                 if (string.Equals(context.Request.Host.Host, wwwHost, StringComparison.OrdinalIgnoreCase))
                 {
-                    string redirectUrl = $"{redirectAuthority}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
+                    string redirectUrl = UriHelper.BuildAbsolute(redirectScheme, redirectHost, context.Request.PathBase, context.Request.Path, context.Request.QueryString);
                     context.Response.Redirect(redirectUrl, permanent: true);
                     return;
                 }
