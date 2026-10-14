@@ -78,8 +78,8 @@ public class ListingSourceCodeServiceTests
             await Assert.That(result).IsNotNull();
             await Assert.That(result.FileExtension).IsEqualTo("cs");
             await Assert.That(result.Content).Contains("BookContent filename");
-            await Assert.That(chapterListings.Count).IsEqualTo(1);
-            await Assert.That(chapterListings[0].ListingNumber).IsEqualTo(1);
+            ListingSourceCodeResponse listing = await Assert.That(chapterListings).HasSingleItem();
+            await Assert.That(listing.ListingNumber).IsEqualTo(1);
         }
     }
 
