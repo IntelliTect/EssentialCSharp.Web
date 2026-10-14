@@ -1,21 +1,32 @@
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using System.Text.RegularExpressions;
 
 namespace EssentialCSharp.Web.Services;
 
-public class RouteConfigurationService : IRouteConfigurationService
+public partial class RouteConfigurationService : IRouteConfigurationService
 {
+    [GeneratedRegex(@"\{[^}]+\}|\[[^\]]+\]")]
+    public static partial Regex RouteParameterRegex();
+
     private readonly IActionDescriptorCollectionProvider _ActionDescriptorCollectionProvider;
     private readonly HashSet<string> _StaticRoutes;
+    private readonly HashSet<string> _IndexableRoutes;
 
     public RouteConfigurationService(IActionDescriptorCollectionProvider actionDescriptorCollectionProvider)
     {
         _ActionDescriptorCollectionProvider = actionDescriptorCollectionProvider;
         _StaticRoutes = ExtractStaticRoutes();
+        _IndexableRoutes = ExtractIndexableRoutes();
     }
 
     public IReadOnlySet<string> GetStaticRoutes()
     {
         return _StaticRoutes;
+    }
+
+    public IReadOnlySet<string> GetIndexableRoutes()
+    {
+        return _IndexableRoutes;
     }
 
     private HashSet<string> ExtractStaticRoutes()
@@ -59,4 +70,14 @@ public class RouteConfigurationService : IRouteConfigurationService
 
         return routes;
     }
+
+    private HashSet<string> ExtractIndexableRoutes()
+    {
+        return _StaticRoutes
+            .Where(route => !route.StartsWith("api/", StringComparison.OrdinalIgnoreCase))
+            .Where(route => !RouteParameterRegex().IsMatch(route))
+            .Where(route => !route.Contains("identity", StringComparison.OrdinalIgnoreCase))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
 }
+

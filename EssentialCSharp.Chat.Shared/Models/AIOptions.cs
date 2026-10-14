@@ -3,6 +3,21 @@
 public class AIOptions
 {
     /// <summary>
+    /// Enables local AI backend usage when Azure endpoint is not configured.
+    /// </summary>
+    public bool UseLocalAI { get; set; }
+
+    /// <summary>
+    /// Local OpenAI-compatible endpoint (for example, Ollama).
+    /// </summary>
+    public string? LocalEndpoint { get; set; }
+
+    /// <summary>
+    /// Local chat model identifier (for example, qwen2.5-coder:7b).
+    /// </summary>
+    public string? LocalChatModel { get; set; }
+
+    /// <summary>
     /// The Azure OpenAI deployment name for text embedding generation.
     /// </summary>
     public string VectorGenerationDeploymentName { get; set; } = string.Empty;

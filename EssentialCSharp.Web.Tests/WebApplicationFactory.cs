@@ -1,5 +1,7 @@
 using System.Data.Common;
+using EssentialCSharp.Chat.Common.Services;
 using EssentialCSharp.Web.Data;
+using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using TUnit.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
@@ -37,6 +39,12 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
         {
             RemoveSingleOrNone(
                 services,
+                descriptor => descriptor.ServiceType == typeof(IHostedService) &&
+                    descriptor.ImplementationType == typeof(DatabaseMigrationService),
+                nameof(DatabaseMigrationService));
+
+            RemoveSingleOrNone(
+                services,
                 descriptor => descriptor.ServiceType ==
                     typeof(IDbContextOptionsConfiguration<EssentialCSharpWebContext>),
                 "IDbContextOptionsConfiguration<EssentialCSharpWebContext>");
@@ -45,14 +53,6 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
                 services,
                 descriptor => descriptor.ServiceType == typeof(DbConnection),
                 nameof(DbConnection));
-
-            // Remove DatabaseMigrationService: it calls MigrateAsync which conflicts
-            // with EnsureCreated() used below for the in-memory SQLite test database.
-            RemoveSingleOrNone(
-                services,
-                descriptor => descriptor.ServiceType == typeof(IHostedService) &&
-                    descriptor.ImplementationType == typeof(DatabaseMigrationService),
-                nameof(DatabaseMigrationService));
 
             // Keep per-scope connections so each request/test scope uses a fresh DbConnection,
             // which avoids locking issues from sharing one SqliteConnection instance.
@@ -98,6 +98,16 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
             services.RemoveAll<IListingSourceCodeService>();
             services.AddSingleton<IListingSourceCodeService>(
                 _ => TestListingSourceCodeServiceHelper.CreateService());
+
+            // Override IChatCompletionService with UnavailableChatService so tests are not
+            // affected by developer AI configuration or environment variables.
+            services.RemoveAll<IChatCompletionService>();
+            services.AddSingleton<IChatCompletionService, UnavailableChatService>();
+
+            // Keep chat contract tests off the real hCaptcha network path so failures reflect
+            // chat availability behavior rather than captcha service reachability.
+            services.RemoveAll<ICaptchaService>();
+            services.AddSingleton<ICaptchaService, PassingCaptchaService>();
         });
     }
 
@@ -158,5 +168,20 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
         }
 
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    }
+
+    private sealed class PassingCaptchaService : ICaptchaService
+    {
+        private static readonly HCaptchaResult _Success = new()
+        {
+            Success = true,
+            Hostname = "localhost"
+        };
+
+        public Task<HCaptchaResult?> VerifyAsync(string? response, CancellationToken cancellationToken = default) =>
+            Task.FromResult<HCaptchaResult?>(_Success);
+
+        public Task<HCaptchaResult?> VerifyAsync(string? response, string? remoteIp, CancellationToken cancellationToken = default) =>
+            Task.FromResult<HCaptchaResult?>(_Success);
     }
 }

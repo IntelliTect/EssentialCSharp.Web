@@ -15,6 +15,7 @@ using EssentialCSharp.Web.Services.Referrals;
 using EssentialCSharp.Web.Tools;
 using Mailjet.Client;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -45,13 +46,11 @@ public partial class Program
         builder.Services.AddHealthChecks()
             .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
 
-        // OpenTelemetry — two mutually exclusive export paths:
-        //   Production:  Azure Monitor (Application Insights) via APPLICATIONINSIGHTS_CONNECTION_STRING
-        //   Local/Aspire: OTLP to Aspire Dashboard via OTEL_EXPORTER_OTLP_ENDPOINT
-        // Never both simultaneously — that would cause duplicate telemetry in App Insights.
+        // Prefer Aspire's OTLP endpoint when present; otherwise export to Azure Monitor.
+        // This keeps local traces in the dashboard even when a developer has an App Insights connection string configured.
         string? appInsightsConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
-        bool useAzureMonitor = !string.IsNullOrWhiteSpace(appInsightsConnectionString);
         bool useOtlp = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
+        bool useAzureMonitor = !useOtlp && !string.IsNullOrWhiteSpace(appInsightsConnectionString);
         bool profilerSupportedPlatform = OperatingSystem.IsWindows() || OperatingSystem.IsLinux();
         bool profilerSkippedUnsupportedPlatform = false;
 
@@ -136,22 +135,21 @@ public partial class Program
         });
 
         builder.Services.AddTrustedForwardedHeaders(builder.Configuration, builder.Environment);
+        builder.Services.AddHttpsRedirection(options =>
+        {
+            options.HttpsPort = 443;
+        });
 
         ConfigurationManager configuration = builder.Configuration;
         string connectionString = builder.Configuration.GetConnectionString("EssentialCSharpWebContextConnection") ?? throw new InvalidOperationException("Connection string 'EssentialCSharpWebContextConnection' not found.");
 
-        // Create a logger that's accessible throughout the entire method
-        var loggerFactory = LoggerFactory.Create(loggingBuilder =>
-            loggingBuilder.AddConsole().SetMinimumLevel(LogLevel.Information));
-        var initialLogger = loggerFactory.CreateLogger<Program>();
-        if (profilerSkippedUnsupportedPlatform)
-            LogSkippingUnsupportedAzureMonitorProfiler(initialLogger, RuntimeInformation.OSDescription);
-
         builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure(5)));
 
-        // Must be registered before AddDataProtection(): hosted services start in registration
-        // order, and DataProtectionHostedService reads DataProtectionKeys during startup.
-        builder.Services.AddHostedService<DatabaseMigrationService>();
+        if (builder.Environment.IsDevelopment())
+        {
+            // Must run before DataProtectionHostedService, which reads DataProtectionKeys.
+            builder.Services.AddHostedService<DatabaseMigrationService>();
+        }
 
         // Data Protection — persist keys to SQL Server so they survive container restarts.
         // SetApplicationName ensures the discriminator is stable across container hostname changes.
@@ -274,11 +272,8 @@ public partial class Program
         builder.Services.AddSingleton<IBookToolQueryService, BookToolQueryService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
 
-        // Add AI Chat services
-        if (!builder.Environment.IsDevelopment())
-        {
-            builder.Services.AddAzureOpenAIServices(configuration);
-        }
+        // Add AI Chat services using configuration-driven backend selection.
+        builder.Services.AddConfiguredChatServices(configuration);
 
         // MCP server — always enabled, authenticated via opaque DB-backed tokens.
         builder.Services.AddScoped<McpApiTokenService>();
@@ -441,9 +436,12 @@ public partial class Program
              });
         }
 
-        loggerFactory.Dispose();
-
         WebApplication app = builder.Build();
+
+        if (profilerSkippedUnsupportedPlatform)
+            LogSkippingUnsupportedAzureMonitorProfiler(
+                app.Services.GetRequiredService<ILogger<Program>>(),
+                RuntimeInformation.OSDescription);
 
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
@@ -457,7 +455,9 @@ public partial class Program
                 ? configuredBaseUri.Host[4..]
                 : configuredBaseUri.Host;
             string wwwHost = $"www.{apexHost}";
-            string redirectAuthority = new UriBuilder(configuredBaseUri) { Host = apexHost }.Uri.GetLeftPart(UriPartial.Authority);
+            Uri apexUri = new UriBuilder(configuredBaseUri) { Host = apexHost }.Uri;
+            string redirectScheme = apexUri.Scheme;
+            HostString redirectHost = new HostString(apexUri.Authority);
 
             app.UseExceptionHandler(exceptionApp =>
             {
@@ -488,7 +488,12 @@ public partial class Program
                     }
                 });
             });
-            app.UseForwardedHeaders();
+            // Skip manual UseForwardedHeaders when ASPNETCORE_FORWARDEDHEADERS_ENABLED=true;
+            // the built-in startup filter already called it before this pipeline runs.
+            if (!string.Equals(app.Configuration["ASPNETCORE_FORWARDEDHEADERS_ENABLED"], "true", StringComparison.OrdinalIgnoreCase))
+            {
+                app.UseForwardedHeaders();
+            }
 
             // Build dynamic CSP — TryDotNet origin comes from runtime config
             string? tryDotNetOrigin = app.Configuration["TryDotNet:Origin"];
@@ -530,7 +535,7 @@ public partial class Program
             {
                 if (string.Equals(context.Request.Host.Host, wwwHost, StringComparison.OrdinalIgnoreCase))
                 {
-                    string redirectUrl = $"{redirectAuthority}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
+                    string redirectUrl = UriHelper.BuildAbsolute(redirectScheme, redirectHost, context.Request.PathBase, context.Request.Path, context.Request.QueryString);
                     context.Response.Redirect(redirectUrl, permanent: true);
                     return;
                 }
@@ -540,7 +545,10 @@ public partial class Program
         else
         {
             app.UseDeveloperExceptionPage();
-            app.UseForwardedHeaders();
+            if (!string.Equals(app.Configuration["ASPNETCORE_FORWARDEDHEADERS_ENABLED"], "true", StringComparison.OrdinalIgnoreCase))
+            {
+                app.UseForwardedHeaders();
+            }
         }
 
         app.MapHealthChecks("/health").DisableRateLimiting();
@@ -549,9 +557,9 @@ public partial class Program
             Predicate = r => r.Tags.Contains("live")
         }).DisableRateLimiting();
 
-        if (app.Environment.IsDevelopment())
+        if (!app.Environment.IsDevelopment())
         {
-        app.UseHttpsRedirection();
+            app.UseHttpsRedirection();
         }
         app.UseStaticFiles();
 
@@ -563,28 +571,13 @@ public partial class Program
 
         app.UseAuthentication();
 
+        // /mcp uses a named non-default scheme. Normalize the principal before
+        // rate limiting so valid MCP requests partition by MCP user while
+        // missing/invalid bearer requests fall back to the anonymous/IP bucket
+        // instead of inheriting the site's cookie principal.
         app.UseWhen(
             context => context.Request.Path.StartsWithSegments("/mcp"),
-            branch => branch.Use(async (context, next) =>
-            {
-                // /mcp uses a named non-default scheme. Normalize the principal before
-                // rate limiting so valid MCP requests partition by MCP user while
-                // missing/invalid bearer requests fall back to the anonymous/IP bucket
-                // instead of inheriting the site's cookie principal.
-                McpApiTokenService.ResolvedMcpApiToken? resolvedToken = null;
-                if (McpBearerAuthentication.TryGetRawToken(context.Request, out string? rawToken))
-                {
-                    var tokenService = context.RequestServices.GetRequiredService<McpApiTokenService>();
-                    resolvedToken = await tokenService.ResolveValidTokenAsync(rawToken, context.RequestAborted);
-                    McpBearerAuthentication.StoreResolution(context, resolvedToken);
-                }
-
-                context.User = resolvedToken is not null
-                    ? McpBearerAuthentication.CreatePrincipal(resolvedToken.UserId)
-                    : new ClaimsPrincipal(new ClaimsIdentity());
-
-                await next(context);
-            }));
+            branch => branch.UseMiddleware<McpTokenNormalizationMiddleware>());
 
         app.UseRateLimiter();
 

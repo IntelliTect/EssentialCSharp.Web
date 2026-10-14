@@ -23,6 +23,48 @@ public class SitemapXmlHelpersTests : IntegrationTestBase
     }
 
     [Test]
+    public async Task GenerateSitemapXml_DoesNotIncludeApiRoutes()
+    {
+        // Arrange
+        var siteMappings = new List<SiteMapping> { CreateSiteMapping(1, 1, true) };
+        var baseUrl = "https://test.example.com/";
+
+        // Act & Assert
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        SitemapXmlHelpers.GenerateSitemapXml(
+            siteMappings,
+            routeConfigurationService,
+            baseUrl,
+            out var nodes);
+
+        var allUrls = nodes.Select(n => n.Url).ToList();
+
+        // Verify no API routes are included (assert on the /api/ pattern, not specific controller names)
+        await Assert.That(allUrls).DoesNotContain(url => url.Contains("/api/", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Test]
+    public async Task GenerateSitemapXml_DoesNotIncludeParameterizedRoutes()
+    {
+        // Arrange
+        var siteMappings = new List<SiteMapping> { CreateSiteMapping(1, 1, true) };
+        var baseUrl = "https://test.example.com/";
+
+        // Act & Assert
+        var routeConfigurationService = Factory.Services.GetRequiredService<IRouteConfigurationService>();
+        SitemapXmlHelpers.GenerateSitemapXml(
+            siteMappings,
+            routeConfigurationService,
+            baseUrl,
+            out var nodes);
+
+        var allUrls = nodes.Select(n => n.Url).ToList();
+
+        // Verify no parameterized routes (with {}) are included
+        await Assert.That(allUrls).DoesNotContain(url => url.Contains('{'));
+    }
+
+    [Test]
     public async Task EnsureSitemapHealthy_WithMultipleCanonicalLinksForSamePage_ThrowsException()
     {
         // Arrange - Two mappings for the same chapter/page both marked as canonical

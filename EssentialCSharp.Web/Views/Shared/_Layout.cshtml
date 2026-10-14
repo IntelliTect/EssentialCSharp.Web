@@ -42,11 +42,6 @@
     <link rel="stylesheet" href="~/css/chat-widget.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/code-runner.css" asp-append-version="true" />
     <link rel="stylesheet" href="/lib/docsearch/style.css" />
-    @*Font Family*@
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;0,900;1,400;1,500;1,700;1,900&display=auto" rel="stylesheet">
-    @*End Font Family*@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -56,6 +51,7 @@
     <meta name="theme-color" content="#ffffff">
     <!-- Cookie Consent Manager - Load before analytics -->
     <script src="~/js/consent-manager.js" asp-append-version="true"></script>
+    <script src="~/js/clarity-manager.js" asp-append-version="true"></script>
     <script src="~/js/appinsights-manager.js" asp-append-version="true"></script>
     @{
         string? authUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -66,16 +62,6 @@
         // user GUID to third-party scripts that enumerate window properties.
         <meta name="ecs-auth-user-id" content="@authUserId" />
     }
-    
-    <!-- Microsoft Clarity - Will be activated based on consent -->
-    <script type="text/javascript">
-        (function (c, l, a, r, i, t, y) {
-            c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments) };
-            t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i;
-            y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
-        })(window, document, "clarity", "script", "g4keetzd2o");
-    </script>
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <!-- Google tag (gtag.js) - Consent defaults MUST be set before gtag.js loads (Google Consent Mode v2 requirement) -->
     <script>
@@ -83,12 +69,8 @@
         function gtag(){dataLayer.push(arguments);}
         gtag('consent', 'default', {
             analytics_storage: 'denied',
-            ad_storage: 'denied',
-            ad_user_data: 'denied',
-            ad_personalization: 'denied',
             functionality_storage: 'granted',
             security_storage: 'granted',
-            personalization_storage: 'denied',
             wait_for_update: 500  // ms to hold GA pings while consent banner loads
         });
         gtag('js', new Date());
@@ -107,9 +89,10 @@
     <header class="header-background">
         <div class="banner d-flex justify-content-between">
             <div class="d-flex align-items-center menu-position">
-                <button id="sidebar-toggle-button" class="menu-btn has-tooltip" type="button">
-                    <i class="fa fa-bars fa-lg icon-light"></i>
-                    <span class="tooltip-text sidebar-tooltip-text">
+                <button id="sidebar-toggle-button" class="menu-btn has-tooltip" type="button"
+                        aria-label="Toggle navigation" aria-expanded="false" aria-keyshortcuts="Control+M">
+                    <i class="fa fa-bars fa-lg icon-light" aria-hidden="true"></i>
+                    <span class="tooltip-text sidebar-tooltip-text" aria-hidden="true">
                         <b>Ctrl + M</b>
                     </span>
                 </button>
@@ -139,16 +122,19 @@
             <div class="d-flex align-items-center">
                 <div class="border-end pe-3 d-none d-md-block">
                     <a class="btn btn-primary btn-sm rounded-pill"
-                       target="blank"
+                       target="_blank"
+                       rel="noopener"
                        href="https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas">
-                        <span class="fa fa-solid fa-comment fa-lg text-light me-1"></span>
+                        <span class="fa fa-solid fa-comment fa-lg text-light me-1" aria-hidden="true"></span>
                         Feedback
                     </a>
                 </div>
                 <a class="d-md-none"
-                   target="blank"
+                   target="_blank"
+                   rel="noopener"
+                   aria-label="Send feedback"
                    href="https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas">
-                    <span class="fa fa-solid fa-comment icon-light fa-lg"></span>
+                    <span class="fa fa-solid fa-comment icon-light fa-lg" aria-hidden="true"></span>
                 </a>
                 <partial name="_LoginPartial" />
             </div>
@@ -158,6 +144,7 @@
     <main id="site-layout" class="layout">
         <div id="sidebarContainer" class="background-grey-lighten-2"></div>
         <div class="container my-5 pb-5">
+            <div id="page-share-host"></div>
             <div id="page-nav-host"></div>
             @RenderBody()
         </div>
@@ -176,7 +163,10 @@
                 <a target="_blank" rel="noreferrer noopener" href="https://intellitect.com/about/privacy-policy/">Privacy</a>
             </div>
             <div class="col-12 col-md-auto align-self-end p-2">
-                <a href="javascript:void(0)" onclick="openConsentPreferences()">Cookie Preferences</a>
+                <a asp-route="CookiePolicy">Cookie Policy</a>
+            </div>
+            <div class="col-12 col-md-auto align-self-end p-2">
+                <button type="button" class="btn btn-link p-0 align-baseline" onclick="openConsentPreferences()">Cookie Preferences</button>
             </div>
             <div class="col-12 col-md-auto align-self-end p-2"><a asp-route="TermsOfService">Terms Of Service</a></div>
         </div>
@@ -208,6 +198,7 @@
         window.IS_AUTHENTICATED = @Json.Serialize(SignInManager.IsSignedIn(User));
         window.TRYDOTNET_ORIGIN = @Json.Serialize(Configuration["TryDotNet:Origin"]);
         window.APPLICATIONINSIGHTS_CONNECTION_STRING = @Json.Serialize(Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]);
+        window.APPLICATIONINSIGHTS_APP_ID = @Json.Serialize(Configuration["APPLICATIONINSIGHTS_APP_ID"]);
         window.BUILD_LABEL = @Json.Serialize(buildLabel);
         window.ENABLE_CHAT_WIDGET = @Json.Serialize(!Context.Request.Path.StartsWithSegments("/Identity"));
         window.HCAPTCHA_SITE_KEY = @Json.Serialize(chatCaptchaSiteKey);

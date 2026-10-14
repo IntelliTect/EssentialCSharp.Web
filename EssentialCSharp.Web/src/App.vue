@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, provide, reactive, watch } from "vue";
 import HeaderStatus from "./components/HeaderStatus.vue";
 import SidebarPanel from "./components/SidebarPanel.vue";
 import PageNavigation from "./components/PageNavigation.vue";
+import PageShareAction from "./components/PageShareAction.vue";
 import SnackbarMessage from "./components/SnackbarMessage.vue";
 import ChatWidget from "./components/ChatWidget.vue";
 import CodeRunnerModal from "./components/CodeRunnerModal.vue";
@@ -18,6 +19,22 @@ function updateLayoutClasses() {
     }
 
     siteLayout.classList.toggle("has-sidebar", Boolean(shell.sidebarShown) && !shell.smallScreen);
+}
+
+function updateSidebarToggleState() {
+    if (!sidebarToggleButton) {
+        return;
+    }
+
+    const isShown = Boolean(shell.sidebarShown);
+    sidebarToggleButton.setAttribute("aria-expanded", String(isShown));
+    // #sidebar only exists while shown, so only reference it then.
+    if (isShown) {
+        sidebarToggleButton.setAttribute("aria-controls", "sidebar");
+    }
+    else {
+        sidebarToggleButton.removeAttribute("aria-controls");
+    }
 }
 
 function handleSidebarToggleClick(event) {
@@ -49,6 +66,7 @@ onMounted(() => {
     document.addEventListener("click", handleCopyLinkClick);
     window.copyToClipboard = shell.copyToClipboard;
     updateLayoutClasses();
+    updateSidebarToggleState();
 });
 
 onUnmounted(() => {
@@ -57,7 +75,10 @@ onUnmounted(() => {
     delete window.copyToClipboard;
 });
 
-watch(() => shell.sidebarShown, updateLayoutClasses);
+watch(() => shell.sidebarShown, () => {
+    updateLayoutClasses();
+    updateSidebarToggleState();
+});
 watch(() => shell.smallScreen, updateLayoutClasses);
 </script>
 
@@ -72,6 +93,10 @@ watch(() => shell.smallScreen, updateLayoutClasses);
 
     <Teleport to="#page-nav-host">
         <PageNavigation />
+    </Teleport>
+
+    <Teleport to="#page-share-host">
+        <PageShareAction />
     </Teleport>
 
     <Teleport to="#snackbar-host">
