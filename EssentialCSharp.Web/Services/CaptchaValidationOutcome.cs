@@ -2,7 +2,7 @@ namespace EssentialCSharp.Web.Services;
 
 public enum CaptchaValidationOutcome
 {
-    Disabled,
+    Misconfigured,
     MissingToken,
     Unavailable,
     Invalid,

@@ -78,7 +78,7 @@ public partial class RegisterModel(
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
     }
 
-    public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
+    public async Task<IActionResult> OnPostAsync(string? returnUrl = null, CancellationToken cancellationToken = default)
     {
         returnUrl ??= Url.Content("~/");
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
@@ -89,96 +89,13 @@ public partial class RegisterModel(
             return Page();
         }
 
-        CaptchaValidationResult captchaResult = await captchaValidationService.ValidateAsync(hCaptcha_response, HttpContext.Connection.RemoteIpAddress?.ToString());
+        CaptchaValidationResult captchaResult = await captchaValidationService.ValidateAsync(
+            hCaptcha_response,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            cancellationToken);
         if (!captchaResult.ShouldProceed)
         {
-            if (captchaResult.Outcome == CaptchaValidationOutcome.Disabled)
-            {
-                LogHCaptchaDisabledWarning(logger);
-                ModelState.AddModelError(string.Empty, "Captcha verification is not configured. Please contact support.");
-                return Page();
-            }
-            if (captchaResult.Outcome == CaptchaValidationOutcome.MissingToken)
-            {
-                ModelState.AddModelError(string.Empty, HCaptchaErrorDetails.GetValue(HCaptchaErrorDetails.MissingInputResponse).FriendlyDescription);
-                return Page();
-            }
-            if (captchaResult.Outcome == CaptchaValidationOutcome.Unavailable)
-            {
-                ModelState.AddModelError(string.Empty, "Captcha verification is temporarily unavailable. Please try again later.");
-                return Page();
-            }
-            if (captchaResult.Outcome == CaptchaValidationOutcome.Invalid)
-            {
-                if (captchaResult.Response is not HCaptchaResult response)
-                {
-                    LogHCaptchaInvalidOutcomeMissingResponse(logger);
-                    ModelState.AddModelError(string.Empty, "Captcha verification is temporarily unavailable. Please try again later.");
-                    return Page();
-                }
-
-                switch (response.ErrorCodes?.Length)
-                {
-                    case 0:
-                        LogHCaptchaNoErrorCodes(logger);
-                        ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
-                        return Page();
-                    case > 1:
-                        LogHCaptchaMultipleErrorCodes(logger, string.Join(", ", response.ErrorCodes));
-                        ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
-                        return Page();
-                    default:
-                        {
-                            if (response.ErrorCodes is null)
-                            {
-                                LogHCaptchaNullErrorCodes(logger);
-                                ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
-                                return Page();
-                            }
-                            if (HCaptchaErrorDetails.TryGetValue(response.ErrorCodes.Single(), out HCaptchaErrorDetails? details))
-                            {
-                                if (details is null)
-                                {
-                                    LogHCaptchaNullErrorCodes(logger);
-                                    ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
-                                    return Page();
-                                }
-
-                                switch (details.ErrorCode)
-                                {
-                                    case HCaptchaErrorDetails.MissingInputResponse:
-                                    case HCaptchaErrorDetails.InvalidInputResponse:
-                                    case HCaptchaErrorDetails.InvalidOrAlreadySeenResponse:
-                                        ModelState.AddModelError(string.Empty, details.FriendlyDescription);
-                                        LogHCaptchaErrorCode(logger, details.ToString());
-                                        return Page();
-                                    case HCaptchaErrorDetails.BadRequest:
-                                        ModelState.AddModelError(string.Empty, details.FriendlyDescription);
-                                        LogHCaptchaErrorCode(logger, details.ToString());
-                                        return Page();
-                                    case HCaptchaErrorDetails.MissingInputSecret:
-                                    case HCaptchaErrorDetails.InvalidInputSecret:
-                                    case HCaptchaErrorDetails.NotUsingDummyPasscode:
-                                    case HCaptchaErrorDetails.SitekeySecretMismatch:
-                                        LogHCaptchaCriticalErrorCode(logger, details.ToString());
-                                        ModelState.AddModelError(string.Empty, "Captcha verification is temporarily unavailable. Please try again later.");
-                                        return Page();
-                                    default:
-                                        LogHCaptchaUnknownErrorCode(logger, details.ErrorCode);
-                                        ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
-                                        return Page();
-                                }
-                            }
-
-                            LogHCaptchaUnrecognizedErrorCode(logger, response.ErrorCodes.Single());
-                            ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
-                            return Page();
-                        }
-                }
-            }
-
-            LogHCaptchaUnhandledOutcome(logger, captchaResult.Outcome.ToString());
-            ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
+            AddCaptchaValidationError(captchaResult);
             return Page();
         }
 
@@ -186,8 +103,8 @@ public partial class RegisterModel(
         user.FirstName = Input.FirstName;
         user.LastName = Input.LastName;
 
-        await userStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
-        await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+        await userStore.SetUserNameAsync(user, Input.UserName, cancellationToken);
+        await emailStore.SetEmailAsync(user, Input.Email, cancellationToken);
         if (Input.Password is null)
         {
             LogPasswordNull(logger);
@@ -241,6 +158,87 @@ public partial class RegisterModel(
         return Page();
     }
 
+    private void AddCaptchaValidationError(CaptchaValidationResult captchaResult)
+    {
+        switch (captchaResult.Outcome)
+        {
+            case CaptchaValidationOutcome.Misconfigured:
+                ModelState.AddModelError(string.Empty, "Captcha verification is not configured. Please contact support.");
+                return;
+            case CaptchaValidationOutcome.MissingToken:
+                ModelState.AddModelError(string.Empty, HCaptchaErrorDetails.GetValue(HCaptchaErrorDetails.MissingInputResponse).FriendlyDescription);
+                return;
+            case CaptchaValidationOutcome.Unavailable:
+                ModelState.AddModelError(string.Empty, "Captcha verification is temporarily unavailable. Please try again later.");
+                return;
+            case CaptchaValidationOutcome.Invalid when captchaResult.Response is not null:
+                AddInvalidCaptchaError(captchaResult.Response);
+                return;
+            case CaptchaValidationOutcome.Invalid:
+                LogHCaptchaInvalidOutcomeMissingResponse(logger);
+                ModelState.AddModelError(string.Empty, "Captcha verification is temporarily unavailable. Please try again later.");
+                return;
+            default:
+                LogHCaptchaUnhandledOutcome(logger, captchaResult.Outcome.ToString());
+                ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
+                return;
+        }
+    }
+
+    private void AddInvalidCaptchaError(HCaptchaResult response)
+    {
+        if (response.ErrorCodes is null)
+        {
+            LogHCaptchaNullErrorCodes(logger);
+            ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
+            return;
+        }
+
+        if (response.ErrorCodes.Length == 0)
+        {
+            LogHCaptchaNoErrorCodes(logger);
+            ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
+            return;
+        }
+
+        if (response.ErrorCodes.Length > 1)
+        {
+            LogHCaptchaMultipleErrorCodes(logger, string.Join(", ", response.ErrorCodes));
+            ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
+            return;
+        }
+
+        string errorCode = response.ErrorCodes[0];
+        if (!HCaptchaErrorDetails.TryGetValue(errorCode, out HCaptchaErrorDetails? details) || details is null)
+        {
+            LogHCaptchaUnrecognizedErrorCode(logger, errorCode);
+            ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
+            return;
+        }
+
+        switch (details.ErrorCode)
+        {
+            case HCaptchaErrorDetails.MissingInputResponse:
+            case HCaptchaErrorDetails.InvalidInputResponse:
+            case HCaptchaErrorDetails.InvalidOrAlreadySeenResponse:
+            case HCaptchaErrorDetails.BadRequest:
+                ModelState.AddModelError(string.Empty, details.FriendlyDescription);
+                LogHCaptchaErrorCode(logger, details.ToString());
+                return;
+            case HCaptchaErrorDetails.MissingInputSecret:
+            case HCaptchaErrorDetails.InvalidInputSecret:
+            case HCaptchaErrorDetails.NotUsingDummyPasscode:
+            case HCaptchaErrorDetails.SitekeySecretMismatch:
+                LogHCaptchaCriticalErrorCode(logger, details.ToString());
+                ModelState.AddModelError(string.Empty, "Captcha verification is temporarily unavailable. Please try again later.");
+                return;
+            default:
+                LogHCaptchaUnknownErrorCode(logger, details.ErrorCode);
+                ModelState.AddModelError(string.Empty, "Captcha verification failed. Please try again.");
+                return;
+        }
+    }
+
     private EssentialCSharpWebUser CreateUser()
     {
         try
@@ -260,9 +258,6 @@ public partial class RegisterModel(
 
     [LoggerMessage(Level = LogLevel.Information, Message = "User created a new account with password.")]
     private static partial void LogUserCreatedWithPassword(ILogger<RegisterModel> logger);
-
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Captcha is disabled in configuration")]
-    private static partial void LogHCaptchaDisabledWarning(ILogger<RegisterModel> logger);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "HCaptcha determined the passcode is not valid with zero error codes")]
     private static partial void LogHCaptchaNoErrorCodes(ILogger<RegisterModel> logger);

@@ -302,7 +302,7 @@ public partial class ChatController : ControllerBase
     {
         return captchaValidation.Outcome switch
         {
-            CaptchaValidationOutcome.Disabled or CaptchaValidationOutcome.Unavailable => LogAndReturn503(),
+            CaptchaValidationOutcome.Misconfigured or CaptchaValidationOutcome.Unavailable => LogAndReturn503(),
             CaptchaValidationOutcome.Invalid => LogInvalidAndReturn403(),
             _ => StatusCode(403, new { error = "Human verification required.", errorCode = "captcha_failed" })
         };
@@ -324,7 +324,7 @@ public partial class ChatController : ControllerBase
     {
         switch (captchaValidation.Outcome)
         {
-            case CaptchaValidationOutcome.Disabled:
+            case CaptchaValidationOutcome.Misconfigured:
             case CaptchaValidationOutcome.Unavailable:
                 LogCaptchaUnavailable(captchaValidation.Outcome);
                 Response.StatusCode = 503;
@@ -352,17 +352,12 @@ public partial class ChatController : ControllerBase
 
     private void LogCaptchaUnavailable(CaptchaValidationOutcome outcome)
     {
-        if (outcome == CaptchaValidationOutcome.Disabled)
-            LogCaptchaConfigurationMissing(_Logger);
-        else
+        if (outcome == CaptchaValidationOutcome.Unavailable)
             LogCaptchaServiceUnavailable(_Logger);
     }
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "hCaptcha service unavailable during chat request — failing closed (503)")]
     private static partial void LogCaptchaServiceUnavailable(ILogger<ChatController> logger);
-
-    [LoggerMessage(Level = LogLevel.Warning, Message = "hCaptcha configuration missing during chat request — failing closed (503)")]
-    private static partial void LogCaptchaConfigurationMissing(ILogger<ChatController> logger);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "hCaptcha validation failed for chat request — error codes: {ErrorCodes}")]
     private static partial void LogCaptchaValidationFailed(ILogger<ChatController> logger, string errorCodes);

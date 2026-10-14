@@ -59,10 +59,13 @@ public class ResetPasswordModel(UserManager<EssentialCSharpWebUser> userManager,
         }
     }
 
-    public async Task<IActionResult> OnPostAsync()
+    public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken = default)
     {
         string? captchaToken = Request.Form[CaptchaOptions.HttpPostResponseKeyName];
-        CaptchaValidationResult captchaResult = await captchaValidationService.ValidateAsync(captchaToken, HttpContext.Connection.RemoteIpAddress?.ToString());
+        CaptchaValidationResult captchaResult = await captchaValidationService.ValidateAsync(
+            captchaToken,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            cancellationToken);
         if (!captchaResult.ShouldProceed)
         {
             ModelState.AddModelError(string.Empty, "Human verification failed. Please try again.");

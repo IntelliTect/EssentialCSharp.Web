@@ -19,7 +19,7 @@ public class CaptchaValidationServiceTests
 
         CaptchaValidationResult result = await validationService.ValidateAsync("token", "127.0.0.1");
 
-        await Assert.That(result.Outcome).IsEqualTo(CaptchaValidationOutcome.Disabled);
+        await Assert.That(result.Outcome).IsEqualTo(CaptchaValidationOutcome.Misconfigured);
         await Assert.That(result.ShouldProceed).IsFalse();
         await Assert.That(captchaService.CallCount).IsEqualTo(0);
     }
@@ -36,7 +36,7 @@ public class CaptchaValidationServiceTests
 
         CaptchaValidationResult result = await validationService.ValidateAsync("token", "127.0.0.1");
 
-        await Assert.That(result.Outcome).IsEqualTo(CaptchaValidationOutcome.Disabled);
+        await Assert.That(result.Outcome).IsEqualTo(CaptchaValidationOutcome.Misconfigured);
         await Assert.That(result.ShouldProceed).IsFalse();
         await Assert.That(captchaService.CallCount).IsEqualTo(0);
     }
@@ -53,7 +53,7 @@ public class CaptchaValidationServiceTests
 
         CaptchaValidationResult result = await validationService.ValidateAsync("token", "127.0.0.1");
 
-        await Assert.That(result.Outcome).IsEqualTo(CaptchaValidationOutcome.Disabled);
+        await Assert.That(result.Outcome).IsEqualTo(CaptchaValidationOutcome.Misconfigured);
         await Assert.That(result.ShouldProceed).IsFalse();
         await Assert.That(captchaService.CallCount).IsEqualTo(0);
     }
@@ -90,6 +90,27 @@ public class CaptchaValidationServiceTests
         await Assert.That(result.Outcome).IsEqualTo(CaptchaValidationOutcome.Unavailable);
         await Assert.That(result.ShouldProceed).IsFalse();
         await Assert.That(captchaService.CallCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task ValidateAsync_ForwardsCancellationToken()
+    {
+        using CancellationTokenSource cancellationTokenSource = new();
+        CancellationToken receivedCancellationToken = default;
+        StubCaptchaService captchaService = new((_, _, cancellationToken) =>
+        {
+            receivedCancellationToken = cancellationToken;
+            return Task.FromResult<HCaptchaResult?>(new HCaptchaResult { Success = true });
+        });
+        using ServiceProvider serviceProvider = CreateServiceProvider(
+            new CaptchaOptions { SecretKey = "secret", SiteKey = "sitekey" },
+            captchaService);
+
+        ICaptchaValidationService validationService = serviceProvider.GetRequiredService<ICaptchaValidationService>();
+
+        await validationService.ValidateAsync("token", "127.0.0.1", cancellationTokenSource.Token);
+
+        await Assert.That(receivedCancellationToken).IsEqualTo(cancellationTokenSource.Token);
     }
 
     [Test]
@@ -130,6 +151,7 @@ public class CaptchaValidationServiceTests
     private static ServiceProvider CreateServiceProvider(CaptchaOptions options, ICaptchaService captchaService)
     {
         ServiceCollection services = new();
+        services.AddLogging();
         services.AddSingleton(Options.Create(options));
         services.AddSingleton(captchaService);
         services.AddSingleton<ICaptchaValidationService, CaptchaValidationService>();

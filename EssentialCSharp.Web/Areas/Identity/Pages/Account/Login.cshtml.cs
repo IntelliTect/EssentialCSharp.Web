@@ -62,12 +62,15 @@ public partial class LoginModel(SignInManager<EssentialCSharpWebUser> signInMana
         ReturnUrl = returnUrl;
     }
 
-    public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
+    public async Task<IActionResult> OnPostAsync(string? returnUrl = null, CancellationToken cancellationToken = default)
     {
         returnUrl ??= Url.Content("~/");
 
         string? captchaToken = Request.Form[CaptchaOptions.HttpPostResponseKeyName];
-        CaptchaValidationResult captchaResult = await captchaValidationService.ValidateAsync(captchaToken, HttpContext.Connection.RemoteIpAddress?.ToString());
+        CaptchaValidationResult captchaResult = await captchaValidationService.ValidateAsync(
+            captchaToken,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            cancellationToken);
         if (!captchaResult.ShouldProceed)
         {
             ModelState.AddModelError(string.Empty, "Human verification failed. Please try again.");
