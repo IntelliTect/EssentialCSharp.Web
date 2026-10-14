@@ -64,10 +64,14 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Write IndexNow key verification file
-        if: env.INDEXNOW_API_KEY != ''
         env:
           INDEXNOW_API_KEY: ${{ secrets.INDEXNOW_API_KEY }}
-        run: printf '%s' "$INDEXNOW_API_KEY" > "EssentialCSharp.Web/wwwroot/$INDEXNOW_API_KEY.txt"
+        run: |
+          if [ -n "$INDEXNOW_API_KEY" ]; then
+            printf '%s' "$INDEXNOW_API_KEY" > "EssentialCSharp.Web/wwwroot/$INDEXNOW_API_KEY.txt"
+          else
+            echo "::warning::INDEXNOW_API_KEY secret not set; IndexNow key file not written."
+          fi
 
       # Only build for dev registry — prod gets the image via az acr import in deploy-production
       - name: Build Container Image
@@ -197,6 +201,11 @@ jobs:
           fi
           echo "digest=$DIGEST" >> $GITHUB_OUTPUT
 
+      # Baseline for IndexNow: lets us submit only URLs that actually changed in this deploy.
+      - name: Snapshot sitemap before deploy
+        continue-on-error: true
+        run: curl -sf --max-time 30 "https://essentialcsharp.com/sitemap.xml" -o "$RUNNER_TEMP/sitemap-before.xml" || echo "::warning::Could not snapshot pre-deploy sitemap."
+
       - name: Deploy to Container App
         env:
           CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
@@ -256,31 +265,62 @@ jobs:
           #   https://essentialcsharp.com/{key}.txt  (served from wwwroot/{key}.txt)
           # The file must contain exactly the key value. Without it, submissions return HTTP 403.
           #
-          # We fetch the live sitemap (app is confirmed up after smoke test) and extract all <loc>
-          # URLs to submit as actual content URLs per the IndexNow spec.
+          # Per the spec, only submit URLs that were added, updated, or deleted. Resubmitting
+          # unchanged URLs on every deploy risks our submissions being deprioritized.
+          # We diff the pre-deploy sitemap snapshot against the live post-deploy sitemap:
+          #   - URL added or removed            -> submit
+          #   - <lastmod> changed (book pages)  -> submit
 
-          # Fetch the live sitemap and extract all <loc> URLs into a newline-delimited list
-          SITEMAP=$(curl -sf "https://essentialcsharp.com/sitemap.xml")
-          if [ -z "$SITEMAP" ]; then
-            echo "::warning::Could not fetch sitemap; skipping IndexNow submission."
+          if [ -z "$INDEXNOW_API_KEY" ]; then
+            echo "::warning::INDEXNOW_API_KEY secret not set; skipping IndexNow submission."
+            exit 0
+          fi
+          if [ ! -s "$RUNNER_TEMP/sitemap-before.xml" ]; then
+            echo "::warning::No pre-deploy sitemap snapshot; skipping IndexNow submission."
+            exit 0
+          fi
+          if ! curl -sf --max-time 30 "https://essentialcsharp.com/sitemap.xml" -o "$RUNNER_TEMP/sitemap-after.xml"; then
+            echo "::warning::Could not fetch post-deploy sitemap; skipping IndexNow submission."
             exit 0
           fi
 
-          # Build a JSON array from <loc>...</loc> entries
-          URL_ARRAY=$(echo "$SITEMAP" \
-            | grep -oP '(?<=<loc>)[^<]+' \
-            | jq -Rn '[inputs]')
+          URL_ARRAY=$(python3 - "$RUNNER_TEMP/sitemap-before.xml" "$RUNNER_TEMP/sitemap-after.xml" <<'PY'
+          import json, sys
+          import xml.etree.ElementTree as ET
+
+          def load(path):
+              entries = {}
+              for url in ET.parse(path).getroot().findall("{*}url"):
+                  loc = url.findtext("{*}loc", "").strip()
+                  if loc:
+                      entries[loc] = url.findtext("{*}lastmod", "").strip()
+              return entries
+
+          before, after = load(sys.argv[1]), load(sys.argv[2])
+          if not after:
+              sys.exit("Post-deploy sitemap contained no URLs; refusing to diff.")
+          changed = sorted(
+              loc for loc in before.keys() | after.keys()
+              if before.get(loc) != after.get(loc)
+          )
+          print(json.dumps(changed))
+          PY
+          )
 
           URL_COUNT=$(echo "$URL_ARRAY" | jq 'length')
-          echo "Submitting $URL_COUNT URLs to IndexNow..."
+          if [ "$URL_COUNT" -eq 0 ]; then
+            echo "No sitemap URLs changed in this deploy; nothing to submit to IndexNow."
+            exit 0
+          fi
+          echo "Submitting $URL_COUNT changed URLs to IndexNow:"
+          echo "$URL_ARRAY" | jq -r '.[]'
+
+          PAYLOAD=$(jq -n --arg key "$INDEXNOW_API_KEY" --argjson urls "$URL_ARRAY" \
+            '{host: "essentialcsharp.com", key: $key, urlList: $urls}')
 
           RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST https://api.indexnow.org/indexnow \
             -H "Content-Type: application/json; charset=utf-8" \
-            -d "{
-              \"host\": \"essentialcsharp.com\",
-              \"key\": \"$INDEXNOW_API_KEY\",
-              \"urlList\": $URL_ARRAY
-            }")
+            -d "$PAYLOAD")
 
           echo "IndexNow response: HTTP $RESPONSE"
           if [ "$RESPONSE" != "200" ] && [ "$RESPONSE" != "202" ]; then

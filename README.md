@@ -14,13 +14,16 @@ Please use issues or discussions to report issues found.
 
 ## IndexNow Setup (Production Deployment)
 
-The deployment workflow notifies search engines (Bing, Yandex, Naver) of content updates via the [IndexNow protocol](https://www.indexnow.org/). After each successful production deploy the workflow fetches the live `sitemap.xml`, extracts all content URLs, and submits them in a single batch POST to IndexNow.
+The deployment workflow notifies search engines (Bing, Yandex, Naver) of content updates via the [IndexNow protocol](https://www.indexnow.org/). After each successful production deploy it submits only the URLs that were added, updated, or removed in that deploy.
 
 ### How It Works
 
-1. After the smoke test confirms the app is live, the workflow fetches `https://essentialcsharp.com/sitemap.xml`.
-2. All `<loc>` URLs are extracted and POSTed to `https://api.indexnow.org/indexnow`.
-3. IndexNow distributes those URLs to all participating search engines (Bing, Yandex, Naver, etc.).
+1. Before deploying, the workflow snapshots the live `https://essentialcsharp.com/sitemap.xml`.
+2. After the smoke test confirms the new version is live, it fetches the sitemap again.
+3. It diffs the two: URLs that were added, removed, or whose `<lastmod>` changed are POSTed to `https://api.indexnow.org/indexnow`. If nothing changed, nothing is submitted.
+4. IndexNow distributes those URLs to all participating search engines (Bing, Yandex, Naver, etc.).
+
+Book pages get their `<lastmod>` from `sitemap.json` in the content NuGet package. Static app pages (`/about`, `/guidelines`, etc.) have no `<lastmod>`, so they are only submitted when added or removed.
 
 ### Setup Requirements
 
@@ -43,5 +46,5 @@ The key file is intentionally public — that is by design. The "security" is th
 
 ### Important Notes
 - The IndexNow step uses `continue-on-error: true` — a submission failure will never block a deployment
-- Submitting all sitemap URLs on every deploy is intentional; IndexNow has no hard rate limit for batch submissions and the full URL list ensures nothing is missed
+- Only changed URLs are submitted, per the IndexNow guidance; resubmitting unchanged URLs on every deploy risks submissions being deprioritized
 - To rotate the key: generate a new hex string and update the GitHub Secret — the old key file disappears automatically on the next deploy
