@@ -29,7 +29,7 @@ public class ReadingControllerTests : IntegrationTestBase
 
         var body = await response.Content.ReadFromJsonAsync<BookStatsResponse>();
         await Assert.That(body).IsNotNull();
-        await Assert.That(body!.TotalWordCount).IsGreaterThanOrEqualTo(0);
+        await Assert.That(body.TotalWordCount).IsGreaterThanOrEqualTo(0);
         await Assert.That(body.Chapters).IsNotNull();
     }
 

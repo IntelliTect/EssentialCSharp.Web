@@ -45,7 +45,7 @@ public class McpApiTokenServiceTests : IntegrationTestBase
         (_, var entity) = await tokenService.CreateTokenAsync(userId, "default-expiry");
 
         await Assert.That(entity.ExpiresAt).IsNotNull();
-        await Assert.That(entity.ExpiresAt!.Value)
+        await Assert.That(entity.ExpiresAt.Value)
             .IsEqualTo(McpApiTokenService.GetDefaultExpirationUtc(entity.CreatedAt));
     }
 
@@ -58,7 +58,7 @@ public class McpApiTokenServiceTests : IntegrationTestBase
         (_, var entity) = await tokenService.CreateTokenAsync(userId, "custom-expiry", requestedExpiry);
 
         await Assert.That(entity.ExpiresAt).IsNotNull();
-        await Assert.That(entity.ExpiresAt!.Value).IsEqualTo(requestedExpiry);
+        await Assert.That(entity.ExpiresAt.Value).IsEqualTo(requestedExpiry);
     }
 
     [Test]
@@ -83,7 +83,7 @@ public class McpApiTokenServiceTests : IntegrationTestBase
 
         await Assert.That(entity.CreatedAt).IsEqualTo(createdAtUtc);
         await Assert.That(entity.ExpiresAt).IsNotNull();
-        await Assert.That(entity.ExpiresAt!.Value)
+        await Assert.That(entity.ExpiresAt.Value)
             .IsEqualTo(McpApiTokenService.GetDefaultExpirationUtc(createdAtUtc));
     }
 
