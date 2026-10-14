@@ -46,13 +46,11 @@ public partial class Program
         builder.Services.AddHealthChecks()
             .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
 
-        // OpenTelemetry — two mutually exclusive export paths:
-        //   Production:  Azure Monitor (Application Insights) via APPLICATIONINSIGHTS_CONNECTION_STRING
-        //   Local/Aspire: OTLP to Aspire Dashboard via OTEL_EXPORTER_OTLP_ENDPOINT
-        // Never both simultaneously — that would cause duplicate telemetry in App Insights.
+        // Prefer Aspire's OTLP endpoint when present; otherwise export to Azure Monitor.
+        // This keeps local traces in the dashboard even when a developer has an App Insights connection string configured.
         string? appInsightsConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
-        bool useAzureMonitor = !string.IsNullOrWhiteSpace(appInsightsConnectionString);
         bool useOtlp = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
+        bool useAzureMonitor = !useOtlp && !string.IsNullOrWhiteSpace(appInsightsConnectionString);
         bool profilerSupportedPlatform = OperatingSystem.IsWindows() || OperatingSystem.IsLinux();
         bool profilerSkippedUnsupportedPlatform = false;
 
