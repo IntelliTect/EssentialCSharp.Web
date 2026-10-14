@@ -76,7 +76,7 @@ public class ListingSourceCodeServiceTests
         using (Assert.Multiple())
         {
             await Assert.That(result).IsNotNull();
-            await Assert.That(result!.FileExtension).IsEqualTo("cs");
+            await Assert.That(result.FileExtension).IsEqualTo("cs");
             await Assert.That(result.Content).Contains("BookContent filename");
             await Assert.That(chapterListings.Count).IsEqualTo(1);
             await Assert.That(chapterListings[0].ListingNumber).IsEqualTo(1);
