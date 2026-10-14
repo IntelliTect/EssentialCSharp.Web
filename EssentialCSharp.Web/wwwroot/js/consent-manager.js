@@ -90,9 +90,6 @@ class ConsentManager {
 
         const banner = this.createConsentBanner();
         document.body.appendChild(banner);
-        
-        // Add banner styles if not already added
-        this.addConsentStyles();
     }
 
     createConsentBanner() {
@@ -113,7 +110,7 @@ class ConsentManager {
                     <button id="consent-customize" class="btn btn-outline-primary" type="button" aria-expanded="false" aria-controls="consent-details">Customize</button>
                 </div>
             </div>
-            <div id="consent-details" class="consent-details" hidden>
+            <div id="consent-details" class="consent-details consent-details-hidden">
                 <div class="consent-category">
                     <label class="consent-switch">
                         <input type="checkbox" id="consent-essential" checked disabled>
@@ -173,8 +170,7 @@ class ConsentManager {
         const details = document.getElementById('consent-details');
         const customizeButton = document.getElementById('consent-customize');
         if (details) {
-            const isExpanded = !details.hidden;
-            details.hidden = isExpanded;
+            const isExpanded = details.classList.toggle('consent-details-hidden');
             customizeButton?.setAttribute('aria-expanded', String(!isExpanded));
             if (isExpanded) {
                 return;
@@ -265,123 +261,6 @@ class ConsentManager {
         if (banner) {
             banner.remove();
         }
-    }
-
-    addConsentStyles() {
-        if (document.getElementById('consent-styles')) return; // Already added
-
-        const styles = document.createElement('style');
-        styles.id = 'consent-styles';
-        styles.textContent = `
-            .consent-banner {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                background: #ffffff;
-                border-top: 3px solid #007bff;
-                box-shadow: 0 -4px 12px rgba(0,0,0,0.15);
-                z-index: 10000;
-                font-family: inherit;
-            }
-
-            .consent-banner-content {
-                max-width: 1200px;
-                margin: 0 auto;
-                padding: 20px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 20px;
-            }
-
-            .consent-banner-text h2 {
-                margin: 0 0 8px 0;
-                font-size: 1.2rem;
-                color: #333;
-            }
-
-            .consent-banner-text p {
-                margin: 0;
-                color: #666;
-                font-size: 0.95rem;
-            }
-
-            /* The site-wide "a { text-decoration: none }" leaves these links
-               distinguishable from the text only by color (WCAG 1.4.1). */
-            .consent-banner-text p a {
-                text-decoration: underline;
-            }
-
-            .consent-banner-actions {
-                display: flex;
-                gap: 10px;
-                flex-wrap: wrap;
-            }
-
-            .consent-details[hidden] {
-                display: none;
-            }
-
-            .consent-details {
-                border-top: 1px solid #eee;
-                padding: 20px;
-                max-width: 1200px;
-                margin: 0 auto;
-            }
-
-            .consent-category {
-                margin-bottom: 20px;
-            }
-
-            .consent-switch {
-                display: flex;
-                align-items: center;
-                gap: 15px;
-                cursor: pointer;
-                padding: 15px;
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                background: #f8f9fa;
-            }
-
-            .consent-switch input[type="checkbox"] {
-                width: 20px;
-                height: 20px;
-                margin: 0;
-            }
-
-            .consent-info strong {
-                display: block;
-                margin-bottom: 5px;
-                color: #333;
-            }
-
-            .consent-info p {
-                margin: 0;
-                color: #666;
-                font-size: 0.9rem;
-            }
-
-            .consent-actions {
-                text-align: center;
-                margin-top: 20px;
-            }
-
-            @media (max-width: 768px) {
-                .consent-banner-content {
-                    flex-direction: column;
-                    text-align: center;
-                }
-                
-                .consent-banner-actions {
-                    justify-content: center;
-                    width: 100%;
-                }
-            }
-        `;
-        
-        document.head.appendChild(styles);
     }
 
     // Cookie utility methods

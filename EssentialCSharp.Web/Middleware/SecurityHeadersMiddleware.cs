@@ -19,7 +19,12 @@ public class SecurityHeadersMiddleware(RequestDelegate next, SecurityHeadersPoli
 
         foreach (KeyValuePair<string, string> headerValuePair in _Policy.SetHeaders)
         {
-            headers[headerValuePair.Key] = headerValuePair.Value;
+            string value = headerValuePair.Value;
+            if (value.Contains(CspNonce.Placeholder, StringComparison.Ordinal))
+            {
+                value = value.Replace(CspNonce.Placeholder, CspNonce.GetOrCreate(context), StringComparison.Ordinal);
+            }
+            headers[headerValuePair.Key] = value;
         }
 
         foreach (string header in _Policy.RemoveHeaders)
