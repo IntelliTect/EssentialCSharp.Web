@@ -89,9 +89,10 @@
     <header class="header-background">
         <div class="banner d-flex justify-content-between">
             <div class="d-flex align-items-center menu-position">
-                <button id="sidebar-toggle-button" class="menu-btn has-tooltip" type="button">
-                    <i class="fa fa-bars fa-lg icon-light"></i>
-                    <span class="tooltip-text sidebar-tooltip-text">
+                <button id="sidebar-toggle-button" class="menu-btn has-tooltip" type="button"
+                        aria-label="Toggle navigation" aria-expanded="false" aria-keyshortcuts="Control+M">
+                    <i class="fa fa-bars fa-lg icon-light" aria-hidden="true"></i>
+                    <span class="tooltip-text sidebar-tooltip-text" aria-hidden="true">
                         <b>Ctrl + M</b>
                     </span>
                 </button>
@@ -121,16 +122,19 @@
             <div class="d-flex align-items-center">
                 <div class="border-end pe-3 d-none d-md-block">
                     <a class="btn btn-primary btn-sm rounded-pill"
-                       target="blank"
+                       target="_blank"
+                       rel="noopener"
                        href="https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas">
-                        <span class="fa fa-solid fa-comment fa-lg text-light me-1"></span>
+                        <span class="fa fa-solid fa-comment fa-lg text-light me-1" aria-hidden="true"></span>
                         Feedback
                     </a>
                 </div>
                 <a class="d-md-none"
-                   target="blank"
+                   target="_blank"
+                   rel="noopener"
+                   aria-label="Send feedback"
                    href="https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas">
-                    <span class="fa fa-solid fa-comment icon-light fa-lg"></span>
+                    <span class="fa fa-solid fa-comment icon-light fa-lg" aria-hidden="true"></span>
                 </a>
                 <partial name="_LoginPartial" />
             </div>

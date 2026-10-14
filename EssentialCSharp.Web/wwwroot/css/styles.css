@@ -196,6 +196,13 @@ a:hover {
   margin: 0 !important;
 }
 
+/* DocSearch's default muted gray (#969faf) is ~2.3:1 on its button and key
+   backgrounds; darken it to meet the 4.5:1 minimum (WCAG 1.4.3). */
+.DocSearch-Button,
+.DocSearch-Container {
+  --docsearch-muted-color: #4f5666;
+}
+
 .DocSearch-Container {
   font-family: system-ui, -apple-system, "Segoe UI", Arial, Helvetica, sans-serif !important;
 }
@@ -242,6 +249,11 @@ a:hover {
   color: transparent;
   border: none;
   background-color: transparent;
+}
+
+.menu-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
 }
 
 @media only screen and (max-width: 768px) {
@@ -559,6 +571,19 @@ a:hover {
   }
 }
 
+.toc-filter-toggle {
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.toc-filter-toggle:focus-visible {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
 .filter-input-container {
     display: flex;
     align-items: center;
@@ -582,7 +607,6 @@ a:hover {
     background-color: #007bff;
     color: white;
     border-radius: 0 4px 4px 0;
-    cursor: pointer;
 }
 
     .filter-btn .fa-search {
