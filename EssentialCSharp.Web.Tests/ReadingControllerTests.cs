@@ -171,6 +171,25 @@ public class ReadingControllerTests : IntegrationTestBase
     }
 
     [Test]
+    public async Task PostSession_RejectsPageKeyLongerThanPersistenceLimit()
+    {
+        string userId = await CreateUserWithBaselineProfileAsync();
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+        using var request = CreateSessionRequest(
+        [
+            new ReadingController.ReadingIntervalDto(new string('p', 257), 60, 100, false)
+        ]);
+
+        using HttpResponseMessage response = await client.SendAsync(request);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+        UserReadingProfile profile = await GetProfileAsync(userId);
+        await Assert.That(profile.TotalWordsRead).IsEqualTo(1200L);
+        await Assert.That(profile.TotalActiveSeconds).IsEqualTo(360L);
+        await Assert.That(await GetActivityCountAsync(userId)).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task PostSession_ConcurrentRequests_PreserveBothAggregateIncrements()
     {
         string userId = await CreateUserWithBaselineProfileAsync();

@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Models;
@@ -77,7 +78,7 @@ public partial class ReadingController(
     // -------------------------------------------------------------------------
 
     public record ReadingIntervalDto(
-        string PageKey,
+        [Required, StringLength(ReadingActivity.PageKeyMaxLength)] string PageKey,
         int ActiveSeconds,
         int WordsRead,
         bool Completed);
