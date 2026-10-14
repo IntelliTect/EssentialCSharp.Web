@@ -181,9 +181,17 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
         };
 
         public Task<HCaptchaResult?> VerifyAsync(string? response, CancellationToken cancellationToken = default) =>
-            Task.FromResult<HCaptchaResult?>(_Success);
+            VerifyAsync(response, remoteIp: null, cancellationToken: cancellationToken);
 
-        public Task<HCaptchaResult?> VerifyAsync(string? response, string? remoteIp, CancellationToken cancellationToken = default) =>
-            Task.FromResult<HCaptchaResult?>(_Success);
+        public Task<HCaptchaResult?> VerifyAsync(string? response, string? remoteIp, CancellationToken cancellationToken = default)
+        {
+            if (response == "unavailable-captcha-test-token")
+                return Task.FromResult<HCaptchaResult?>(null);
+
+            if (response == "invalid-captcha-test-token")
+                return Task.FromResult<HCaptchaResult?>(new HCaptchaResult { Success = false });
+
+            return Task.FromResult<HCaptchaResult?>(_Success);
+        }
     }
 }
