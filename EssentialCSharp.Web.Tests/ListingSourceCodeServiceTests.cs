@@ -66,6 +66,24 @@ public class ListingSourceCodeServiceTests
     }
 
     [Test]
+    public async Task GetListingAsync_BookContentFilename_ReturnsListing()
+    {
+        ListingSourceCodeService service = CreateService();
+
+        ListingSourceCodeResponse? result = await service.GetListingAsync(99, 1);
+        IReadOnlyList<ListingSourceCodeResponse> chapterListings = await service.GetListingsByChapterAsync(99);
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(result).IsNotNull();
+            await Assert.That(result!.FileExtension).IsEqualTo("cs");
+            await Assert.That(result.Content).Contains("BookContent filename");
+            await Assert.That(chapterListings.Count).IsEqualTo(1);
+            await Assert.That(chapterListings[0].ListingNumber).IsEqualTo(1);
+        }
+    }
+
+    [Test]
     public async Task GetListingsByChapterAsync_WithValidChapter_ReturnsAllListings()
     {
         // Arrange
