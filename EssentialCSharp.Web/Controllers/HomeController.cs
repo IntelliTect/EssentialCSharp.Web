@@ -1,6 +1,7 @@
 using DotnetSitemapGenerator;
 using EssentialCSharp.Web.Extensions;
 using EssentialCSharp.Web.Helpers;
+using EssentialCSharp.Web.Middleware;
 using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using HtmlAgilityPack;
@@ -31,6 +32,14 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
             string filePath = Path.Join(hostingEnvironment.ContentRootPath, Path.Join(siteMapping.PagePath));
             HtmlDocument doc = new();
             doc.Load(filePath);
+            // Generated chapter pages embed <style> blocks; allow them under the CSP via the request nonce.
+            if (CspNonce.Get(HttpContext) is string nonce)
+            {
+                foreach (HtmlNode styleNode in doc.DocumentNode.Descendants("style"))
+                {
+                    styleNode.SetAttributeValue("nonce", nonce);
+                }
+            }
             string headHtml = doc.DocumentNode.Element("html")?.Element("head")?.InnerHtml ?? string.Empty;
             string html = doc.DocumentNode.Element("html")?.Element("body")?.InnerHtml ?? string.Empty;
 

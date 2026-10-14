@@ -513,7 +513,7 @@ public partial class Program
             string csp = string.Join("; ",
                 $"default-src 'self'",
                 $"script-src 'self' 'unsafe-inline' cdn.jsdelivr.net www.clarity.ms www.googletagmanager.com js.monitor.azure.com https://hcaptcha.com https://*.hcaptcha.com{tryDotNetSources}",
-                $"style-src 'self' cdnjs.cloudflare.com fonts.googleapis.com https://hcaptcha.com https://*.hcaptcha.com",
+                $"style-src 'self' 'nonce-{CspNonce.Placeholder}' cdnjs.cloudflare.com fonts.googleapis.com https://hcaptcha.com https://*.hcaptcha.com",
                 $"style-src-attr 'unsafe-inline'",
                 $"font-src 'self' fonts.gstatic.com cdnjs.cloudflare.com",
                 $"img-src 'self' data: https:",
