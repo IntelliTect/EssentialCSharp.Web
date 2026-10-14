@@ -607,7 +607,6 @@ a:hover {
     background-color: #007bff;
     color: white;
     border-radius: 0 4px 4px 0;
-    cursor: pointer;
 }
 
     .filter-btn .fa-search {

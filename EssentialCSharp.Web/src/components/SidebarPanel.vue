@@ -99,9 +99,9 @@ function isActivePath(paths) {
                         class="filter-input"
                         placeholder="Search sections..."
                     />
-                    <button type="button" class="filter-btn" aria-hidden="true" tabindex="-1">
+                    <span class="filter-btn" aria-hidden="true">
                         <i class="fa fa-search icon-light" />
-                    </button>
+                    </span>
                 </div>
             </div>
 
