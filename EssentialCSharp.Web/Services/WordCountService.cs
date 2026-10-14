@@ -5,8 +5,9 @@ namespace EssentialCSharp.Web.Services;
 /// <summary>
 /// Singleton service that computes prose-only word counts for all content pages
 /// at startup and caches them in memory. Code blocks (<c>&lt;pre&gt;</c>,
-/// <c>&lt;code&gt;</c>, <c>&lt;script&gt;</c>, <c>&lt;style&gt;</c>) are excluded
-/// because they are read very differently from prose and would skew WPM estimates.
+/// <c>&lt;code&gt;</c>, <c>&lt;script&gt;</c>, <c>&lt;style&gt;</c>, and generated
+/// <c>.code-block-section</c> listings are excluded because they are read very
+/// differently from prose and would skew WPM estimates.
 /// </summary>
 public class WordCountService : IWordCountService
 {
@@ -141,8 +142,10 @@ public class WordCountService : IWordCountService
         HtmlNode? body = doc.DocumentNode.SelectSingleNode("//body") ?? doc.DocumentNode;
 
         // Remove excluded tags (modifies in-place on a clone isn't available, so remove from live tree).
-        // XPath: //pre | //code | //script | //style
-        string xpath = string.Join(" | ", ExcludedTags.Select(t => $"//{t}"));
+        string xpath = string.Join(
+            " | ",
+            ExcludedTags.Select(t => $"//{t}")
+                .Append("//*[contains(concat(' ', normalize-space(@class), ' '), ' code-block-section ')]"));
         foreach (HtmlNode node in body.SelectNodes(xpath)?.ToList() ?? [])
         {
             node.Remove();

@@ -112,6 +112,42 @@ public class WordCountServiceTests
     }
 
     [Test]
+    public async Task GetPageWordCount_ExcludesGeneratedCodeBlockSection()
+    {
+        const string html = """
+            <html><body>
+                <p>Prose before the listing.</p>
+                <div class="element-section code-block-top-section code-block-bottom-section code-block-section">
+                    <div class="code-block-heading">Listing 1.16: Using Console.ReadLine()</div>
+                    <div class="code-block-lines">
+                        <div class="code-line">
+                            <span class="code-line-number no-select">1.</span>
+                            <span class="CPKeyword" v-pre>public</span>&nbsp;<span class="CPKeyword" v-pre>class</span>&nbsp;HeyYou
+                        </div>
+                        <div class="code-line">
+                            <span class="code-line-number no-select">2.</span>
+                            { Console.WriteLine(<span class="Maroon" v-pre>&quot;Hello&nbsp;world&quot;</span>); }
+                        </div>
+                    </div>
+                </div>
+                <p>Prose after the listing.</p>
+            </body></html>
+            """;
+        (string tempDir, string filePath) = WriteTempHtmlFile(html);
+        try
+        {
+            SiteMapping mapping = MakeMapping("generated-code", tempDir, Path.GetFileName(filePath), 1, 1);
+            (WordCountService service, _) = CreateService([mapping], tempDir);
+
+            await Assert.That(service.GetPageWordCount("generated-code")).IsEqualTo(8);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    [Test]
     public async Task GetPageWordCount_ExcludesScriptAndStyle()
     {
         const string html = """
