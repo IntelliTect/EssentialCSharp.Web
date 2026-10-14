@@ -15,6 +15,7 @@
 
 import { ref, onMounted, onBeforeUnmount, readonly } from "vue";
 import { getDocumentScrollFraction } from "../utils/readingProgress.js";
+import { applyOutlierRules, deriveWpm, getSessionWordsRead } from "../utils/readingAlgorithm.js";
 
 // ----- Constants -----
 const IDLE_THRESHOLD_S = 300; // 5 minutes
@@ -100,8 +101,11 @@ export function useReadingTracker() {
     let tickIntervalId = null;
     let lastMousemoveAt = 0;
 
-    // Scroll tracking.
-    let maxScrollFraction = getDocumentScrollFraction();
+    // Scroll tracking. Session credit is measured from the initial position, so
+    // deep links and restored scroll positions do not credit skipped content.
+    let sessionStartScrollFraction = getDocumentScrollFraction();
+    let maxScrollFraction = sessionStartScrollFraction;
+    let hasUserInput = false;
 
     // Page context (from window globals set by _Layout.cshtml).
     const pageKey = window.CURRENT_PAGE_KEY ?? null;
@@ -122,6 +126,11 @@ export function useReadingTracker() {
         }
     }
 
+    function markUserInput() {
+        hasUserInput = true;
+        markActivity();
+    }
+
     function onVisibilityChange() {
         if (document.visibilityState !== "visible") {
             state = STATE_HIDDEN;
@@ -136,13 +145,20 @@ export function useReadingTracker() {
         const now = Date.now();
         if (now - lastMousemoveAt >= MOUSEMOVE_THROTTLE_MS) {
             lastMousemoveAt = now;
-            markActivity();
+            markUserInput();
         }
     }
 
     function onScroll() {
-        markActivity();
         const fraction = getDocumentScrollFraction();
+        if (!hasUserInput) {
+            // Browser anchor/restoration scrolls before reader input reset the baseline.
+            sessionStartScrollFraction = fraction;
+            maxScrollFraction = fraction;
+            return;
+        }
+
+        markActivity();
         if (fraction > maxScrollFraction) {
             maxScrollFraction = fraction;
         }
@@ -168,7 +184,10 @@ export function useReadingTracker() {
     async function flush({ keepalive = false } = {}) {
         if (!pageKey || activeSeconds.value <= 0 || pageWordCount <= 0) return;
 
-        const wordsRead = Math.round(pageWordCount * maxScrollFraction);
+        const wordsRead = getSessionWordsRead(
+            pageWordCount,
+            sessionStartScrollFraction,
+            maxScrollFraction);
         const scrollFraction = maxScrollFraction;
         // Near-bottom (within 5%) = completed.
         const completed = scrollFraction >= 0.95;
@@ -189,15 +208,21 @@ export function useReadingTracker() {
                 }
             }
         } else {
-            // Update localStorage profile.
+            // Update localStorage profile with the same outlier rules as the server.
             const local = loadLocalProfile();
-            local.totalWords = (local.totalWords || 0) + wordsRead;
-            local.totalActiveSeconds = (local.totalActiveSeconds || 0) + activeSeconds.value;
+            const totalWords = local.totalWords || 0;
+            const totalActiveSeconds = local.totalActiveSeconds || 0;
+            const accepted = applyOutlierRules(
+                wordsRead,
+                activeSeconds.value,
+                deriveWpm(totalWords, totalActiveSeconds));
+            if (!accepted) return;
+
+            local.totalWords = totalWords + accepted.words;
+            local.totalActiveSeconds = totalActiveSeconds + accepted.seconds;
             saveLocalProfile(local);
 
-            const localWpm = local.totalActiveSeconds > 0
-                ? local.totalWords / (local.totalActiveSeconds / 60)
-                : 0;
+            const localWpm = deriveWpm(local.totalWords, local.totalActiveSeconds);
             if (localWpm > 0) {
                 wpm.value = localWpm;
             }
@@ -242,16 +267,20 @@ export function useReadingTracker() {
 
     onMounted(async () => {
         state = document.visibilityState === "visible" ? STATE_READING : STATE_HIDDEN;
-        maxScrollFraction = Math.max(maxScrollFraction, getDocumentScrollFraction());
+        if (!hasUserInput) {
+            sessionStartScrollFraction = getDocumentScrollFraction();
+            maxScrollFraction = sessionStartScrollFraction;
+        }
 
         tickIntervalId = setInterval(tick, TICK_INTERVAL_MS);
 
         document.addEventListener("visibilitychange", onVisibilityChange);
         document.addEventListener("mousemove", onMousemove, { passive: true });
-        document.addEventListener("keydown", markActivity);
+        document.addEventListener("keydown", markUserInput);
+        document.addEventListener("wheel", markUserInput, { passive: true });
         window.addEventListener("scroll", onScroll, { passive: true });
-        document.addEventListener("touchstart", markActivity, { passive: true });
-        document.addEventListener("pointerdown", markActivity);
+        document.addEventListener("touchstart", markUserInput, { passive: true });
+        document.addEventListener("pointerdown", markUserInput);
         window.addEventListener("focus", markActivity);
         window.addEventListener("beforeunload", onBeforeUnload);
 
@@ -280,10 +309,11 @@ export function useReadingTracker() {
 
         document.removeEventListener("visibilitychange", onVisibilityChange);
         document.removeEventListener("mousemove", onMousemove);
-        document.removeEventListener("keydown", markActivity);
+        document.removeEventListener("keydown", markUserInput);
+        document.removeEventListener("wheel", markUserInput);
         window.removeEventListener("scroll", onScroll);
-        document.removeEventListener("touchstart", markActivity);
-        document.removeEventListener("pointerdown", markActivity);
+        document.removeEventListener("touchstart", markUserInput);
+        document.removeEventListener("pointerdown", markUserInput);
         window.removeEventListener("focus", markActivity);
         window.removeEventListener("beforeunload", onBeforeUnload);
 

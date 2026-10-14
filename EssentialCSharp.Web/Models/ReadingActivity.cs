@@ -13,6 +13,8 @@ namespace EssentialCSharp.Web.Models;
 [Index(nameof(UserId), nameof(PageKey))]
 public class ReadingActivity
 {
+    public const int PageKeyMaxLength = 256;
+
     public int Id { get; set; }
 
     [Required]
@@ -23,7 +25,7 @@ public class ReadingActivity
     /// Matches <see cref="SiteMapping.PrimaryKey"/> for the page that was read.
     /// </summary>
     [Required]
-    [MaxLength(256)]
+    [MaxLength(PageKeyMaxLength)]
     public required string PageKey { get; set; }
 
     public DateTime RecordedAtUtc { get; set; } = DateTime.UtcNow;
