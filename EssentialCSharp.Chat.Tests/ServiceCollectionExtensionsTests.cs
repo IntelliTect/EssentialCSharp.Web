@@ -31,6 +31,21 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Test]
+    public void AddConfiguredChatServices_WithFullAzureConfig_ConstructsAzureChatService()
+    {
+        var services = CreateServices(new Dictionary<string, string?>
+        {
+            ["AIOptions:Endpoint"] = "https://example.openai.azure.com",
+            ["AIOptions:ChatDeploymentName"] = "chat-deployment",
+            ["AIOptions:VectorGenerationDeploymentName"] = "embedding-deployment",
+            ["ConnectionStrings:PostgresVectorStore"] = "Host=localhost;Database=test;Username=test;Password=test;"
+        });
+
+        using var provider = services.BuildServiceProvider();
+        _ = provider.GetRequiredService<IChatCompletionService>();
+    }
+
+    [Test]
     [Arguments("invalid-azure-falls-back-to-local")]
     [Arguments("valid-local")]
     [Arguments("connection-string-fallback")]

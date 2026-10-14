@@ -17,6 +17,10 @@ namespace EssentialCSharp.Web.Controllers;
 [IgnoreAntiforgeryToken]
 public partial class ChatController : ControllerBase
 {
+    private const string ContentFilteredErrorCode = "content_filtered";
+    private const string ContentFilteredErrorMessage =
+        "This request could not be completed because it did not meet the content safety policy.";
+
     private readonly IChatCompletionService _ChatService;
     private readonly ResponseIdValidationService _ResponseIdValidationService;
     private readonly ICaptchaValidationService _CaptchaValidationService;
@@ -78,6 +82,14 @@ public partial class ChatController : ControllerBase
                 Response = response,
                 ResponseId = responseId,
                 Timestamp = DateTime.UtcNow
+            });
+        }
+        catch (ChatContentFilteredException)
+        {
+            return UnprocessableEntity(new
+            {
+                error = ContentFilteredErrorMessage,
+                errorCode = ContentFilteredErrorCode
             });
         }
         catch (ConversationContextLimitExceededException)
@@ -188,6 +200,39 @@ public partial class ChatController : ControllerBase
 
             throw;
         }
+        catch (ChatContentFilteredException)
+        {
+            if (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
+                return;
+
+            if (!Response.HasStarted)
+            {
+                Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
+                Response.ContentType = "application/json";
+                await Response.WriteAsJsonAsync(new
+                {
+                    error = ContentFilteredErrorMessage,
+                    errorCode = ContentFilteredErrorCode
+                }, cancellationToken);
+                return;
+            }
+
+            try
+            {
+                var eventData = JsonSerializer.Serialize(new
+                {
+                    type = "error",
+                    message = ContentFilteredErrorMessage,
+                    errorCode = ContentFilteredErrorCode
+                });
+                await Response.WriteAsync($"data: {eventData}\n\n", cancellationToken);
+                await Response.Body.FlushAsync(cancellationToken);
+            }
+            catch (Exception writeException) when (writeException is IOException or OperationCanceledException or ObjectDisposedException)
+            {
+                // The stream cannot deliver a moderation event after the client disconnects.
+            }
+        }
         catch (ConversationContextLimitExceededException ex)
         {
             if (!Response.HasStarted)
@@ -240,14 +285,15 @@ public partial class ChatController : ControllerBase
             LogChatStreamErrorBeforeResponseStarted(_Logger, ex, User.Identity?.Name);
             Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
             Response.ContentType = "application/json";
-            await Response.WriteAsJsonAsync(new { error = "Chat service unavailable", errorCode = "chat_unavailable" }, cancellationToken);
+            await Response.WriteAsJsonAsync(new { error = "Chat service unavailable", errorCode = ex.ErrorCode }, cancellationToken);
         }
         catch (ChatBackendUnavailableException ex)
         {
             LogChatStreamErrorMidStream(_Logger, ex, User.Identity?.Name);
             try
             {
-                await Response.WriteAsync("data: {\"type\":\"error\",\"message\":\"Chat service unavailable\",\"errorCode\":\"chat_unavailable\"}\n\n", CancellationToken.None);
+                var eventData = JsonSerializer.Serialize(new { type = "error", message = "Chat service unavailable", errorCode = ex.ErrorCode });
+                await Response.WriteAsync($"data: {eventData}\n\n", CancellationToken.None);
                 await Response.Body.FlushAsync(CancellationToken.None);
             }
             catch (Exception writeException) when (writeException is IOException or OperationCanceledException or ObjectDisposedException)

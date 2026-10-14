@@ -1,0 +1,131 @@
+@{
+    ViewData["Title"] = "Cookie Policy";
+}
+
+<div class="px-3">
+    <h1>@ViewData["Title"]</h1>
+    <hr class="divider-light-blue" />
+
+    <p>
+        This page explains how Essential C# uses cookies and similar browser storage technologies. We use
+        essential cookies required for security and sign-in, and optional analytics cookies only after you
+        grant analytics consent from the cookie banner or the <button type="button" class="btn btn-link p-0 align-baseline" onclick="openConsentPreferences()">Cookie Preferences</button> link.
+    </p>
+
+    <p>
+        We do not use advertising or personalization cookies on this site.
+    </p>
+
+    <h2>How to manage your consent</h2>
+    <p>
+        You can accept, reject, or withdraw analytics consent at any time from the footer's Cookie Preferences link.
+        Withdrawing consent also clears the analytics cookies we control from your browser.
+    </p>
+
+    <h2>Cookies we use</h2>
+
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">Cookie / Storage Key</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Provider</th>
+                    <th scope="col">Purpose</th>
+                    <th scope="col">Typical duration</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>essential-csharp-consent</code></td>
+                    <td>Essential</td>
+                    <td>Essential C#</td>
+                    <td>Stores your consent choices and the consent version so we know whether to show the banner again.</td>
+                    <td>365 days</td>
+                </tr>
+                <tr>
+                    <td><code>.AspNetCore.Identity.Application</code></td>
+                    <td>Essential</td>
+                    <td>Essential C# / ASP.NET Core Identity</td>
+                    <td>Keeps signed-in users authenticated while they use the site.</td>
+                    <td>Up to 60 minutes of inactivity, with sliding renewal while active</td>
+                </tr>
+                <tr>
+                    <td><code>.AspNetCore.Antiforgery.*</code></td>
+                    <td>Essential</td>
+                    <td>Essential C# / ASP.NET Core</td>
+                    <td>Protects forms and authenticated requests against cross-site request forgery attacks.</td>
+                    <td>Session or framework-managed</td>
+                </tr>
+                <tr>
+                    <td><code>_ga</code>, <code>_ga_*</code>, <code>_gid</code>, <code>_gat</code></td>
+                    <td>Analytics</td>
+                    <td>Google Analytics</td>
+                    <td>Measures page usage, sessions, and engagement after analytics consent is granted.</td>
+                    <td>Varies by cookie; commonly from 1 minute to 2 years</td>
+                </tr>
+                <tr>
+                    <td><code>_clck</code>, <code>_clsk</code>, <code>CLID</code>, <code>ANONCHK</code>, <code>MR</code>, <code>MUID</code>, <code>SM</code></td>
+                    <td>Analytics</td>
+                    <td>Microsoft Clarity</td>
+                    <td>Helps us understand aggregated interaction patterns such as clicks, scrolling, and session behavior after analytics consent is granted.</td>
+                    <td>Varies by cookie; typically session to 1 year</td>
+                </tr>
+                <tr>
+                    <td><code>ai_user</code>, <code>ai_session</code></td>
+                    <td>Analytics</td>
+                    <td>Azure Application Insights</td>
+                    <td>Measures client-side telemetry and page activity after analytics consent is granted.</td>
+                    <td>Typically session to 1 year</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h2>Other browser storage we use</h2>
+
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">Storage Key</th>
+                    <th scope="col">Storage Type</th>
+                    <th scope="col">Purpose</th>
+                    <th scope="col">Typical duration</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>aiChatHistory</code></td>
+                    <td>localStorage</td>
+                    <td>Stores recent authenticated AI chat messages in your browser so the chat widget can restore the latest conversation state.</td>
+                    <td>Up to 2 hours unless you clear it sooner</td>
+                </tr>
+                <tr>
+                    <td><code>aiChatLastResponseId</code></td>
+                    <td>sessionStorage</td>
+                    <td>Stores the last AI response identifier for the current tab to continue the active chat safely.</td>
+                    <td>Current browser tab session</td>
+                </tr>
+                <tr>
+                    <td><code>sidebarShown</code></td>
+                    <td>localStorage</td>
+                    <td>Remembers whether the table-of-contents sidebar is shown or hidden on non-identity pages.</td>
+                    <td>Until you clear browser storage</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h2>Third-party services</h2>
+    <p>
+        When you consent to analytics, the site may load Google Analytics, Microsoft Clarity, and Azure Application Insights.
+        These providers may process technical data such as IP-derived region information, page URLs, browser metadata, and
+        usage events according to their own privacy documentation.
+    </p>
+
+    <p>
+        For broader information about how personal data is handled, please see the
+        <a href="https://intellitect.com/about/privacy-policy/" target="_blank" rel="noreferrer noopener">IntelliTect Privacy Policy</a>.
+    </p>
+</div>

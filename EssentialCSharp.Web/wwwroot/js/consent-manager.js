@@ -8,15 +8,11 @@ class ConsentManager {
     constructor() {
         this.COOKIE_NAME = 'essential-csharp-consent';
         this.COOKIE_DURATION = 365; // days
-        this.CONSENT_VERSION = '2'; // Bump this to re-prompt all users when consent terms change
+        this.CONSENT_VERSION = '3'; // Bump this to re-prompt all users when consent terms change
         this.consentState = {
             analytics_storage: 'denied',
-            ad_storage: 'denied',
-            ad_user_data: 'denied',
-            ad_personalization: 'denied',
             functionality_storage: 'granted', // Always granted for essential functionality
-            security_storage: 'granted', // Always granted for security
-            personalization_storage: 'denied'
+            security_storage: 'granted' // Always granted for security
         };
         
         this.init();
@@ -28,8 +24,6 @@ class ConsentManager {
         // Load saved consent preferences (signals GA if already consented)
         this.loadConsentPreferences();
 
-        // Always send Clarity the current consent state (denied by default for new visitors).
-        // Clarity's polyfill queues this call and delivers it when the script loads.
         this.updateClarityConsent();
         
         // Show banner if no valid consent stored
@@ -62,8 +56,7 @@ class ConsentManager {
                 // Validate and only apply known consent properties for security.
                 // Exclude functionality_storage and security_storage — always essential, never user-overrideable.
                 const validConsentKeys = [
-                    'analytics_storage', 'ad_storage', 'ad_user_data', 
-                    'ad_personalization', 'personalization_storage'
+                    'analytics_storage'
                 ];
                 
                 const validatedPreferences = {};
@@ -106,19 +99,21 @@ class ConsentManager {
         const banner = document.createElement('div');
         banner.id = 'consent-banner';
         banner.className = 'consent-banner';
+        banner.setAttribute('role', 'region');
+        banner.setAttribute('aria-label', 'Cookie preferences');
         banner.innerHTML = `
             <div class="consent-banner-content">
                 <div class="consent-banner-text">
-                    <h3>Cookie Preferences</h3>
-                    <p>We use cookies to improve your experience and analyze website usage. See our <a href="https://intellitect.com/about/privacy-policy/" target="_blank" rel="noopener noreferrer">Privacy Policy</a> for details.</p>
+                    <h2>Cookie Preferences</h2>
+                    <p>We use essential cookies to keep the site secure and optional analytics cookies to understand site usage. See our <a href="/cookie-policy">Cookie Policy</a> and <a href="https://intellitect.com/about/privacy-policy/" target="_blank" rel="noopener noreferrer">Privacy Policy</a> for details.</p>
                 </div>
                 <div class="consent-banner-actions">
-                    <button id="consent-reject-all" class="btn btn-outline-secondary me-2">Reject All</button>
-                    <button id="consent-accept-all" class="btn btn-primary me-2">Accept All</button>
-                    <button id="consent-customize" class="btn btn-outline-primary">Customize</button>
+                    <button id="consent-reject-all" class="btn btn-outline-secondary me-2" type="button">Reject All</button>
+                    <button id="consent-accept-all" class="btn btn-primary me-2" type="button">Accept All</button>
+                    <button id="consent-customize" class="btn btn-outline-primary" type="button" aria-expanded="false" aria-controls="consent-details">Customize</button>
                 </div>
             </div>
-            <div id="consent-details" class="consent-details" style="display: none;">
+            <div id="consent-details" class="consent-details" hidden>
                 <div class="consent-category">
                     <label class="consent-switch">
                         <input type="checkbox" id="consent-essential" checked disabled>
@@ -135,22 +130,13 @@ class ConsentManager {
                         <span class="consent-slider"></span>
                         <div class="consent-info">
                             <strong>Analytics Cookies</strong>
-                            <p>Help us understand how you use our site to improve your experience.</p>
-                        </div>
-                    </label>
-                </div>
-                <div class="consent-category">
-                    <label class="consent-switch">
-                        <input type="checkbox" id="consent-advertising">
-                        <span class="consent-slider"></span>
-                        <div class="consent-info">
-                            <strong>Google Signals</strong>
-                            <p>Allows Google to associate your visit with your Google account for analytics modeling and cross-site measurement. No advertisements are served on this site, but Google may use this data across its services.</p>
+                            <p>Help us understand how you use the site through Google Analytics, Microsoft Clarity, and Azure Application Insights. We do not use advertising or personalization cookies.</p>
                         </div>
                     </label>
                 </div>
                 <div class="consent-actions">
                     <button id="consent-save-preferences" class="btn btn-primary">Save Preferences</button>
+                    <button id="consent-withdraw-consent" class="btn btn-outline-secondary ms-2" type="button">Withdraw Consent</button>
                 </div>
             </div>
         `;
@@ -177,29 +163,33 @@ class ConsentManager {
         banner.querySelector('#consent-save-preferences').addEventListener('click', () => {
             this.saveCustomPreferences();
         });
+
+        banner.querySelector('#consent-withdraw-consent').addEventListener('click', () => {
+            this.revokeAllConsent();
+        });
     }
 
     showCustomizeOptions() {
         const details = document.getElementById('consent-details');
+        const customizeButton = document.getElementById('consent-customize');
         if (details) {
-            details.style.display = 'block';
-            
+            const isExpanded = !details.hidden;
+            details.hidden = isExpanded;
+            customizeButton?.setAttribute('aria-expanded', String(!isExpanded));
+            if (isExpanded) {
+                return;
+            }
+
             // Load current preferences into checkboxes
-            document.getElementById('consent-analytics').checked = 
+            document.getElementById('consent-analytics').checked =
                 this.consentState.analytics_storage === 'granted';
-            document.getElementById('consent-advertising').checked = 
-                this.consentState.ad_storage === 'granted';
         }
     }
 
     acceptAllConsent() {
         this.consentState = {
             ...this.consentState,
-            analytics_storage: 'granted',
-            ad_storage: 'granted',
-            ad_user_data: 'granted',
-            ad_personalization: 'granted',
-            personalization_storage: 'granted'
+            analytics_storage: 'granted'
         };
         
         this.saveConsentAndClose();
@@ -208,11 +198,7 @@ class ConsentManager {
     rejectAllConsent() {
         this.consentState = {
             ...this.consentState,
-            analytics_storage: 'denied',
-            ad_storage: 'denied',
-            ad_user_data: 'denied',
-            ad_personalization: 'denied',
-            personalization_storage: 'denied'
+            analytics_storage: 'denied'
         };
         
         this.saveConsentAndClose();
@@ -220,15 +206,10 @@ class ConsentManager {
 
     saveCustomPreferences() {
         const analyticsChecked = document.getElementById('consent-analytics').checked;
-        const advertisingChecked = document.getElementById('consent-advertising').checked;
         
         this.consentState = {
             ...this.consentState,
-            analytics_storage: analyticsChecked ? 'granted' : 'denied',
-            ad_storage: advertisingChecked ? 'granted' : 'denied',
-            ad_user_data: advertisingChecked ? 'granted' : 'denied',
-            ad_personalization: advertisingChecked ? 'granted' : 'denied',
-            personalization_storage: advertisingChecked ? 'granted' : 'denied'
+            analytics_storage: analyticsChecked ? 'granted' : 'denied'
         };
         
         this.saveConsentAndClose();
@@ -271,7 +252,6 @@ class ConsentManager {
         if (window.clarity) {
             try {
                 window.clarity('consentv2', {
-                    ad_storage: this.consentState.ad_storage,
                     analytics_storage: this.consentState.analytics_storage
                 });
             } catch (error) {
@@ -315,7 +295,7 @@ class ConsentManager {
                 gap: 20px;
             }
 
-            .consent-banner-text h3 {
+            .consent-banner-text h2 {
                 margin: 0 0 8px 0;
                 font-size: 1.2rem;
                 color: #333;
@@ -327,10 +307,20 @@ class ConsentManager {
                 font-size: 0.95rem;
             }
 
+            /* The site-wide "a { text-decoration: none }" leaves these links
+               distinguishable from the text only by color (WCAG 1.4.1). */
+            .consent-banner-text p a {
+                text-decoration: underline;
+            }
+
             .consent-banner-actions {
                 display: flex;
                 gap: 10px;
                 flex-wrap: wrap;
+            }
+
+            .consent-details[hidden] {
+                display: none;
             }
 
             .consent-details {
@@ -434,7 +424,7 @@ class ConsentManager {
     }
 
     hasAdvertisingConsent() {
-        return this.consentState.ad_storage === 'granted';
+        return false;
     }
 
     notifyConsentChanged() {

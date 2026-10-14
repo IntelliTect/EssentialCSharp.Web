@@ -34,7 +34,7 @@
     bottom: 24px;
     right: 24px;
     z-index: 1050;
-    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: system-ui, -apple-system, "Segoe UI", BlinkMacSystemFont, sans-serif;
 }
 
 /* Responsive positioning to avoid navigation conflicts */

@@ -39,6 +39,12 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
         {
             RemoveSingleOrNone(
                 services,
+                descriptor => descriptor.ServiceType == typeof(IHostedService) &&
+                    descriptor.ImplementationType == typeof(DatabaseMigrationService),
+                nameof(DatabaseMigrationService));
+
+            RemoveSingleOrNone(
+                services,
                 descriptor => descriptor.ServiceType ==
                     typeof(IDbContextOptionsConfiguration<EssentialCSharpWebContext>),
                 "IDbContextOptionsConfiguration<EssentialCSharpWebContext>");
@@ -47,14 +53,6 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
                 services,
                 descriptor => descriptor.ServiceType == typeof(DbConnection),
                 nameof(DbConnection));
-
-            // Remove DatabaseMigrationService: it calls MigrateAsync which conflicts
-            // with EnsureCreated() used below for the in-memory SQLite test database.
-            RemoveSingleOrNone(
-                services,
-                descriptor => descriptor.ServiceType == typeof(IHostedService) &&
-                    descriptor.ImplementationType == typeof(DatabaseMigrationService),
-                nameof(DatabaseMigrationService));
 
             // Keep per-scope connections so each request/test scope uses a fresh DbConnection,
             // which avoids locking issues from sharing one SqliteConnection instance.

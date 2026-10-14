@@ -1,10 +1,11 @@
-using Azure.AI.OpenAI;
+using Azure.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 using OpenAI.Responses;
 using System.ClientModel;
+using System.ClientModel.Primitives;
 using System.Collections.Frozen;
 
 namespace EssentialCSharp.Chat.Common.Services;
@@ -15,7 +16,6 @@ namespace EssentialCSharp.Chat.Common.Services;
 public partial class AIChatService : IChatCompletionService
 {
     private readonly AIOptions _Options;
-    private readonly AzureOpenAIClient _AzureClient;
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     private readonly ResponsesClient _ResponseClient;
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
@@ -25,19 +25,109 @@ public partial class AIChatService : IChatCompletionService
     public bool IsAvailable => true;
     public bool SupportsContextualSearch => true;
 
-    public AIChatService(IOptions<AIOptions> options, AISearchService searchService, AzureOpenAIClient azureClient, ILogger<AIChatService> logger)
+    // The scope required for Azure OpenAI token auth via managed identity.
+    private const string AzureCognitiveServicesScope = "https://cognitiveservices.azure.com/.default";
+
+    // The Azure OpenAI REST API version used by Azure.AI.OpenAI 2.9.0-beta.1.
+    // AzureOpenAIClient.GetResponsesClient() is binary-incompatible with OpenAI 2.12.0
+    // because OpenAI changed the ResponsesClient constructor from (ClientPipeline, OpenAIClientOptions)
+    // to (ClientPipeline, ResponsesClientOptions). Until Azure.AI.OpenAI ships an update that
+    // supports OpenAI 2.12+, we construct ResponsesClient directly using BearerTokenPolicy.
+    private const string AzureApiVersion = "2025-04-01-preview";
+
+    public AIChatService(IOptions<AIOptions> options, AISearchService searchService, TokenCredential credential, ILogger<AIChatService> logger)
+        : this(options, searchService, CreateResponseClient(options.Value, credential), logger)
+    {
+    }
+
+    /// <summary>
+    /// Creates the chat service with a preconfigured Responses API client.
+    /// </summary>
+    /// <remarks>
+    /// This overload supports callers that own Responses API client configuration.
+    /// </remarks>
+    public AIChatService(
+        IOptions<AIOptions> options,
+        AISearchService searchService,
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        ResponsesClient responseClient,
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        ILogger<AIChatService> logger)
     {
         _Options = options.Value;
         _SearchService = searchService;
         _Logger = logger;
         _AllowedMcpTools = _Options.AllowedMcpTools.ToFrozenSet(StringComparer.Ordinal);
-
-        // Initialize Azure OpenAI client and get the Response Client from it
-        _AzureClient = azureClient;
+        _ResponseClient = responseClient;
+    }
 
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        _ResponseClient = _AzureClient.GetResponsesClient();
+    private static ResponsesClient CreateResponseClient(AIOptions options, TokenCredential credential)
+    {
+        // Build an Azure-authenticated ResponsesClient directly, targeting the deployment endpoint.
+        // The endpoint is: {AzureEndpoint}/openai/deployments/{ChatDeploymentName}
+        // ResponsesClient appends "/responses" to produce the full Azure REST path.
+        var deploymentEndpoint = new Uri(
+            $"{options.Endpoint.TrimEnd('/')}/openai/deployments/{options.ChatDeploymentName}");
+
+        var responsesOptions = new ResponsesClientOptions { Endpoint = deploymentEndpoint };
+        responsesOptions.AddPolicy(new ApiVersionPipelinePolicy(AzureApiVersion), PipelinePosition.PerCall);
+
+        var tokenProvider = new AzureCogServicesTokenProvider(credential);
+        var bearerPolicy = new BearerTokenPolicy(tokenProvider, AzureCognitiveServicesScope);
+        return new ResponsesClient(bearerPolicy, responsesOptions);
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+    }
+
+    /// <summary>
+    /// Adds the Azure api-version query parameter to every outgoing request.
+    /// Required because the base ResponsesClient does not know the Azure API version;
+    /// that concern was previously handled internally by AzureResponsesClient.
+    /// </summary>
+    private sealed class ApiVersionPipelinePolicy(string apiVersion) : PipelinePolicy
+    {
+        public override void Process(PipelineMessage message, IReadOnlyList<PipelinePolicy> pipeline, int currentIndex)
+        {
+            AppendApiVersion(message);
+            ProcessNext(message, pipeline, currentIndex);
+        }
+
+        public override async ValueTask ProcessAsync(PipelineMessage message, IReadOnlyList<PipelinePolicy> pipeline, int currentIndex)
+        {
+            AppendApiVersion(message);
+            await ProcessNextAsync(message, pipeline, currentIndex);
+        }
+
+        private void AppendApiVersion(PipelineMessage message)
+        {
+            var uri = message.Request.Uri?.ToString();
+            if (uri is null || uri.Contains("api-version", StringComparison.OrdinalIgnoreCase))
+                return;
+            var separator = uri.Contains('?') ? '&' : '?';
+            message.Request.Uri = new Uri(uri + separator + "api-version=" + apiVersion);
+        }
+    }
+
+    /// <summary>
+    /// Bridges Azure.Core's <see cref="TokenCredential"/> into the System.ClientModel
+    /// <see cref="AuthenticationTokenProvider"/> abstraction used by <see cref="BearerTokenPolicy"/>.
+    /// </summary>
+    private sealed class AzureCogServicesTokenProvider(TokenCredential credential) : AuthenticationTokenProvider
+    {
+        public override GetTokenOptions CreateTokenOptions(IReadOnlyDictionary<string, object> context)
+            => new(context);
+
+        public override AuthenticationToken GetToken(GetTokenOptions options, CancellationToken cancellationToken)
+        {
+            var token = credential.GetToken(new TokenRequestContext([AzureCognitiveServicesScope]), cancellationToken);
+            return new AuthenticationToken(token.Token, "Bearer", token.ExpiresOn, null);
+        }
+
+        public override async ValueTask<AuthenticationToken> GetTokenAsync(GetTokenOptions options, CancellationToken cancellationToken)
+        {
+            var token = await credential.GetTokenAsync(new TokenRequestContext([AzureCognitiveServicesScope]), cancellationToken);
+            return new AuthenticationToken(token.Token, "Bearer", token.ExpiresOn, null);
+        }
     }
 
     /// <summary>
@@ -102,6 +192,7 @@ public partial class AIChatService : IChatCompletionService
 
         // Create the streaming response using the Responses API
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        responseOptions.StreamingEnabled = true;
         responseOptions.InputItems.Clear();
         responseOptions.InputItems.Add(ResponseItem.CreateUserMessageItem(enrichedPrompt));
         var streamingUpdates = _ResponseClient.CreateResponseStreamingAsync(responseOptions, cancellationToken);
@@ -191,14 +282,21 @@ public partial class AIChatService : IChatCompletionService
         // Track this leg's response ID so tool-call continuations chain from it,
         // ensuring the model's context includes the user's message + reasoning.
         string? currentLegResponseId = null;
+        var textPartsWithDelta = new HashSet<string>(StringComparer.Ordinal);
+        var refusalPartsWithDelta = new HashSet<string>(StringComparer.Ordinal);
+        var streamUpdateTypes = new List<string>(capacity: 64);
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         List<FunctionCallResponseItem>? pendingFunctionCalls = null;
 
         // Wrap the raw stream to convert context-length API errors to our domain exception.
         // C# does not allow yield inside a try/catch, so error remapping is done in a
         // separate helper that puts try/catch only around MoveNextAsync.
-        await foreach (var update in RethrowContextLengthErrors(streamingUpdates, responseOptions.PreviousResponseId, cancellationToken))
+        await foreach (var update in RethrowKnownResponseErrors(streamingUpdates, responseOptions.PreviousResponseId, endUserId, cancellationToken))
         {
+            var updateType = update.GetType().Name;
+            streamUpdateTypes.Add(updateType);
+            if (streamUpdateTypes.Count > 40)
+                streamUpdateTypes.RemoveAt(0);
             if (update is StreamingResponseCreatedUpdate created)
             {
                 // Emit the response ID early so the controller can record ownership
@@ -222,7 +320,95 @@ public partial class AIChatService : IChatCompletionService
             }
             else if (update is StreamingResponseOutputTextDeltaUpdate deltaUpdate)
             {
+                textPartsWithDelta.Add($"{deltaUpdate.ItemId}:{deltaUpdate.OutputIndex}:{deltaUpdate.ContentIndex}");
                 yield return (deltaUpdate.Delta.ToString(), null);
+            }
+            else if (update is StreamingResponseOutputTextDoneUpdate doneUpdate)
+            {
+                // Some SDK/server combinations emit only TextDone (no deltas) for a content part.
+                // Emit Done text when no delta was seen for that same part to avoid duplicates.
+                string textPartKey = $"{doneUpdate.ItemId}:{doneUpdate.OutputIndex}:{doneUpdate.ContentIndex}";
+                if (!textPartsWithDelta.Contains(textPartKey) && !string.IsNullOrEmpty(doneUpdate.Text))
+                    yield return (doneUpdate.Text, null);
+            }
+            else if (update is StreamingResponseRefusalDeltaUpdate refusalDeltaUpdate)
+            {
+                refusalPartsWithDelta.Add($"{refusalDeltaUpdate.ItemId}:{refusalDeltaUpdate.OutputIndex}:{refusalDeltaUpdate.ContentIndex}");
+                yield return (refusalDeltaUpdate.Delta.ToString(), null);
+            }
+            else if (update is StreamingResponseRefusalDoneUpdate refusalDoneUpdate)
+            {
+                // Refusal content can also arrive as done-only events.
+                string refusalPartKey = $"{refusalDoneUpdate.ItemId}:{refusalDoneUpdate.OutputIndex}:{refusalDoneUpdate.ContentIndex}";
+                if (!refusalPartsWithDelta.Contains(refusalPartKey) && !string.IsNullOrEmpty(refusalDoneUpdate.Refusal))
+                    yield return (refusalDoneUpdate.Refusal, null);
+            }
+            else if (update is StreamingResponseErrorUpdate errorUpdate)
+            {
+                string errorCode = errorUpdate.Code ?? "unknown";
+                string errorMessage = errorUpdate.Message ?? "no message provided";
+                if (IsContentFilterFailure(errorCode, null, errorMessage))
+                {
+                    LogChatResponseBlocked(_Logger, endUserId);
+                    throw new ChatContentFilteredException();
+                }
+
+                LogStreamingResponseErrorUpdate(
+                    _Logger,
+                    currentLegResponseId,
+                    errorCode,
+                    errorMessage,
+                    BuildRecentUpdateSequence(streamUpdateTypes));
+                throw new ChatBackendUnavailableException(
+                    $"Streaming response error: {errorCode} - {errorMessage}",
+                    errorCode: "stream_response_error");
+            }
+            else if (update is StreamingResponseFailedUpdate failedUpdate)
+            {
+                string? errorCode = failedUpdate.Response.Error?.Code.ToString();
+                string? errorMessage = failedUpdate.Response.Error?.Message;
+                if (IsContentFilterFailure(errorCode, null, errorMessage))
+                {
+                    LogChatResponseBlocked(_Logger, endUserId);
+                    throw new ChatContentFilteredException();
+                }
+
+                LogStreamingResponseTerminalUpdate(
+                    _Logger,
+                    "failed",
+                    failedUpdate.Response.Id,
+                    failedUpdate.Response.Status?.ToString(),
+                    errorCode,
+                    errorMessage,
+                    failedUpdate.Response.IncompleteStatusDetails?.Reason?.ToString(),
+                    BuildRecentUpdateSequence(streamUpdateTypes));
+                throw new ChatBackendUnavailableException(
+                    BuildStreamingTerminalFailureMessage(failedUpdate.Response, "failed"),
+                    errorCode: "stream_response_failed");
+            }
+            else if (update is StreamingResponseIncompleteUpdate incompleteUpdate)
+            {
+                string? errorCode = incompleteUpdate.Response.Error?.Code.ToString();
+                string? errorMessage = incompleteUpdate.Response.Error?.Message;
+                string? incompleteReason = incompleteUpdate.Response.IncompleteStatusDetails?.Reason?.ToString();
+                if (IsContentFilterFailure(errorCode, incompleteReason, errorMessage))
+                {
+                    LogChatResponseBlocked(_Logger, endUserId);
+                    throw new ChatContentFilteredException();
+                }
+
+                LogStreamingResponseTerminalUpdate(
+                    _Logger,
+                    "incomplete",
+                    incompleteUpdate.Response.Id,
+                    incompleteUpdate.Response.Status?.ToString(),
+                    errorCode,
+                    errorMessage,
+                    incompleteReason,
+                    BuildRecentUpdateSequence(streamUpdateTypes));
+                throw new ChatBackendUnavailableException(
+                    BuildStreamingTerminalFailureMessage(incompleteUpdate.Response, "incomplete"),
+                    errorCode: "stream_response_incomplete");
             }
             // StreamingResponseCompletedUpdate: ResponseId already emitted above — no-op.
         }
@@ -261,8 +447,7 @@ public partial class AIChatService : IChatCompletionService
     }
 
     /// <summary>
-    /// Wraps a streaming response enumerable to remap <see cref="ClientResultException"/>
-    /// context-length errors to <see cref="ConversationContextLimitExceededException"/>.
+    /// Wraps a streaming response enumerable to remap known provider errors to domain exceptions.
     /// <para>
     /// C# prohibits <c>yield return</c> inside a <c>try</c> block with a <c>catch</c> clause
     /// (CS1626). By putting the <c>try/catch</c> only around <c>MoveNextAsync</c> and the
@@ -270,9 +455,10 @@ public partial class AIChatService : IChatCompletionService
     /// </para>
     /// </summary>
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-    private static async IAsyncEnumerable<StreamingResponseUpdate> RethrowContextLengthErrors(
+    private async IAsyncEnumerable<StreamingResponseUpdate> RethrowKnownResponseErrors(
         IAsyncEnumerable<StreamingResponseUpdate> source,
         string? previousResponseId,
+        string? endUserId,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await using var enumerator = source.GetAsyncEnumerator(cancellationToken);
@@ -282,6 +468,11 @@ public partial class AIChatService : IChatCompletionService
             try { hasNext = await enumerator.MoveNextAsync(); }
             catch (ClientResultException ex) when (IsContextLengthError(ex))
             { throw new ConversationContextLimitExceededException(previousResponseId, ex); }
+            catch (ClientResultException ex) when (IsContentFilterError(ex))
+            {
+                LogChatResponseBlocked(_Logger, endUserId);
+                throw new ChatContentFilteredException(ex);
+            }
 
             if (!hasNext) break;
             yield return enumerator.Current; // yield return is outside try/catch — valid
@@ -452,11 +643,26 @@ public partial class AIChatService : IChatCompletionService
             {
                 throw new ConversationContextLimitExceededException(responseOptions.PreviousResponseId, ex);
             }
+            catch (ClientResultException ex) when (IsContentFilterError(ex))
+            {
+                LogChatResponseBlocked(_Logger, endUserId);
+                throw new ChatContentFilteredException(ex);
+            }
 
-            string responseId = response.Value.Id;
+            var responseResult = response.Value;
+            if (IsContentFilterFailure(
+                    code: null,
+                    reason: responseResult.IncompleteStatusDetails?.Reason?.ToString(),
+                    message: null))
+            {
+                LogChatResponseBlocked(_Logger, endUserId);
+                throw new ChatContentFilteredException();
+            }
+
+            string responseId = responseResult.Id;
 
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-            var functionCalls = response.Value.OutputItems.OfType<FunctionCallResponseItem>().ToList();
+            var functionCalls = responseResult.OutputItems.OfType<FunctionCallResponseItem>().ToList();
 
             if (functionCalls.Count > 0 && mcpClient != null)
             {
@@ -510,7 +716,7 @@ public partial class AIChatService : IChatCompletionService
                 continue;
             }
 
-            var assistantMessage = response.Value.OutputItems
+            var assistantMessage = responseResult.OutputItems
                 .OfType<MessageResponseItem>()
                 .FirstOrDefault(m => m.Role == MessageRole.Assistant &&
                                      !string.IsNullOrEmpty(m.Content?.FirstOrDefault()?.Text));
@@ -560,6 +766,7 @@ public partial class AIChatService : IChatCompletionService
             Temperature = source.Temperature,
             TopP = source.TopP,
             ServiceTier = source.ServiceTier,
+            StreamingEnabled = source.StreamingEnabled,
         };
         foreach (var tool in source.Tools)
             clone.Tools.Add(tool);
@@ -598,6 +805,31 @@ public partial class AIChatService : IChatCompletionService
         return arguments;
     }
 
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+    private static string BuildStreamingTerminalFailureMessage(ResponseResult response, string terminalStatus)
+    {
+        if (!string.IsNullOrWhiteSpace(response.Error?.Message))
+            return $"Streaming response {terminalStatus}: {response.Error.Message}";
+
+        if (response.IncompleteStatusDetails?.Reason is { } reason)
+            return $"Streaming response {terminalStatus}: {reason}";
+
+        if (response.Status is { } status)
+            return $"Streaming response ended with status '{status}'.";
+
+        return $"Streaming response ended with status '{terminalStatus}'.";
+    }
+
+    private static string BuildRecentUpdateSequence(List<string> streamUpdateTypes)
+    {
+        const int MaxUpdatesToInclude = 40;
+        int count = streamUpdateTypes.Count;
+        if (count <= MaxUpdatesToInclude)
+            return string.Join(" -> ", streamUpdateTypes);
+        return $"... -> {string.Join(" -> ", streamUpdateTypes.Skip(count - MaxUpdatesToInclude))}";
+    }
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
     [LoggerMessage(Level = LogLevel.Information, Message = "AI tool call invoked: tool={ToolName} iteration={Iteration} user={EndUserId}")]
     private static partial void LogMcpToolCallInvoked(ILogger logger, string toolName, int iteration, string? endUserId);
 
@@ -615,6 +847,29 @@ public partial class AIChatService : IChatCompletionService
 
     [LoggerMessage(Level = LogLevel.Information, Message = "AI contextual search performed for prompt enrichment")]
     private static partial void LogContextualSearchPerformed(ILogger logger);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Streaming response error update received: responseId={ResponseId} code={Code} message={Message} updateSequence={UpdateSequence}")]
+    private static partial void LogStreamingResponseErrorUpdate(
+        ILogger logger,
+        string? responseId,
+        string code,
+        string message,
+        string updateSequence);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Streaming response terminal update: updateType={UpdateType} responseId={ResponseId} status={Status} errorCode={ErrorCode} errorMessage={ErrorMessage} incompleteReason={IncompleteReason} updateSequence={UpdateSequence}")]
+    private static partial void LogStreamingResponseTerminalUpdate(
+        ILogger logger,
+        string updateType,
+        string? responseId,
+        string? status,
+        string? errorCode,
+        string? errorMessage,
+        string? incompleteReason,
+        string updateSequence);
 
     /// <summary>
     /// Returns <c>true</c> when the API error indicates the conversation context window was exceeded.
@@ -635,6 +890,86 @@ public partial class AIChatService : IChatCompletionService
                ex.Message.Contains("maximum context length", StringComparison.OrdinalIgnoreCase) ||
                ex.Message.Contains("reduce the length of the messages", StringComparison.OrdinalIgnoreCase) ||
                ex.Message.Contains("token_limit_exceeded", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsContentFilterError(ClientResultException ex)
+    {
+        if (ex.Status is not (400 or 403))
+            return false;
+
+        string? responseBody = ex.GetRawResponse()?.Content?.ToString();
+        return ContainsContentFilterErrorCode(responseBody) ||
+               IsContentFilterFailure(
+                   TryExtractErrorCode(ex),
+                   reason: null,
+                   ex.Message);
+    }
+
+    private static bool IsContentFilterFailure(string? code, string? reason, string? message) =>
+        IsContentFilterCode(code) ||
+        IsContentFilterCode(reason) ||
+        (message is not null &&
+            (message.Contains("content_filter", StringComparison.OrdinalIgnoreCase) ||
+             message.Contains("content filter", StringComparison.OrdinalIgnoreCase) ||
+             message.Contains("ResponsibleAIPolicyViolation", StringComparison.OrdinalIgnoreCase) ||
+             message.Contains("content policy violation", StringComparison.OrdinalIgnoreCase)));
+
+    private static bool IsContentFilterCode(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
+
+        string normalized = string.Concat(value.Where(char.IsLetterOrDigit));
+        return normalized.Equals("contentfilter", StringComparison.OrdinalIgnoreCase) ||
+               normalized.Equals("contentfiltererror", StringComparison.OrdinalIgnoreCase) ||
+               normalized.Equals("contentfiltered", StringComparison.OrdinalIgnoreCase) ||
+               normalized.Equals("responsibleaipolicyviolation", StringComparison.OrdinalIgnoreCase) ||
+               normalized.Equals("contentpolicyviolation", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool ContainsContentFilterErrorCode(string? responseBody)
+    {
+        if (string.IsNullOrWhiteSpace(responseBody))
+            return false;
+
+        try
+        {
+            using var document = System.Text.Json.JsonDocument.Parse(responseBody);
+            return ContainsContentFilterErrorCode(document.RootElement);
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static bool ContainsContentFilterErrorCode(System.Text.Json.JsonElement element)
+    {
+        if (element.ValueKind == System.Text.Json.JsonValueKind.Object)
+        {
+            foreach (var property in element.EnumerateObject())
+            {
+                if (property.Name.Equals("code", StringComparison.OrdinalIgnoreCase) &&
+                    property.Value.ValueKind == System.Text.Json.JsonValueKind.String &&
+                    IsContentFilterCode(property.Value.GetString()))
+                {
+                    return true;
+                }
+
+                if (ContainsContentFilterErrorCode(property.Value))
+                    return true;
+            }
+        }
+        else if (element.ValueKind == System.Text.Json.JsonValueKind.Array)
+        {
+            foreach (var item in element.EnumerateArray())
+            {
+                if (ContainsContentFilterErrorCode(item))
+                    return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -660,4 +995,9 @@ public partial class AIChatService : IChatCompletionService
         }
         return null;
     }
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Azure chat response blocked by the configured content safety policy for user {EndUserId}")]
+    private static partial void LogChatResponseBlocked(ILogger logger, string? endUserId);
 }

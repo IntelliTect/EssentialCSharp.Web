@@ -5,6 +5,16 @@ namespace EssentialCSharp.Web.Helpers;
 
 public static class SitemapXmlHelpers
 {
+    private static readonly IReadOnlyDictionary<string, (ChangeFrequency ChangeFrequency, decimal Priority)> RouteMetadata =
+        new Dictionary<string, (ChangeFrequency, decimal)>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["/home"] = (ChangeFrequency.Monthly, 0.5M),
+            ["/about"] = (ChangeFrequency.Monthly, 0.5M),
+            ["/announcements"] = (ChangeFrequency.Monthly, 0.5M),
+            ["/guidelines"] = (ChangeFrequency.Monthly, 0.9M),
+            ["/termsofservice"] = (ChangeFrequency.Yearly, 0.2M)
+        };
+
     public static void EnsureSitemapHealthy(List<SiteMapping> siteMappings)
     {
         var groups = siteMappings.GroupBy(item => new { item.ChapterNumber, item.PageNumber });
@@ -41,10 +51,13 @@ public static class SitemapXmlHelpers
 
         foreach (var route in controllerRoutes)
         {
+            var metadata = RouteMetadata.GetValueOrDefault(
+                route,
+                (ChangeFrequency: ChangeFrequency.Monthly, Priority: 0.5M));
             nodes.Add(new($"{baseUrl}{route}")
             {
-                ChangeFrequency = GetChangeFrequencyForRoute(route),
-                Priority = GetPriorityForRoute(route)
+                ChangeFrequency = metadata.ChangeFrequency,
+                Priority = metadata.Priority
             });
         }
 
@@ -68,29 +81,4 @@ public static class SitemapXmlHelpers
 
     private static bool IsSitemapRoute(string route) =>
         route.TrimStart('/').Equals("sitemap.xml", StringComparison.OrdinalIgnoreCase);
-
-    private static ChangeFrequency GetChangeFrequencyForRoute(string route)
-    {
-        return route.ToLowerInvariant() switch
-        {
-            "/termsofservice" => ChangeFrequency.Yearly,
-            "/announcements" => ChangeFrequency.Monthly,
-            "/guidelines" => ChangeFrequency.Monthly,
-            _ => ChangeFrequency.Monthly
-        };
-    }
-
-    private static decimal GetPriorityForRoute(string route)
-    {
-        return route.ToLowerInvariant() switch
-        {
-            "/home" => 0.5M,
-            "/about" => 0.5M,
-            "/announcements" => 0.5M,
-            "/guidelines" => 0.9M,
-            "/termsofservice" => 0.2M,
-            _ => 0.5M
-        };
-    }
-
 }
