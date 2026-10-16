@@ -29,7 +29,7 @@ on:
     pull-requests: read
   steps:
     - id: check
-      env: 
+      env:
         GH_TOKEN: ${{ github.token }}
       run: |
         MAX_OPEN_PRS=8
@@ -47,12 +47,20 @@ timeout-minutes: 60
 
 permissions:
   actions: read
+  attestations: read
+  checks: read
+  code-quality: read
   contents: read
-  copilot-requests: write
-  discussions: read
+  deployments: read
   issues: read
+  discussions: read
+  packages: read
+  pages: read
   pull-requests: read
   security-events: read
+  statuses: read
+  vulnerability-alerts: read
+  copilot-requests: write # org-based billing
 
 network:
   allowed:
@@ -69,7 +77,6 @@ checkout:
   fetch-depth: 0   # fetch full history
 
 tools:
-  web-fetch:
   github:
     toolsets: [all]
     min-integrity: none # This workflow is allowed to examine and comment on any issues or PRs
@@ -87,6 +94,11 @@ tools:
         const path = require("node:path");
         const fail = message => { throw new Error(`notes.json: ${message}`); };
         const notesPath = path.join(memoryRoot, "notes.json");
+        // memoryRoot is a git clone of the memory branch, so ignore its .git metadata.
+        const memoryEntries = fs.readdirSync(memoryRoot, { withFileTypes: true }).filter(entry => entry.name !== ".git");
+        if (memoryEntries.length !== 1 || !memoryEntries[0].isFile() || memoryEntries[0].name !== "notes.json") {
+          fail("must be the only file in repo memory");
+        }
         if (!fs.existsSync(notesPath)) fail("missing (create an initial notes.json that matches schema version 1)");
         const data = JSON.parse(fs.readFileSync(notesPath, "utf8"));
         const isObject = value => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -174,7 +186,7 @@ safe-outputs:
     title-prefix: "[repo-assist] "
     labels: [automation, repo-assist]
     protected-files:
-      policy: request_review
+      policy: request-review
       exclude:
         - CHANGELOG.md
         - README.md
@@ -199,11 +211,11 @@ safe-outputs:
   add-labels:
     allowed: [bug, enhancement, "help wanted", "good first issue", "spam", "off topic", documentation, question, duplicate, wontfix, "needs triage", "needs investigation", "breaking change", performance, security, refactor]
     max: 30
-    target: "*" 
+    target: "*"
   remove-labels:
     allowed: [bug, enhancement, "help wanted", "good first issue", "spam", "off topic", documentation, question, duplicate, wontfix, "needs triage", "needs investigation", "breaking change", performance, security, refactor]
     max: 5
-    target: "*" 
+    target: "*"
 
 steps:
   - name: Fetch repo data for task weighting
@@ -297,9 +309,7 @@ steps:
           json.dump(result, f, indent=2)
       EOF
 
-source: githubnext/agentics/workflows/repo-assist.md@4bc8419fad05e6b032741cbfd189986700bcf71c
-# Use a concrete model because the auto alias is unavailable to this organization.
-model: gpt-5.6
+source: githubnext/agentics/workflows/repo-assist.md@5d11aa2a05ce2c943c085acb7b12b583f83ed375
 ---
 
 # Repo Assist
@@ -326,12 +336,12 @@ Always be:
 
 ## Memory
 
-Repo memory contains exactly one schema-validated file, `notes.json`. Read it at the **start** of every run, using `jq` to select only the fields needed for the selected tasks. Update it at the **end** whenever state changed.
+Repo memory contains exactly one schema-validated file, `notes.json`. Read it at the **start** of every run, using `jq` to select only the fields needed for the selected tasks. Update it at the **end** whenever state changed, by regenerating the whole file in one step (for example with `jq ... > notes.json.tmp && mv notes.json.tmp notes.json`) rather than applying partial edits, and run `jq . notes.json` to confirm it still parses before finishing.
 
 The schema stores only:
 
 - `cursors`: the last issue reached by Tasks 1 and 2, or `null` when a fresh search is required
-- `issues`: the latest still-actionable Repo Assist interaction or investigation state for an issue
+- `issues`: the latest still-actionable Repo Assist interaction or investigation state for an issue. Each entry is exactly `{number, state, updated_at, note}`, and `state` must be one of `commented`, `awaiting_clarification`, `resolution_recommended`, `deferred`, or `awaiting_approval`. Any other value (for example `closed`, `resolved`, or `investigating`) fails validation and discards the whole run's memory update; if an issue is resolved or closed, delete its entry instead
 - `fixes`: one record per attempted issue fix, including its PR or branch when known
 - `checks`: only the latest result for each engineering, documentation, QA, testing, release, or maintenance area
 - `completed_actions`: Monthly Activity actions checked off by a maintainer, so they are not proposed again

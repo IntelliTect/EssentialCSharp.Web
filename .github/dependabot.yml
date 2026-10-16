@@ -35,7 +35,11 @@ updates:
   - package-ecosystem: "github-actions" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
-      interval: "weekly" 
+      interval: "weekly"
+    ignore:
+      # gh-aw actions must match the compiler version that generated the .lock.yml files.
+      # Upgrade them with `gh aw upgrade` (which recompiles) instead.
+      - dependency-name: "github/gh-aw-actions/*"
 
   - package-ecosystem: "npm"
     directory: "/EssentialCSharp.Web/"

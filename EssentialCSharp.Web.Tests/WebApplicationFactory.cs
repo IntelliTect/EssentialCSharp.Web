@@ -39,6 +39,12 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
         {
             RemoveSingleOrNone(
                 services,
+                descriptor => descriptor.ServiceType == typeof(IHostedService) &&
+                    descriptor.ImplementationType == typeof(DatabaseMigrationService),
+                nameof(DatabaseMigrationService));
+
+            RemoveSingleOrNone(
+                services,
                 descriptor => descriptor.ServiceType ==
                     typeof(IDbContextOptionsConfiguration<EssentialCSharpWebContext>),
                 "IDbContextOptionsConfiguration<EssentialCSharpWebContext>");
@@ -47,14 +53,6 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
                 services,
                 descriptor => descriptor.ServiceType == typeof(DbConnection),
                 nameof(DbConnection));
-
-            // Remove DatabaseMigrationService: it calls MigrateAsync which conflicts
-            // with EnsureCreated() used below for the in-memory SQLite test database.
-            RemoveSingleOrNone(
-                services,
-                descriptor => descriptor.ServiceType == typeof(IHostedService) &&
-                    descriptor.ImplementationType == typeof(DatabaseMigrationService),
-                nameof(DatabaseMigrationService));
 
             // Keep per-scope connections so each request/test scope uses a fresh DbConnection,
             // which avoids locking issues from sharing one SqliteConnection instance.
@@ -181,9 +179,17 @@ public sealed class WebApplicationFactory : TestWebApplicationFactory<Program>
         };
 
         public Task<HCaptchaResult?> VerifyAsync(string? response, CancellationToken cancellationToken = default) =>
-            Task.FromResult<HCaptchaResult?>(_Success);
+            VerifyAsync(response, remoteIp: null, cancellationToken: cancellationToken);
 
-        public Task<HCaptchaResult?> VerifyAsync(string? response, string? remoteIp, CancellationToken cancellationToken = default) =>
-            Task.FromResult<HCaptchaResult?>(_Success);
+        public Task<HCaptchaResult?> VerifyAsync(string? response, string? remoteIp, CancellationToken cancellationToken = default)
+        {
+            if (response == "unavailable-captcha-test-token")
+                return Task.FromResult<HCaptchaResult?>(null);
+
+            if (response == "invalid-captcha-test-token")
+                return Task.FromResult<HCaptchaResult?>(new HCaptchaResult { Success = false });
+
+            return Task.FromResult<HCaptchaResult?>(_Success);
+        }
     }
 }

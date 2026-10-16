@@ -66,12 +66,16 @@ public partial class CaptchaService(IHttpClientFactory clientFactory, IOptions<C
 
             // hCaptcha siteverify requires URL-encoded POST; base URL is set in IHttpClientFactory registration
             using FormUrlEncodedContent content = new(postData);
-            HttpResponseMessage res = await client.PostAsync("/siteverify", content, cancellationToken);
+            using HttpResponseMessage res = await client.PostAsync("/siteverify", content, cancellationToken);
 
             res.EnsureSuccessStatusCode();
             return JsonSerializer.Deserialize<HCaptchaResult>(await res.Content.ReadAsStringAsync(cancellationToken));
         }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException or JsonException)
         {
             LogSiteverifyFailed(logger, ex);
             return null;
