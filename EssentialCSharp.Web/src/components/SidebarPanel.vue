@@ -79,18 +79,29 @@ function isActivePath(paths) {
                     <h5 style="margin-right:8px;">
                         Contents
                     </h5>
-                    <i class="fa-solid fa-filter" @click="shell.enableTocFilter = shell.enableTocFilter === 'filter' ? 'none' : 'filter'" />
+                    <button
+                        type="button"
+                        class="toc-filter-toggle"
+                        aria-label="Filter contents"
+                        :aria-controls="shell.enableTocFilter === 'filter' ? 'toc-filter' : null"
+                        :aria-expanded="shell.enableTocFilter === 'filter'"
+                        @click="shell.enableTocFilter = shell.enableTocFilter === 'filter' ? 'none' : 'filter'"
+                    >
+                        <i class="fa-solid fa-filter" aria-hidden="true" />
+                    </button>
                 </div>
-                <div v-if="shell.enableTocFilter === 'filter'" class="filter-input-container">
+                <div v-if="shell.enableTocFilter === 'filter'" id="toc-filter" class="filter-input-container">
+                    <label for="toc-filter-input" class="visually-hidden">Filter contents</label>
                     <input
+                        id="toc-filter-input"
                         v-model="shell.searchQuery"
                         type="text"
                         class="filter-input"
                         placeholder="Search sections..."
                     />
-                    <button type="button" class="filter-btn">
+                    <span class="filter-btn" aria-hidden="true">
                         <i class="fa fa-search icon-light" />
-                    </button>
+                    </span>
                 </div>
             </div>
 

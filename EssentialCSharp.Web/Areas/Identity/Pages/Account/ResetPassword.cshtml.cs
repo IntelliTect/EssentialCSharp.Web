@@ -1,7 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using EssentialCSharp.Web.Areas.Identity.Data;
-using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -11,7 +10,7 @@ using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
-public class ResetPasswordModel(UserManager<EssentialCSharpWebUser> userManager, ICaptchaService captchaService, IOptions<CaptchaOptions> optionsAccessor) : PageModel
+public class ResetPasswordModel(UserManager<EssentialCSharpWebUser> userManager, ICaptchaValidationService captchaValidationService, IOptions<CaptchaOptions> optionsAccessor) : PageModel
 {
     private InputModel? _Input;
     [BindProperty]
@@ -60,11 +59,14 @@ public class ResetPasswordModel(UserManager<EssentialCSharpWebUser> userManager,
         }
     }
 
-    public async Task<IActionResult> OnPostAsync()
+    public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken = default)
     {
         string? captchaToken = Request.Form[CaptchaOptions.HttpPostResponseKeyName];
-        HCaptchaResult? captchaResult = await captchaService.VerifyAsync(captchaToken, HttpContext.Connection.RemoteIpAddress?.ToString());
-        if (captchaResult?.Success != true)
+        CaptchaValidationResult captchaResult = await captchaValidationService.ValidateAsync(
+            captchaToken,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            cancellationToken);
+        if (!captchaResult.ShouldProceed)
         {
             ModelState.AddModelError(string.Empty, "Human verification failed. Please try again.");
             return Page();

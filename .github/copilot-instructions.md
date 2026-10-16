@@ -1,7 +1,7 @@
 # GitHub Copilot Instructions for EssentialCSharp.Web
 
 ## Project Overview & Core Purpose
-This is a comprehensive ASP.NET Core 9.0 web application ecosystem for the **Essential C#** programming education platform. The project serves as the technical foundation for [essentialcsharp.com](https://essentialcsharp.com/), providing educational content, AI-powered chat assistance, and user management for C# learning resources.
+This is a comprehensive ASP.NET Core 10.0 web application ecosystem for the **Essential C#** programming education platform. The project serves as the technical foundation for [essentialcsharp.com](https://essentialcsharp.com/), providing educational content, AI-powered chat assistance, and user management for C# learning resources.
 
 **Key Value**: Provides an interactive learning platform where developers can access Essential C# content, engage with AI-powered assistance for C# questions, and track their learning progress through a modern web interface.
 
@@ -29,13 +29,13 @@ EssentialCSharp.Web.sln
 ## Tech Stack & Core Technologies
 
 ### Framework & Runtime
-- **.NET 9.0** with **C# 13** language features
-- **ASP.NET Core 9.0** for web application framework
-- **Entity Framework Core 8.0.10** for data access with SQL Server
+- **.NET 10.0** with **C# 14** language features
+- **ASP.NET Core 10.0** for web application framework
+- **Entity Framework Core 10.0.12** for data access with SQL Server
 - **ASP.NET Core Identity** for user authentication and authorization
 
 ### AI & Chat Integration
-- **Microsoft Semantic Kernel 1.60.0** for AI orchestration
+- **Microsoft Semantic Kernel 1.80.1** for AI orchestration
 - **Azure OpenAI** integration for chat functionality
 - **pgvector with PostgreSQL** for vector database operations
 - **Model Context Protocol (MCP)** for AI agent integration
@@ -89,14 +89,14 @@ EssentialCSharp.Web.sln
 - **Test Structure**: Follow AAA pattern (Arrange, Act, Assert)
 
 ### Testing Tools
-- **xUnit 2.9.3** as the primary testing framework
-- **Moq 4.20.72** for mocking dependencies
+- **TUnit 1.69.16** as the primary testing framework
+- **Moq 4.21.0** for mocking dependencies
 - **Coverlet** for code coverage collection
 - **Microsoft.AspNetCore.Mvc.Testing** for integration testing
 
 ### Test Conventions
 ```csharp
-[Fact]
+[Test]
 public async Task MethodName_Scenario_ExpectedBehavior()
 {
     // Arrange

@@ -10,7 +10,8 @@ const vuetify = createVuetify({
     components,
     directives,
     theme: {
-        defaultTheme: "light"
+        defaultTheme: "light",
+        cspNonce: document.querySelector('meta[name="csp-nonce"]')?.content || undefined
     }
 });
 

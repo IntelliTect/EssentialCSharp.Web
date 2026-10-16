@@ -13,12 +13,7 @@ public partial class CaptchaService(IHttpClientFactory clientFactory, IOptions<C
     // Explicit overload used by integration tests: https://docs.hcaptcha.com/#verify-the-user-response-server-side
     public async Task<HCaptchaResult?> VerifyAsync(string secret, string response, string sitekey, CancellationToken cancellationToken = default)
     {
-        List<KeyValuePair<string, string>> postData =
-        [
-            new("secret", secret),
-            new("response", response),
-            new("sitekey", sitekey)
-        ];
+        List<KeyValuePair<string, string>> postData = BuildPostData(secret, response, sitekey);
 
         return await PostVerification(postData, cancellationToken);
     }
@@ -36,12 +31,7 @@ public partial class CaptchaService(IHttpClientFactory clientFactory, IOptions<C
         string secret = Options.SecretKey ?? throw new InvalidOperationException($"{CaptchaOptions.CaptchaSender} {nameof(Options.SecretKey)} is unexpectedly null");
         string sitekey = Options.SiteKey ?? throw new InvalidOperationException($"{CaptchaOptions.CaptchaSender} {nameof(Options.SiteKey)} is unexpectedly null");
 
-        List<KeyValuePair<string, string>> postData =
-        [
-            new("secret", secret),
-            new("response", response),
-            new("sitekey", sitekey)
-        ];
+        List<KeyValuePair<string, string>> postData = BuildPostData(secret, response, sitekey);
 
         if (Options.VerifyRemoteIp && !string.IsNullOrWhiteSpace(remoteIp))
         {
@@ -61,6 +51,13 @@ public partial class CaptchaService(IHttpClientFactory clientFactory, IOptions<C
         return result;
     }
 
+    private static List<KeyValuePair<string, string>> BuildPostData(string secret, string response, string sitekey) =>
+        [
+            new("secret", secret),
+            new("response", response),
+            new("sitekey", sitekey)
+        ];
+
     private async Task<HCaptchaResult?> PostVerification(List<KeyValuePair<string, string>> postData, CancellationToken cancellationToken = default)
     {
         try
@@ -69,12 +66,16 @@ public partial class CaptchaService(IHttpClientFactory clientFactory, IOptions<C
 
             // hCaptcha siteverify requires URL-encoded POST; base URL is set in IHttpClientFactory registration
             using FormUrlEncodedContent content = new(postData);
-            HttpResponseMessage res = await client.PostAsync("/siteverify", content, cancellationToken);
+            using HttpResponseMessage res = await client.PostAsync("/siteverify", content, cancellationToken);
 
             res.EnsureSuccessStatusCode();
             return JsonSerializer.Deserialize<HCaptchaResult>(await res.Content.ReadAsStringAsync(cancellationToken));
         }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException or JsonException)
         {
             LogSiteverifyFailed(logger, ex);
             return null;

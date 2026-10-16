@@ -18,6 +18,9 @@ internal static class McpTestHelper
     public static HttpClient CreateClient(TracedWebApplicationFactory<Program> factory) =>
         factory.Inner.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
 
+    public static HttpClient CreateClient(Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> factory) =>
+        factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
     public static HttpRequestMessage CreateInitializeRequest(string path = "/mcp")
     {
         var request = new HttpRequestMessage(HttpMethod.Post, path)
@@ -50,12 +53,15 @@ internal static class McpTestHelper
         request.Headers.Add("Cookie", $"{cookieName}={cookieValue}");
 
     public static async Task<string> CreateUserAsync(TracedWebApplicationFactory<Program> factory, string userPrefix)
+        => await CreateUserAsync(factory.Services, userPrefix);
+
+    public static async Task<string> CreateUserAsync(IServiceProvider services, string userPrefix)
     {
         string userId = Guid.NewGuid().ToString();
         string suffix = Guid.NewGuid().ToString("N")[..8];
         string userName = $"{userPrefix.ToLowerInvariant()}-{suffix}";
 
-        using var scope = factory.Services.CreateScope();
+        using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<EssentialCSharpWebContext>();
         db.Users.Add(new EssentialCSharpWebUser
         {
@@ -91,8 +97,13 @@ internal static class McpTestHelper
     public static async Task<(string CookieName, string CookieValue)> CreateIdentityApplicationCookieAsync(
         TracedWebApplicationFactory<Program> factory,
         string userId)
+        => await CreateIdentityApplicationCookieAsync(factory.Services, userId);
+
+    public static async Task<(string CookieName, string CookieValue)> CreateIdentityApplicationCookieAsync(
+        IServiceProvider services,
+        string userId)
     {
-        using var scope = factory.Services.CreateScope();
+        using var scope = services.CreateScope();
         var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<EssentialCSharpWebUser>>();
         EssentialCSharpWebUser user = await signInManager.UserManager.FindByIdAsync(userId)
             ?? throw new InvalidOperationException($"Could not find test user '{userId}' to create an identity cookie.");
