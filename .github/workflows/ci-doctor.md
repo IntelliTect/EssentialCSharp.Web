@@ -35,8 +35,6 @@ safe-outputs:
 
 timeout-minutes: 10
 source: githubnext/agentics/workflows/ci-doctor.md@5d11aa2a05ce2c943c085acb7b12b583f83ed375
-# Avoid the auto alias, which requires a model-catalog request during agent startup.
-model: gpt-5.6
 ---
 
 # CI Failure Doctor
