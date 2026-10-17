@@ -12,24 +12,35 @@
 @inject SignInManager<EssentialCSharpWebUser> SignInManager
 @inject IConfiguration Configuration
 @inject IOptions<CaptchaOptions> _CaptchaOptions
+@inject IOptions<SiteSettings> SiteSettings
 <!DOCTYPE html>
 <html lang="en">
 <head>
     @{
         const string imageUrl = "https://essentialcsharp.com/images/icon.png";
-        const string description = "Accelerate your development knowledge with C# expert Mark Michaelis and Benjamin Michaelis' free, online comprehensive C# tutorial and reference that is updated through C# 11.0";
+        const string defaultDescription = "Accelerate your development knowledge with C# expert Mark Michaelis and Benjamin Michaelis' free, online comprehensive C# tutorial and reference that is updated through C# 11.0";
+        string description = ViewData["Description"] is string pageDescription && !string.IsNullOrWhiteSpace(pageDescription)
+            ? pageDescription
+            : defaultDescription;
+        string canonicalUrl = ViewData["CanonicalUrl"] as string
+            ?? $"{SiteSettings.Value.BaseUrl.TrimEnd('/')}{Context.Request.PathBase}{Context.Request.Path}";
         string title = $"Essential C#{(string.IsNullOrEmpty(ViewBag.PageTitle) ? string.Empty : $": {ViewBag.PageTitle}")}";
     }
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://essentialcsharp.com/" />
+    <meta property="og:url" content="@canonicalUrl" />
+    @if (Context.Response.StatusCode < 400 && !Context.Request.Path.StartsWithSegments("/Identity"))
+    {
+        <link rel="canonical" href="@canonicalUrl" />
+    }
     <meta property="og:image:secure_url" content="@imageUrl" />
     <meta property="og:image" content="@imageUrl" />
     <meta name="twitter:image" content="@imageUrl" />
     <title id="page-title">@title</title>
     <meta property="og:image:type" content="image/png" />
-    <meta name="description" property="og:description" content="@description" />
+    <meta name="description" content="@description" />
+    <meta property="og:description" content="@description" />
     <meta name="twitter:description" content="@description" />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:site" content="@@IntelliTect" />
@@ -62,6 +73,14 @@
         // user GUID to third-party scripts that enumerate window properties.
         <meta name="ecs-auth-user-id" content="@authUserId" />
     }
+    @{
+        string? cspNonce = EssentialCSharp.Web.Middleware.CspNonce.Get(Context);
+    }
+    @if (!string.IsNullOrEmpty(cspNonce))
+    {
+        // Lets client code (e.g. Vuetify's theme stylesheet) create <style> elements allowed by the CSP.
+        <meta name="csp-nonce" content="@cspNonce" />
+    }
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <!-- Google tag (gtag.js) - Consent defaults MUST be set before gtag.js loads (Google Consent Mode v2 requirement) -->
     <script>
@@ -89,9 +108,10 @@
     <header class="header-background">
         <div class="banner d-flex justify-content-between">
             <div class="d-flex align-items-center menu-position">
-                <button id="sidebar-toggle-button" class="menu-btn has-tooltip" type="button">
-                    <i class="fa fa-bars fa-lg icon-light"></i>
-                    <span class="tooltip-text sidebar-tooltip-text">
+                <button id="sidebar-toggle-button" class="menu-btn has-tooltip" type="button"
+                        aria-label="Toggle navigation" aria-expanded="false" aria-keyshortcuts="Control+M">
+                    <i class="fa fa-bars fa-lg icon-light" aria-hidden="true"></i>
+                    <span class="tooltip-text sidebar-tooltip-text" aria-hidden="true">
                         <b>Ctrl + M</b>
                     </span>
                 </button>
@@ -121,16 +141,19 @@
             <div class="d-flex align-items-center">
                 <div class="border-end pe-3 d-none d-md-block">
                     <a class="btn btn-primary btn-sm rounded-pill"
-                       target="blank"
+                       target="_blank"
+                       rel="noopener"
                        href="https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas">
-                        <span class="fa fa-solid fa-comment fa-lg text-light me-1"></span>
+                        <span class="fa fa-solid fa-comment fa-lg text-light me-1" aria-hidden="true"></span>
                         Feedback
                     </a>
                 </div>
                 <a class="d-md-none"
-                   target="blank"
+                   target="_blank"
+                   rel="noopener"
+                   aria-label="Send feedback"
                    href="https://github.com/IntelliTect/EssentialCSharp.Web/discussions/new?category=feedback-and-ideas">
-                    <span class="fa fa-solid fa-comment icon-light fa-lg"></span>
+                    <span class="fa fa-solid fa-comment icon-light fa-lg" aria-hidden="true"></span>
                 </a>
                 <partial name="_LoginPartial" />
             </div>
@@ -168,7 +191,7 @@
         </div>
     </footer>
 
-    <div id="docsearch" style="display: none;"></div>
+    <div id="docsearch" class="d-none"></div>
 
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/algoliaDocSearch.js" asp-append-version="true"></script>

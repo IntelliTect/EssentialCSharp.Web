@@ -1,8 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Encodings.Web;
 using EssentialCSharp.Web.Areas.Identity.Data;
-using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -15,7 +14,7 @@ using Microsoft.Extensions.Options;
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
 [AllowAnonymous]
-public class ResendEmailConfirmationModel(UserManager<EssentialCSharpWebUser> userManager, IEmailSender emailSender, ICaptchaService captchaService, IOptions<CaptchaOptions> optionsAccessor) : PageModel
+public class ResendEmailConfirmationModel(UserManager<EssentialCSharpWebUser> userManager, IEmailSender emailSender, ICaptchaValidationService captchaValidationService, IOptions<CaptchaOptions> optionsAccessor) : PageModel
 {
     private InputModel? _Input;
     [BindProperty]
@@ -34,11 +33,14 @@ public class ResendEmailConfirmationModel(UserManager<EssentialCSharpWebUser> us
         public string? Email { get; set; }
     }
 
-    public async Task<IActionResult> OnPostAsync()
+    public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken = default)
     {
         string? captchaToken = Request.Form[CaptchaOptions.HttpPostResponseKeyName];
-        HCaptchaResult? captchaResult = await captchaService.VerifyAsync(captchaToken, HttpContext.Connection.RemoteIpAddress?.ToString());
-        if (captchaResult?.Success != true)
+        CaptchaValidationResult captchaResult = await captchaValidationService.ValidateAsync(
+            captchaToken,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            cancellationToken);
+        if (!captchaResult.ShouldProceed)
         {
             ModelState.AddModelError(string.Empty, "Human verification failed. Please try again.");
             return Page();

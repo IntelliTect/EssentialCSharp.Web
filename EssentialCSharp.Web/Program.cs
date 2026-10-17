@@ -46,13 +46,11 @@ public partial class Program
         builder.Services.AddHealthChecks()
             .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
 
-        // OpenTelemetry — two mutually exclusive export paths:
-        //   Production:  Azure Monitor (Application Insights) via APPLICATIONINSIGHTS_CONNECTION_STRING
-        //   Local/Aspire: OTLP to Aspire Dashboard via OTEL_EXPORTER_OTLP_ENDPOINT
-        // Never both simultaneously — that would cause duplicate telemetry in App Insights.
+        // Prefer Aspire's OTLP endpoint when present; otherwise export to Azure Monitor.
+        // This keeps local traces in the dashboard even when a developer has an App Insights connection string configured.
         string? appInsightsConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
-        bool useAzureMonitor = !string.IsNullOrWhiteSpace(appInsightsConnectionString);
         bool useOtlp = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
+        bool useAzureMonitor = !useOtlp && !string.IsNullOrWhiteSpace(appInsightsConnectionString);
         bool profilerSupportedPlatform = OperatingSystem.IsWindows() || OperatingSystem.IsLinux();
         bool profilerSkippedUnsupportedPlatform = false;
 
@@ -147,9 +145,11 @@ public partial class Program
 
         builder.Services.AddDbContext<EssentialCSharpWebContext>(options => options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure(5)));
 
-        // Must be registered before AddDataProtection(): hosted services start in registration
-        // order, and DataProtectionHostedService reads DataProtectionKeys during startup.
-        builder.Services.AddHostedService<DatabaseMigrationService>();
+        if (builder.Environment.IsDevelopment())
+        {
+            // Must run before DataProtectionHostedService, which reads DataProtectionKeys.
+            builder.Services.AddHostedService<DatabaseMigrationService>();
+        }
 
         // Data Protection — persist keys to SQL Server so they survive container restarts.
         // SetApplicationName ensures the discriminator is stable across container hostname changes.
@@ -267,6 +267,7 @@ public partial class Program
         builder.Services.AddOutputCache();
         builder.Services.AddCaptchaService(builder.Configuration.GetSection(CaptchaOptions.CaptchaSender));
         builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
+        builder.Services.AddSingleton<ChapterDescriptionService>();
         builder.Services.AddSingleton<IRouteConfigurationService, RouteConfigurationService>();
         builder.Services.AddSingleton<IListingSourceCodeService, ListingSourceCodeService>();
         builder.Services.AddSingleton<IBookToolQueryService, BookToolQueryService>();
@@ -513,7 +514,8 @@ public partial class Program
             string csp = string.Join("; ",
                 $"default-src 'self'",
                 $"script-src 'self' 'unsafe-inline' cdn.jsdelivr.net www.clarity.ms www.googletagmanager.com js.monitor.azure.com https://hcaptcha.com https://*.hcaptcha.com{tryDotNetSources}",
-                $"style-src 'self' 'unsafe-inline' cdnjs.cloudflare.com fonts.googleapis.com https://hcaptcha.com https://*.hcaptcha.com",
+                $"style-src 'self' 'nonce-{CspNonce.Placeholder}' cdnjs.cloudflare.com fonts.googleapis.com https://hcaptcha.com https://*.hcaptcha.com",
+                $"style-src-attr 'unsafe-inline'",
                 $"font-src 'self' fonts.gstatic.com cdnjs.cloudflare.com",
                 $"img-src 'self' data: https:",
                 $"connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://api.pwnedpasswords.com https://*.algolia.net https://*.algolianet.com https://*.google-analytics.com https://*.clarity.ms https://*.in.applicationinsights.azure.com{GetApplicationInsightsCspSources(app.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"], app.Logger)}{tryDotNetSources}",

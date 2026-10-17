@@ -21,6 +21,7 @@ public class McpSetupController : BaseController
     public IActionResult Index()
     {
         ViewBag.PageTitle = "MCP Setup";
+        ViewData["Description"] = "Connect AI coding tools to Essential C# with the Model Context Protocol setup guide.";
         var toolInfos = _tools
             .OrderBy(t => t.ProtocolTool.Name)
             .Select(t =>

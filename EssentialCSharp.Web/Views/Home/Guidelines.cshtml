@@ -53,7 +53,7 @@
             foreach (var guideline in group)
             {
                 <div>
-                    <i class="@GetSymbolForType(guideline.Type)" style="color: @GetColorForType(guideline.Type); padding-right: 10px;"></i>
+                    <i class="@GetSymbolForType(guideline.Type) guideline-icon @GetColorClassForType(guideline.Type)"></i>
                     <span>@guideline.Guideline</span>
                 </div>
             }
@@ -75,14 +75,14 @@
         };
     }
 
-    private string GetColorForType(GuidelineType type)
+    private string GetColorClassForType(GuidelineType type)
     {
         return type switch
         {
-            GuidelineType.DoNot => "#ff0000",
-            GuidelineType.Avoid => "#ff0000",
-            GuidelineType.Consider => "#7a7a7a",
-            GuidelineType.Do => "#63E6BE",
+            GuidelineType.DoNot => "guideline-color-do-not",
+            GuidelineType.Avoid => "guideline-color-avoid",
+            GuidelineType.Consider => "guideline-color-consider",
+            GuidelineType.Do => "guideline-color-do",
             _ => string.Empty,
         };
     }

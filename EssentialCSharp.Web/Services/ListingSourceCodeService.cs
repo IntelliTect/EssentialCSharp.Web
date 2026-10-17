@@ -49,14 +49,21 @@ public partial class ListingSourceCodeService : IListingSourceCodeService, IDisp
             return null;
         }
 
-        string pattern = $"{chapterNumber:D2}.{listingNumber:D2}.*";
+        Regex listingFileRegex = ListingFilePattern();
         IFileInfo? matchingFile = directoryContents
             .Where(f => !f.IsDirectory)
-            .FirstOrDefault(f => IsMatch(f.Name, pattern));
+            .Select(f => new { File = f, Match = listingFileRegex.Match(f.Name) })
+            .Where(x => x.Match.Success
+                && int.Parse(x.Match.Groups[1].Value, CultureInfo.InvariantCulture) == chapterNumber
+                && int.Parse(x.Match.Groups[2].Value, CultureInfo.InvariantCulture) == listingNumber)
+            .OrderBy(x => string.Equals(Path.GetExtension(x.File.Name), ".cs", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+            .ThenBy(x => x.File.Name, StringComparer.Ordinal)
+            .Select(x => x.File)
+            .FirstOrDefault();
 
         if (matchingFile == null)
         {
-            LogListingFileNotFound(_Logger, pattern, chapterDirectory);
+            LogListingFileNotFound(_Logger, $"{chapterNumber:D2}.{listingNumber:D2}", chapterDirectory);
             return null;
         }
 
@@ -82,7 +89,7 @@ public partial class ListingSourceCodeService : IListingSourceCodeService, IDisp
             return Array.Empty<ListingSourceCodeResponse>();
         }
 
-        // Regex to match files like "01.01.cs" or "23.15.xml"
+        // Match both legacy "01.01.cs" and BookContent "Listing01.01.Title.cs" names.
         Regex listingFileRegex = ListingFilePattern();
         
         var matchedFiles = directoryContents
@@ -122,14 +129,7 @@ public partial class ListingSourceCodeService : IListingSourceCodeService, IDisp
         return await reader.ReadToEndAsync();
     }
 
-    private static bool IsMatch(string fileName, string pattern)
-    {
-        // Convert glob-like pattern to regex (simple version for our use case)
-        string regexPattern = "^" + Regex.Escape(pattern).Replace("\\*", ".*") + "$";
-        return Regex.IsMatch(fileName, regexPattern);
-    }
-
-    [GeneratedRegex(@"^(\d{2})\.(\d{2})\.(\w+)$")]
+    [GeneratedRegex(@"^(?:Listing)?(\d{2})\.(\d{2})(?:\..+)?\.(\w+)$")]
     private static partial Regex ListingFilePattern();
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Using listing source code from: {Path}")]
