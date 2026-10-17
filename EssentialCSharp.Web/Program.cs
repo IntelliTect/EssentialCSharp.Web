@@ -267,6 +267,7 @@ public partial class Program
         builder.Services.AddOutputCache();
         builder.Services.AddCaptchaService(builder.Configuration.GetSection(CaptchaOptions.CaptchaSender));
         builder.Services.AddSingleton<ISiteMappingService, SiteMappingService>();
+        builder.Services.AddSingleton<ChapterDescriptionService>();
         builder.Services.AddSingleton<IRouteConfigurationService, RouteConfigurationService>();
         builder.Services.AddSingleton<IListingSourceCodeService, ListingSourceCodeService>();
         builder.Services.AddSingleton<IBookToolQueryService, BookToolQueryService>();
