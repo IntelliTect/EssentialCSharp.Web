@@ -2,7 +2,7 @@
   "version": 1,
   "cursors": {
     "labelling_after": 1496,
-    "investigation_after": 1502
+    "investigation_after": 346
   },
   "issues": [
     {
@@ -99,32 +99,20 @@
   "checks": [
     {
       "area": "build",
-      "checked_at": "2026-10-13",
-      "result": "dotnet restore and Release solution build passed with AccessToNugetFeed=false; gh aw compile ci-doctor --no-emit passed with no warnings.",
-      "follow_up": null
+      "checked_at": "2026-10-17",
+      "result": "Release build and current open Repo Assist changes were reviewed; no repository-side coding update was warranted in this run.",
+      "follow_up": "Maintainer review remains pending for existing Repo Assist PRs."
     },
     {
       "area": "qa",
-      "checked_at": "2026-10-12",
-      "result": "Investigated accessibility failure report #1492 and confirmed it duplicates #1491 and existing startup workflow work.",
-      "follow_up": "Maintainer should close #1492 after comparing the readiness-gate and broader startup PRs."
+      "checked_at": "2026-10-17",
+      "result": "Rechecked oldest open issues #251 and #346; both already have Repo Assist guidance tied to closed implementation PRs, so no duplicate follow-up was posted.",
+      "follow_up": "Maintainer should close or reopen with a concrete remaining requirement."
     },
     {
       "area": "docs",
       "checked_at": "2026-10-11",
       "result": "Reviewed accessibility-review workflow maintenance; added explicit startup readiness polling and log output on timeout.",
-      "follow_up": null
-    },
-    {
-      "area": "repo_assist_prs",
-      "checked_at": "2026-10-17",
-      "result": "Reviewed current open Repo Assist PRs and recent maintainer activity; no failing open Repo Assist change required an update.",
-      "follow_up": "Maintainer review remains pending for existing Repo Assist PRs."
-    },
-    {
-      "area": "code",
-      "checked_at": "2026-10-17",
-      "result": "Reviewed low-risk coding candidates and current test coverage; no distinct improvement was justified beyond existing open Repo Assist PRs.",
       "follow_up": null
     }
   ],
@@ -132,8 +120,13 @@
   "priorities": [
     {
       "task": 2,
-      "item": "#1492",
-      "note": "Maintainer should close duplicate accessibility failure report after comparing #1491 with #1424/#1425."
+      "item": "#251",
+      "note": "Maintainer should close if closed #751 fully addressed protected-user storage, or specify remaining protection guarantees."
+    },
+    {
+      "task": 2,
+      "item": "#346",
+      "note": "Maintainer should close if closed #787 addressed the search proposal, or define the remaining search/deployment gap."
     },
     {
       "task": 3,
@@ -141,29 +134,14 @@
       "note": "Compare or consolidate the readiness-gate fix with existing open accessibility startup PR #1425."
     },
     {
-      "task": 2,
-      "item": "#1489",
-      "note": "Monitor for the first failing CI step and private-feed availability confirmation."
-    },
-    {
-      "task": 2,
-      "item": "#1466",
-      "note": "Maintainer should close after verifying the production checkout fix on main."
-    },
-    {
-      "task": 2,
-      "item": "#796",
-      "note": "Maintainer should close after verifying merged OAuth fix #797."
-    },
-    {
       "task": 3,
       "item": "#1494",
-      "note": "Maintainer should review the focused CI Failure Doctor terminal-output fix."
+      "note": "Maintainer review is needed for the protected-file CI Failure Doctor fallback issue #1496."
     },
     {
       "task": 2,
-      "item": "#1496",
-      "note": "Maintainer review is needed for the protected-file CI Failure Doctor fallback issue."
+      "item": "#1492",
+      "note": "Maintainer should close duplicate accessibility failure report after comparing #1491 with #1424/#1425."
     }
   ]
 }
