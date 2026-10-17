@@ -5,11 +5,9 @@ description: |
   Identifies accessibility issues and creates GitHub issues with detailed
   findings and remediation recommendations. Helps maintain accessibility standards
   continuously throughout the development cycle.
-
 on:
   schedule: weekly
   workflow_dispatch:
-
 permissions:
   actions: read
   contents: read
@@ -17,9 +15,7 @@ permissions:
   issues: read
   pull-requests: read
   security-events: read
-
 network: defaults
-
 safe-outputs:
   mentions: false
   allowed-github-references: []
@@ -29,15 +25,11 @@ safe-outputs:
     max: 5
   add-comment:
     max: 5
-
 tools:
   playwright:
-  web-fetch:
   github:
     toolsets: [all]
-
 timeout-minutes: 15
-
 steps:
   - name: Checkout repository
     uses: actions/checkout@v7.0.1
@@ -49,7 +41,7 @@ steps:
     with:
       global-json-file: global.json
   - name: Set up Node.js
-    uses: actions/setup-node@v7.0.0
+    uses: actions/setup-node@v7.1.0
     with:
       node-version-file: EssentialCSharp.Web/.nvmrc
   - name: Build and run app in background
@@ -59,9 +51,15 @@ steps:
       npm run build --prefix EssentialCSharp.Web
       dotnet build EssentialCSharp.Web.slnx --configuration Release --no-restore -p:AccessToNugetFeed=false -p:SkipFrontendBuild=true
       ASPNETCORE_URLS=http://127.0.0.1:3000 dotnet run --project EssentialCSharp.Web/EssentialCSharp.Web.csproj --configuration Release --no-build --no-launch-profile > /tmp/essentialcsharp-web.log 2>&1 &
+      for attempt in {1..60}; do
+        if curl --silent --output /dev/null http://127.0.0.1:3000/; then
+          exit 0
+        fi
+        sleep 2
+      done
+      cat /tmp/essentialcsharp-web.log
+      exit 1
 source: githubnext/agentics/workflows/accessibility-review.md@5d11aa2a05ce2c943c085acb7b12b583f83ed375
-# Use a concrete model because the auto alias is unavailable to this organization.
-model: gpt-5.6
 ---
 
 # Accessibility Review
