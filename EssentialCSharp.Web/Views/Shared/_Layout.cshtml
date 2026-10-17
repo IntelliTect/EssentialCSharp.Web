@@ -30,7 +30,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="@canonicalUrl" />
-    @if (ViewData["HeadHasCanonical"] is not true && Context.Response.StatusCode < 400 && !Context.Request.Path.StartsWithSegments("/Identity"))
+    @if (Context.Response.StatusCode < 400 && !Context.Request.Path.StartsWithSegments("/Identity"))
     {
         <link rel="canonical" href="@canonicalUrl" />
     }

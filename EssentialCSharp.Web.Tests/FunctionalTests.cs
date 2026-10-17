@@ -1,5 +1,9 @@
 using System.Net;
 using HtmlAgilityPack;
+using EssentialCSharp.Web.Services;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace EssentialCSharp.Web.Tests;
 
@@ -55,7 +59,27 @@ public class FunctionalTests : IntegrationTestBase
     [Arguments("/hello-world", "https://essentialcsharp.com/introducing-c", "Hello")]
     public async Task PagesHaveOneCanonicalAndPageSpecificDescriptions(string path, string expectedCanonical, string expectedDescription)
     {
-        using HttpClient client = CreateClientWithoutAutoRedirect();
+        await using WebApplicationFactory<Program> factory = CreateFactoryWithBaseUrl("https://essentialcsharp.com");
+        await AssertPageMetadata(factory, path, expectedCanonical, expectedDescription);
+    }
+
+    [Test]
+    [Arguments("/about", "https://dev.essentialcsharp.com/about", "Learn about Essential C#")]
+    [Arguments("/introducing-c", "https://dev.essentialcsharp.com/introducing-c", "Introducing C#")]
+    [Arguments("/hello-world?rid=abc", "https://dev.essentialcsharp.com/introducing-c", "Hello")]
+    public async Task CanonicalUrlsUseConfiguredDeploymentOrigin(string path, string expectedCanonical, string expectedDescription)
+    {
+        await using WebApplicationFactory<Program> factory = CreateFactoryWithBaseUrl("https://dev.essentialcsharp.com/");
+        await AssertPageMetadata(factory, path, expectedCanonical, expectedDescription);
+    }
+
+    private WebApplicationFactory<Program> CreateFactoryWithBaseUrl(string baseUrl) =>
+        Factory.Inner.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+            services.PostConfigure<SiteSettings>(settings => settings.BaseUrl = baseUrl)));
+
+    private static async Task AssertPageMetadata(WebApplicationFactory<Program> factory, string path, string expectedCanonical, string expectedDescription)
+    {
+        using HttpClient client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
         using HttpResponseMessage response = await GetFollowingGetRedirectsAsync(client, path);
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
 

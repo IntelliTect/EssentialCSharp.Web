@@ -40,17 +40,29 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
                     styleNode.SetAttributeValue("nonce", nonce);
                 }
             }
+            // The parser emits a canonical with a hardcoded production origin. Keep its path (so alias routes
+            // still point at the primary page) but re-base it on this deployment's configured origin, and
+            // remove it from the injected head so the layout renders exactly one canonical.
+            string canonicalPath = "/" + siteMapping.PrimaryKey;
+            foreach (HtmlNode canonicalNode in doc.DocumentNode.SelectNodes("/html/head/link[@rel='canonical']")?.ToList() ?? [])
+            {
+                string href = canonicalNode.GetAttributeValue("href", "");
+                if (Uri.TryCreate(href, UriKind.Absolute, out Uri? absolute))
+                {
+                    canonicalPath = absolute.AbsolutePath;
+                }
+                else if (href.StartsWith('/'))
+                {
+                    canonicalPath = href.Split('?', '#')[0];
+                }
+                canonicalNode.Remove();
+            }
             string headHtml = doc.DocumentNode.Element("html")?.Element("head")?.InnerHtml ?? string.Empty;
             string html = doc.DocumentNode.Element("html")?.Element("body")?.InnerHtml ?? string.Empty;
-            HtmlNode? canonical = doc.DocumentNode.SelectSingleNode("/html/head/link[@rel='canonical']");
 
             ViewBag.PageTitle = siteMapping.IndentLevel is 0 ? siteMapping.ChapterTitle + " " + siteMapping.RawHeading : siteMapping.RawHeading;
             ViewData["Description"] = chapterDescriptionService.GetDescription(siteMapping);
-            if (canonical is not null)
-            {
-                ViewData["CanonicalUrl"] = canonical.GetAttributeValue("href", "");
-                ViewData["HeadHasCanonical"] = true;
-            }
+            ViewData["CanonicalUrl"] = $"{siteSettings.Value.BaseUrl.TrimEnd('/')}{Request.PathBase}{canonicalPath}";
             ViewBag.NextPage = FlipPage(siteMapping!.ChapterNumber, siteMapping.PageNumber, true);
             ViewBag.CurrentPageKey = siteMapping.PrimaryKey;
             ViewBag.PreviousPage = FlipPage(siteMapping.ChapterNumber, siteMapping.PageNumber, false);
