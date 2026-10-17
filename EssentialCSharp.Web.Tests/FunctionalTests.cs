@@ -1,4 +1,5 @@
 using System.Net;
+using HtmlAgilityPack;
 
 namespace EssentialCSharp.Web.Tests;
 
@@ -40,6 +41,49 @@ public class FunctionalTests : IntegrationTestBase
 
         // Verify it's actually HTML content, not just whitespace
         await Assert.That(content).Contains("<html", StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Test]
+    [Arguments("/about?rid=abc", "https://essentialcsharp.com/about", "Learn about Essential C#")]
+    [Arguments("/home", "https://essentialcsharp.com/home", "Explore Essential C#")]
+    [Arguments("/guidelines", "https://essentialcsharp.com/guidelines", "coding guidelines")]
+    [Arguments("/announcements", "https://essentialcsharp.com/announcements", "announcements")]
+    [Arguments("/TermsOfService", "https://essentialcsharp.com/TermsOfService", "terms of service")]
+    [Arguments("/mcp-setup", "https://essentialcsharp.com/mcp-setup", "Model Context Protocol")]
+    [Arguments("/introducing-c", "https://essentialcsharp.com/introducing-c", "Introducing C#")]
+    [Arguments("/hello-world", "https://essentialcsharp.com/introducing-c", "Hello")]
+    public async Task PagesHaveOneCanonicalAndPageSpecificDescriptions(string path, string expectedCanonical, string expectedDescription)
+    {
+        using HttpResponseMessage response = await factory.CreateClient().GetAsync(path);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+
+        HtmlDocument document = new();
+        document.LoadHtml(await response.Content.ReadAsStringAsync());
+        HtmlNode head = document.DocumentNode.SelectSingleNode("//head");
+        HtmlNodeCollection canonicals = head.SelectNodes("link[@rel='canonical']");
+        await Assert.That(canonicals.Count).IsEqualTo(1);
+        await Assert.That(canonicals[0].GetAttributeValue("href", "")).IsEqualTo(expectedCanonical);
+        await Assert.That(head.SelectSingleNode("meta[@property='og:url']").GetAttributeValue("content", "")).IsEqualTo(expectedCanonical);
+
+        string description = head.SelectSingleNode("meta[@name='description']").GetAttributeValue("content", "");
+        await Assert.That(description).Contains(expectedDescription);
+        await Assert.That(head.SelectNodes("meta[@name='description']").Count).IsEqualTo(1);
+        await Assert.That(head.SelectSingleNode("meta[@property='og:description']").GetAttributeValue("content", "")).IsEqualTo(description);
+        await Assert.That(head.SelectSingleNode("meta[@name='twitter:description']").GetAttributeValue("content", "")).IsEqualTo(description);
+    }
+
+    [Test]
+    public async Task NotFoundPageKeepsDescriptionFallbackWithoutCanonical()
+    {
+        using HttpResponseMessage response = await factory.CreateClient().GetAsync("/non-existing-page1234");
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
+
+        HtmlDocument document = new();
+        document.LoadHtml(await response.Content.ReadAsStringAsync());
+        HtmlNode head = document.DocumentNode.SelectSingleNode("//head");
+        await Assert.That(head.SelectNodes("link[@rel='canonical']")).IsNull();
+        await Assert.That(head.SelectSingleNode("meta[@name='description']").GetAttributeValue("content", ""))
+            .Contains("Accelerate your development knowledge");
     }
 
     [Test]
