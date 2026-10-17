@@ -6,18 +6,6 @@
   },
   "issues": [
     {
-      "number": 1501,
-      "state": "commented",
-      "updated_at": "2026-10-13",
-      "note": "Identified workflow_run safe-output targeting defect; created focused CI Doctor fix PR."
-    },
-    {
-      "number": 1502,
-      "state": "commented",
-      "updated_at": "2026-10-13",
-      "note": "Reproduced clean local build with HtmlAgilityPack 1.13.1; requested earliest failed CI step before package changes."
-    },
-    {
       "number": 494,
       "state": "awaiting_clarification",
       "updated_at": "2026-10-02",
@@ -92,14 +80,6 @@
   ],
   "fixes": [
     {
-      "issue": 1501,
-      "pr": null,
-      "branch": "repo-assist/fix-issue-1501-ci-doctor-comment-target",
-      "status": "open",
-      "updated_at": "2026-10-13",
-      "note": "Configured add-comment target * in ci-doctor source and lock; draft PR intent accepted."
-    },
-    {
       "issue": 1491,
       "pr": null,
       "branch": "repo-assist/fix-issue-1491-accessibility-readiness",
@@ -118,22 +98,10 @@
   ],
   "checks": [
     {
-      "area": "code",
-      "checked_at": "2026-10-13",
-      "result": "Investigated HtmlAgilityPack 1.13.1 report; full solution build passed after public-feed restore, so no application compatibility fix is justified.",
-      "follow_up": "Await the failed CI run earliest meaningful error."
-    },
-    {
       "area": "build",
       "checked_at": "2026-10-13",
       "result": "dotnet restore and Release solution build passed with AccessToNugetFeed=false; gh aw compile ci-doctor --no-emit passed with no warnings.",
       "follow_up": null
-    },
-    {
-      "area": "repo_assist_prs",
-      "checked_at": "2026-10-13",
-      "result": "Created focused draft CI Failure Doctor comment-target fix for #1501 and commented on #1501 and #1502.",
-      "follow_up": "Maintainer review remains pending for the new workflow fix."
     },
     {
       "area": "qa",
@@ -146,20 +114,22 @@
       "checked_at": "2026-10-11",
       "result": "Reviewed accessibility-review workflow maintenance; added explicit startup readiness polling and log output on timeout.",
       "follow_up": null
+    },
+    {
+      "area": "repo_assist_prs",
+      "checked_at": "2026-10-17",
+      "result": "Reviewed current open Repo Assist PRs and recent maintainer activity; no failing open Repo Assist change required an update.",
+      "follow_up": "Maintainer review remains pending for existing Repo Assist PRs."
+    },
+    {
+      "area": "code",
+      "checked_at": "2026-10-17",
+      "result": "Reviewed low-risk coding candidates and current test coverage; no distinct improvement was justified beyond existing open Repo Assist PRs.",
+      "follow_up": null
     }
   ],
   "completed_actions": [],
   "priorities": [
-    {
-      "task": 3,
-      "item": "#1501",
-      "note": "Maintainer review is needed for the CI Failure Doctor explicit comment-target fix."
-    },
-    {
-      "task": 2,
-      "item": "#1502",
-      "note": "Confirm the earliest failed CI step before deciding whether the HtmlAgilityPack update needs action."
-    },
     {
       "task": 2,
       "item": "#1492",
@@ -194,11 +164,6 @@
       "task": 2,
       "item": "#1496",
       "note": "Maintainer review is needed for the protected-file CI Failure Doctor fallback issue."
-    },
-    {
-      "task": 2,
-      "item": "#1493",
-      "note": "Maintainer should compare the protected-file accessibility readiness fix with existing startup work."
     }
   ]
 }
