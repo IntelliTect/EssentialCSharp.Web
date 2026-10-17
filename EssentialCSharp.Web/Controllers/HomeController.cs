@@ -78,6 +78,7 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
     public IActionResult CookiePolicy()
     {
         ViewBag.PageTitle = "Cookie Policy";
+        ViewData["Description"] = "Learn how Essential C# uses cookies and manages your privacy preferences.";
         return View();
     }
 
