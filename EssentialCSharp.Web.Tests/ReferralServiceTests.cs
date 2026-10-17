@@ -25,16 +25,16 @@ public class ReferralServiceTests : IntegrationTestBase
     {
         string userId = CreateUserId();
         string referralId = await CreateUserWithReferralIdAsync(userId);
-        await CreateUserAsync(CreateUserId());
+        string unrelatedUserId = CreateUserId();
+        await CreateUserAsync(unrelatedUserId);
 
-        await InServiceScopeAsync(async services =>
-        {
-            services.GetRequiredService<IReferralService>().TrackReferralAsync(referralId, null);
-            await services.GetRequiredService<EssentialCSharpWebContext>().SaveChangesAsync();
-        });
+        InServiceScope(services =>
+            services.GetRequiredService<IReferralService>().TrackReferralAsync(referralId, null));
 
         int referralCount = await GetReferralCountAsync(userId);
         await Assert.That(referralCount).IsEqualTo(1);
+        int unrelatedReferralCount = await GetReferralCountAsync(unrelatedUserId);
+        await Assert.That(unrelatedReferralCount).IsEqualTo(0);
     }
 
     [Test]
@@ -47,27 +47,21 @@ public class ReferralServiceTests : IntegrationTestBase
             new Claim(ClaimsExtensions.ReferrerIdClaimType, referralId)
         ]));
 
-        await InServiceScopeAsync(async services =>
-        {
-            services.GetRequiredService<IReferralService>().TrackReferralAsync(referralId, user);
-            await services.GetRequiredService<EssentialCSharpWebContext>().SaveChangesAsync();
-        });
+        InServiceScope(services =>
+            services.GetRequiredService<IReferralService>().TrackReferralAsync(referralId, user));
 
         int referralCount = await GetReferralCountAsync(userId);
         await Assert.That(referralCount).IsEqualTo(0);
     }
 
     [Test]
-    public async Task TrackReferralAsync_UnknownReferralId_DoesNotThrowOrChangeUsers()
+    public async Task TrackReferralAsync_UnknownReferralId_DoesNotThrowOrChangeUser()
     {
         string userId = CreateUserId();
         await CreateUserAsync(userId);
 
-        await InServiceScopeAsync(async services =>
-        {
-            services.GetRequiredService<IReferralService>().TrackReferralAsync("unknown", null);
-            await services.GetRequiredService<EssentialCSharpWebContext>().SaveChangesAsync();
-        });
+        InServiceScope(services =>
+            services.GetRequiredService<IReferralService>().TrackReferralAsync("unknown", null));
 
         int referralCount = await GetReferralCountAsync(userId);
         await Assert.That(referralCount).IsEqualTo(0);
@@ -79,8 +73,6 @@ public class ReferralServiceTests : IntegrationTestBase
 
         return await InServiceScopeAsync(async services =>
         {
-            EssentialCSharpWebContext dbContext =
-                services.GetRequiredService<EssentialCSharpWebContext>();
             UserManager<EssentialCSharpWebUser> userManager =
                 services.GetRequiredService<UserManager<EssentialCSharpWebUser>>();
             EssentialCSharpWebUser user = await userManager.FindByIdAsync(userId)
@@ -89,14 +81,12 @@ public class ReferralServiceTests : IntegrationTestBase
             string referralId = await services.GetRequiredService<IReferralService>()
                 .EnsureReferralIdAsync(user)
                 ?? throw new InvalidOperationException("A referral ID was not generated.");
-            await dbContext.SaveChangesAsync();
             return referralId;
         });
     }
 
     private async Task CreateUserAsync(string userId)
     {
-        _ = Factory;
         await InServiceScopeAsync(async services =>
         {
             UserManager<EssentialCSharpWebUser> userManager =
@@ -118,7 +108,6 @@ public class ReferralServiceTests : IntegrationTestBase
 
     private async Task<int> GetReferralCountAsync(string userId)
     {
-        _ = Factory;
         return await InServiceScopeAsync(async services =>
             await services.GetRequiredService<EssentialCSharpWebContext>().Users
                 .Where(user => user.Id == userId)
