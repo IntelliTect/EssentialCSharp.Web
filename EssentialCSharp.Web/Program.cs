@@ -615,6 +615,11 @@ public partial class Program
 
         app.MapFallbackToController("Index", "Home");
 
+        // Construct content-backed singletons now so an unreadable content file fails startup (the new
+        // revision never takes traffic) instead of surfacing as a 500 on the first page request.
+        app.Services.GetRequiredService<ChapterDescriptionService>();
+        app.Services.GetRequiredService<IGuidelinesService>();
+
         // Validate sitemap data at startup — logs errors but allows startup to continue
         var siteMappingService = app.Services.GetRequiredService<ISiteMappingService>();
         var logger = app.Services.GetRequiredService<ILogger<Program>>();

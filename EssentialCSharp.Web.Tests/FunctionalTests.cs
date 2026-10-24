@@ -55,9 +55,9 @@ public class FunctionalTests : IntegrationTestBase
     [Arguments("/announcements", "https://essentialcsharp.com/announcements", "announcements")]
     [Arguments("/TermsOfService", "https://essentialcsharp.com/TermsOfService", "terms of service")]
     [Arguments("/mcp-setup", "https://essentialcsharp.com/mcp-setup", "Model Context Protocol")]
-    [Arguments("/introducing-c", "https://essentialcsharp.com/introducing-c", "Introducing C#")]
-    [Arguments("/hello-world", "https://essentialcsharp.com/introducing-c", "Hello")]
-    public async Task PagesHaveOneCanonicalAndPageSpecificDescriptions(string path, string expectedCanonical, string expectedDescription)
+    [Arguments("/introducing-c", "https://essentialcsharp.com/introducing-c", null)]
+    [Arguments("/hello-world", "https://essentialcsharp.com/introducing-c", null)]
+    public async Task PagesHaveOneCanonicalAndPageSpecificDescriptions(string path, string expectedCanonical, string? expectedDescription)
     {
         await using WebApplicationFactory<Program> factory = CreateFactoryWithBaseUrl("https://essentialcsharp.com");
         await AssertPageMetadata(factory, path, expectedCanonical, expectedDescription);
@@ -65,9 +65,9 @@ public class FunctionalTests : IntegrationTestBase
 
     [Test]
     [Arguments("/about", "https://dev.essentialcsharp.com/about", "Learn about Essential C#")]
-    [Arguments("/introducing-c", "https://dev.essentialcsharp.com/introducing-c", "Introducing C#")]
-    [Arguments("/hello-world?rid=abc", "https://dev.essentialcsharp.com/introducing-c", "Hello")]
-    public async Task CanonicalUrlsUseConfiguredDeploymentOrigin(string path, string expectedCanonical, string expectedDescription)
+    [Arguments("/introducing-c", "https://dev.essentialcsharp.com/introducing-c", null)]
+    [Arguments("/hello-world?rid=abc", "https://dev.essentialcsharp.com/introducing-c", null)]
+    public async Task CanonicalUrlsUseConfiguredDeploymentOrigin(string path, string expectedCanonical, string? expectedDescription)
     {
         await using WebApplicationFactory<Program> factory = CreateFactoryWithBaseUrl("https://dev.essentialcsharp.com/");
         await AssertPageMetadata(factory, path, expectedCanonical, expectedDescription);
@@ -77,7 +77,7 @@ public class FunctionalTests : IntegrationTestBase
         Factory.Inner.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
             services.PostConfigure<SiteSettings>(settings => settings.BaseUrl = baseUrl)));
 
-    private static async Task AssertPageMetadata(WebApplicationFactory<Program> factory, string path, string expectedCanonical, string expectedDescription)
+    private static async Task AssertPageMetadata(WebApplicationFactory<Program> factory, string path, string expectedCanonical, string? expectedDescription)
     {
         using HttpClient client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
         using HttpResponseMessage response = await GetFollowingGetRedirectsAsync(client, path);
@@ -92,7 +92,15 @@ public class FunctionalTests : IntegrationTestBase
         await Assert.That((head.SelectSingleNode("meta[@property='og:url']") ?? throw new InvalidOperationException("Missing OG URL")).GetAttributeValue("content", "")).IsEqualTo(expectedCanonical);
 
         string description = (head.SelectSingleNode("meta[@name='description']") ?? throw new InvalidOperationException("Missing description")).GetAttributeValue("content", "");
-        await Assert.That(description).Contains(expectedDescription);
+        if (expectedDescription is null)
+        {
+            await Assert.That(description).IsNotEmpty();
+            await Assert.That(description).DoesNotContain("Accelerate your development knowledge");
+        }
+        else
+        {
+            await Assert.That(description).Contains(expectedDescription);
+        }
         await Assert.That((head.SelectNodes("meta[@name='description']") ?? throw new InvalidOperationException("Missing description")).Count).IsEqualTo(1);
         await Assert.That((head.SelectSingleNode("meta[@property='og:description']") ?? throw new InvalidOperationException("Missing OG description")).GetAttributeValue("content", "")).IsEqualTo(description);
         await Assert.That((head.SelectSingleNode("meta[@name='twitter:description']") ?? throw new InvalidOperationException("Missing Twitter description")).GetAttributeValue("content", "")).IsEqualTo(description);
