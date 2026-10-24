@@ -16,10 +16,10 @@ public sealed class ChapterDescriptionService
         }
 
         using FileStream stream = File.OpenRead(path);
-        List<ChapterDescription> entries = JsonSerializer.Deserialize<List<ChapterDescription>>(stream)
+        List<SiteMappingDescription> entries = JsonSerializer.Deserialize<List<SiteMappingDescription>>(stream)
             ?? throw new InvalidDataException($"No chapter descriptions found in {path}");
         Dictionary<string, string> descriptions = new(StringComparer.OrdinalIgnoreCase);
-        foreach (ChapterDescription entry in entries)
+        foreach (SiteMappingDescription entry in entries)
         {
             foreach (string key in entry.Keys)
             {
@@ -42,6 +42,4 @@ public sealed class ChapterDescriptionService
         string heading = mapping.IndentLevel == 0 ? mapping.ChapterTitle : mapping.RawHeading;
         return $"Learn about {heading} in Essential C# with practical examples and explanations from the online C# guide.";
     }
-
-    private sealed record ChapterDescription(List<string> Keys, string Value);
 }
