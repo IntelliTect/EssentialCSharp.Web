@@ -59,9 +59,9 @@ public class ChapterDescriptionServiceTests
     [Arguments("""[{"Keys":"a","Value":"keys is not an array"}]""")]
     public async Task MalformedDescriptionsFailWithAClearMessage(string json)
     {
-        InvalidDataException exception = Assert.Throws<InvalidDataException>(() => CreateServiceFromJson(json));
-
-        await Assert.That(exception.Message).Contains("sitemap.descriptions.json");
+        await Assert.That(() => CreateServiceFromJson(json))
+            .Throws<InvalidDataException>()
+            .WithMessageContaining("sitemap.descriptions.json");
     }
 
     private static ChapterDescriptionService CreateServiceFromJson(string json)

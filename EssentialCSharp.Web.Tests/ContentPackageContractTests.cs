@@ -24,7 +24,10 @@ public class ContentPackageContractTests : IntegrationTestBase
     {
         IServiceProvider services = Factory.Inner.Services;
 
-        await Assert.That(services.GetRequiredService<ISiteMappingService>().SiteMappings.Count).IsGreaterThan(0);
-        await Assert.That(services.GetRequiredService<IGuidelinesService>().Guidelines.Count).IsGreaterThan(0);
+        using (Assert.Multiple())
+        {
+            await Assert.That(services.GetRequiredService<ISiteMappingService>().SiteMappings).IsNotEmpty();
+            await Assert.That(services.GetRequiredService<IGuidelinesService>().Guidelines).IsNotEmpty();
+        }
     }
 }
