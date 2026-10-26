@@ -1,7 +1,7 @@
 using System.ClientModel;
 using System.ClientModel.Primitives;
 using System.Net;
-using System.Text;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Azure.Core;
 using EssentialCSharp.Chat.Common.Services;
@@ -93,7 +93,7 @@ public class AzureOpenAIV1ClientsTests
                 request.Content is null ? string.Empty : await request.Content.ReadAsStringAsync(cancellationToken));
             return new HttpResponseMessage(HttpStatusCode.NotFound)
             {
-                Content = new StringContent("{\"error\":{\"message\":\"Resource not found\"}}", Encoding.UTF8, "application/json")
+                Content = JsonContent.Create(new { error = new { message = "Resource not found" } })
             };
         }
     }
