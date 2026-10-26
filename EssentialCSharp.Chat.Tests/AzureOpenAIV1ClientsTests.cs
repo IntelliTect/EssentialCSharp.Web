@@ -34,13 +34,16 @@ public class AzureOpenAIV1ClientsTests
 
         CreateResponseOptions options = new() { Model = "web-chat" };
         options.InputItems.Add(ResponseItem.CreateUserMessageItem("hello"));
-        _ = await Assert.ThrowsAsync<ClientResultException>(async () => await client.CreateResponseAsync(options));
+        await Assert.That(async () => await client.CreateResponseAsync(options)).Throws<ClientResultException>();
 
-        await Assert.That(handler.Request.Method).IsEqualTo(HttpMethod.Post);
-        await Assert.That(handler.Request.Uri.GetLeftPart(UriPartial.Path)).IsEqualTo("https://example.cognitiveservices.azure.com/openai/v1/responses");
-        await Assert.That(handler.Request.Uri.Query).IsEmpty();
-        await Assert.That(handler.Request.Authorization).IsEqualTo("Bearer test-token");
-        await Assert.That(JsonDocument.Parse(handler.Request.Body).RootElement.GetProperty("model").GetString()).IsEqualTo("web-chat");
+        using (Assert.Multiple())
+        {
+            await Assert.That(handler.Request.Method).IsEqualTo(HttpMethod.Post);
+            // Uri equality includes the query string, so this also proves no api-version is appended.
+            await Assert.That(handler.Request.Uri).IsEqualTo(new Uri("https://example.cognitiveservices.azure.com/openai/v1/responses"));
+            await Assert.That(handler.Request.Authorization).IsEqualTo("Bearer test-token");
+            await Assert.That(JsonDocument.Parse(handler.Request.Body).RootElement.GetProperty("model").GetString()).IsEqualTo("web-chat");
+        }
 #pragma warning restore OPENAI001
     }
 
@@ -50,13 +53,16 @@ public class AzureOpenAIV1ClientsTests
         CapturingHandler handler = new();
         var client = AzureOpenAIV1Clients.CreateEmbeddingClient(Endpoint, "embedding-model", new FakeCredential(), CreateTransport(handler));
 
-        _ = await Assert.ThrowsAsync<ClientResultException>(async () => await client.GenerateEmbeddingAsync("hello"));
+        await Assert.That(async () => await client.GenerateEmbeddingAsync("hello")).Throws<ClientResultException>();
 
-        await Assert.That(handler.Request.Method).IsEqualTo(HttpMethod.Post);
-        await Assert.That(handler.Request.Uri.GetLeftPart(UriPartial.Path)).IsEqualTo("https://example.cognitiveservices.azure.com/openai/v1/embeddings");
-        await Assert.That(handler.Request.Uri.Query).IsEmpty();
-        await Assert.That(handler.Request.Authorization).IsEqualTo("Bearer test-token");
-        await Assert.That(JsonDocument.Parse(handler.Request.Body).RootElement.GetProperty("model").GetString()).IsEqualTo("embedding-model");
+        using (Assert.Multiple())
+        {
+            await Assert.That(handler.Request.Method).IsEqualTo(HttpMethod.Post);
+            // Uri equality includes the query string, so this also proves no api-version is appended.
+            await Assert.That(handler.Request.Uri).IsEqualTo(new Uri("https://example.cognitiveservices.azure.com/openai/v1/embeddings"));
+            await Assert.That(handler.Request.Authorization).IsEqualTo("Bearer test-token");
+            await Assert.That(JsonDocument.Parse(handler.Request.Body).RootElement.GetProperty("model").GetString()).IsEqualTo("embedding-model");
+        }
     }
 
     private static HttpClientPipelineTransport CreateTransport(CapturingHandler handler) => new(new HttpClient(handler));
