@@ -25,18 +25,8 @@ public partial class AIChatService : IChatCompletionService
     public bool IsAvailable => true;
     public bool SupportsContextualSearch => true;
 
-    // The scope required for Azure OpenAI token auth via managed identity.
-    private const string AzureCognitiveServicesScope = "https://cognitiveservices.azure.com/.default";
-
-    // The Azure OpenAI REST API version used by Azure.AI.OpenAI 2.9.0-beta.1.
-    // AzureOpenAIClient.GetResponsesClient() is binary-incompatible with OpenAI 2.12.0
-    // because OpenAI changed the ResponsesClient constructor from (ClientPipeline, OpenAIClientOptions)
-    // to (ClientPipeline, ResponsesClientOptions). Until Azure.AI.OpenAI ships an update that
-    // supports OpenAI 2.12+, we construct ResponsesClient directly using BearerTokenPolicy.
-    private const string AzureApiVersion = "2025-04-01-preview";
-
     public AIChatService(IOptions<AIOptions> options, AISearchService searchService, TokenCredential credential, ILogger<AIChatService> logger)
-        : this(options, searchService, CreateResponseClient(options.Value, credential), logger)
+        : this(options, searchService, AzureOpenAIV1Clients.CreateResponsesClient(options.Value.Endpoint, credential), logger)
     {
     }
 
@@ -59,75 +49,6 @@ public partial class AIChatService : IChatCompletionService
         _Logger = logger;
         _AllowedMcpTools = _Options.AllowedMcpTools.ToFrozenSet(StringComparer.Ordinal);
         _ResponseClient = responseClient;
-    }
-
-#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-    private static ResponsesClient CreateResponseClient(AIOptions options, TokenCredential credential)
-    {
-        // Build an Azure-authenticated ResponsesClient directly, targeting the deployment endpoint.
-        // The endpoint is: {AzureEndpoint}/openai/deployments/{ChatDeploymentName}
-        // ResponsesClient appends "/responses" to produce the full Azure REST path.
-        var deploymentEndpoint = new Uri(
-            $"{options.Endpoint.TrimEnd('/')}/openai/deployments/{options.ChatDeploymentName}");
-
-        var responsesOptions = new ResponsesClientOptions { Endpoint = deploymentEndpoint };
-        responsesOptions.AddPolicy(new ApiVersionPipelinePolicy(AzureApiVersion), PipelinePosition.PerCall);
-
-        var tokenProvider = new AzureCogServicesTokenProvider(credential);
-        var bearerPolicy = new BearerTokenPolicy(tokenProvider, AzureCognitiveServicesScope);
-        return new ResponsesClient(bearerPolicy, responsesOptions);
-#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-    }
-
-    /// <summary>
-    /// Adds the Azure api-version query parameter to every outgoing request.
-    /// Required because the base ResponsesClient does not know the Azure API version;
-    /// that concern was previously handled internally by AzureResponsesClient.
-    /// </summary>
-    private sealed class ApiVersionPipelinePolicy(string apiVersion) : PipelinePolicy
-    {
-        public override void Process(PipelineMessage message, IReadOnlyList<PipelinePolicy> pipeline, int currentIndex)
-        {
-            AppendApiVersion(message);
-            ProcessNext(message, pipeline, currentIndex);
-        }
-
-        public override async ValueTask ProcessAsync(PipelineMessage message, IReadOnlyList<PipelinePolicy> pipeline, int currentIndex)
-        {
-            AppendApiVersion(message);
-            await ProcessNextAsync(message, pipeline, currentIndex);
-        }
-
-        private void AppendApiVersion(PipelineMessage message)
-        {
-            var uri = message.Request.Uri?.ToString();
-            if (uri is null || uri.Contains("api-version", StringComparison.OrdinalIgnoreCase))
-                return;
-            var separator = uri.Contains('?') ? '&' : '?';
-            message.Request.Uri = new Uri(uri + separator + "api-version=" + apiVersion);
-        }
-    }
-
-    /// <summary>
-    /// Bridges Azure.Core's <see cref="TokenCredential"/> into the System.ClientModel
-    /// <see cref="AuthenticationTokenProvider"/> abstraction used by <see cref="BearerTokenPolicy"/>.
-    /// </summary>
-    private sealed class AzureCogServicesTokenProvider(TokenCredential credential) : AuthenticationTokenProvider
-    {
-        public override GetTokenOptions CreateTokenOptions(IReadOnlyDictionary<string, object> context)
-            => new(context);
-
-        public override AuthenticationToken GetToken(GetTokenOptions options, CancellationToken cancellationToken)
-        {
-            var token = credential.GetToken(new TokenRequestContext([AzureCognitiveServicesScope]), cancellationToken);
-            return new AuthenticationToken(token.Token, "Bearer", token.ExpiresOn, null);
-        }
-
-        public override async ValueTask<AuthenticationToken> GetTokenAsync(GetTokenOptions options, CancellationToken cancellationToken)
-        {
-            var token = await credential.GetTokenAsync(new TokenRequestContext([AzureCognitiveServicesScope]), cancellationToken);
-            return new AuthenticationToken(token.Token, "Bearer", token.ExpiresOn, null);
-        }
     }
 
     /// <summary>

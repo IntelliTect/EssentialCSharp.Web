@@ -1,4 +1,3 @@
-using Azure.AI.OpenAI;
 using Azure.Core;
 using Azure.Identity;
 using EssentialCSharp.Chat.Common.Models;
@@ -7,7 +6,6 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Microsoft.SemanticKernel;
 using Npgsql;
 
 namespace EssentialCSharp.Chat.Common.Extensions;
@@ -40,37 +38,17 @@ public static class ServiceCollectionExtensions
             throw new InvalidOperationException("AIOptions.Endpoint is required.");
         }
 
-        var endpoint = new Uri(aiOptions.Endpoint);
-
-        // Register Azure OpenAI services with Managed Identity authentication
-#pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        services.AddAzureOpenAIChatClient(
-            aiOptions.ChatDeploymentName,
-            endpoint.ToString(),
-            credential);
-
-        services.AddSingleton(provider =>
-            new AzureOpenAIClient(endpoint, credential));
-
-        // Register the resolved credential so AIChatService can build its ResponsesClient
-        // directly, bypassing the binary-incompatible AzureOpenAIClient.GetResponsesClient().
+        // Register the resolved credential so AIChatService can build its Responses client from it.
         services.AddSingleton(credential);
-
-        services.AddAzureOpenAIChatCompletion(
-            aiOptions.ChatDeploymentName,
-            aiOptions.Endpoint,
-            credential);
 
         // Add PostgreSQL vector store with managed identity support
         services.AddPostgresVectorStoreWithManagedIdentity(postgresConnectionString, credential);
 
         services.AddEmbeddingGenerator(sp =>
-            sp.GetRequiredService<AzureOpenAIClient>()
-              .GetEmbeddingClient(aiOptions.VectorGenerationDeploymentName)
+            AzureOpenAIV1Clients.CreateEmbeddingClient(aiOptions.Endpoint, aiOptions.VectorGenerationDeploymentName, credential)
               .AsIEmbeddingGenerator())
             .UseLogging()
             .UseOpenTelemetry();
-#pragma warning restore SKEXP0010
 
         // Ensure options are available even when caller provides AIOptions directly.
         services.AddOptions<EmbeddingRetryOptions>()
