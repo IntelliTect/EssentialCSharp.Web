@@ -56,10 +56,13 @@ public sealed class ChapterDescriptionService
                 return result;
             }
 
-            if (entry.TryGetProperty("Key", out JsonElement singleKey) && singleKey.ValueKind == JsonValueKind.String
-                && !string.IsNullOrWhiteSpace(singleKey.GetString()))
+            if (entry.TryGetProperty("Key", out JsonElement singleKey) && singleKey.ValueKind == JsonValueKind.String)
             {
-                return [singleKey.GetString()!];
+                string? text = singleKey.GetString();
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    return [text];
+                }
             }
         }
 
@@ -69,9 +72,10 @@ public sealed class ChapterDescriptionService
     private static string ReadValue(JsonElement entry, string path, int index)
     {
         if (entry.ValueKind == JsonValueKind.Object
-            && entry.TryGetProperty("Value", out JsonElement value) && value.ValueKind == JsonValueKind.String)
+            && entry.TryGetProperty("Value", out JsonElement value) && value.ValueKind == JsonValueKind.String
+            && value.GetString() is string text)
         {
-            return value.GetString()!;
+            return text;
         }
 
         throw InvalidEntry(path, index, "has no \"Value\" string");
