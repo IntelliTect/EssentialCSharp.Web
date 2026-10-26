@@ -213,7 +213,7 @@ a:hover {
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  min-width: 0;
+  flex: 0 0 auto;
 }
 
 .header-brand {
@@ -224,13 +224,27 @@ a:hover {
 }
 
 #header-status-host {
-  flex: 0 1 auto;
+  flex: 1 1 0;
   min-width: 0;
+  padding: 0 0.75rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-@media (min-width: 992px) {
-  #header-status-host {
-    flex: 1 1 0;
+/* overflow:hidden on #manage shifts the inline-block baseline; align by top instead */
+.banner .has-tooltip {
+  vertical-align: top;
+}
+
+#manage {
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 767.98px) {
+  #manage {
+    max-width: 10rem;
   }
 }
 
@@ -282,12 +296,41 @@ a:hover {
   font-size: 1.2rem;
   text-overflow: ellipsis;
   cursor: pointer;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
-.menu-progress {
-  font-style: normal;
-  font-weight: 200;
-  font-size: 1rem;
+/* Let the title shrink with an ellipsis instead of being clipped */
+#header-status-host > div {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Hide the title only when its box is too narrow to show anything readable */
+#header-status-host {
+  container-type: inline-size;
+}
+
+@container (max-width: 5rem) {
+  .menu-chapter-title {
+    display: none;
+  }
+}
+
+/* Progress is a thin track along the bottom of the fixed header, so the title keeps the space.
+   The faint full-width track keeps it from reading as a page-load bar. */
+.menu-progress-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.menu-progress-bar {
+  height: 100%;
+  background: var(--primary-accent-color);
 }
 
 .has-tooltip {
