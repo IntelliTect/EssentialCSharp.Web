@@ -18,7 +18,6 @@
     <PackageVersion Include="AspNet.Security.OAuth.GitHub" Version="10.0.0" />
     <PackageVersion Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.5.2" />
     <PackageVersion Include="Azure.Identity" Version="1.21.0" />
-    <PackageVersion Include="Azure.AI.OpenAI" Version="2.9.0-beta.1" />
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.6.0" />
     <!-- TODO: update to stable release when Azure.Monitor.OpenTelemetry.Profiler reaches GA -->
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.Profiler" Version="1.0.1-beta.7" />
@@ -41,7 +40,7 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.13" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.13" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.11.0" />
-    <PackageVersion Include="Microsoft.SemanticKernel" Version="1.81.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Core" Version="1.81.0" />
     <PackageVersion Include="CommunityToolkit.VectorData.PgVector" Version="1.0.1" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.402" />
     <!-- Pin to patched versions; NuGet.Protocol 6.12.5+ fixes GHSA-g4vj-cjjj-v7hg (pulled in by Microsoft.VisualStudio.Web.CodeGeneration.Design) -->
