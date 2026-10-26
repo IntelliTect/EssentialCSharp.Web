@@ -36,11 +36,11 @@ public class AzureOpenAIV1ClientsTests
         options.InputItems.Add(ResponseItem.CreateUserMessageItem("hello"));
         _ = await Assert.ThrowsAsync<ClientResultException>(async () => await client.CreateResponseAsync(options));
 
-        await Assert.That(handler.Method).IsEqualTo(HttpMethod.Post);
-        await Assert.That(handler.Uri!.GetLeftPart(UriPartial.Path)).IsEqualTo("https://example.cognitiveservices.azure.com/openai/v1/responses");
-        await Assert.That(handler.Uri.Query).IsEmpty();
-        await Assert.That(handler.Authorization).IsEqualTo("Bearer test-token");
-        await Assert.That(JsonDocument.Parse(handler.Body!).RootElement.GetProperty("model").GetString()).IsEqualTo("web-chat");
+        await Assert.That(handler.Request.Method).IsEqualTo(HttpMethod.Post);
+        await Assert.That(handler.Request.Uri.GetLeftPart(UriPartial.Path)).IsEqualTo("https://example.cognitiveservices.azure.com/openai/v1/responses");
+        await Assert.That(handler.Request.Uri.Query).IsEmpty();
+        await Assert.That(handler.Request.Authorization).IsEqualTo("Bearer test-token");
+        await Assert.That(JsonDocument.Parse(handler.Request.Body).RootElement.GetProperty("model").GetString()).IsEqualTo("web-chat");
 #pragma warning restore OPENAI001
     }
 
@@ -52,11 +52,11 @@ public class AzureOpenAIV1ClientsTests
 
         _ = await Assert.ThrowsAsync<ClientResultException>(async () => await client.GenerateEmbeddingAsync("hello"));
 
-        await Assert.That(handler.Method).IsEqualTo(HttpMethod.Post);
-        await Assert.That(handler.Uri!.GetLeftPart(UriPartial.Path)).IsEqualTo("https://example.cognitiveservices.azure.com/openai/v1/embeddings");
-        await Assert.That(handler.Uri.Query).IsEmpty();
-        await Assert.That(handler.Authorization).IsEqualTo("Bearer test-token");
-        await Assert.That(JsonDocument.Parse(handler.Body!).RootElement.GetProperty("model").GetString()).IsEqualTo("embedding-model");
+        await Assert.That(handler.Request.Method).IsEqualTo(HttpMethod.Post);
+        await Assert.That(handler.Request.Uri.GetLeftPart(UriPartial.Path)).IsEqualTo("https://example.cognitiveservices.azure.com/openai/v1/embeddings");
+        await Assert.That(handler.Request.Uri.Query).IsEmpty();
+        await Assert.That(handler.Request.Authorization).IsEqualTo("Bearer test-token");
+        await Assert.That(JsonDocument.Parse(handler.Request.Body).RootElement.GetProperty("model").GetString()).IsEqualTo("embedding-model");
     }
 
     private static HttpClientPipelineTransport CreateTransport(CapturingHandler handler) => new(new HttpClient(handler));
@@ -73,21 +73,24 @@ public class AzureOpenAIV1ClientsTests
     /// <summary>Records the first request and answers 404 so the SDK call throws without a real service.</summary>
     private sealed class CapturingHandler : HttpMessageHandler
     {
-        public HttpMethod? Method { get; private set; }
-        public Uri? Uri { get; private set; }
-        public string? Authorization { get; private set; }
-        public string? Body { get; private set; }
+        private CapturedRequest? _request;
+
+        public CapturedRequest Request => _request
+            ?? throw new InvalidOperationException("The client under test never sent a request.");
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            Method = request.Method;
-            Uri = request.RequestUri;
-            Authorization = request.Headers.Authorization?.ToString();
-            Body = request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken);
+            _request = new CapturedRequest(
+                request.Method,
+                request.RequestUri ?? throw new InvalidOperationException("The request has no URI."),
+                request.Headers.Authorization?.ToString(),
+                request.Content is null ? string.Empty : await request.Content.ReadAsStringAsync(cancellationToken));
             return new HttpResponseMessage(HttpStatusCode.NotFound)
             {
                 Content = new StringContent("{\"error\":{\"message\":\"Resource not found\"}}", Encoding.UTF8, "application/json")
             };
         }
     }
+
+    private sealed record CapturedRequest(HttpMethod Method, Uri Uri, string? Authorization, string Body);
 }
