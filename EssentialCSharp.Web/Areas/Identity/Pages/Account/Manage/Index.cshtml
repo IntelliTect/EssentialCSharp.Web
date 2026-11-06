@@ -46,48 +46,11 @@ ViewData["ActivePage"] = ManageNavPages.Index;
                 data-confirm="Reset your reading speed? This cannot be undone.">
             Reset reading speed
         </button>
-        <div id="reset-reading-status" class="mt-2 small" role="status" aria-live="polite" aria-atomic="true" style="display:none;"></div>
+        <div id="reset-reading-status" class="mt-2 small" role="status" aria-live="polite" aria-atomic="true" hidden></div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        (function () {
-            const btn = document.getElementById('reset-reading-speed-button');
-            const status = document.getElementById('reset-reading-status');
-            if (!btn) return;
-
-            btn.addEventListener('click', async function () {
-                if (!confirm(btn.dataset.confirm)) return;
-
-                btn.disabled = true;
-                status.style.display = '';
-                status.textContent = 'Resetting…';
-                status.className = 'mt-2 small text-muted';
-
-                try {
-                    const res = await fetch('/api/reading/reset', {
-                        method: 'POST',
-                        headers: {
-                            'RequestVerificationToken': document.querySelector('meta[name="csrf-token"]')?.content ?? ''
-                        }
-                    });
-                    if (res.ok) {
-                        try { localStorage.removeItem('readingProfile'); } catch {}
-                        status.textContent = 'Reading speed reset successfully.';
-                        status.className = 'mt-2 small text-success';
-                    } else {
-                        status.textContent = 'Reset failed. Please try again.';
-                        status.className = 'mt-2 small text-danger';
-                        btn.disabled = false;
-                    }
-                } catch {
-                    status.textContent = 'Network error. Please try again.';
-                    status.className = 'mt-2 small text-danger';
-                    btn.disabled = false;
-                }
-            });
-        })();
-    </script>
+    <script type="module" src="~/dist/assets/reading-reset.js" asp-append-version="true"></script>
 }
