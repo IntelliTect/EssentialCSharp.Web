@@ -15,7 +15,10 @@ export const MOUSEMOVE_THROTTLE_MS = 1000;
 export const RETRY_BASE_DELAY_MS = 5000;
 export const RETRY_MAX_DELAY_MS = 120000;
 
-/** Unsent intervals kept while the server is unreachable; the oldest are dropped beyond this. */
+/**
+ * Unsent intervals kept while the server is unreachable; the oldest are dropped beyond this.
+ * Must stay within the server's MaxIntervalsPerRequest (enforced by its options validator).
+ */
 export const MAX_QUEUED_INTERVALS = 20;
 
 /** Cross-tab notification that the reading profile was reset. */

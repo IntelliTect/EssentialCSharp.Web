@@ -86,6 +86,9 @@ export function useReadingTracker(context) {
     let outbox = [];
     let failures = 0;
     let retryAt = 0;
+    // Bumped when another tab resets the profile; responses to batches sent before
+    // the reset are ignored (no restore, no wpm update).
+    let generation = 0;
 
     const contentElement = findContentElement();
 
@@ -129,7 +132,8 @@ export function useReadingTracker(context) {
      * is credited by later time.
      */
     function collect() {
-        // The server rejects intervals above its per-interval cap, so never emit
+        // The server rejects intervals above MaxActiveSecondsPerInterval (its options
+        // validator enforces idle threshold <= that cap), so never emit
         // one longer than the idle threshold: split long pending time into several
         // intervals of the same batch.
         while (Math.floor(pendingSeconds) >= 1) {
@@ -173,6 +177,7 @@ export function useReadingTracker(context) {
 
         const batch = outbox;
         outbox = [];
+        const batchGeneration = generation;
 
         inFlight++;
         let result;
@@ -181,7 +186,7 @@ export function useReadingTracker(context) {
         } finally {
             inFlight--;
         }
-        if (disposed) return;
+        if (disposed || batchGeneration !== generation) return;
 
         if (result.status === STATUS_OK) {
             failures = 0;
@@ -229,6 +234,7 @@ export function useReadingTracker(context) {
     // Another tab reset the reading profile: return to the default estimate and
     // drop unsent data so it does not repopulate the profile that was just cleared.
     function onReset() {
+        generation++;
         wpm.value = context.defaultWpm;
         if (!tracking) return;
         pendingSeconds = 0;

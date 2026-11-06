@@ -280,6 +280,41 @@ describe("useReadingTracker", () => {
     });
 
     describe("reset in another tab", () => {
+        async function resetFromOtherTab() {
+            const other = new BroadcastChannel("essentialcsharp-reading-reset");
+            other.postMessage({ type: "reset" });
+            await new Promise((resolve) => realSetTimeout(resolve, 50));
+            other.close();
+        }
+
+        it("does not restore a batch that was in flight at reset time when it fails", async () => {
+            let fail;
+            fetchMock.mockReturnValueOnce(new Promise((resolve) => { fail = resolve; }))
+                .mockResolvedValue(reply(200));
+            start();
+            readThroughPage();
+            await advance(61);
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+
+            await resetFromOtherTab();
+            fail(reply(503));
+            await advance(30); // well past the backoff
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        });
+
+        it("ignores the wpm of a response to a batch sent before the reset", async () => {
+            let succeed;
+            fetchMock.mockReturnValueOnce(new Promise((resolve) => { succeed = resolve; }));
+            const tracker = start(context({ wpm: 300 }));
+            readThroughPage();
+            await advance(61);
+
+            await resetFromOtherTab();
+            succeed(reply(200, { body: { wpm: 300 } }));
+            await advance(1);
+            expect(tracker.wpm.value).toBe(200);
+        });
+
         it("returns to the default wpm and discards unsent time", async () => {
             const tracker = start(context({ wpm: 300 }));
             readThroughPage();
