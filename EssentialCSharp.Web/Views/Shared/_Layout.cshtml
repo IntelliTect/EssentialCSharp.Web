@@ -30,7 +30,12 @@
     }
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="csrf-token" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
+    @if (SignInManager.IsSignedIn(User))
+    {
+        // Only signed-in users call the antiforgery-protected reading API; GetAndStoreTokens sets
+        // cookie/no-cache headers, so never call it for anonymous visitors on public pages.
+        <meta name="csrf-token" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
+    }
     <meta property="og:type" content="website" />
     <meta property="og:url" content="@canonicalUrl" />
     @if (Context.Response.StatusCode < 400 && !Context.Request.Path.StartsWithSegments("/Identity"))
@@ -224,13 +229,8 @@
         window.BUILD_LABEL = @Json.Serialize(buildLabel);
         window.ENABLE_CHAT_WIDGET = @Json.Serialize(!Context.Request.Path.StartsWithSegments("/Identity"));
         window.HCAPTCHA_SITE_KEY = @Json.Serialize(chatCaptchaSiteKey);
-        window.CURRENT_PAGE_KEY = @Json.Serialize(ViewBag.CurrentPageKey);
-        window.PAGE_WORD_COUNT = @Json.Serialize(ViewBag.PageWordCount ?? 0);
-        window.CHAPTER_WORD_COUNT = @Json.Serialize(ViewBag.ChapterWordCount ?? 0);
-        window.WORDS_BEFORE_PAGE = @Json.Serialize(ViewBag.WordsBeforePage ?? 0);
-        window.CHAPTER_START_WORDS = @Json.Serialize(ViewBag.ChapterStartWords ?? 0);
-        window.BOOK_WORD_COUNT = @Json.Serialize(ViewBag.BookWordCount ?? 0);
     </script>
+    @await Component.InvokeAsync("ReadingContext")
     <script src="~/dist/assets/site-shell.js" type="module" asp-append-version="true"></script>
 </body>
 </html>

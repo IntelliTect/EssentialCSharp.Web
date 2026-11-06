@@ -13,7 +13,7 @@ using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Controllers;
 
-public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment hostingEnvironment, ISiteMappingService siteMappingService, ChapterDescriptionService chapterDescriptionService, IHttpContextAccessor httpContextAccessor, IRouteConfigurationService routeConfigurationService, IOptions<SiteSettings> siteSettings, IWordCountService wordCountService) : BaseController(routeConfigurationService, httpContextAccessor)
+public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment hostingEnvironment, ISiteMappingService siteMappingService, ChapterDescriptionService chapterDescriptionService, IHttpContextAccessor httpContextAccessor, IRouteConfigurationService routeConfigurationService, IOptions<SiteSettings> siteSettings) : BaseController(routeConfigurationService, httpContextAccessor)
 {
     [EnableRateLimiting("content")]
     public IActionResult Index()
@@ -60,6 +60,7 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
             string headHtml = doc.DocumentNode.Element("html")?.Element("head")?.InnerHtml ?? string.Empty;
             string html = doc.DocumentNode.Element("html")?.Element("body")?.InnerHtml ?? string.Empty;
 
+            // PrimaryKey is not serialized in sitemap.json, so it is null after deserialization; Keys is authoritative.
             string pageKey = siteMapping.Keys.FirstOrDefault() ?? siteMapping.PrimaryKey ?? string.Empty;
             ViewBag.PageTitle = siteMapping.IndentLevel is 0 ? siteMapping.ChapterTitle + " " + siteMapping.RawHeading : siteMapping.RawHeading;
             ViewData["Description"] = chapterDescriptionService.GetDescription(siteMapping);
@@ -70,11 +71,6 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
             ViewBag.HeadContents = headHtml;
             ViewBag.Contents = html;
             ViewBag.NeedsPageHeading = doc.DocumentNode.SelectSingleNode("//body//h1") is null;
-            ViewBag.PageWordCount = wordCountService.GetPageWordCount(pageKey);
-            ViewBag.ChapterWordCount = wordCountService.GetChapterWordCount(siteMapping.ChapterNumber);
-            ViewBag.WordsBeforePage = wordCountService.GetWordsBeforePage(pageKey);
-            ViewBag.ChapterStartWords = wordCountService.GetChapterStartWords(pageKey);
-            ViewBag.BookWordCount = wordCountService.GetBookWordCount();
             return View();
         }
         else
