@@ -6,6 +6,7 @@ import { getReadingContext } from "./readingContext.js";
 // the parser and this fixture cannot silently drift apart (see the key-set test below).
 const complete = () => ({
     isAuthenticated: true,
+    userId: "user-1",
     pageKey: "chapter-1/page-2",
     pageWords: 1200,
     chapterWords: 5000,
