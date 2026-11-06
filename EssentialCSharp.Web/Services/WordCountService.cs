@@ -1,167 +1,161 @@
+using System.Collections.Frozen;
 using HtmlAgilityPack;
+using Microsoft.Extensions.Hosting;
 
 namespace EssentialCSharp.Web.Services;
 
 /// <summary>
-/// Singleton service that computes prose-only word counts for all content pages
-/// at startup and caches them in memory. Code blocks (<c>&lt;pre&gt;</c>,
-/// <c>&lt;code&gt;</c>, <c>&lt;script&gt;</c>, <c>&lt;style&gt;</c>, and generated
-/// <c>.code-block-section</c> listings are excluded because they are read very
-/// differently from prose and would skew WPM estimates.
+/// Computes prose-only word counts for all content pages when the host starts and caches
+/// them in an immutable snapshot. <c>&lt;pre&gt;</c>, <c>&lt;script&gt;</c>, <c>&lt;style&gt;</c>
+/// and generated <c>.code-block-section</c> listings are excluded because they are read very
+/// differently from prose and would skew WPM estimates. Inline <c>&lt;code&gt;</c> inside prose
+/// is counted, since readers do read those identifiers as part of the sentence.
 /// </summary>
-public class WordCountService : IWordCountService
+public sealed partial class WordCountService(
+    ISiteMappingService siteMappingService,
+    IWebHostEnvironment hostingEnvironment,
+    ILogger<WordCountService> logger) : IWordCountService, IHostedLifecycleService
 {
-    // Tags whose text content is excluded from prose word counts.
-    private static readonly HashSet<string> ExcludedTags = new(StringComparer.OrdinalIgnoreCase)
+    private const string ExcludedXPath =
+        "//pre | //script | //style | //*[contains(concat(' ', normalize-space(@class), ' '), ' code-block-section ')]";
+
+    private volatile Snapshot? _snapshot;
+
+    public bool IsReady => _snapshot is not null;
+
+    public PageWordStats? GetPageStats(string pageKey) =>
+        _snapshot?.Pages.GetValueOrDefault(pageKey);
+
+    public int GetPageWordCount(string pageKey) => GetPageStats(pageKey)?.PageWords ?? 0;
+
+    public int GetBookWordCount() => _snapshot?.BookWords ?? 0;
+
+    public IReadOnlyList<ChapterWordCount> GetChapterWordCounts() => _snapshot?.Chapters ?? [];
+
+    /// <summary>
+    /// Reads every mapped content page and publishes the word-count snapshot. A page that is
+    /// missing or cannot be parsed is logged and counted as zero words; it never fails the build.
+    /// </summary>
+    public Task BuildAsync(CancellationToken cancellationToken = default)
     {
-        "pre", "code", "script", "style"
-    };
-
-    private readonly Dictionary<string, int> _pageWordCounts;
-    private readonly Dictionary<int, int> _chapterWordCounts;
-    private readonly int _bookWordCount;
-    private readonly Dictionary<string, int> _wordsBeforePage;
-    private readonly Dictionary<string, int> _chapterStartWords;
-    private readonly IReadOnlyList<ChapterWordCount> _chapterWordCountList;
-    private readonly Dictionary<string, PageWordData> _pagesByPath;
-
-    public WordCountService(ISiteMappingService siteMappingService, IWebHostEnvironment hostingEnvironment)
-    {
-        _pageWordCounts = [];
-        _chapterWordCounts = [];
-        _wordsBeforePage = [];
-        _chapterStartWords = [];
-        _pagesByPath = new Dictionary<string, PageWordData>(
-            OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
-
-        // Walk mappings in canonical reading order: chapter → page → order-on-page.
+        // Walk mappings in canonical reading order: chapter -> page -> order-on-page.
         IEnumerable<SiteMapping> orderedMappings = siteMappingService.SiteMappings
             .OrderBy(m => m.ChapterNumber)
             .ThenBy(m => m.PageNumber)
             .ThenBy(m => m.OrderOnPage);
 
-        int bookWords = 0;
-        int currentChapter = -1;
-        int chapterWords = 0;
+        // One entry per distinct file, in reading order. Later mappings of the same file only add keys.
+        Dictionary<string, FileEntry> filesByPath = new(StringComparer.Ordinal);
+        List<FileEntry> files = [];
+        Dictionary<string, FileEntry> fileByKey = new(StringComparer.Ordinal);
 
         foreach (SiteMapping mapping in orderedMappings)
         {
-            string filePath = Path.GetFullPath(Path.Join(
-                hostingEnvironment.ContentRootPath,
-                Path.Join(mapping.PagePath)));
+            cancellationToken.ThrowIfCancellationRequested();
 
-            if (_pagesByPath.TryGetValue(filePath, out PageWordData? existingPage))
+            string? path = ResolvePath(mapping);
+            if (path is null)
             {
-                MapKeys(mapping, existingPage);
+                LogPathEscapesRoot(logger, (mapping.Keys ?? []).FirstOrDefault() ?? mapping.PrimaryKey);
                 continue;
             }
 
-            // Chapter boundary: flush previous chapter totals.
-            if (mapping.ChapterNumber != currentChapter)
+            if (!filesByPath.TryGetValue(path, out FileEntry? entry))
             {
-                if (currentChapter >= 0)
+                entry = new FileEntry(mapping.ChapterNumber, CountProseWords(path));
+                filesByPath[path] = entry;
+                files.Add(entry);
+            }
+
+            foreach (string key in (mapping.Keys ?? []).Append(mapping.PrimaryKey))
+            {
+                // First mapping wins if the sitemap contains a key collision.
+                if (!string.IsNullOrWhiteSpace(key))
                 {
-                    _chapterWordCounts[currentChapter] = chapterWords;
+                    fileByKey.TryAdd(key, entry);
                 }
-                currentChapter = mapping.ChapterNumber;
-                chapterWords = 0;
             }
-
-            int words = CountProseWords(filePath);
-            PageWordData page = new(words, bookWords, chapterWords);
-            _pagesByPath[filePath] = page;
-            MapKeys(mapping, page);
-
-            bookWords += words;
-            chapterWords += words;
         }
 
-        // Flush the last chapter.
-        if (currentChapter >= 0)
+        Dictionary<int, int> chapterTotals = [];
+        foreach (FileEntry file in files)
         {
-            _chapterWordCounts[currentChapter] = chapterWords;
+            chapterTotals[file.Chapter] = chapterTotals.GetValueOrDefault(file.Chapter) + file.Words;
+        }
+        int bookWords = chapterTotals.Values.Sum();
+
+        Dictionary<FileEntry, PageWordStats> statsByFile = new(ReferenceEqualityComparer.Instance);
+        Dictionary<int, int> chapterRunning = [];
+        int wordsBefore = 0;
+        foreach (FileEntry file in files)
+        {
+            int chapterStart = chapterRunning.GetValueOrDefault(file.Chapter);
+            statsByFile[file] = new PageWordStats(file.Words, chapterTotals[file.Chapter], wordsBefore, chapterStart, bookWords);
+            chapterRunning[file.Chapter] = chapterStart + file.Words;
+            wordsBefore += file.Words;
         }
 
-        _bookWordCount = bookWords;
-        _chapterWordCountList = _chapterWordCounts
-            .OrderBy(kv => kv.Key)
-            .Select(kv => new ChapterWordCount(kv.Key, kv.Value))
-            .ToList()
-            .AsReadOnly();
+        _snapshot = new Snapshot(
+            fileByKey.ToFrozenDictionary(kv => kv.Key, kv => statsByFile[kv.Value], StringComparer.Ordinal),
+            [.. chapterTotals.OrderBy(kv => kv.Key).Select(kv => new ChapterWordCount(kv.Key, kv.Value))],
+            bookWords);
+
+        return Task.CompletedTask;
     }
 
-    public int GetPageWordCount(string pageKey) =>
-        _pageWordCounts.TryGetValue(pageKey, out int count) ? count : 0;
+    // ---- Hosting: build before the host starts accepting requests ----
 
-    public int GetChapterWordCount(int chapterNumber) =>
-        _chapterWordCounts.TryGetValue(chapterNumber, out int count) ? count : 0;
+    public Task StartingAsync(CancellationToken cancellationToken) => BuildAsync(cancellationToken);
+    public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task StartedAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task StoppingAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task StoppedAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-    public int GetBookWordCount() => _bookWordCount;
+    // ---- Implementation ----
 
-    public int GetWordsBeforePage(string pageKey) =>
-        _wordsBeforePage.TryGetValue(pageKey, out int count) ? count : 0;
-
-    public int GetChapterStartWords(string pageKey) =>
-        _chapterStartWords.TryGetValue(pageKey, out int count) ? count : 0;
-
-    public IReadOnlyList<ChapterWordCount> GetChapterWordCounts() => _chapterWordCountList;
-
-    // ---
-
-    private void MapKeys(SiteMapping mapping, PageWordData page)
+    /// <summary>Returns a normalized, '/'-separated absolute path, or null if it leaves the content root.</summary>
+    private string? ResolvePath(SiteMapping mapping)
     {
-        IEnumerable<string> pageKeys = (mapping.Keys ?? [])
-            .Append(mapping.PrimaryKey)
-            .Where(key => !string.IsNullOrWhiteSpace(key))
-            .Distinct(StringComparer.Ordinal);
+        string root = Path.GetFullPath(hostingEnvironment.ContentRootPath);
+        string full = Path.GetFullPath(Path.Join(root, Path.Join(mapping.PagePath)));
+        string relative = Path.GetRelativePath(root, full);
+        return relative.StartsWith("..", StringComparison.Ordinal) || Path.IsPathRooted(relative)
+            ? null
+            : full.Replace('\\', '/');
+    }
 
-        foreach (string pageKey in pageKeys)
+    private int CountProseWords(string filePath)
+    {
+        try
         {
-            // Keep the first mapping for a route key if the sitemap contains a collision.
-            if (_pageWordCounts.ContainsKey(pageKey))
+            if (!File.Exists(filePath))
             {
-                continue;
+                LogFileMissing(logger, filePath);
+                return 0;
             }
 
-            _pageWordCounts[pageKey] = page.WordCount;
-            _wordsBeforePage[pageKey] = page.WordsBeforePage;
-            _chapterStartWords[pageKey] = page.ChapterStartWords;
-        }
-    }
+            HtmlDocument doc = new();
+            doc.Load(filePath);
 
-    private static int CountProseWords(string filePath)
-    {
-        if (!File.Exists(filePath))
+            HtmlNode root = doc.DocumentNode.SelectSingleNode("//body") ?? doc.DocumentNode;
+
+            foreach (HtmlNode node in root.SelectNodes(ExcludedXPath)?.ToList() ?? [])
+            {
+                node.Remove();
+            }
+
+            return CountWords(HtmlEntity.DeEntitize(root.InnerText));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
         {
+            LogFileUnreadable(logger, ex, filePath);
             return 0;
         }
-
-        HtmlDocument doc = new();
-        doc.Load(filePath);
-
-        HtmlNode? body = doc.DocumentNode.SelectSingleNode("//body") ?? doc.DocumentNode;
-
-        // Remove excluded tags (modifies in-place on a clone isn't available, so remove from live tree).
-        string xpath = string.Join(
-            " | ",
-            ExcludedTags.Select(t => $"//{t}")
-                .Append("//*[contains(concat(' ', normalize-space(@class), ' '), ' code-block-section ')]"));
-        foreach (HtmlNode node in body.SelectNodes(xpath)?.ToList() ?? [])
-        {
-            node.Remove();
-        }
-
-        string text = body.InnerText;
-        return CountWords(text);
     }
 
     private static int CountWords(string text)
     {
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            return 0;
-        }
-
         int count = 0;
         bool inWord = false;
         foreach (char c in text)
@@ -179,5 +173,19 @@ public class WordCountService : IWordCountService
         return count;
     }
 
-    private sealed record PageWordData(int WordCount, int WordsBeforePage, int ChapterStartWords);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Skipping word count for mapping '{Key}': page path escapes the content root.")]
+    private static partial void LogPathEscapesRoot(ILogger logger, string? key);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Content file '{FilePath}' not found; counting it as 0 words.")]
+    private static partial void LogFileMissing(ILogger logger, string filePath);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Could not read content file '{FilePath}'; counting it as 0 words.")]
+    private static partial void LogFileUnreadable(ILogger logger, Exception exception, string filePath);
+
+    private sealed record FileEntry(int Chapter, int Words);
+
+    private sealed record Snapshot(
+        FrozenDictionary<string, PageWordStats> Pages,
+        IReadOnlyList<ChapterWordCount> Chapters,
+        int BookWords);
 }
