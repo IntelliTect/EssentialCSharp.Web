@@ -172,7 +172,7 @@ public class ReadingControllerTests : IntegrationTestBase
         string userId = await CreateUserWithBaselineProfileAsync();
         using HttpClient client = await CreateAuthenticatedClientAsync(userId);
         int words = Math.Min(page.WordCount, 50);
-        int wallClockSeconds = 3600;
+        int wallClockSeconds = Options.MaxActiveSecondsPerInterval;
 
         using HttpResponseMessage response = await PostSessionAsync(client, Interval(page.Key, words, wallClockSeconds));
 
