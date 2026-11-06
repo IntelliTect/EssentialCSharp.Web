@@ -3,7 +3,6 @@ using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Controllers;
 
@@ -11,9 +10,7 @@ namespace EssentialCSharp.Web.Controllers;
 [Authorize]
 [Route("api/reading")]
 [ReadingAntiforgeryFailureHeader]
-public class ReadingController(
-    IReadingProfileService readingProfileService,
-    IOptions<ReadingOptions> options) : ControllerBase
+public class ReadingController(IReadingProfileService readingProfileService) : ControllerBase
 {
     public const string WriteRateLimitPolicy = "ReadingWrite";
 
@@ -34,30 +31,6 @@ public class ReadingController(
             return Unauthorized();
         }
 
-        int maxIntervals = options.Value.MaxIntervalsPerRequest;
-        if (request.Intervals.Count > maxIntervals)
-        {
-            ModelState.AddModelError(
-                nameof(ReadingSessionRequest.Intervals),
-                $"A session may contain at most {maxIntervals} intervals.");
-            return ValidationProblem(ModelState);
-        }
-
-        if (request.Intervals.Any(i => i is null))
-        {
-            ModelState.AddModelError(nameof(ReadingSessionRequest.Intervals), "Intervals must not contain null entries.");
-            return ValidationProblem(ModelState);
-        }
-
-        int maxActiveSeconds = options.Value.MaxActiveSecondsPerInterval;
-        if (request.Intervals.Any(i => i.ActiveSeconds > maxActiveSeconds))
-        {
-            ModelState.AddModelError(
-                nameof(ReadingIntervalRequest.ActiveSeconds),
-                $"An interval may contain at most {maxActiveSeconds} active seconds.");
-            return ValidationProblem(ModelState);
-        }
-
         ReadingInterval[] intervals = request.Intervals
             .Select(i => new ReadingInterval(i.PageKey, i.WordsRead, i.ActiveSeconds))
             .ToArray();
@@ -65,7 +38,11 @@ public class ReadingController(
         RecordSessionResult result = await readingProfileService.RecordSessionAsync(userId, intervals, cancellationToken);
         if (result.Profile is null)
         {
-            ModelState.AddModelError(nameof(ReadingIntervalRequest.PageKey), $"Unknown page key '{result.UnknownPageKey}'.");
+            // The service rejects the first interval whose page is unknown, so the first match is that interval.
+            int index = request.Intervals.FindIndex(i => i.PageKey == result.UnknownPageKey);
+            ModelState.AddModelError(
+                $"{nameof(ReadingSessionRequest.Intervals)}[{index}].{nameof(ReadingIntervalRequest.PageKey)}",
+                $"Unknown page key '{result.UnknownPageKey}'.");
             return ValidationProblem(ModelState);
         }
 

@@ -220,10 +220,11 @@ internal static class ReadingTestSupport
 
     /// <summary>
     /// Asserts a 400 <c>application/problem+json</c> validation problem whose <c>errors</c> member names
-    /// <paramref name="fieldName"/> (case-insensitive substring of an error key, so binder path prefixes such as
-    /// <c>Intervals[0].</c> are not pinned). Message text is not asserted.
+    /// <paramref name="keyParts"/> (every part must appear, case-insensitively, in a single error key, so a test can
+    /// require both the interval index and the field, e.g. <c>"Intervals[1]"</c> and <c>"ActiveSeconds"</c>, without
+    /// pinning the exact path format). Message text is not asserted.
     /// </summary>
-    public static async Task AssertValidationProblemAsync(HttpResponseMessage response, string fieldName)
+    public static async Task AssertValidationProblemAsync(HttpResponseMessage response, params string[] keyParts)
     {
         ProblemResponse problem = await ReadProblemAsync(response);
         using (Assert.Multiple())
@@ -232,8 +233,8 @@ internal static class ReadingTestSupport
             await Assert.That(problem.MediaType).IsEqualTo("application/problem+json").Because(problem.ToString());
             await Assert.That(problem.Root).IsNotNull().Because($"the body is not JSON: {problem}");
             await Assert.That(problem.ErrorKeys)
-                .Contains(key => key.Contains(fieldName, StringComparison.OrdinalIgnoreCase))
-                .Because($"expected an error naming '{fieldName}' in {problem}");
+                .Contains(key => keyParts.All(part => key.Contains(part, StringComparison.OrdinalIgnoreCase)))
+                .Because($"expected an error key containing {string.Join(" and ", keyParts.Select(p => $"'{p}'"))} in {problem}");
         }
     }
 
