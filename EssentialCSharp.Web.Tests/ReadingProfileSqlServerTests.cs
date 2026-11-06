@@ -17,21 +17,16 @@ namespace EssentialCSharp.Web.Tests;
 /// Opt-in tests against a real SQL Server. Set ESSENTIALCSHARP_TEST_SQLSERVER to a connection string without a
 /// database, for example
 /// <c>Server=(localdb)\MSSQLLocalDB;Integrated Security=true;TrustServerCertificate=true</c>.
-/// Each test creates a throwaway database, applies the real migrations and drops the database afterwards.
+/// The migration test uses its own throwaway database; the other tests share one migrated database per class
+/// (each creates its own users, so they do not interfere) which is dropped after the class.
+/// When the variable is missing the tests are skipped locally but fail when running in CI (<c>CI</c> or
+/// <c>GITHUB_ACTIONS</c> set), so a misconfigured pipeline cannot silently stop covering SQL Server.
 /// </summary>
 public class ReadingProfileSqlServerTests
 {
     private const string EnvVar = "ESSENTIALCSHARP_TEST_SQLSERVER";
     private const string PageKey = "sql-test-page";
-
-    private sealed class FakeWordCountService : IWordCountService
-    {
-        public bool IsReady => true;
-        public PageWordStats? GetPageStats(string pageKey) => null;
-        public int GetPageWordCount(string pageKey) => pageKey == PageKey ? 1000 : 0;
-        public int GetBookWordCount() => 1000;
-        public IReadOnlyList<ChapterWordCount> GetChapterWordCounts() => [];
-    }
+    private const int PageWords = 1000;
 
     private sealed class TestDatabase(string baseConnectionString, string name) : IAsyncDisposable
     {
@@ -57,7 +52,7 @@ public class ReadingProfileSqlServerTests
         public EssentialCSharpWebContext CreateContext() => _services.GetRequiredService<EssentialCSharpWebContext>();
 
         public static ReadingProfileService CreateService(EssentialCSharpWebContext context) =>
-            new(context, new FakeWordCountService(), Options.Create(new ReadingOptions()), NullLogger<ReadingProfileService>.Instance);
+            new(context, ReadingTestSupport.FakeWordCountService.WithSinglePage(PageKey, PageWords), Options.Create(new ReadingOptions()), NullLogger<ReadingProfileService>.Instance);
 
         public async ValueTask DisposeAsync()
         {
@@ -72,16 +67,30 @@ public class ReadingProfileSqlServerTests
         }
     }
 
-    private static async Task<TestDatabase> CreateDatabaseAsync(bool migrate = true)
+    private static string RequireConnectionString()
     {
-        string baseConnectionString = Environment.GetEnvironmentVariable(EnvVar) ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(baseConnectionString))
+        string connectionString = Environment.GetEnvironmentVariable(EnvVar) ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(connectionString))
         {
-            Skip.Test($"Set {EnvVar} to a SQL Server connection string (no database), e.g. "
-                + @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;TrustServerCertificate=true");
+            return connectionString;
         }
 
-        var database = new TestDatabase(baseConnectionString, $"ReadingTest_{Guid.NewGuid():N}");
+        string message = $"Set {EnvVar} to a SQL Server connection string (no database), e.g. "
+            + @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;TrustServerCertificate=true";
+        bool inCi = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI"))
+            || !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GITHUB_ACTIONS"));
+        if (inCi)
+        {
+            throw new InvalidOperationException($"{EnvVar} must be set in CI so the SQL Server tests run. {message}");
+        }
+
+        Skip.Test(message);
+        throw new InvalidOperationException("unreachable");
+    }
+
+    private static async Task<TestDatabase> CreateDatabaseAsync(bool migrate = true)
+    {
+        var database = new TestDatabase(RequireConnectionString(), $"ReadingTest_{Guid.NewGuid():N}");
         if (migrate)
         {
             await using EssentialCSharpWebContext context = database.CreateContext();
@@ -89,6 +98,33 @@ public class ReadingProfileSqlServerTests
         }
 
         return database;
+    }
+
+    private static readonly SemaphoreSlim SharedDatabaseGate = new(1, 1);
+    private static TestDatabase? _sharedDatabase;
+
+    /// <summary>One migrated database for all tests in this class.</summary>
+    private static async Task<TestDatabase> GetSharedDatabaseAsync()
+    {
+        await SharedDatabaseGate.WaitAsync();
+        try
+        {
+            return _sharedDatabase ??= await CreateDatabaseAsync();
+        }
+        finally
+        {
+            SharedDatabaseGate.Release();
+        }
+    }
+
+    [After(Class)]
+    public static async Task DropSharedDatabaseAsync()
+    {
+        if (_sharedDatabase is { } database)
+        {
+            _sharedDatabase = null;
+            await database.DisposeAsync();
+        }
     }
 
     private static async Task<string> CreateUserAsync(TestDatabase database)
@@ -134,26 +170,30 @@ public class ReadingProfileSqlServerTests
     }
 
     [Test]
-    public async Task Migrations_ApplyOnSqlServer_AndDownThenUpAgainWorks()
+    public async Task UserReadingProfileMigration_ApplyingRevertingAndReapplyingWorksOnSqlServer()
     {
         await using TestDatabase database = await CreateDatabaseAsync(migrate: false);
         await using EssentialCSharpWebContext context = database.CreateContext();
         IMigrator migrator = context.GetService<IMigrator>();
+        string[] all = context.Database.GetMigrations().ToArray();
+        int index = Array.FindIndex(all, id => id.EndsWith("_AddUserReadingProfile", StringComparison.Ordinal));
+        await Assert.That(index).IsGreaterThanOrEqualTo(0).Because("the AddUserReadingProfile migration must exist");
+        string target = all[index];
+        string predecessor = index == 0 ? Migration.InitialDatabase : all[index - 1];
 
-        await context.Database.MigrateAsync();
+        await migrator.MigrateAsync(target);
         bool tableAfterUp = await TableExistsAsync(context);
-        IReadOnlyList<string> applied = (await context.Database.GetAppliedMigrationsAsync()).ToList();
-        string previous = applied[^2];
 
-        await migrator.MigrateAsync(previous);
+        await migrator.MigrateAsync(predecessor);
         bool tableAfterDown = await TableExistsAsync(context);
 
-        await context.Database.MigrateAsync();
+        await migrator.MigrateAsync(target);
         bool tableAfterReapply = await TableExistsAsync(context);
+
+        await context.Database.MigrateAsync();
 
         using (Assert.Multiple())
         {
-            await Assert.That(applied[^1]).EndsWith("AddUserReadingProfile");
             await Assert.That(tableAfterUp).IsTrue();
             await Assert.That(tableAfterDown).IsFalse();
             await Assert.That(tableAfterReapply).IsTrue();
@@ -169,7 +209,7 @@ public class ReadingProfileSqlServerTests
     [Test]
     public async Task FirstWriteCreatesRow_AndLaterWritesAccumulateExactly()
     {
-        await using TestDatabase database = await CreateDatabaseAsync();
+        TestDatabase database = await GetSharedDatabaseAsync();
         string userId = await CreateUserAsync(database);
 
         (long, long)? before = await ReadTotalsAsync(database, userId);
@@ -188,10 +228,11 @@ public class ReadingProfileSqlServerTests
     }
 
     [Test]
-    public async Task ConcurrentWritesForSameNewUser_SumExactlyWithNoLostUpdatesOrErrors()
+    [Timeout(120_000)]
+    public async Task ConcurrentWritesForSameNewUser_SumExactlyWithNoLostUpdatesOrErrors(CancellationToken cancellationToken)
     {
         const int Concurrency = 50;
-        await using TestDatabase database = await CreateDatabaseAsync();
+        TestDatabase database = await GetSharedDatabaseAsync();
         string userId = await CreateUserAsync(database);
         var gate = new TaskCompletionSource();
 
@@ -203,7 +244,7 @@ public class ReadingProfileSqlServerTests
             }))
             .ToArray();
         gate.SetResult();
-        await Task.WhenAll(calls);
+        await Task.WhenAll(calls).WaitAsync(cancellationToken);
 
         (long, long)? totals = await ReadTotalsAsync(database, userId);
         await Assert.That(totals).IsEqualTo((100L * Concurrency, 60L * Concurrency));
@@ -212,7 +253,7 @@ public class ReadingProfileSqlServerTests
     [Test]
     public async Task ConcurrentWritesForDifferentUsers_DoNotInterfere()
     {
-        await using TestDatabase database = await CreateDatabaseAsync();
+        TestDatabase database = await GetSharedDatabaseAsync();
         string[] users = await Task.WhenAll(Enumerable.Range(0, 5).Select(_ => CreateUserAsync(database)));
         var gate = new TaskCompletionSource();
 
@@ -227,17 +268,31 @@ public class ReadingProfileSqlServerTests
         gate.SetResult();
         await Task.WhenAll(calls);
 
-        for (int i = 0; i < users.Length; i++)
+        using (Assert.Multiple())
         {
-            long writes = (i + 1) * 10;
-            await Assert.That(await ReadTotalsAsync(database, users[i])).IsEqualTo((100L * writes, 60L * writes));
+            for (int i = 0; i < users.Length; i++)
+            {
+                long writes = (i + 1) * 10;
+                await Assert.That(await ReadTotalsAsync(database, users[i])).IsEqualTo((100L * writes, 60L * writes));
+            }
         }
+    }
+
+    [Test]
+    public async Task WriteForANonexistentUser_SurfacesAnErrorAndCreatesNoRow()
+    {
+        TestDatabase database = await GetSharedDatabaseAsync();
+        string missingUserId = Guid.NewGuid().ToString();
+
+        await Assert.That(async () => await RecordAsync(database, missingUserId)).Throws<DbUpdateException>();
+
+        await Assert.That(await ReadTotalsAsync(database, missingUserId)).IsNull();
     }
 
     [Test]
     public async Task DeletingUser_CascadesToTheirProfileRow()
     {
-        await using TestDatabase database = await CreateDatabaseAsync();
+        TestDatabase database = await GetSharedDatabaseAsync();
         string userId = await CreateUserAsync(database);
         await RecordAsync(database, userId);
 
@@ -252,7 +307,7 @@ public class ReadingProfileSqlServerTests
     [Test]
     public async Task Reset_RemovesOnlyTheCallersRow()
     {
-        await using TestDatabase database = await CreateDatabaseAsync();
+        TestDatabase database = await GetSharedDatabaseAsync();
         string caller = await CreateUserAsync(database);
         string other = await CreateUserAsync(database);
         await RecordAsync(database, caller);

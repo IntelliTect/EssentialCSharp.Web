@@ -9,11 +9,35 @@ public class ReadingOptionsValidatorTests
     private static ValidateOptionsResult CrossField(ReadingOptions options) =>
         new ReadingOptionsValidator().Validate(null, options);
 
-    private static List<ValidationResult> Annotations(ReadingOptions options)
+    private static List<string> AnnotatedMembersWithErrors(ReadingOptions options)
     {
         var results = new List<ValidationResult>();
         Validator.TryValidateObject(options, new ValidationContext(options), results, validateAllProperties: true);
-        return results;
+        return results.SelectMany(r => r.MemberNames).ToList();
+    }
+
+    /// <summary>Each integer option with its inclusive valid range and a way to set just that option.</summary>
+    private static readonly (string Property, int Min, int Max, Func<int, ReadingOptions> With)[] IntegerRanges =
+    [
+        (nameof(ReadingOptions.HardCutoffWpm), 1, 10_000, v => new ReadingOptions { HardCutoffWpm = v }),
+        (nameof(ReadingOptions.MaxIntervalsPerRequest), 1, 1_000, v => new ReadingOptions { MaxIntervalsPerRequest = v }),
+        (nameof(ReadingOptions.DefaultWpm), 1, 10_000, v => new ReadingOptions { DefaultWpm = v }),
+        (nameof(ReadingOptions.MaxCreditWpm), 1, 10_000, v => new ReadingOptions { MaxCreditWpm = v }),
+        (nameof(ReadingOptions.IdleThresholdSeconds), 1, 86_400, v => new ReadingOptions { IdleThresholdSeconds = v }),
+        (nameof(ReadingOptions.PeriodicFlushActiveSeconds), 1, 3_600, v => new ReadingOptions { PeriodicFlushActiveSeconds = v }),
+        (nameof(ReadingOptions.MaxActiveSecondsPerInterval), 1, 86_400, v => new ReadingOptions { MaxActiveSecondsPerInterval = v }),
+    ];
+
+    /// <summary>Every integer option just outside (<c>valid: false</c>) and exactly on (<c>valid: true</c>) both bounds.</summary>
+    public static IEnumerable<(string Property, int Value, Func<int, ReadingOptions> With, bool Valid)> IntegerBoundaryCases()
+    {
+        foreach ((string property, int min, int max, Func<int, ReadingOptions> with) in IntegerRanges)
+        {
+            yield return (property, min - 1, with, false);
+            yield return (property, min, with, true);
+            yield return (property, max, with, true);
+            yield return (property, max + 1, with, false);
+        }
     }
 
     [Test]
@@ -24,106 +48,90 @@ public class ReadingOptionsValidatorTests
         using (Assert.Multiple())
         {
             await Assert.That(CrossField(options).Succeeded).IsTrue();
-            await Assert.That(Annotations(options)).IsEmpty();
+            await Assert.That(AnnotatedMembersWithErrors(options)).IsEmpty();
         }
     }
 
     [Test]
-    public async Task MaxCreditWpmAboveHardCutoff_Fails()
+    [MethodDataSource(nameof(IntegerBoundaryCases))]
+    public async Task IntegerOption_IsAcceptedWithinItsRangeAndRejectedOutsideIt(
+        string property, int value, Func<int, ReadingOptions> with, bool valid)
     {
-        ValidateOptionsResult result = CrossField(new ReadingOptions { HardCutoffWpm = 700, MaxCreditWpm = 701 });
+        List<string> membersWithErrors = AnnotatedMembersWithErrors(with(value));
 
-        await Assert.That(result.Failed).IsTrue();
-        await Assert.That(result.FailureMessage).Contains(nameof(ReadingOptions.MaxCreditWpm));
+        if (valid)
+        {
+            await Assert.That(membersWithErrors).DoesNotContain(property);
+        }
+        else
+        {
+            await Assert.That(membersWithErrors).Contains(property);
+        }
     }
 
     [Test]
-    public async Task MaxCreditWpmEqualToHardCutoff_Passes() =>
-        await Assert.That(CrossField(new ReadingOptions { HardCutoffWpm = 700, MaxCreditWpm = 700 }).Succeeded).IsTrue();
-
-    [Test]
-    public async Task PeriodicFlushAboveMaxActiveSeconds_Fails()
+    [Arguments(-0.01, false)]
+    [Arguments(0.0, true)]
+    [Arguments(0.25, true)]
+    [Arguments(1.0, true)]
+    [Arguments(1.01, false)]
+    public async Task SlowOutlierFactor_IsAcceptedWithinZeroToOneInclusive(double value, bool valid)
     {
-        ValidateOptionsResult result = CrossField(
-            new ReadingOptions { MaxActiveSecondsPerInterval = 100, IdleThresholdSeconds = 100, PeriodicFlushActiveSeconds = 101 });
+        List<string> membersWithErrors = AnnotatedMembersWithErrors(new ReadingOptions { SlowOutlierFactor = value });
 
-        await Assert.That(result.Failed).IsTrue();
-        await Assert.That(result.FailureMessage).Contains(nameof(ReadingOptions.PeriodicFlushActiveSeconds));
+        if (valid)
+        {
+            await Assert.That(membersWithErrors).DoesNotContain(nameof(ReadingOptions.SlowOutlierFactor));
+        }
+        else
+        {
+            await Assert.That(membersWithErrors).Contains(nameof(ReadingOptions.SlowOutlierFactor));
+        }
+    }
+
+    /// <summary>Cross-field rules: each case names the option the failure message must mention, or null when it is valid.</summary>
+    public static IEnumerable<(Func<ReadingOptions> Options, string? FailingProperty)> CrossFieldCases()
+    {
+        yield return (() => new ReadingOptions { HardCutoffWpm = 700, MaxCreditWpm = 701 }, nameof(ReadingOptions.MaxCreditWpm));
+        yield return (() => new ReadingOptions { HardCutoffWpm = 700, MaxCreditWpm = 700 }, null);
+
+        yield return (
+            () => new ReadingOptions { MaxActiveSecondsPerInterval = 100, IdleThresholdSeconds = 100, PeriodicFlushActiveSeconds = 101 },
+            nameof(ReadingOptions.PeriodicFlushActiveSeconds));
+        yield return (
+            () => new ReadingOptions { MaxActiveSecondsPerInterval = 100, IdleThresholdSeconds = 100, PeriodicFlushActiveSeconds = 100 },
+            null);
+
+        yield return (
+            () => new ReadingOptions { MaxActiveSecondsPerInterval = 100, PeriodicFlushActiveSeconds = 60, IdleThresholdSeconds = 101 },
+            nameof(ReadingOptions.IdleThresholdSeconds));
+
+        yield return (
+            () => new ReadingOptions { MaxIntervalsPerRequest = ReadingOptionsValidator.MinIntervalsPerRequest - 1 },
+            nameof(ReadingOptions.MaxIntervalsPerRequest));
+        yield return (
+            () => new ReadingOptions { MaxIntervalsPerRequest = ReadingOptionsValidator.MinIntervalsPerRequest },
+            null);
     }
 
     [Test]
-    public async Task IdleThresholdAboveMaxActiveSeconds_Fails()
+    [MethodDataSource(nameof(CrossFieldCases))]
+    public async Task CrossFieldRules_FailNamingTheOffendingOptionOnlyWhenViolated(
+        Func<ReadingOptions> options, string? failingProperty)
     {
-        ValidateOptionsResult result = CrossField(
-            new ReadingOptions { MaxActiveSecondsPerInterval = 100, PeriodicFlushActiveSeconds = 60, IdleThresholdSeconds = 101 });
+        ValidateOptionsResult result = CrossField(options());
 
-        await Assert.That(result.Failed).IsTrue();
-        await Assert.That(result.FailureMessage).Contains(nameof(ReadingOptions.IdleThresholdSeconds));
+        if (failingProperty is null)
+        {
+            await Assert.That(result.Succeeded).IsTrue();
+        }
+        else
+        {
+            using (Assert.Multiple())
+            {
+                await Assert.That(result.Failed).IsTrue();
+                await Assert.That(result.FailureMessage).Contains(failingProperty);
+            }
+        }
     }
-
-    [Test]
-    public async Task MaxIntervalsPerRequestBelowClientOutbox_Fails()
-    {
-        ValidateOptionsResult result = CrossField(new ReadingOptions { MaxIntervalsPerRequest = 19 });
-
-        await Assert.That(result.Failed).IsTrue();
-        await Assert.That(result.FailureMessage).Contains(nameof(ReadingOptions.MaxIntervalsPerRequest));
-    }
-
-    [Test]
-    public async Task MaxIntervalsPerRequestEqualToClientOutbox_Passes() =>
-        await Assert.That(CrossField(new ReadingOptions { MaxIntervalsPerRequest = 20 }).Succeeded).IsTrue();
-
-    [Test]
-    [Arguments(nameof(ReadingOptions.HardCutoffWpm), 0)]
-    [Arguments(nameof(ReadingOptions.HardCutoffWpm), 10_001)]
-    [Arguments(nameof(ReadingOptions.MaxIntervalsPerRequest), 0)]
-    [Arguments(nameof(ReadingOptions.MaxIntervalsPerRequest), 1_001)]
-    [Arguments(nameof(ReadingOptions.DefaultWpm), 0)]
-    [Arguments(nameof(ReadingOptions.DefaultWpm), 10_001)]
-    [Arguments(nameof(ReadingOptions.MaxCreditWpm), 0)]
-    [Arguments(nameof(ReadingOptions.MaxCreditWpm), 10_001)]
-    [Arguments(nameof(ReadingOptions.IdleThresholdSeconds), 0)]
-    [Arguments(nameof(ReadingOptions.IdleThresholdSeconds), 86_401)]
-    [Arguments(nameof(ReadingOptions.PeriodicFlushActiveSeconds), 0)]
-    [Arguments(nameof(ReadingOptions.PeriodicFlushActiveSeconds), 3_601)]
-    [Arguments(nameof(ReadingOptions.MaxActiveSecondsPerInterval), 0)]
-    [Arguments(nameof(ReadingOptions.MaxActiveSecondsPerInterval), 86_401)]
-    public async Task IntegerOutOfRange_IsRejected(string property, int value)
-    {
-        ReadingOptions options = With(property, value);
-
-        await Assert.That(Annotations(options).SelectMany(r => r.MemberNames)).Contains(property);
-    }
-
-    [Test]
-    [Arguments(-0.01)]
-    [Arguments(1.01)]
-    public async Task SlowOutlierFactorOutOfRange_IsRejected(double value)
-    {
-        var options = new ReadingOptions { SlowOutlierFactor = value };
-
-        await Assert.That(Annotations(options).SelectMany(r => r.MemberNames)).Contains(nameof(ReadingOptions.SlowOutlierFactor));
-    }
-
-    [Test]
-    [Arguments(nameof(ReadingOptions.HardCutoffWpm), 1)]
-    [Arguments(nameof(ReadingOptions.HardCutoffWpm), 10_000)]
-    [Arguments(nameof(ReadingOptions.IdleThresholdSeconds), 86_400)]
-    [Arguments(nameof(ReadingOptions.PeriodicFlushActiveSeconds), 3_600)]
-    [Arguments(nameof(ReadingOptions.MaxActiveSecondsPerInterval), 86_400)]
-    public async Task IntegerAtRangeBoundary_IsAccepted(string property, int value) =>
-        await Assert.That(Annotations(With(property, value))).IsEmpty();
-
-    private static ReadingOptions With(string property, int value) => property switch
-    {
-        nameof(ReadingOptions.HardCutoffWpm) => new ReadingOptions { HardCutoffWpm = value },
-        nameof(ReadingOptions.MaxIntervalsPerRequest) => new ReadingOptions { MaxIntervalsPerRequest = value },
-        nameof(ReadingOptions.DefaultWpm) => new ReadingOptions { DefaultWpm = value },
-        nameof(ReadingOptions.MaxCreditWpm) => new ReadingOptions { MaxCreditWpm = value },
-        nameof(ReadingOptions.IdleThresholdSeconds) => new ReadingOptions { IdleThresholdSeconds = value },
-        nameof(ReadingOptions.PeriodicFlushActiveSeconds) => new ReadingOptions { PeriodicFlushActiveSeconds = value },
-        nameof(ReadingOptions.MaxActiveSecondsPerInterval) => new ReadingOptions { MaxActiveSecondsPerInterval = value },
-        _ => throw new ArgumentOutOfRangeException(nameof(property)),
-    };
 }

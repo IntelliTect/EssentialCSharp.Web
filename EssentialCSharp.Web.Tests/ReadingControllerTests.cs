@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Claims;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
@@ -6,6 +7,10 @@ using EssentialCSharp.Web.Controllers;
 using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Metadata;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -26,10 +31,10 @@ public class ReadingControllerTests : IntegrationTestBase
 
     // The content package is a placeholder in many environments, so word counts and reading options are fixed
     // (see ReadingTestSupport).
-    protected override void ConfigureTestServices(IServiceCollection services) =>
-        ReadingTestSupport.UseFakes(services, new ReadingTestSupport.FakeWordCountService());
+    private readonly ReadingOptions Options = ReadingTestSupport.CreateOptions();
 
-    private static ReadingOptions Options => ReadingTestSupport.Options;
+    protected override void ConfigureTestServices(IServiceCollection services) =>
+        ReadingTestSupport.UseFakes(services, new ReadingTestSupport.FakeWordCountService(), Options);
 
     // ---- authentication ----
 
@@ -243,7 +248,7 @@ public class ReadingControllerTests : IntegrationTestBase
         using HttpResponseMessage response = await PostSessionAsync(
             client, Interval(LargePage, ReadingIntervalRequest.MaxWordsRead + 1, 400));
 
-        await AssertValidationProblemAsync(response, "Intervals[0].WordsRead");
+        await ReadingTestSupport.AssertValidationProblemAsync(response, nameof(ReadingIntervalRequest.WordsRead));
         await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
     }
 
@@ -269,7 +274,7 @@ public class ReadingControllerTests : IntegrationTestBase
         using HttpResponseMessage response = await PostSessionAsync(
             client, Interval(LargePage, 100, Options.MaxActiveSecondsPerInterval + 1));
 
-        await AssertValidationProblemAsync(response, nameof(ReadingIntervalRequest.ActiveSeconds));
+        await ReadingTestSupport.AssertValidationProblemAsync(response, nameof(ReadingIntervalRequest.ActiveSeconds));
         await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
     }
 
@@ -296,7 +301,7 @@ public class ReadingControllerTests : IntegrationTestBase
         using HttpResponseMessage response = await PostSessionAsync(
             client, Enumerable.Repeat(Interval(LargePage, 10, 10), Options.MaxIntervalsPerRequest + 1).ToArray());
 
-        await AssertValidationProblemAsync(response, nameof(ReadingSessionRequest.Intervals));
+        await ReadingTestSupport.AssertValidationProblemAsync(response, nameof(ReadingSessionRequest.Intervals));
         await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
     }
 
@@ -308,21 +313,37 @@ public class ReadingControllerTests : IntegrationTestBase
 
         using HttpResponseMessage response = await PostSessionAsync(client);
 
-        await AssertValidationProblemAsync(response, nameof(ReadingSessionRequest.Intervals));
+        await ReadingTestSupport.AssertValidationProblemAsync(response, nameof(ReadingSessionRequest.Intervals));
         await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
     }
 
     [Test]
-    public async Task PostSession_DeclaresA32KiBRequestSizeLimit()
+    public async Task PostSession_HasARequestSizeLimitThatFitsAMaximalLegitimateRequestButIsFarBelowTheServerDefault()
     {
-        // The in-memory TestServer does not enforce Kestrel's body-size feature, so a real 413 cannot be provoked here;
-        // pin the endpoint metadata that Kestrel enforces instead.
-        System.Reflection.MethodInfo action = typeof(ReadingController).GetMethod(nameof(ReadingController.PostSession))!;
-        var limit = (Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute?)Attribute.GetCustomAttribute(
-            action, typeof(Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute));
+        // The in-memory TestServer does not enforce Kestrel's body-size feature, so an oversized request cannot be
+        // rejected here; read the limit the endpoint declares (which Kestrel enforces) from the endpoint metadata.
+        EndpointDataSource endpoints = Factory.Services.GetRequiredService<EndpointDataSource>();
+        long?[] declaredLimits = endpoints.Endpoints
+            .Where(e => e.Metadata.GetMetadata<ControllerActionDescriptor>() is { ActionName: nameof(ReadingController.PostSession) })
+            .Select(e => e.Metadata.GetMetadata<IRequestSizeLimitMetadata>()?.MaxRequestBodySize)
+            .Distinct()
+            .ToArray();
+        long? limit = declaredLimits.Length == 1 ? declaredLimits[0] : null;
 
-        await Assert.That(limit).IsNotNull();
-        await Assert.That(((Microsoft.AspNetCore.Http.Metadata.IRequestSizeLimitMetadata)limit!).MaxRequestBodySize).IsEqualTo(32L * 1024);
+        // The largest request a well-behaved client may send: the maximum number of intervals, each with a
+        // maximum-length page key and the largest numeric values.
+        object maximalInterval = Interval(
+            ReadingTestSupport.MaxLengthPageKey, ReadingIntervalRequest.MaxWordsRead, Options.MaxActiveSecondsPerInterval);
+        int maximalRequestBytes = JsonSerializer.SerializeToUtf8Bytes(
+            new { intervals = Enumerable.Repeat(maximalInterval, Options.MaxIntervalsPerRequest).ToArray() }).Length;
+        const long KestrelDefaultMaxRequestBodySize = 30_000_000;
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(limit).IsNotNull().Because("the endpoint must declare its own request size limit");
+            await Assert.That(limit ?? 0).IsGreaterThanOrEqualTo(maximalRequestBytes);
+            await Assert.That(limit ?? long.MaxValue).IsLessThan(KestrelDefaultMaxRequestBodySize);
+        }
     }
 
     [Test]
@@ -348,7 +369,7 @@ public class ReadingControllerTests : IntegrationTestBase
         using HttpResponseMessage response = await PostSessionAsync(
             client, Interval(new string('k', ReadingIntervalRequest.PageKeyMaxLength + 1), 10, 10));
 
-        await AssertValidationProblemAsync(response, "Intervals[0].PageKey");
+        await ReadingTestSupport.AssertValidationProblemAsync(response, nameof(ReadingIntervalRequest.PageKey));
         await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
     }
 
@@ -382,19 +403,14 @@ public class ReadingControllerTests : IntegrationTestBase
 
         using HttpResponseMessage response = await client.SendAsync(request);
 
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest).Because(scenario);
-        string raw = await response.Content.ReadAsStringAsync();
-        bool hasErrors = false;
-        try
+        ReadingTestSupport.ProblemResponse problem = await ReadingTestSupport.ReadProblemAsync(response);
+
+        using (Assert.Multiple())
         {
-            using JsonDocument problem = JsonDocument.Parse(raw);
-            hasErrors = problem.RootElement.TryGetProperty("errors", out _);
-        }
-        catch (JsonException)
-        {
+            await Assert.That(problem.Status).IsEqualTo(HttpStatusCode.BadRequest).Because($"{scenario}: {problem}");
+            await Assert.That(problem.HasErrorsMember).IsTrue().Because($"{scenario}: expected a validation problem with an errors member, got {problem}");
         }
 
-        await Assert.That(hasErrors).IsTrue().Because($"{scenario}: expected a validation problem with an errors member, got {raw}");
         await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
     }
 
@@ -406,7 +422,7 @@ public class ReadingControllerTests : IntegrationTestBase
 
         using HttpResponseMessage response = await PostSessionAsync(client, Interval("no-such-page", 10, 10));
 
-        await AssertValidationProblemAsync(response, nameof(ReadingIntervalRequest.PageKey));
+        await ReadingTestSupport.AssertValidationProblemAsync(response, nameof(ReadingIntervalRequest.PageKey));
         await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
     }
 
@@ -419,7 +435,7 @@ public class ReadingControllerTests : IntegrationTestBase
         // A page with no countable prose cannot be read, so the service rejects it as it does an unknown key.
         using HttpResponseMessage response = await PostSessionAsync(client, Interval(ReadingTestSupport.EmptyPage, 10, 10));
 
-        await AssertValidationProblemAsync(response, nameof(ReadingIntervalRequest.PageKey));
+        await ReadingTestSupport.AssertValidationProblemAsync(response, nameof(ReadingIntervalRequest.PageKey));
         await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
     }
 
@@ -432,7 +448,7 @@ public class ReadingControllerTests : IntegrationTestBase
         using HttpResponseMessage response = await PostSessionAsync(
             client, Interval(LargePage, 100, 60), Interval("no-such-page", 10, 10));
 
-        await AssertValidationProblemAsync(response, nameof(ReadingIntervalRequest.PageKey));
+        await ReadingTestSupport.AssertValidationProblemAsync(response, nameof(ReadingIntervalRequest.PageKey));
         await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
     }
 
@@ -485,27 +501,31 @@ public class ReadingControllerTests : IntegrationTestBase
     [Arguments("GET", "/api/reading/profile")]
     [Arguments("POST", "/api/reading/session")]
     [Arguments("POST", "/api/reading/reset")]
-    public async Task WriteEndpoint_IsRateLimitedPerUser(string method, string url)
+    public async Task AuthenticatedEndpoint_ThrottlesAUserWhoKeepsCallingWith429_WithoutAffectingOtherUsers(string method, string url)
     {
-        // Does not depend on the exact permit count: keep calling until the first 429, up to a ceiling.
-        const int ceiling = 100;
+        // The permit count is a production tuning value and is deliberately not asserted: keep calling until the
+        // first 429. The ceiling is only a sanity bound that turns "never throttled" into a failure.
+        const int Ceiling = 1000;
         string limitedUser = await McpTestHelper.CreateUserAsync(Factory, "reading-limited");
         string otherUser = await McpTestHelper.CreateUserAsync(Factory, "reading-unlimited");
         using HttpClient limitedClient = await CreateAuthenticatedClientAsync(limitedUser);
         using HttpClient otherClient = await CreateAuthenticatedClientAsync(otherUser);
 
         var statuses = new List<HttpStatusCode>();
-        while (statuses.Count < ceiling && !statuses.Contains(HttpStatusCode.TooManyRequests))
+        while (statuses.Count < Ceiling && !statuses.Contains(HttpStatusCode.TooManyRequests))
         {
             using HttpResponseMessage response = await SendAsync(limitedClient, method, url);
             statuses.Add(response.StatusCode);
         }
+
         using HttpResponseMessage otherUserResponse = await SendAsync(otherClient, method, url);
 
         using (Assert.Multiple())
         {
-            await Assert.That(statuses).Contains(HttpStatusCode.TooManyRequests).Because($"no 429 within {ceiling} requests");
-            await Assert.That(statuses.Take(statuses.Count - 1)).DoesNotContain(s => s != HttpStatusCode.OK && s != HttpStatusCode.NoContent);
+            await Assert.That(statuses).Contains(HttpStatusCode.TooManyRequests).Because($"no 429 within {Ceiling} requests");
+            await Assert.That(statuses.Take(statuses.Count - 1))
+                .DoesNotContain(s => s != HttpStatusCode.OK && s != HttpStatusCode.NoContent)
+                .Because("every request before the throttle must succeed");
             await Assert.That(otherUserResponse.StatusCode).IsNotEqualTo(HttpStatusCode.TooManyRequests);
         }
     }
@@ -516,6 +536,63 @@ public class ReadingControllerTests : IntegrationTestBase
             : url.EndsWith("/session", StringComparison.Ordinal)
                 ? PostSessionAsync(client, Interval(LargePage, 10, 10))
                 : client.PostAsync(url, null);
+
+    // ---- profile timestamps ----
+
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task PostSession_StampsUpdatedAtUtcWithTheTimeOfTheWrite(bool userAlreadyHasProfile)
+    {
+        string userId = userAlreadyHasProfile
+            ? await CreateUserWithBaselineProfileAsync(updatedAtUtc: DateTime.UtcNow.AddDays(-30))
+            : await McpTestHelper.CreateUserAsync(Factory, "reading-stamp");
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+
+        DateTime before = DateTime.UtcNow;
+        using HttpResponseMessage response = await PostSessionAsync(client, Interval(LargePage, 10, 10));
+        DateTime after = DateTime.UtcNow;
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        DateTime updatedAt = DateTime.SpecifyKind((await GetProfileAsync(userId)).UpdatedAtUtc, DateTimeKind.Utc);
+        using (Assert.Multiple())
+        {
+            await Assert.That(updatedAt).IsGreaterThanOrEqualTo(before.AddSeconds(-1));
+            await Assert.That(updatedAt).IsLessThanOrEqualTo(after.AddSeconds(1));
+        }
+    }
+
+    // ---- identity without a user id ----
+
+    [Test]
+    [Arguments("GET", "/api/reading/profile")]
+    [Arguments("POST", "/api/reading/session")]
+    [Arguments("POST", "/api/reading/reset")]
+    public async Task AuthenticatedPrincipalWithoutUserIdClaim_IsUnauthorizedAndWritesNothing(string method, string url)
+    {
+        // A signed-in principal that carries no NameIdentifier claim has no user to act for. The antiforgery token is
+        // minted for the same stripped principal so the request is rejected for the missing id, not for the token.
+        string victimId = await CreateUserWithBaselineProfileAsync();
+        ReadingTestSupport.AntiforgeryCredentials credentials = await ReadingTestSupport.CreateSignedInAntiforgeryCredentialsAsync(
+            Factory,
+            victimId,
+            principal => new ClaimsPrincipal(new ClaimsIdentity(
+                principal.Claims.Where(c => c.Type != ClaimTypes.NameIdentifier),
+                principal.Identity?.AuthenticationType)));
+        using HttpClient client = CreateClientWithoutAutoRedirect();
+        using var request = new HttpRequestMessage(new HttpMethod(method), url);
+        request.Headers.Add("Cookie", credentials.CookieHeader);
+        request.Headers.Add(credentials.HeaderName, credentials.RequestToken);
+        if (method == "POST")
+        {
+            request.Content = JsonBody($$"""{"intervals":[{"pageKey":"{{LargePage}}","wordsRead":10,"activeSeconds":10}]}""");
+        }
+
+        using HttpResponseMessage response = await client.SendAsync(request);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
+        await AssertProfileAsync(victimId, BaselineWords, BaselineSeconds);
+    }
 
     // ---- concurrency ----
 
@@ -630,26 +707,10 @@ public class ReadingControllerTests : IntegrationTestBase
     private static Task<HttpResponseMessage> PostSessionAsync(HttpClient client, params object[] intervals) =>
         client.PostAsJsonAsync("/api/reading/session", new { intervals });
 
-    /// <summary>Asserts a 400 validation problem whose <c>errors</c> object has exactly the expected key (message text is not asserted).</summary>
-    private static async Task AssertValidationProblemAsync(HttpResponseMessage response, string expectedErrorKey)
-    {
-        string raw = await response.Content.ReadAsStringAsync();
-        using JsonDocument document = JsonDocument.Parse(raw);
-        string[] keys = document.RootElement.TryGetProperty("errors", out JsonElement errors)
-            ? errors.EnumerateObject().Select(p => p.Name).ToArray()
-            : [];
-        using (Assert.Multiple())
-        {
-            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest).Because(raw);
-            await Assert.That(response.Content.Headers.ContentType?.MediaType).IsEqualTo("application/problem+json");
-            await Assert.That(keys).IsEquivalentTo(new[] { expectedErrorKey }).Because(raw);
-        }
-    }
-
-    private async Task<string> CreateUserWithBaselineProfileAsync()
+    private async Task<string> CreateUserWithBaselineProfileAsync(DateTime? updatedAtUtc = null)
     {
         string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-test");
-        await SeedProfileAsync(userId, BaselineWords, BaselineSeconds);
+        await ReadingTestSupport.SeedProfileAsync(Factory.Services, userId, BaselineWords, BaselineSeconds, updatedAtUtc);
         return userId;
     }
 
@@ -676,18 +737,6 @@ public class ReadingControllerTests : IntegrationTestBase
         }
     }
 
-    /// <summary>Creates a client signed in as <paramref name="userId"/>, with the antiforgery cookie and header token the app expects.</summary>
-    private async Task<HttpClient> CreateAuthenticatedClientAsync(string userId, bool includeAntiforgery = true)
-    {
-        HttpClient client = McpTestHelper.CreateClient(Factory);
-        (string cookieHeader, string headerName, string token) =
-            await ReadingTestSupport.CreateAuthenticatedCredentialsAsync(Factory, userId, includeAntiforgery);
-        if (includeAntiforgery)
-        {
-            client.DefaultRequestHeaders.Add(headerName, token);
-        }
-
-        client.DefaultRequestHeaders.Add("Cookie", cookieHeader);
-        return client;
-    }
+    private Task<HttpClient> CreateAuthenticatedClientAsync(string userId, bool includeAntiforgery = true) =>
+        ReadingTestSupport.CreateSignedInClientAsync(Factory, userId, includeAntiforgery);
 }

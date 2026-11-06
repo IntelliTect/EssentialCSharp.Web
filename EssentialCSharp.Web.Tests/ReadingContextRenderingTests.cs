@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using EssentialCSharp.Web.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -12,38 +11,34 @@ namespace EssentialCSharp.Web.Tests;
 /// and a <c>csrf-token</c> meta tag (signed-in users only). Values are checked against a fake word-count service
 /// with distinct numbers per field, so swapped or zeroed fields fail.
 /// </summary>
-public partial class ReadingContextRenderingTests : IntegrationTestBase
+public class ReadingContextRenderingTests : IntegrationTestBase
 {
-    private const string ContentPage = "/hello-world";
+    private const string ContentPage = "/" + ReadingTestSupport.ContentPageKey;
 
-    private static readonly string[] ExpectedFields =
-    [
-        "isAuthenticated", "pageKey", "pageWords", "chapterWords", "wordsBeforePage", "chapterStartWords",
-        "bookWords", "wpm", "defaultWpm", "maxCreditWpm", "idleThresholdSeconds", "periodicFlushActiveSeconds"
-    ];
+    private readonly ReadingOptions _options = ReadingTestSupport.CreateOptions();
 
     protected override void ConfigureTestServices(IServiceCollection services) =>
-        ReadingTestSupport.UseFakes(services, new ReadingTestSupport.FakeWordCountService());
+        ReadingTestSupport.UseFakes(services, new ReadingTestSupport.FakeWordCountService(), _options);
 
     [Test]
-    public async Task AnonymousContentPage_RendersEveryReadingContextFieldWithItsValue()
+    public async Task AnonymousContentPage_RendersThePageStatisticsAndNoPersonalWpm()
     {
         using HttpClient client = CreateClientWithoutAutoRedirect();
+        PageWordStats expected = ReadingTestSupport.ContentPageStats;
 
-        using JsonDocument context = ParseReadingContext(await GetOkHtmlAsync(client, ContentPage));
+        using JsonDocument context = await GetReadingContextAsync(client, ContentPage);
         JsonElement root = context.RootElement;
 
         using (Assert.Multiple())
         {
-            await Assert.That(root.EnumerateObject().Select(p => p.Name)).IsEquivalentTo(ExpectedFields);
-            await Assert.That(root.GetProperty("isAuthenticated").GetBoolean()).IsFalse();
-            await Assert.That(root.GetProperty("pageKey").GetString()).IsEqualTo("hello-world");
-            await Assert.That(root.GetProperty("pageWords").GetInt32()).IsEqualTo(1234);
-            await Assert.That(root.GetProperty("chapterWords").GetInt32()).IsEqualTo(3000);
-            await Assert.That(root.GetProperty("wordsBeforePage").GetInt32()).IsEqualTo(400);
-            await Assert.That(root.GetProperty("chapterStartWords").GetInt32()).IsEqualTo(100);
-            await Assert.That(root.GetProperty("bookWords").GetInt32()).IsEqualTo(5150);
-            await Assert.That(root.GetProperty("wpm").ValueKind).IsEqualTo(JsonValueKind.Null);
+            await Assert.That(ReadingTestSupport.Field(root, "isAuthenticated").GetBoolean()).IsFalse();
+            await Assert.That(ReadingTestSupport.Field(root, "pageKey").GetString()).IsEqualTo(ReadingTestSupport.ContentPageKey);
+            await Assert.That(ReadingTestSupport.Field(root, "pageWords").GetInt32()).IsEqualTo(expected.PageWords);
+            await Assert.That(ReadingTestSupport.Field(root, "chapterWords").GetInt32()).IsEqualTo(expected.ChapterWords);
+            await Assert.That(ReadingTestSupport.Field(root, "wordsBeforePage").GetInt32()).IsEqualTo(expected.WordsBeforePage);
+            await Assert.That(ReadingTestSupport.Field(root, "chapterStartWords").GetInt32()).IsEqualTo(expected.ChapterStartWords);
+            await Assert.That(ReadingTestSupport.Field(root, "bookWords").GetInt32()).IsEqualTo(expected.BookWords);
+            await Assert.That(ReadingTestSupport.Field(root, "wpm").ValueKind).IsEqualTo(JsonValueKind.Null);
         }
     }
 
@@ -51,31 +46,42 @@ public partial class ReadingContextRenderingTests : IntegrationTestBase
     public async Task ContentPage_RendersTheConfiguredReadingOptionsAsClientConstants()
     {
         using HttpClient client = CreateClientWithoutAutoRedirect();
-        ReadingOptions configured = ReadingTestSupport.Options;
+        var defaults = new ReadingOptions();
 
-        using JsonDocument context = ParseReadingContext(await GetOkHtmlAsync(client, ContentPage));
+        using JsonDocument context = await GetReadingContextAsync(client, ContentPage);
         JsonElement root = context.RootElement;
 
-        // The configured values are deliberately not the defaults (210/810/310/65), so a hard-coded constant fails.
         using (Assert.Multiple())
         {
-            await Assert.That(root.GetProperty("defaultWpm").GetInt32()).IsEqualTo(configured.DefaultWpm).And.IsEqualTo(210);
-            await Assert.That(root.GetProperty("maxCreditWpm").GetInt32()).IsEqualTo(configured.MaxCreditWpm).And.IsEqualTo(810);
-            await Assert.That(root.GetProperty("idleThresholdSeconds").GetInt32()).IsEqualTo(configured.IdleThresholdSeconds).And.IsEqualTo(310);
-            await Assert.That(root.GetProperty("periodicFlushActiveSeconds").GetInt32()).IsEqualTo(configured.PeriodicFlushActiveSeconds).And.IsEqualTo(65);
+            // Guard: the test options must differ from the defaults, otherwise a hard-coded constant would pass.
+            await Assert.That(_options.DefaultWpm).IsNotEqualTo(defaults.DefaultWpm);
+            await Assert.That(_options.MaxCreditWpm).IsNotEqualTo(defaults.MaxCreditWpm);
+            await Assert.That(_options.IdleThresholdSeconds).IsNotEqualTo(defaults.IdleThresholdSeconds);
+            await Assert.That(_options.PeriodicFlushActiveSeconds).IsNotEqualTo(defaults.PeriodicFlushActiveSeconds);
+
+            await Assert.That(ReadingTestSupport.Field(root, "defaultWpm").GetInt32()).IsEqualTo(_options.DefaultWpm);
+            await Assert.That(ReadingTestSupport.Field(root, "maxCreditWpm").GetInt32()).IsEqualTo(_options.MaxCreditWpm);
+            await Assert.That(ReadingTestSupport.Field(root, "idleThresholdSeconds").GetInt32()).IsEqualTo(_options.IdleThresholdSeconds);
+            await Assert.That(ReadingTestSupport.Field(root, "periodicFlushActiveSeconds").GetInt32()).IsEqualTo(_options.PeriodicFlushActiveSeconds);
         }
     }
 
     [Test]
     [Arguments("/about")]
     [Arguments("/Identity/Account/Login")]
-    public async Task NonContentPage_DoesNotRenderReadingContext(string path)
+    public async Task NonContentPage_RendersNormallyWithoutReadingContext(string path)
     {
         using HttpClient client = CreateClientWithoutAutoRedirect();
 
-        string html = await GetOkHtmlAsync(client, path);
+        using HttpResponseMessage response = await GetFollowingGetRedirectsAsync(client, path);
+        string html = await ReadingTestSupport.ReadOkHtmlAsync(response);
 
-        await Assert.That(html).DoesNotContain("READING_CONTEXT");
+        using (Assert.Multiple())
+        {
+            await Assert.That(ReadingTestSupport.PageTitle(html)).IsNotNull().And.IsNotEmpty()
+                .Because("the page itself must render");
+            await Assert.That(ReadingTestSupport.TryParseReadingContext(html)).IsNull();
+        }
     }
 
     [Test]
@@ -84,13 +90,13 @@ public partial class ReadingContextRenderingTests : IntegrationTestBase
         using HttpClient client = CreateClientWithoutAutoRedirect();
         string antiforgeryCookieName = ReadingTestSupport.AntiforgeryCookieName(Factory.Services);
 
-        using HttpResponseMessage response = await client.GetAsync(ContentPage);
-        string html = await response.Content.ReadAsStringAsync();
+        using HttpResponseMessage response = await GetFollowingGetRedirectsAsync(client, ContentPage);
+        string html = await ReadingTestSupport.ReadOkHtmlAsync(response);
         response.Headers.TryGetValues("Set-Cookie", out IEnumerable<string>? cookies);
 
         using (Assert.Multiple())
         {
-            await Assert.That(html).DoesNotContain("name=\"csrf-token\"");
+            await Assert.That(ReadingTestSupport.CsrfToken(html)).IsNull();
             await Assert.That(cookies ?? []).DoesNotContain(c => c.StartsWith(antiforgeryCookieName + "=", StringComparison.Ordinal));
         }
     }
@@ -103,13 +109,13 @@ public partial class ReadingContextRenderingTests : IntegrationTestBase
         await ReadingTestSupport.SeedProfileAsync(Factory.Services, userId, 1200, 360);
 
         string html = await GetSignedInHtmlAsync(userId);
-        using JsonDocument context = ParseReadingContext(html);
+        using JsonDocument context = ReadingTestSupport.ParseReadingContext(html);
 
         using (Assert.Multiple())
         {
-            await Assert.That(context.RootElement.GetProperty("isAuthenticated").GetBoolean()).IsTrue();
-            await Assert.That(context.RootElement.GetProperty("wpm").GetInt32()).IsEqualTo(200);
-            await Assert.That(CsrfToken(html)).IsNotNull().And.IsNotEmpty();
+            await Assert.That(ReadingTestSupport.Field(context.RootElement, "isAuthenticated").GetBoolean()).IsTrue();
+            await Assert.That(ReadingTestSupport.Field(context.RootElement, "wpm").GetInt32()).IsEqualTo(200);
+            await Assert.That(ReadingTestSupport.CsrfToken(html)).IsNotNull().And.IsNotEmpty();
         }
     }
 
@@ -120,9 +126,9 @@ public partial class ReadingContextRenderingTests : IntegrationTestBase
         // 1300 words in 420 seconds is 185.71 WPM, which rounds up (truncating would give 185).
         await ReadingTestSupport.SeedProfileAsync(Factory.Services, userId, 1300, 420);
 
-        using JsonDocument context = ParseReadingContext(await GetSignedInHtmlAsync(userId));
+        using JsonDocument context = ReadingTestSupport.ParseReadingContext(await GetSignedInHtmlAsync(userId));
 
-        await Assert.That(context.RootElement.GetProperty("wpm").GetInt32()).IsEqualTo(186);
+        await Assert.That(ReadingTestSupport.Field(context.RootElement, "wpm").GetInt32()).IsEqualTo(186);
     }
 
     [Test]
@@ -130,56 +136,29 @@ public partial class ReadingContextRenderingTests : IntegrationTestBase
     {
         string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-context-new");
 
-        using JsonDocument context = ParseReadingContext(await GetSignedInHtmlAsync(userId));
+        using JsonDocument context = ReadingTestSupport.ParseReadingContext(await GetSignedInHtmlAsync(userId));
 
         using (Assert.Multiple())
         {
-            await Assert.That(context.RootElement.GetProperty("isAuthenticated").GetBoolean()).IsTrue();
-            await Assert.That(context.RootElement.GetProperty("wpm").ValueKind).IsEqualTo(JsonValueKind.Null);
+            await Assert.That(ReadingTestSupport.Field(context.RootElement, "isAuthenticated").GetBoolean()).IsTrue();
+            await Assert.That(ReadingTestSupport.Field(context.RootElement, "wpm").ValueKind).IsEqualTo(JsonValueKind.Null);
         }
+    }
+
+    private static async Task<JsonDocument> GetReadingContextAsync(HttpClient client, string path)
+    {
+        using HttpResponseMessage response = await GetFollowingGetRedirectsAsync(client, path);
+        return ReadingTestSupport.ParseReadingContext(await ReadingTestSupport.ReadOkHtmlAsync(response));
     }
 
     private async Task<string> GetSignedInHtmlAsync(string userId)
     {
-        (string cookieName, string cookieValue) = await McpTestHelper.CreateIdentityApplicationCookieAsync(Factory, userId);
         using HttpClient client = CreateClientWithoutAutoRedirect();
         using HttpRequestMessage request = new(HttpMethod.Get, ContentPage);
-        McpTestHelper.AddCookie(request, cookieName, cookieValue);
+        request.Headers.Add("Cookie", await ReadingTestSupport.CreateSignedInCookieHeaderAsync(Factory, userId));
 
         using HttpResponseMessage response = await client.SendAsync(request);
-
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        return await response.Content.ReadAsStringAsync();
-    }
-
-    internal static JsonDocument ParseReadingContext(string html)
-    {
-        Match match = ReadingContextScript().Match(html);
-        if (!match.Success)
-        {
-            throw new InvalidOperationException("The page has no window.READING_CONTEXT assignment.");
-        }
-
-        return JsonDocument.Parse(match.Groups[1].Value);
-    }
-
-    internal static string? CsrfToken(string html)
-    {
-        Match match = CsrfMeta().Match(html);
-        return match.Success ? match.Groups[1].Value : null;
-    }
-
-    [GeneratedRegex(@"window\.READING_CONTEXT\s*=\s*(\{.*?\});\s*</script>", RegexOptions.Singleline)]
-    private static partial Regex ReadingContextScript();
-
-    [GeneratedRegex("<meta name=\"csrf-token\" content=\"([^\"]*)\"")]
-    private static partial Regex CsrfMeta();
-
-    internal static async Task<string> GetOkHtmlAsync(HttpClient client, string path)
-    {
-        using HttpResponseMessage response = await GetFollowingGetRedirectsAsync(client, path);
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        return await response.Content.ReadAsStringAsync();
+        return await ReadingTestSupport.ReadOkHtmlAsync(response);
     }
 }
 
@@ -194,18 +173,18 @@ public class ReadingContextUnknownPageTests : IntegrationTestBase
     {
         using HttpClient client = CreateClientWithoutAutoRedirect();
 
-        using JsonDocument context = ReadingContextRenderingTests.ParseReadingContext(
-            await ReadingContextRenderingTests.GetOkHtmlAsync(client, "/hello-world"));
+        using HttpResponseMessage response = await GetFollowingGetRedirectsAsync(client, "/" + ReadingTestSupport.ContentPageKey);
+        using JsonDocument context = ReadingTestSupport.ParseReadingContext(await ReadingTestSupport.ReadOkHtmlAsync(response));
         JsonElement root = context.RootElement;
 
         using (Assert.Multiple())
         {
-            await Assert.That(root.GetProperty("pageKey").GetString()).IsEqualTo("hello-world");
-            await Assert.That(root.GetProperty("pageWords").GetInt32()).IsEqualTo(0);
-            await Assert.That(root.GetProperty("chapterWords").GetInt32()).IsEqualTo(0);
-            await Assert.That(root.GetProperty("wordsBeforePage").GetInt32()).IsEqualTo(0);
-            await Assert.That(root.GetProperty("chapterStartWords").GetInt32()).IsEqualTo(0);
-            await Assert.That(root.GetProperty("bookWords").GetInt32()).IsEqualTo(5150);
+            await Assert.That(ReadingTestSupport.Field(root, "pageKey").GetString()).IsEqualTo(ReadingTestSupport.ContentPageKey);
+            await Assert.That(ReadingTestSupport.Field(root, "pageWords").GetInt32()).IsEqualTo(0);
+            await Assert.That(ReadingTestSupport.Field(root, "chapterWords").GetInt32()).IsEqualTo(0);
+            await Assert.That(ReadingTestSupport.Field(root, "wordsBeforePage").GetInt32()).IsEqualTo(0);
+            await Assert.That(ReadingTestSupport.Field(root, "chapterStartWords").GetInt32()).IsEqualTo(0);
+            await Assert.That(ReadingTestSupport.Field(root, "bookWords").GetInt32()).IsEqualTo(ReadingTestSupport.BookWords);
         }
     }
 }
@@ -224,20 +203,18 @@ public class ReadingContextProfileFailureTests : IntegrationTestBase
     public async Task ProfileServiceFailure_StillRendersThePageWithNullWpm()
     {
         string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-context-outage");
-        (string cookieName, string cookieValue) = await McpTestHelper.CreateIdentityApplicationCookieAsync(Factory, userId);
         using HttpClient client = CreateClientWithoutAutoRedirect();
-        using HttpRequestMessage request = new(HttpMethod.Get, "/hello-world");
-        McpTestHelper.AddCookie(request, cookieName, cookieValue);
+        using HttpRequestMessage request = new(HttpMethod.Get, "/" + ReadingTestSupport.ContentPageKey);
+        request.Headers.Add("Cookie", await ReadingTestSupport.CreateSignedInCookieHeaderAsync(Factory, userId));
 
         using HttpResponseMessage response = await client.SendAsync(request);
-        string html = await response.Content.ReadAsStringAsync();
+        string html = await ReadingTestSupport.ReadOkHtmlAsync(response);
 
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        using JsonDocument context = ReadingContextRenderingTests.ParseReadingContext(html);
+        using JsonDocument context = ReadingTestSupport.ParseReadingContext(html);
         using (Assert.Multiple())
         {
-            await Assert.That(context.RootElement.GetProperty("isAuthenticated").GetBoolean()).IsTrue();
-            await Assert.That(context.RootElement.GetProperty("wpm").ValueKind).IsEqualTo(JsonValueKind.Null);
+            await Assert.That(ReadingTestSupport.Field(context.RootElement, "isAuthenticated").GetBoolean()).IsTrue();
+            await Assert.That(ReadingTestSupport.Field(context.RootElement, "wpm").ValueKind).IsEqualTo(JsonValueKind.Null);
         }
     }
 

@@ -1,115 +1,111 @@
 using System.Net;
-using System.Net.Http.Headers;
-using System.Text.Json;
 using System.Text;
-using EssentialCSharp.Web.Areas.Identity.Data;
-using Microsoft.AspNetCore.Antiforgery;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
+using EssentialCSharp.Web.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Tests;
 
 /// <summary>
-/// Evidence for the client contract: what POST /api/reading/session returns for a missing or invalid antiforgery
-/// token versus a body that fails validation, so the client can tell "stop tracking" from "drop this interval".
+/// The reading client treats a rejected antiforgery token differently from a body that fails validation
+/// ("stop tracking until the page reloads" versus "drop this interval"), so the two must stay distinguishable:
+/// a write without a valid antiforgery token is rejected, changes nothing, and the rejection is a problem
+/// document that carries no validation <c>errors</c> member.
 /// </summary>
 public class ReadingAntiforgeryContractTests : IntegrationTestBase
 {
-    private sealed record Observed(HttpStatusCode Status, string? ContentType, string Body)
-    {
-        public override string ToString() => $"{(int)Status} content-type={ContentType ?? "<none>"} body={(Body.Length == 0 ? "<empty>" : Body)}";
-    }
-
-    private const string ValidBody = """{"intervals":[{"pageKey":"x","wordsRead":10,"activeSeconds":10}]}""";
+    private const long SeededWords = 1200;
+    private const long SeededSeconds = 360;
+    private const string ValidBody = $$"""{"intervals":[{"pageKey":"{{ReadingTestSupport.LargePage}}","wordsRead":10,"activeSeconds":10}]}""";
     private const string InvalidBody = """{"intervals":[]}""";
 
+    protected override void ConfigureTestServices(IServiceCollection services) =>
+        ReadingTestSupport.UseFakes(services, new ReadingTestSupport.FakeWordCountService());
+
     [Test]
-    public async Task AntiforgeryFailure_IsDistinguishableFromValidationFailure()
+    [Arguments("missing token")]
+    [Arguments("invalid token")]
+    public async Task WriteWithoutAValidAntiforgeryToken_IsRejectedAsNonValidationProblemAndLeavesProfileUnchanged(string tokenKind)
     {
-        string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-csrf");
-        (string cookieHeader, string token, string headerName) = await CreateCredentialsAsync(userId);
+        (string userId, ReadingTestSupport.AntiforgeryCredentials credentials) = await CreateUserWithCredentialsAsync();
+        string? token = tokenKind == "invalid token" ? "not-a-valid-token" : null;
 
-        Observed missing = await PostAsync(cookieHeader, headerName, token: null, ValidBody);
-        Observed invalid = await PostAsync(cookieHeader, headerName, token: "not-a-valid-token", ValidBody);
-        Observed validationFailure = await PostAsync(cookieHeader, headerName, token, InvalidBody);
+        using HttpResponseMessage response = await PostSessionAsync(credentials, token, ValidBody);
+        ReadingTestSupport.ProblemResponse problem = await ReadingTestSupport.ReadProblemAsync(response);
 
-        Console.WriteLine($"missing token : {missing}");
-        Console.WriteLine($"invalid token : {invalid}");
-        Console.WriteLine($"valid token, invalid body : {validationFailure}");
-
-        // Observed contract: all three are 400 application/problem+json. A validation failure carries an "errors"
-        // object (and the title "One or more validation errors occurred."); an antiforgery failure is a bare
-        // problem document with no "errors" member. A missing token and an invalid token look the same.
         using (Assert.Multiple())
         {
-            await Assert.That(validationFailure.Status).IsEqualTo(HttpStatusCode.BadRequest);
-            await Assert.That(HasErrorsMember(validationFailure)).IsTrue();
-
-            foreach (Observed antiforgeryFailure in new[] { missing, invalid })
-            {
-                await Assert.That(antiforgeryFailure.Status).IsEqualTo(HttpStatusCode.BadRequest);
-                await Assert.That(antiforgeryFailure.ContentType).StartsWith("application/problem+json");
-                await Assert.That(HasErrorsMember(antiforgeryFailure)).IsFalse();
-            }
+            await Assert.That(problem.Status).IsEqualTo(HttpStatusCode.BadRequest).Because(problem.ToString());
+            await Assert.That(problem.MediaType).IsEqualTo("application/problem+json").Because(problem.ToString());
+            await Assert.That(problem.Root).IsNotNull().Because($"the body is not JSON: {problem}");
+            await Assert.That(problem.HasErrorsMember).IsFalse()
+                .Because($"an antiforgery rejection must not look like a validation failure: {problem}");
+            await Assert.That(await ReadTotalsAsync(userId)).IsEqualTo((SeededWords, SeededSeconds));
         }
     }
 
-    private static bool HasErrorsMember(Observed response)
+    [Test]
+    public async Task ValidationFailureWithAValidToken_CarriesAnErrorsMember_UnlikeAnAntiforgeryRejection()
     {
-        using JsonDocument document = JsonDocument.Parse(response.Body);
-        return document.RootElement.TryGetProperty("errors", out _);
+        (string userId, ReadingTestSupport.AntiforgeryCredentials credentials) = await CreateUserWithCredentialsAsync();
+
+        using HttpResponseMessage response = await PostSessionAsync(credentials, credentials.RequestToken, InvalidBody);
+        ReadingTestSupport.ProblemResponse problem = await ReadingTestSupport.ReadProblemAsync(response);
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(problem.Status).IsEqualTo(HttpStatusCode.BadRequest).Because(problem.ToString());
+            await Assert.That(problem.Root).IsNotNull().Because($"the body is not JSON: {problem}");
+            await Assert.That(problem.HasErrorsMember).IsTrue().Because(problem.ToString());
+            await Assert.That(await ReadTotalsAsync(userId)).IsEqualTo((SeededWords, SeededSeconds));
+        }
     }
 
-    private async Task<Observed> PostAsync(string cookieHeader, string headerName, string? token, string body)
+    [Test]
+    public async Task WriteWithAValidAntiforgeryToken_IsAccepted()
+    {
+        (string userId, ReadingTestSupport.AntiforgeryCredentials credentials) = await CreateUserWithCredentialsAsync();
+
+        using HttpResponseMessage response = await PostSessionAsync(credentials, credentials.RequestToken, ValidBody);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(await ReadTotalsAsync(userId)).IsEqualTo((SeededWords + 10, SeededSeconds + 10));
+    }
+
+    private async Task<(string UserId, ReadingTestSupport.AntiforgeryCredentials Credentials)> CreateUserWithCredentialsAsync()
+    {
+        string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-csrf");
+        await ReadingTestSupport.SeedProfileAsync(Factory.Services, userId, SeededWords, SeededSeconds);
+        return (userId, await ReadingTestSupport.CreateSignedInAntiforgeryCredentialsAsync(Factory, userId));
+    }
+
+    private async Task<HttpResponseMessage> PostSessionAsync(
+        ReadingTestSupport.AntiforgeryCredentials credentials, string? token, string body)
     {
         using HttpClient client = McpTestHelper.CreateClient(Factory);
         using var request = new HttpRequestMessage(HttpMethod.Post, "/api/reading/session")
         {
             Content = new StringContent(body, Encoding.UTF8, "application/json")
         };
-        request.Headers.Add("Cookie", cookieHeader);
+        request.Headers.Add("Cookie", credentials.CookieHeader);
         if (token is not null)
         {
-            request.Headers.Add(headerName, token);
+            request.Headers.Add(credentials.HeaderName, token);
         }
 
-        using HttpResponseMessage response = await client.SendAsync(request);
-        MediaTypeHeaderValue? contentType = response.Content.Headers.ContentType;
-        return new Observed(response.StatusCode, contentType?.ToString(), await response.Content.ReadAsStringAsync());
+        return await client.SendAsync(request);
     }
 
-    private async Task<(string CookieHeader, string Token, string HeaderName)> CreateCredentialsAsync(string userId)
-    {
-        (string cookieName, string cookieValue) =
-            await McpTestHelper.CreateIdentityApplicationCookieAsync(Factory, userId);
-
-        (string antiforgeryCookie, string requestToken, string headerName) = await InServiceScopeAsync(async services =>
+    private async Task<(long Words, long Seconds)> ReadTotalsAsync(string userId) =>
+        await InServiceScopeAsync(async services =>
         {
-            EssentialCSharpWebUser user = await services.GetRequiredService<UserManager<EssentialCSharpWebUser>>()
-                .FindByIdAsync(userId)
-                ?? throw new InvalidOperationException($"User {userId} does not exist.");
-            var context = new DefaultHttpContext
-            {
-                RequestServices = services,
-                User = await services.GetRequiredService<IUserClaimsPrincipalFactory<EssentialCSharpWebUser>>()
-                    .CreateAsync(user)
-            };
-
-            AntiforgeryTokenSet tokens = services.GetRequiredService<IAntiforgery>().GetAndStoreTokens(context);
-            string antiforgeryCookieName = services.GetRequiredService<IOptions<AntiforgeryOptions>>().Value.Cookie.Name
-                ?? throw new InvalidOperationException("The antiforgery cookie name is not configured.");
-            string cookie = context.Response.Headers.SetCookie
-                .Select(value => value?.Split(';', 2)[0])
-                .OfType<string>()
-                .Single(value => value.StartsWith(antiforgeryCookieName + "=", StringComparison.Ordinal));
-            return (
-                cookie,
-                tokens.RequestToken ?? throw new InvalidOperationException("No antiforgery request token."),
-                tokens.HeaderName ?? "RequestVerificationToken");
+            UserReadingProfileTotals totals = await services.GetRequiredService<EssentialCSharpWebContext>()
+                .UserReadingProfiles.AsNoTracking()
+                .Where(p => p.UserId == userId)
+                .Select(p => new UserReadingProfileTotals(p.TotalWordsRead, p.TotalActiveSeconds))
+                .SingleAsync();
+            return (totals.Words, totals.Seconds);
         });
 
-        return ($"{cookieName}={cookieValue}; {antiforgeryCookie}", requestToken, headerName);
-    }
+    private sealed record UserReadingProfileTotals(long Words, long Seconds);
 }
