@@ -3,14 +3,24 @@
  * Loaded as its own Vite entry (no inline script, CSP-safe).
  */
 import { STATUS_AUTH_FAILURE, STATUS_OK, resetProfile } from "./services/readingApi.js";
+import { READING_RESET_CHANNEL } from "./utils/readingConstants.js";
 
 const STATUS_CLASSES = ["text-muted", "text-success", "text-danger"];
 
+// The status element is an always-present (never hidden) live region, so
+// setting its text is announced.
 function showStatus(element, message, tone) {
-    element.hidden = false;
     element.textContent = message;
     element.classList.remove(...STATUS_CLASSES);
     element.classList.add(tone);
+}
+
+/** Tells other open tabs (content pages) to drop their cached WPM and unsent data. */
+function broadcastReset() {
+    if (typeof BroadcastChannel !== "function") return;
+    const channel = new BroadcastChannel(READING_RESET_CHANNEL);
+    channel.postMessage({ type: "reset" });
+    channel.close();
 }
 
 function init() {
@@ -23,18 +33,22 @@ function init() {
 
         button.disabled = true;
         showStatus(status, "Resetting…", "text-muted");
-
-        const result = await resetProfile();
-        if (result.status === STATUS_OK) {
-            showStatus(status, "Reading speed reset successfully.", "text-success");
-            return;
+        try {
+            const result = await resetProfile();
+            if (result.status === STATUS_OK) {
+                broadcastReset();
+                showStatus(status, "Reading speed reset successfully.", "text-success");
+                return;
+            }
+            const message = result.status === STATUS_AUTH_FAILURE
+                ? "Your session has expired. Please sign in again."
+                : "Reset failed. Please try again.";
+            showStatus(status, message, "text-danger");
+        } catch {
+            showStatus(status, "Reset failed. Please try again.", "text-danger");
+        } finally {
+            button.disabled = false;
         }
-
-        const message = result.status === STATUS_AUTH_FAILURE
-            ? "Your session has expired. Please sign in again."
-            : "Reset failed. Please try again.";
-        showStatus(status, message, "text-danger");
-        button.disabled = false;
     });
 }
 

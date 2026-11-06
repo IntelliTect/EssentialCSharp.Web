@@ -14,6 +14,10 @@ export default defineConfig({
             "@": resolve(rootDir, "src")
         }
     },
+    test: {
+        environment: "happy-dom",
+        include: ["src/**/*.test.js"]
+    },
     build: {
         outDir: resolve(rootDir, "wwwroot", "dist"),
         emptyOutDir: true,
