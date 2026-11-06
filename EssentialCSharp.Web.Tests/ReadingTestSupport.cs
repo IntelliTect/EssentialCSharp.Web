@@ -35,7 +35,6 @@ internal static class ReadingTestSupport
     public const string ContentPageKey = "hello-world";
     public static readonly PageWordStats ContentPageStats = new(1234, 3000, 400, 100, 5150);
 
-    public static readonly ChapterWordCount[] Chapters = [new(1, 3000), new(2, 2150)];
     public const int BookWords = 5150;
 
     /// <summary>
@@ -96,7 +95,6 @@ internal static class ReadingTestSupport
         public int GetPageWordCount(string pageKey) => pages.TryGetValue(pageKey, out PageWordStats? s) ? s.PageWords : 0;
         public int GetBookWordCount() => pages.Values.Select(p => p.BookWords).DefaultIfEmpty(0).Max();
         public PageWordStats? GetPageStats(string pageKey) => pages.GetValueOrDefault(pageKey);
-        public IReadOnlyList<ChapterWordCount> GetChapterWordCounts() => Chapters;
     }
 
     public static async Task SeedProfileAsync(

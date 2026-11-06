@@ -7,7 +7,7 @@ namespace EssentialCSharp.Web.Services;
 /// <remarks>
 /// The cache is built when the host starts. Until then (<see cref="IsReady"/> is <see langword="false"/>)
 /// every query returns "no data": <see cref="GetPageStats"/> returns <see langword="null"/>,
-/// counts are 0 and <see cref="GetChapterWordCounts"/> is empty.
+/// counts are 0.
 /// </remarks>
 public interface IWordCountService
 {
@@ -26,13 +26,7 @@ public interface IWordCountService
 
     /// <summary>Gets the total prose word count for the entire book.</summary>
     int GetBookWordCount();
-
-    /// <summary>Gets per-chapter word count summary (ordered by chapter number) for the book-stats API response.</summary>
-    IReadOnlyList<ChapterWordCount> GetChapterWordCounts();
 }
-
-/// <summary>Per-chapter word count summary returned by the book-stats API.</summary>
-public record ChapterWordCount(int ChapterNumber, int WordCount);
 
 /// <summary>Immutable prose word statistics for one page.</summary>
 /// <param name="PageWords">Prose words on the page.</param>

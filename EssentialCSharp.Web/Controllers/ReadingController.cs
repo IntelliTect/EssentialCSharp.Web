@@ -13,42 +13,11 @@ namespace EssentialCSharp.Web.Controllers;
 [ReadingAntiforgeryFailureHeader]
 public class ReadingController(
     IReadingProfileService readingProfileService,
-    IWordCountService wordCountService,
     IOptions<ReadingOptions> options) : ControllerBase
 {
     public const string WriteRateLimitPolicy = "ReadingWrite";
-    public const string PublicRateLimitPolicy = "ReadingPublic";
 
     private const int MaxSessionRequestBytes = 32 * 1024;
-
-    [HttpGet("book-stats")]
-    [AllowAnonymous]
-    [EnableRateLimiting(PublicRateLimitPolicy)]
-    // Word counts are computed once at startup, so the response only changes on deploy.
-    [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
-    [ProducesResponseType<BookStatsResponse>(StatusCodes.Status200OK)]
-    public ActionResult<BookStatsResponse> GetBookStats()
-    {
-        ChapterStatsResponse[] chapters = wordCountService.GetChapterWordCounts()
-            .Select(c => new ChapterStatsResponse(c.ChapterNumber, c.WordCount))
-            .ToArray();
-
-        return new BookStatsResponse(wordCountService.GetBookWordCount(), chapters);
-    }
-
-    [HttpGet("profile")]
-    [EnableRateLimiting(WriteRateLimitPolicy)]
-    [ProducesResponseType<ReadingProfileSummary>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ReadingProfileSummary>> GetProfile(CancellationToken cancellationToken)
-    {
-        if (GetUserId() is not { } userId)
-        {
-            return Unauthorized();
-        }
-
-        return await readingProfileService.GetProfileAsync(userId, cancellationToken);
-    }
 
     [HttpPost("session")]
     [EnableRateLimiting(WriteRateLimitPolicy)]

@@ -371,22 +371,13 @@ public partial class Program
                     });
             });
 
-            // Reading tracker: per-user limit for authenticated endpoints, looser per-IP limit for anonymous book-stats.
+            // Reading tracker: per-user limit for the authenticated reading endpoints.
             options.AddPolicy(ReadingController.WriteRateLimitPolicy, httpContext =>
                 RateLimitPartition.GetFixedWindowLimiter(
                     partitionKey: $"reading-user:{httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown"}",
                     factory: _ => new FixedWindowRateLimiterOptions
                     {
                         PermitLimit = 20,
-                        Window = TimeSpan.FromMinutes(1),
-                        QueueLimit = 0
-                    }));
-            options.AddPolicy(ReadingController.PublicRateLimitPolicy, httpContext =>
-                RateLimitPartition.GetFixedWindowLimiter(
-                    partitionKey: $"reading-ip:{httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip"}",
-                    factory: _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = 60,
                         Window = TimeSpan.FromMinutes(1),
                         QueueLimit = 0
                     }));

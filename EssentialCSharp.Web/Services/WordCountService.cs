@@ -30,8 +30,6 @@ public sealed partial class WordCountService(
 
     public int GetBookWordCount() => _snapshot?.BookWords ?? 0;
 
-    public IReadOnlyList<ChapterWordCount> GetChapterWordCounts() => _snapshot?.Chapters ?? [];
-
     /// <summary>
     /// Reads every mapped content page and publishes the word-count snapshot. A page that is
     /// missing or cannot be parsed is logged and counted as zero words; it never fails the build.
@@ -97,7 +95,6 @@ public sealed partial class WordCountService(
 
         _snapshot = new Snapshot(
             fileByKey.ToFrozenDictionary(kv => kv.Key, kv => statsByFile[kv.Value], StringComparer.Ordinal),
-            [.. chapterTotals.OrderBy(kv => kv.Key).Select(kv => new ChapterWordCount(kv.Key, kv.Value))],
             bookWords);
 
         return Task.CompletedTask;
@@ -186,6 +183,5 @@ public sealed partial class WordCountService(
 
     private sealed record Snapshot(
         FrozenDictionary<string, PageWordStats> Pages,
-        IReadOnlyList<ChapterWordCount> Chapters,
         int BookWords);
 }
