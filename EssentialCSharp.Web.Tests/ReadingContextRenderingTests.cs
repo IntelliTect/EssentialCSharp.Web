@@ -32,6 +32,7 @@ public class ReadingContextRenderingTests : IntegrationTestBase
         using (Assert.Multiple())
         {
             await Assert.That(ReadingTestSupport.Field(root, "isAuthenticated").GetBoolean()).IsFalse();
+            await Assert.That(ReadingTestSupport.Field(root, "userId").ValueKind).IsEqualTo(JsonValueKind.Null);
             await Assert.That(ReadingTestSupport.Field(root, "pageKey").GetString()).IsEqualTo(ReadingTestSupport.ContentPageKey);
             await Assert.That(ReadingTestSupport.Field(root, "pageWords").GetInt32()).IsEqualTo(expected.PageWords);
             await Assert.That(ReadingTestSupport.Field(root, "chapterWords").GetInt32()).IsEqualTo(expected.ChapterWords);
@@ -115,6 +116,7 @@ public class ReadingContextRenderingTests : IntegrationTestBase
         {
             await Assert.That(ReadingTestSupport.Field(context.RootElement, "isAuthenticated").GetBoolean()).IsTrue();
             await Assert.That(ReadingTestSupport.Field(context.RootElement, "wpm").GetInt32()).IsEqualTo(200);
+            await Assert.That(ReadingTestSupport.Field(context.RootElement, "userId").GetString()).IsEqualTo(userId);
             await Assert.That(ReadingTestSupport.CsrfToken(html)).IsNotNull().And.IsNotEmpty();
         }
     }

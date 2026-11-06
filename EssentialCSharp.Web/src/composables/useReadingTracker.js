@@ -18,7 +18,9 @@
  *  - bad-data: that batch is dropped, tracking continues.
  *  - transient: the batch goes back to the queue and is retried with exponential
  *    backoff on a later tick; lifecycle flushes (hidden/pagehide) ignore the
- *    backoff. A keepalive flush that fails during pagehide is lost (accepted).
+ *    backoff. The queue is also saved to localStorage (see readingOutboxStorage)
+ *    so the next page load of the same user sends it. A request still in flight
+ *    when its page is destroyed is lost (at-most-once delivery, accepted).
  *
  * Pieces: useActivityState (idle/visibility/focus/input), services/readingApi
  * (fetch + CSRF + typed results), utils/readingProgress (pure scroll math).
@@ -39,6 +41,13 @@ import {
     RETRY_MAX_DELAY_MS,
     TICK_INTERVAL_MS
 } from "../utils/readingConstants.js";
+import {
+    claimOutbox,
+    clearStoredIntervals,
+    newOutboxKey,
+    saveOutbox,
+    takeStoredIntervals
+} from "../utils/readingOutboxStorage.js";
 import {
     creditInterval,
     findContentElement,
@@ -84,6 +93,9 @@ export function useReadingTracker(context) {
     // Credited intervals awaiting delivery, and retry state.
     /** @type {import("../services/readingApi.js").ReadingInterval[]} */
     let outbox = [];
+    // Key of the localStorage record mirroring the outbox, null while nothing is persisted.
+    // Persisting starts after a failed send; while it is set every outbox change is mirrored.
+    let storedKey = null;
     let failures = 0;
     let retryAt = 0;
     // Bumped when another tab resets the profile; responses to batches sent before
@@ -91,6 +103,28 @@ export function useReadingTracker(context) {
     let generation = 0;
 
     const contentElement = findContentElement();
+
+    function persistOutbox() {
+        if (!context.userId) return;
+        if (outbox.length === 0) {
+            if (storedKey) saveOutbox(storedKey, context.userId, outbox);
+            storedKey = null;
+            return;
+        }
+        storedKey ??= newOutboxKey();
+        saveOutbox(storedKey, context.userId, outbox);
+    }
+
+    function discardPersistedOutbox() {
+        storedKey = null;
+        clearStoredIntervals();
+    }
+
+    // Intervals left by an earlier page load (never another user's) are sent like new ones.
+    if (tracking && context.userId) {
+        outbox = takeStoredIntervals(context.userId);
+        persistOutbox();
+    }
 
     function updateProgress() {
         const measure = measureContent(contentElement);
@@ -155,6 +189,7 @@ export function useReadingTracker(context) {
             outbox.push({ pageKey: context.pageKey, activeSeconds, wordsRead });
         }
         trimOutbox();
+        if (storedKey) persistOutbox();
     }
 
     function trimOutbox() {
@@ -175,6 +210,14 @@ export function useReadingTracker(context) {
         if (outbox.length === 0) return;
         if (!keepalive && (inFlight > 0 || performance.now() < retryAt)) return;
 
+        // A persisted batch is sent only by the tab that still holds its record: if another
+        // tab took it, that tab sends it and this copy is dropped.
+        if (storedKey && !claimOutbox(storedKey)) {
+            storedKey = null;
+            outbox = [];
+            return;
+        }
+        storedKey = null;
         const batch = outbox;
         outbox = [];
         const batchGeneration = generation;
@@ -199,12 +242,14 @@ export function useReadingTracker(context) {
             stopped = true;
             outbox = [];
             pendingSeconds = 0;
+            discardPersistedOutbox();
         } else if (result.status === STATUS_BAD_DATA) {
             failures = 0; // batch dropped; the data was the problem, not the server
         } else {
             // Transient: put the batch back in front of anything queued meanwhile.
             outbox = batch.concat(outbox);
             trimOutbox();
+            persistOutbox();
             failures++;
             retryAt = performance.now()
                 + Math.min(RETRY_BASE_DELAY_MS * 2 ** (failures - 1), RETRY_MAX_DELAY_MS);
@@ -239,6 +284,7 @@ export function useReadingTracker(context) {
         if (!tracking) return;
         pendingSeconds = 0;
         outbox = [];
+        discardPersistedOutbox();
         failures = 0;
         retryAt = 0;
         updateProgress();

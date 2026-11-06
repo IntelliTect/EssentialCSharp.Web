@@ -9,6 +9,7 @@ import {
     RETRY_MAX_DELAY_MS,
     TICK_INTERVAL_MS
 } from "../utils/readingConstants.js";
+import { newOutboxKey, saveOutbox } from "../utils/readingOutboxStorage.js";
 import { installFakeBroadcastChannel } from "../test-utils/fakeBroadcastChannel.js";
 
 // These tests assert requirements (what is credited, delivered, dropped or stopped),
@@ -22,6 +23,7 @@ const DEFAULT_WPM = 200;
 
 const context = (overrides = {}) => ({
     isAuthenticated: true,
+    userId: "user-1",
     pageKey: "chapter-1/page-1",
     pageWords: 2000,
     chapterWords: 8000,
@@ -123,6 +125,7 @@ describe("useReadingTracker", () => {
         document.head.innerHTML = "";
         vi.useRealTimers();
         vi.unstubAllGlobals();
+        localStorage.clear();
         vi.restoreAllMocks();
     });
 
@@ -509,6 +512,139 @@ describe("useReadingTracker", () => {
             // Oldest dropped: the first interval (which carried the whole first screen) is gone.
             expect(Math.max(...words)).toBeLessThanOrEqual(seconds);
             expect(words).toEqual([...words].sort((a, b) => a - b));
+        });
+    });
+
+    describe("unsent data across page loads", () => {
+        const interval = (n) => ({ pageKey: "chapter-1/page-1", activeSeconds: 10, wordsRead: n });
+        const seed = (intervals, userId = "user-1") => saveOutbox(newOutboxKey(), userId, intervals);
+        const nextPageLoad = async (ctx = context()) => {
+            scope.stop();
+            const tracker = start(ctx);
+            await advance(TICK_INTERVAL_MS / 1000 + 1);
+            return tracker;
+        };
+
+        it("delivers on the next page load what a failed send could not deliver", async () => {
+            handler = (n) => (n === 1 ? jsonResponse(503) : ok());
+            start();
+            readThroughPage();
+            await advance(FLUSH_S + 1);
+            expect(calls).toHaveLength(1);
+            expect(delivered).toHaveLength(0);
+
+            await nextPageLoad();
+            expect(delivered).toEqual(calls[0].intervals);
+        });
+
+        it("sends persisted data once even when two tabs load", async () => {
+            seed([interval(5), interval(6)]);
+            start();
+            const otherTab = effectScope();
+            otherTab.run(() => useReadingTracker(context()));
+            await advance(TICK_INTERVAL_MS / 1000 + 1);
+            otherTab.stop();
+
+            expect(delivered).toEqual([interval(5), interval(6)]);
+        });
+
+        it("never sends data persisted for a different account", async () => {
+            seed([interval(5)], "someone-else");
+            start();
+            await advance(10);
+            expect(calls).toHaveLength(0);
+        });
+
+        it("ignores malformed storage and malformed entries", async () => {
+            localStorage.setItem(newOutboxKey(), "{not json");
+            localStorage.setItem(newOutboxKey(), JSON.stringify({ userId: "user-1", intervals: "nope" }));
+            seed([
+                interval(5),
+                { pageKey: "", activeSeconds: 10, wordsRead: 5 },
+                { pageKey: "p", activeSeconds: -1, wordsRead: 5 },
+                { pageKey: "p", activeSeconds: 10, wordsRead: "many" },
+                { pageKey: "p", activeSeconds: Infinity, wordsRead: 5 },
+                null
+            ]);
+            start();
+            await advance(10);
+            expect(delivered).toEqual([interval(5)]);
+        });
+
+        it("keeps tracking without throwing when storage is unavailable", async () => {
+            const broken = () => { throw new Error("storage unavailable"); };
+            vi.stubGlobal("localStorage", {
+                get length() { return broken(); },
+                key: broken,
+                getItem: broken,
+                setItem: broken,
+                removeItem: broken
+            });
+            handler = (n) => (n === 1 ? jsonResponse(503) : ok());
+            start();
+            readThroughPage();
+            await advance(2 * FLUSH_S + 5);
+            await leavePage();
+            // The failed batch is still retried from memory.
+            expect(delivered).toEqual(expect.arrayContaining(calls[0].intervals));
+        });
+
+        it("keeps only the newest intervals when more were persisted than may be queued", async () => {
+            seed(Array.from({ length: MAX_QUEUED_INTERVALS + 5 }, (_, i) => interval(i + 1)));
+            start();
+            await advance(10);
+            expect(delivered).toHaveLength(MAX_QUEUED_INTERVALS);
+            expect(delivered.at(-1).wordsRead).toBe(MAX_QUEUED_INTERVALS + 5);
+            expect(delivered[0].wordsRead).toBe(6);
+        });
+
+        it("discards persisted data when the profile is reset in another tab", async () => {
+            handler = (n) => (n === 1 ? jsonResponse(503) : ok());
+            start();
+            readThroughPage();
+            await advance(FLUSH_S + 1);
+            expect(calls).toHaveLength(1);
+
+            new BroadcastChannel(READING_RESET_CHANNEL).postMessage({ type: "reset" });
+            await nextPageLoad();
+            expect(calls).toHaveLength(1);
+        });
+
+        it("clears persisted data the page was loaded with when it is reset", async () => {
+            seed([interval(5)]);
+            handler = () => jsonResponse(503);
+            start(); // takes the data over; send fails, so it is persisted again
+            await advance(2);
+            expect(calls).toHaveLength(1);
+
+            new BroadcastChannel(READING_RESET_CHANNEL).postMessage({ type: "reset" });
+            handler = () => ok();
+            await nextPageLoad();
+            expect(delivered).toHaveLength(0);
+        });
+
+        it("drops persisted data the server rejects as invalid and does not send it again", async () => {
+            seed([interval(5)]);
+            handler = () => jsonResponse(400, VALIDATION_BODY, PROBLEM_JSON);
+            start();
+            await advance(2);
+            expect(calls).toHaveLength(1);
+
+            handler = () => ok();
+            await nextPageLoad();
+            expect(delivered).toHaveLength(0);
+        });
+
+        it("drops persisted data after an auth failure", async () => {
+            seed([interval(5)]);
+            handler = () => jsonResponse(403);
+            start();
+            await advance(2);
+            expect(calls).toHaveLength(1);
+
+            handler = () => ok();
+            await nextPageLoad();
+            expect(delivered).toHaveLength(0);
         });
     });
 

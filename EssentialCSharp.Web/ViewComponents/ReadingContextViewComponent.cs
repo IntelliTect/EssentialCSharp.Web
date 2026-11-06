@@ -29,12 +29,14 @@ public partial class ReadingContextViewComponent(
         }
 
         bool isAuthenticated = signInManager.IsSignedIn(UserClaimsPrincipal);
-        int? wpm = isAuthenticated ? await GetWpmAsync() : null;
+        string? userId = isAuthenticated ? UserClaimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier) : null;
+        int? wpm = userId is null ? null : await GetWpmAsync(userId);
         ReadingOptions reading = options.Value;
 
         PageWordStats? stats = wordCountService.GetPageStats(pageKey);
         return View(new ReadingContextViewModel(
             IsAuthenticated: isAuthenticated,
+            UserId: userId,
             PageKey: pageKey,
             PageWords: stats?.PageWords ?? 0,
             ChapterWords: stats?.ChapterWords ?? 0,
@@ -49,13 +51,8 @@ public partial class ReadingContextViewComponent(
     }
 
     /// <summary>The signed-in reader's derived WPM rounded to whole words per minute, or null when unknown.</summary>
-    private async Task<int?> GetWpmAsync()
+    private async Task<int?> GetWpmAsync(string userId)
     {
-        if (UserClaimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier) is not { } userId)
-        {
-            return null;
-        }
-
         try
         {
             ReadingProfileSummary profile = await readingProfileService.GetProfileAsync(userId, HttpContext.RequestAborted);
@@ -73,9 +70,12 @@ public partial class ReadingContextViewComponent(
 /// <summary>
 /// Serialized (camelCase) as <c>window.READING_CONTEXT</c>; property names are a contract with the client.
 /// <paramref name="Wpm"/> is null for anonymous readers or readers with no recorded reading time.
+/// <paramref name="UserId"/> is the signed-in reader's own id (null when anonymous); the client scopes
+/// locally persisted unsent reading data to it so it is never sent for a different account.
 /// </summary>
 public record ReadingContextViewModel(
     bool IsAuthenticated,
+    string? UserId,
     string PageKey,
     int PageWords,
     int ChapterWords,

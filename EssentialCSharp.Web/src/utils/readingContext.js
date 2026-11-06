@@ -1,6 +1,7 @@
 /**
  * @typedef {Object} ReadingContext
  * @property {boolean} isAuthenticated
+ * @property {string | null} userId signed-in user id, scopes persisted unsent intervals to one account
  * @property {string} pageKey
  * @property {number} pageWords
  * @property {number} chapterWords
@@ -35,6 +36,7 @@ export function getReadingContext(win = window) {
     if (!required.every(isPositiveNumber)) return null;
     return {
         isAuthenticated: raw.isAuthenticated === true,
+        userId: typeof raw.userId === "string" && raw.userId ? raw.userId : null,
         pageKey: String(raw.pageKey),
         pageWords: toCount(raw.pageWords),
         chapterWords: toCount(raw.chapterWords),
