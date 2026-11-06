@@ -7,9 +7,18 @@
  * hidden, pagehide), never by component unmount.
  *
  *  - Anonymous visitors are not tracked: they only get a scroll fraction and the
- *    DEFAULT_WPM estimate. No timers, input listeners or requests.
- *  - Signed-in visitors: the server is authoritative for WPM (fetched once per
- *    page load) and receives delta-based session intervals.
+ *    default WPM estimate. No timers, input listeners or requests.
+ *  - Signed-in visitors: WPM comes from READING_CONTEXT (server-derived) and is
+ *    refreshed from each POST response. Delta-based intervals are queued and sent.
+ *
+ * Failure handling (see postSession statuses):
+ *  - ok: queue entry sent; WPM refreshed from the response.
+ *  - auth-failure (401/403, antiforgery rejection, no CSRF token): tracking stops
+ *    for the rest of the page.
+ *  - bad-data: that batch is dropped, tracking continues.
+ *  - transient: the batch goes back to the queue and is retried with exponential
+ *    backoff on a later tick; lifecycle flushes (hidden/pagehide) ignore the
+ *    backoff. A keepalive flush that fails during pagehide is lost (accepted).
  *
  * Pieces: useActivityState (idle/visibility/focus/input), services/readingApi
  * (fetch + CSRF + typed results), utils/readingProgress (pure scroll math).
@@ -18,21 +27,20 @@ import { onScopeDispose, readonly, ref } from "vue";
 import { STATE_READING, useActivityState } from "./useActivityState.js";
 import {
     STATUS_AUTH_FAILURE,
+    STATUS_BAD_DATA,
     STATUS_OK,
-    fetchProfile,
     postSession
 } from "../services/readingApi.js";
 import {
-    COMPLETION_THRESHOLD,
-    DEFAULT_WPM,
-    MAX_CREDIT_WPM,
+    MAX_QUEUED_INTERVALS,
     MAX_TICK_DELTA_S,
-    PERIODIC_FLUSH_ACTIVE_S,
+    READING_RESET_CHANNEL,
+    RETRY_BASE_DELAY_MS,
+    RETRY_MAX_DELAY_MS,
     TICK_INTERVAL_MS
 } from "../utils/readingConstants.js";
 import {
-    creditWords,
-    displayFraction,
+    creditInterval,
     findContentElement,
     fractionAboveViewportBottom,
     fractionAboveViewportTop,
@@ -54,32 +62,37 @@ export const READING_TRACKER_KEY = Symbol("readingTracker");
  * @returns {ReadingTracker}
  */
 export function useReadingTracker(context) {
-    const wpm = ref(DEFAULT_WPM);
+    const wpm = ref(context.wpm ?? context.defaultWpm);
     const scrollFraction = ref(0);
 
     const tracking = context.isAuthenticated && context.pageWords > 0;
-    const activity = tracking ? useActivityState() : null;
+    const activity = tracking ? useActivityState(context.idleThresholdSeconds) : null;
 
     let disposed = false;
-    let authFailed = false;
-    let inFlight = false;
+    let stopped = false;
+    let inFlight = 0;
     let rafId = 0;
     let tickId = 0;
 
-    // Unsent active time (fractional seconds) and scroll baseline/high-water
-    // mark, both as fractions of the page content. Flushes send the delta and
-    // rebase these so nothing is ever sent twice.
+    // Unsent active time (fractional seconds). baseline..maxBottom is the
+    // not-yet-credited span of the page (fractions, see readingProgress.js).
     let pendingSeconds = 0;
     let baseline = 0;
     let maxBottom = 0;
     let lastTickAt = performance.now();
 
+    // Credited intervals awaiting delivery, and retry state.
+    /** @type {import("../services/readingApi.js").ReadingInterval[]} */
+    let outbox = [];
+    let failures = 0;
+    let retryAt = 0;
+
     const contentElement = findContentElement();
 
     function updateProgress() {
         const measure = measureContent(contentElement);
-        scrollFraction.value = displayFraction(measure);
         const bottom = fractionAboveViewportBottom(measure);
+        scrollFraction.value = bottom;
         if (!activity?.hasUserInput()) {
             // Anchors / scroll restoration before real input only move the baseline.
             baseline = fractionAboveViewportTop(measure);
@@ -103,41 +116,92 @@ export function useReadingTracker(context) {
         lastTickAt = now;
         if (activity.getState() === STATE_READING) pendingSeconds += deltaS;
         updateProgress();
-        if (pendingSeconds >= PERIODIC_FLUSH_ACTIVE_S) void flush();
+        if (pendingSeconds >= context.periodicFlushActiveSeconds) {
+            void flush();
+        } else if (outbox.length > 0) {
+            void flush({ collect: false }); // retry of previously failed intervals
+        }
     }
 
     /**
-     * Sends the unsent delta. Lifecycle flushes (keepalive) always send; the
-     * periodic one yields to an in-flight request.
+     * Turns pending time + progress into a queued interval. Progress that time
+     * could not account for (the credit was capped) stays after the baseline and
+     * is credited by later time.
      */
-    async function flush({ keepalive = false } = {}) {
-        if (!tracking || authFailed || (inFlight && !keepalive)) return;
-
-        updateProgress();
+    function collect() {
         const activeSeconds = Math.floor(pendingSeconds);
         if (activeSeconds < 1) return;
 
-        const wordsRead = creditWords(
-            context.pageWords, maxBottom - baseline, activeSeconds, MAX_CREDIT_WPM);
-        // Nothing progressed: keep the time pending for when the reader scrolls.
-        if (wordsRead <= 0) return;
-
-        const interval = {
-            pageKey: context.pageKey,
+        const { wordsRead, progressConsumed } = creditInterval({
+            pageWords: context.pageWords,
+            progress: maxBottom - baseline,
             activeSeconds,
-            wordsRead,
-            completed: maxBottom >= COMPLETION_THRESHOLD
-        };
+            maxWpm: context.maxCreditWpm
+        });
+        if (wordsRead <= 0) {
+            // Nothing progressed. Keep at most one flush period of time for a
+            // coming scroll so long stationary reading cannot inflate later credit.
+            pendingSeconds = Math.min(pendingSeconds, context.periodicFlushActiveSeconds);
+            return;
+        }
 
-        // Rebase before sending so a second flush cannot re-send this delta.
         pendingSeconds -= activeSeconds;
-        baseline = maxBottom;
+        baseline += progressConsumed;
+        outbox.push({ pageKey: context.pageKey, activeSeconds, wordsRead });
+        trimOutbox();
+    }
 
-        inFlight = true;
-        const result = await postSession([interval], { keepalive });
-        inFlight = false;
-        // Failures are dropped (no retry queue), but an expired session stops further posts.
-        if (result.status === STATUS_AUTH_FAILURE) authFailed = true;
+    function trimOutbox() {
+        if (outbox.length > MAX_QUEUED_INTERVALS) outbox.splice(0, outbox.length - MAX_QUEUED_INTERVALS);
+    }
+
+    /**
+     * Sends the queue. Lifecycle flushes (keepalive) always send; periodic ones
+     * yield to an in-flight request and to the retry backoff.
+     */
+    async function flush({ keepalive = false, collect: doCollect = true } = {}) {
+        if (!tracking || stopped) return;
+
+        if (doCollect) {
+            updateProgress();
+            collect();
+        }
+        if (outbox.length === 0) return;
+        if (!keepalive && (inFlight > 0 || performance.now() < retryAt)) return;
+
+        const batch = outbox;
+        outbox = [];
+
+        inFlight++;
+        let result;
+        try {
+            result = await postSession(batch, { keepalive });
+        } finally {
+            inFlight--;
+        }
+        if (disposed) return;
+
+        if (result.status === STATUS_OK) {
+            failures = 0;
+            retryAt = 0;
+            const serverWpm = result.data?.wpm;
+            if (typeof serverWpm === "number" && Number.isFinite(serverWpm) && serverWpm > 0) {
+                wpm.value = serverWpm;
+            }
+        } else if (result.status === STATUS_AUTH_FAILURE) {
+            stopped = true;
+            outbox = [];
+            pendingSeconds = 0;
+        } else if (result.status === STATUS_BAD_DATA) {
+            failures = 0; // batch dropped; the data was the problem, not the server
+        } else {
+            // Transient: put the batch back in front of anything queued meanwhile.
+            outbox = batch.concat(outbox);
+            trimOutbox();
+            failures++;
+            retryAt = performance.now()
+                + Math.min(RETRY_BASE_DELAY_MS * 2 ** (failures - 1), RETRY_MAX_DELAY_MS);
+        }
     }
 
     function onVisibilityChange() {
@@ -160,15 +224,23 @@ export function useReadingTracker(context) {
         updateProgress();
     }
 
-    async function loadProfile() {
-        const result = await fetchProfile();
-        if (disposed) return;
-        if (result.status === STATUS_AUTH_FAILURE) {
-            authFailed = true;
-        } else if (result.status === STATUS_OK && result.data?.wpm > 0) {
-            wpm.value = result.data.wpm;
-        }
+    // Another tab reset the reading profile: return to the default estimate and
+    // drop unsent data so it does not repopulate the profile that was just cleared.
+    function onReset() {
+        wpm.value = context.defaultWpm;
+        if (!tracking) return;
+        pendingSeconds = 0;
+        outbox = [];
+        failures = 0;
+        retryAt = 0;
+        updateProgress();
+        baseline = maxBottom;
     }
+
+    const resetChannel = typeof BroadcastChannel === "function"
+        ? new BroadcastChannel(READING_RESET_CHANNEL)
+        : null;
+    if (resetChannel) resetChannel.onmessage = onReset;
 
     // Progress display works for everyone.
     const onScrollOrResize = () => scheduleProgressUpdate();
@@ -182,11 +254,11 @@ export function useReadingTracker(context) {
         window.addEventListener("pagehide", onPageHide);
         window.addEventListener("pageshow", onPageShow);
         tickId = window.setInterval(tick, TICK_INTERVAL_MS);
-        void loadProfile();
     }
 
     onScopeDispose(() => {
         disposed = true;
+        resetChannel?.close();
         clearInterval(tickId);
         if (rafId) cancelAnimationFrame(rafId);
         window.removeEventListener("scroll", onScrollOrResize);

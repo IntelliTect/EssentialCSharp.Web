@@ -11,24 +11,25 @@
  *    counting across tabs.
  */
 import { onScopeDispose } from "vue";
-import { IDLE_THRESHOLD_S, MOUSEMOVE_THROTTLE_MS } from "../utils/readingConstants.js";
+import { MOUSEMOVE_THROTTLE_MS } from "../utils/readingConstants.js";
 
 export const STATE_READING = "READING";
 export const STATE_IDLE = "IDLE";
 export const STATE_HIDDEN = "HIDDEN";
 
 /**
- * @param {{ visible: boolean, focused: boolean, lastInputAt: number | null, now: number }} input
+ * @param {{ visible: boolean, focused: boolean, lastInputAt: number | null, now: number, idleThresholdSeconds: number }} input
  *        timestamps in ms from the same clock
  * @returns {"READING" | "IDLE" | "HIDDEN"}
  */
-export function computeActivityState({ visible, focused, lastInputAt, now }) {
+export function computeActivityState({ visible, focused, lastInputAt, now, idleThresholdSeconds }) {
     if (!visible || !focused) return STATE_HIDDEN;
-    if (lastInputAt === null || (now - lastInputAt) / 1000 > IDLE_THRESHOLD_S) return STATE_IDLE;
+    if (lastInputAt === null || (now - lastInputAt) / 1000 > idleThresholdSeconds) return STATE_IDLE;
     return STATE_READING;
 }
 
-export function useActivityState() {
+/** @param {number} idleThresholdSeconds no input for longer than this switches READING to IDLE */
+export function useActivityState(idleThresholdSeconds) {
     let lastInputAt = null;
     let lastMousemoveAt = 0;
 
@@ -71,7 +72,8 @@ export function useActivityState() {
             visible: document.visibilityState === "visible",
             focused: document.hasFocus(),
             lastInputAt,
-            now: performance.now()
+            now: performance.now(),
+            idleThresholdSeconds
         }),
         hasUserInput: () => lastInputAt !== null,
         /** Forget input (e.g. page restored from bfcache) so the page starts IDLE again. */

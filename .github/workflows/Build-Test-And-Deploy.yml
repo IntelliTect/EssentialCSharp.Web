@@ -56,6 +56,10 @@ jobs:
         working-directory: EssentialCSharp.Web
         run: npm run build
 
+      - name: Test frontend
+        working-directory: EssentialCSharp.Web
+        run: npm test
+
   build-and-test:
     name: Build and test (Ubuntu)
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'

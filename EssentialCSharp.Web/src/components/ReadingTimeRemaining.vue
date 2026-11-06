@@ -41,8 +41,6 @@ const spokenText = computed(() => {
     <div
         v-if="chapterText || bookText"
         class="reading-time-remaining text-light d-flex align-items-center gap-2"
-        role="status"
-        aria-live="off"
     >
         <span class="visually-hidden">{{ spokenText }}</span>
         <span v-if="chapterText" class="reading-time-chapter" aria-hidden="true">

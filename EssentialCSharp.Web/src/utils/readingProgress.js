@@ -1,6 +1,16 @@
 /**
  * Scroll progress measured against the article/content element rather than the
  * whole document, so header/footer/chrome do not skew it.
+ *
+ * Single definition of "progress": the fraction of the content at or above the
+ * viewport BOTTOM edge (content the reader has had on screen). Both the header
+ * estimate (words left) and the credit model use it, so what is displayed and
+ * what is credited cannot disagree. The credit baseline is the same quantity
+ * measured at the viewport TOP when the page loaded (content already scrolled
+ * past is never credited, the first screen is).
+ *
+ * Limitation: the content element includes non-prose blocks (code, images), so
+ * the fraction is by height, not by words.
  */
 
 const clamp01 = (n) => Math.min(1, Math.max(0, Number.isFinite(n) ? n : 0));
@@ -13,8 +23,7 @@ const clamp01 = (n) => Math.min(1, Math.max(0, Number.isFinite(n) ? n : 0));
  */
 
 /**
- * Fraction of the content that has entered the viewport (everything above the
- * viewport bottom). Used for crediting words read.
+ * Progress: fraction of the content that has entered the viewport.
  * @param {ContentMeasure} m
  */
 export function fractionAboveViewportBottom({ top, height, viewportHeight }) {
@@ -23,25 +32,13 @@ export function fractionAboveViewportBottom({ top, height, viewportHeight }) {
 }
 
 /**
- * Fraction of the content that has scrolled above the viewport top. Used as the
- * credit baseline: content already scrolled past on load (deep links, restored
- * scroll) is never credited, but the first screen is.
+ * Fraction of the content that has scrolled above the viewport top; the credit
+ * baseline at load time.
  * @param {ContentMeasure} m
  */
 export function fractionAboveViewportTop({ top, height }) {
     if (!(height > 0)) return 0;
     return clamp01(-top / height);
-}
-
-/**
- * Classic 0..1 "how far through the article" for display. Content that fits in
- * the viewport reports 0, not 1.
- * @param {ContentMeasure} m
- */
-export function displayFraction({ top, height, viewportHeight }) {
-    const scrollable = height - viewportHeight;
-    if (!(scrollable > 0)) return 0;
-    return clamp01(-top / scrollable);
 }
 
 /**
@@ -68,15 +65,20 @@ export function measureContent(element) {
 }
 
 /**
- * Words credited for an interval: progress-based, capped by what is plausible
- * for the active time spent.
- * @param {number} pageWords
- * @param {number} progress fraction of the page progressed this interval (0..1)
- * @param {number} activeSeconds
- * @param {number} maxWpm
+ * Credit for one interval: progress-based, capped by what is plausible for the
+ * active time spent. When time is the binding limit only the matching share of
+ * progress is consumed, so the remainder stays creditable later.
+ * @param {{ pageWords: number, progress: number, activeSeconds: number, maxWpm: number }} input
+ *        progress: fraction of the page progressed since the last credited point (0..1)
+ * @returns {{ wordsRead: number, progressConsumed: number }}
  */
-export function creditWords(pageWords, progress, activeSeconds, maxWpm) {
-    const byProgress = Math.round(pageWords * Math.max(0, progress));
+export function creditInterval({ pageWords, progress, activeSeconds, maxWpm }) {
+    const available = Math.max(0, progress);
+    const byProgress = Math.round(pageWords * available);
     const byTime = Math.floor(Math.max(0, activeSeconds) * maxWpm / 60);
-    return Math.max(0, Math.min(byProgress, byTime));
+    const wordsRead = Math.max(0, Math.min(byProgress, byTime));
+    const progressConsumed = byProgress <= byTime || !(pageWords > 0)
+        ? available
+        : wordsRead / pageWords;
+    return { wordsRead, progressConsumed };
 }
