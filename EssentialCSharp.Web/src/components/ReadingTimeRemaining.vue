@@ -1,83 +1,66 @@
 <script setup>
 import { computed, inject } from "vue";
-import { useReadingTracker } from "../composables/useReadingTracker.js";
-import { getDocumentScrollFraction } from "../utils/readingProgress.js";
+import { READING_TRACKER_KEY } from "../composables/useReadingTracker.js";
+import { formatMinutes, formatMinutesSpoken, minutesForWords } from "../utils/readingFormat.js";
 
-const shell = inject("shell");
+// Null on non-content pages (no READING_CONTEXT): render nothing.
+const tracker = inject(READING_TRACKER_KEY, null);
 
-// Only render on chapter/content pages.
-const isContentPage = computed(() => Boolean(window.CURRENT_PAGE_KEY));
-
-// Word count data from window globals (set by _Layout.cshtml / HomeController).
-const pageWordCount = window.PAGE_WORD_COUNT ?? 0;
-const chapterWordCount = window.CHAPTER_WORD_COUNT ?? 0;
-const chapterStartWords = window.CHAPTER_START_WORDS ?? 0;
-const bookWordCount = window.BOOK_WORD_COUNT ?? 0;
-const wordsBeforePage = window.WORDS_BEFORE_PAGE ?? 0;
-
-const { wpm, activeSeconds } = useReadingTracker();
-
-// Recomputed every second via activeSeconds dependency.
-const scrollFraction = computed(() => {
-    // Reference activeSeconds so Vue re-evaluates as the timer ticks.
-    void activeSeconds.value;
-    return getDocumentScrollFraction();
-});
-
-const wordsReadOnPage = computed(() => Math.round(pageWordCount * scrollFraction.value));
+const context = tracker?.context;
+const wordsReadOnPage = computed(() =>
+    tracker ? Math.round(context.pageWords * tracker.scrollFraction.value) : 0);
 
 const minutesLeftInChapter = computed(() => {
-    if (!wpm.value || wpm.value <= 0 || chapterWordCount <= 0) return null;
-    const wordsLeft = chapterWordCount - chapterStartWords - wordsReadOnPage.value;
-    return Math.max(0, wordsLeft) / wpm.value;
+    if (!tracker || context.chapterWords <= 0) return null;
+    return minutesForWords(
+        context.chapterWords - context.chapterStartWords - wordsReadOnPage.value,
+        tracker.wpm.value);
 });
 
 const minutesLeftInBook = computed(() => {
-    if (!wpm.value || wpm.value <= 0 || bookWordCount <= 0) return null;
-    const wordsLeft = bookWordCount - wordsBeforePage - wordsReadOnPage.value;
-    return Math.max(0, wordsLeft) / wpm.value;
+    if (!tracker || context.bookWords <= 0) return null;
+    return minutesForWords(
+        context.bookWords - context.wordsBeforePage - wordsReadOnPage.value,
+        tracker.wpm.value);
 });
 
-function formatMinutes(minutes) {
-    if (minutes === null || minutes === undefined) return null;
-    const rounded = Math.round(minutes);
-    if (rounded < 60) {
-        return `${rounded} min`;
-    }
-    const hours = Math.floor(rounded / 60);
-    const mins = rounded % 60;
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-}
+const chapterText = computed(() => formatMinutes(minutesLeftInChapter.value));
+const bookText = computed(() => formatMinutes(minutesLeftInBook.value));
 
-const chapterLabel = computed(() => {
-    const m = minutesLeftInChapter.value;
-    if (m === null) return null;
-    return `${formatMinutes(m)} left in chapter`;
-});
-
-const bookLabel = computed(() => {
-    const m = minutesLeftInBook.value;
-    if (m === null) return null;
-    return `${formatMinutes(m)} left in book`;
+const spokenText = computed(() => {
+    const parts = [];
+    const chapter = formatMinutesSpoken(minutesLeftInChapter.value);
+    const book = formatMinutesSpoken(minutesLeftInBook.value);
+    if (chapter) parts.push(`${chapter} left in this chapter`);
+    if (book) parts.push(`${book} left in the book`);
+    return parts.length ? `${parts.join(", ")}.` : "";
 });
 </script>
 
 <template>
     <div
-        v-if="isContentPage && (chapterLabel || bookLabel)"
+        v-if="chapterText || bookText"
         class="reading-time-remaining text-light d-flex align-items-center gap-2"
-        aria-label="Reading time remaining"
+        role="status"
+        aria-live="off"
     >
-        <span v-if="chapterLabel" class="reading-time-chapter d-none d-sm-inline">{{ chapterLabel }}</span>
-        <span v-if="chapterLabel && bookLabel" class="d-none d-lg-inline text-light opacity-50">·</span>
-        <span v-if="bookLabel" class="reading-time-book d-none d-lg-inline">{{ bookLabel }}</span>
+        <span class="visually-hidden">{{ spokenText }}</span>
+        <span v-if="chapterText" class="reading-time-chapter" aria-hidden="true">
+            {{ chapterText }}<span class="d-none d-sm-inline"> left in chapter</span>
+        </span>
+        <span v-if="chapterText && bookText" class="reading-time-separator d-none d-lg-inline" aria-hidden="true">·</span>
+        <span v-if="bookText" class="reading-time-book d-none d-lg-inline" aria-hidden="true">{{ bookText }} left in book</span>
     </div>
 </template>
 
 <style scoped>
+/* #f8f9fa on the header's rgb(26, 48, 70) is roughly 10:1 contrast (WCAG AA needs 4.5:1). */
 .reading-time-remaining {
     font-size: 0.8rem;
     white-space: nowrap;
-    opacity: 0.85;
+}
+
+.reading-time-separator {
+    opacity: 0.7;
 }
 </style>
