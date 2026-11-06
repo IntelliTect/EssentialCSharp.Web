@@ -22,14 +22,23 @@ const context = (overrides = {}) => ({
     ...overrides
 });
 
-const reply = (status, { body, contentType } = {}) => ({
-    ok: status >= 200 && status < 300,
-    status,
-    headers: { get: (name) => (name.toLowerCase() === "content-type" ? contentType ?? null : null) },
-    json: async () => body
-});
+const reply = (status, { body, contentType } = {}) => {
+    const res = {
+        ok: status >= 200 && status < 300,
+        status,
+        headers: { get: (name) => (name.toLowerCase() === "content-type" ? contentType ?? null : null) },
+        json: async () => {
+            if (body === undefined) throw new SyntaxError("empty body");
+            return body;
+        }
+    };
+    res.clone = () => res;
+    return res;
+};
 
 const PROBLEM_JSON = "application/problem+json";
+const ANTIFORGERY_BODY = { title: "Bad Request", status: 400, traceId: "t" };
+const VALIDATION_BODY = { title: "One or more validation errors occurred.", status: 400, errors: { x: ["bad"] }, traceId: "t" };
 
 describe("useReadingTracker", () => {
     let scope;
@@ -193,8 +202,8 @@ describe("useReadingTracker", () => {
             expect(fetchMock).toHaveBeenCalledTimes(1);
         });
 
-        it("stops tracking when a 400 has no problem+json body (antiforgery rejection)", async () => {
-            fetchMock.mockResolvedValue(reply(400));
+        it("stops tracking when a 400 problem has no errors member (antiforgery rejection)", async () => {
+            fetchMock.mockResolvedValue(reply(400, { contentType: PROBLEM_JSON, body: ANTIFORGERY_BODY }));
             start();
             readThroughPage();
             await advance(61);
@@ -203,7 +212,7 @@ describe("useReadingTracker", () => {
         });
 
         it("drops a batch rejected as invalid but keeps tracking", async () => {
-            fetchMock.mockResolvedValueOnce(reply(400, { contentType: PROBLEM_JSON }))
+            fetchMock.mockResolvedValueOnce(reply(400, { contentType: PROBLEM_JSON, body: VALIDATION_BODY }))
                 .mockResolvedValue(reply(200, { body: { wpm: 240 } }));
             start();
             readThroughPage();
@@ -214,6 +223,19 @@ describe("useReadingTracker", () => {
             // The second request carries only newly earned time, not the rejected interval again.
             expect(posts()[1]).toHaveLength(1);
             expect(posts()[1][0].activeSeconds).toBe(60);
+        });
+
+        it("splits long pending time so no interval exceeds the idle threshold", async () => {
+            start(context({ idleThresholdSeconds: 30 }));
+            readThroughPage();
+            for (let i = 0; i < 61; i++) {
+                document.dispatchEvent(new Event("keydown")); // keep the reader active across the short idle threshold
+                await advance(1);
+            }
+            const [batch] = posts();
+            expect(batch.length).toBeGreaterThan(1);
+            expect(Math.max(...batch.map((i) => i.activeSeconds))).toBeLessThanOrEqual(30);
+            expect(batch.reduce((sum, i) => sum + i.activeSeconds, 0)).toBe(60);
         });
 
         it("never posts, and stops, when there is no CSRF token", async () => {
