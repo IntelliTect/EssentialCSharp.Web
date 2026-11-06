@@ -6,6 +6,7 @@ using EssentialCSharp.Chat.Common.Extensions;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
 using EssentialCSharp.Web.Auth;
+using EssentialCSharp.Web.Controllers;
 using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Extensions;
 using EssentialCSharp.Web.Helpers;
@@ -272,6 +273,8 @@ public partial class Program
         builder.Services.AddSingleton<IListingSourceCodeService, ListingSourceCodeService>();
         builder.Services.AddSingleton<IBookToolQueryService, BookToolQueryService>();
         builder.Services.AddSingleton<IWordCountService, WordCountService>();
+        builder.Services.Configure<ReadingOptions>(builder.Configuration.GetSection(ReadingOptions.SectionName));
+        builder.Services.AddScoped<IReadingProfileService, ReadingProfileService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
 
         // Add AI Chat services using configuration-driven backend selection.
@@ -324,6 +327,10 @@ public partial class Program
                 if (IsMcpTransportRequest(httpContext.Request))
                     return RateLimitPartition.GetNoLimiter("mcp-transport");
 
+                // Reading API endpoints are limited by their own named policies.
+                if (httpContext.Request.Path.StartsWithSegments("/api/reading"))
+                    return RateLimitPartition.GetNoLimiter("reading-api");
+
                 var partitionKey = httpContext.User.Identity?.IsAuthenticated == true
                     ? httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown-user"
                     : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip";
@@ -356,6 +363,26 @@ public partial class Program
                         QueueLimit = 0
                     });
             });
+
+            // Reading tracker: per-user limit for authenticated endpoints, looser per-IP limit for anonymous book-stats.
+            options.AddPolicy(ReadingController.WriteRateLimitPolicy, httpContext =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: $"reading-user:{httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown"}",
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 20,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0
+                    }));
+            options.AddPolicy(ReadingController.PublicRateLimitPolicy, httpContext =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: $"reading-ip:{httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip"}",
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 60,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0
+                    }));
 
             // Combined per-minute burst (10/min) + per-hour cap (150/hr) for book content pages.
             // A scraper cycling through the full ~400-page book needs 2+ hours at minimum.

@@ -12,15 +12,15 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EssentialCSharp.Web.Migrations
 {
     [DbContext(typeof(EssentialCSharpWebContext))]
-    [Migration("20260809064123_AddReadingTimeTracking")]
-    partial class AddReadingTimeTracking
+    [Migration("20261106050505_AddUserReadingProfile")]
+    partial class AddUserReadingProfile
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.10")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -142,45 +142,6 @@ namespace EssentialCSharp.Web.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("McpApiTokens");
-                });
-
-            modelBuilder.Entity("EssentialCSharp.Web.Models.ReadingActivity", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ActiveSeconds")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("Completed")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("PageKey")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("RecordedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("WordsRead")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId", "PageKey");
-
-                    b.HasIndex("UserId", "RecordedAtUtc");
-
-                    b.ToTable("ReadingActivities");
                 });
 
             modelBuilder.Entity("EssentialCSharp.Web.Models.UserReadingProfile", b =>
@@ -370,22 +331,11 @@ namespace EssentialCSharp.Web.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("EssentialCSharp.Web.Models.ReadingActivity", b =>
+            modelBuilder.Entity("EssentialCSharp.Web.Models.UserReadingProfile", b =>
                 {
                     b.HasOne("EssentialCSharp.Web.Areas.Identity.Data.EssentialCSharpWebUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("EssentialCSharp.Web.Models.UserReadingProfile", b =>
-                {
-                    b.HasOne("EssentialCSharp.Web.Areas.Identity.Data.EssentialCSharpWebUser", "User")
-                        .WithOne()
-                        .HasForeignKey("EssentialCSharp.Web.Models.UserReadingProfile", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
