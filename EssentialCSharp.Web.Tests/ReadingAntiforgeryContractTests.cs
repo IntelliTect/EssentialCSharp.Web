@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using EssentialCSharp.Web.Controllers;
 using EssentialCSharp.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,10 +8,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace EssentialCSharp.Web.Tests;
 
 /// <summary>
-/// The reading client treats a rejected antiforgery token differently from a body that fails validation
-/// ("stop tracking until the page reloads" versus "drop this interval"), so the two must stay distinguishable:
-/// a write without a valid antiforgery token is rejected, changes nothing, and the rejection is a problem
-/// document that carries no validation <c>errors</c> member.
+/// The reading client stops tracking when an antiforgery token is rejected but only drops the batch when the
+/// body fails validation, so the two must be distinguishable: a rejected token is flagged with the explicit
+/// <see cref="ReadingAntiforgeryFailureHeaderAttribute.HeaderName"/> header, a validation failure is not.
 /// </summary>
 public class ReadingAntiforgeryContractTests : IntegrationTestBase
 {
@@ -25,27 +25,23 @@ public class ReadingAntiforgeryContractTests : IntegrationTestBase
     [Test]
     [Arguments("missing token")]
     [Arguments("invalid token")]
-    public async Task WriteWithoutAValidAntiforgeryToken_IsRejectedAsNonValidationProblemAndLeavesProfileUnchanged(string tokenKind)
+    public async Task WriteWithoutAValidAntiforgeryToken_IsRejectedWithTheExplicitSignalAndLeavesProfileUnchanged(string tokenKind)
     {
         (string userId, ReadingTestSupport.AntiforgeryCredentials credentials) = await CreateUserWithCredentialsAsync();
         string? token = tokenKind == "invalid token" ? "not-a-valid-token" : null;
 
         using HttpResponseMessage response = await PostSessionAsync(credentials, token, ValidBody);
-        ReadingTestSupport.ProblemResponse problem = await ReadingTestSupport.ReadProblemAsync(response);
 
         using (Assert.Multiple())
         {
-            await Assert.That(problem.Status).IsEqualTo(HttpStatusCode.BadRequest).Because(problem.ToString());
-            await Assert.That(problem.MediaType).IsEqualTo("application/problem+json").Because(problem.ToString());
-            await Assert.That(problem.Root).IsNotNull().Because($"the body is not JSON: {problem}");
-            await Assert.That(problem.HasErrorsMember).IsFalse()
-                .Because($"an antiforgery rejection must not look like a validation failure: {problem}");
+            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+            await Assert.That(AntiforgeryFailureSignal(response)).IsEqualTo("1");
             await Assert.That(await ReadTotalsAsync(userId)).IsEqualTo((SeededWords, SeededSeconds));
         }
     }
 
     [Test]
-    public async Task ValidationFailureWithAValidToken_CarriesAnErrorsMember_UnlikeAnAntiforgeryRejection()
+    public async Task ValidationFailureWithAValidToken_HasNoAntiforgerySignalAndCarriesErrors()
     {
         (string userId, ReadingTestSupport.AntiforgeryCredentials credentials) = await CreateUserWithCredentialsAsync();
 
@@ -55,7 +51,7 @@ public class ReadingAntiforgeryContractTests : IntegrationTestBase
         using (Assert.Multiple())
         {
             await Assert.That(problem.Status).IsEqualTo(HttpStatusCode.BadRequest).Because(problem.ToString());
-            await Assert.That(problem.Root).IsNotNull().Because($"the body is not JSON: {problem}");
+            await Assert.That(AntiforgeryFailureSignal(response)).IsNull();
             await Assert.That(problem.HasErrorsMember).IsTrue().Because(problem.ToString());
             await Assert.That(await ReadTotalsAsync(userId)).IsEqualTo((SeededWords, SeededSeconds));
         }
@@ -71,6 +67,11 @@ public class ReadingAntiforgeryContractTests : IntegrationTestBase
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(await ReadTotalsAsync(userId)).IsEqualTo((SeededWords + 10, SeededSeconds + 10));
     }
+
+    private static string? AntiforgeryFailureSignal(HttpResponseMessage response) =>
+        response.Headers.TryGetValues(ReadingAntiforgeryFailureHeaderAttribute.HeaderName, out IEnumerable<string>? values)
+            ? values.Single()
+            : null;
 
     private async Task<(string UserId, ReadingTestSupport.AntiforgeryCredentials Credentials)> CreateUserWithCredentialsAsync()
     {

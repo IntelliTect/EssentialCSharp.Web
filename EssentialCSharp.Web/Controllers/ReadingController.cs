@@ -10,6 +10,7 @@ namespace EssentialCSharp.Web.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/reading")]
+[ReadingAntiforgeryFailureHeader]
 public class ReadingController(
     IReadingProfileService readingProfileService,
     IWordCountService wordCountService,

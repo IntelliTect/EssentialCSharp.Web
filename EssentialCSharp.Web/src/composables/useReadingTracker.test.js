@@ -46,7 +46,7 @@ const jsonResponse = (status, body, contentType = "application/json") => new Res
     body === undefined ? null : JSON.stringify(body),
     { status, headers: body === undefined ? {} : { "content-type": contentType } });
 const ok = (wpm = 240) => jsonResponse(200, { wpm });
-const ANTIFORGERY_BODY = { title: "Bad Request", status: 400, traceId: "t" };
+const antiforgeryRejection = () => new Response(null, { status: 400, headers: { "X-Antiforgery-Failure": "1" } });
 const VALIDATION_BODY = { title: "Invalid", status: 400, errors: { x: ["bad"] }, traceId: "t" };
 
 const sum = (intervals, key) => intervals.reduce((total, i) => total + i[key], 0);
@@ -423,14 +423,22 @@ describe("useReadingTracker", () => {
             expect(calls).toHaveLength(1);
         });
 
-        it("stops tracking when a 400 problem has no errors member (antiforgery rejection)", async () => {
-            handler = () => jsonResponse(400, ANTIFORGERY_BODY, PROBLEM_JSON);
+        it("stops tracking when the server flags a 400 as an antiforgery rejection", async () => {
+            handler = () => antiforgeryRejection();
             start();
             readThroughPage();
             await advance(FLUSH_S + 1);
             await advance(200);
             await leavePage();
             expect(calls).toHaveLength(1);
+        });
+
+        it("treats an unflagged 400 (e.g. from a proxy) as bad data and keeps tracking", async () => {
+            handler = (n) => (n === 1 ? jsonResponse(400, undefined) : ok());
+            start();
+            readThroughPage();
+            await advance(2 * FLUSH_S + 5);
+            expect(calls.length).toBeGreaterThan(1);
         });
 
         it("drops a batch rejected as invalid, never resends it, but keeps tracking", async () => {
