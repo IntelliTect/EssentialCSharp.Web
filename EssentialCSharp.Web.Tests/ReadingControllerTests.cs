@@ -196,7 +196,7 @@ public class ReadingControllerTests : IntegrationTestBase
         using HttpResponseMessage response = await PostSessionAsync(
             client, Interval(LargePage, ReadingIntervalRequest.MaxWordsRead + 1, 400));
 
-        await ReadingTestSupport.AssertValidationProblemAsync(response, nameof(ReadingIntervalRequest.WordsRead));
+        await ReadingTestSupport.AssertValidationProblemAsync(response, "Intervals[0]", nameof(ReadingIntervalRequest.WordsRead));
         await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
     }
 
@@ -220,9 +220,9 @@ public class ReadingControllerTests : IntegrationTestBase
         using HttpClient client = await CreateAuthenticatedClientAsync(userId);
 
         using HttpResponseMessage response = await PostSessionAsync(
-            client, Interval(LargePage, 100, Options.MaxActiveSecondsPerInterval + 1));
+            client, Interval(LargePage, 10, 10), Interval(LargePage, 100, Options.MaxActiveSecondsPerInterval + 1));
 
-        await ReadingTestSupport.AssertValidationProblemAsync(response, nameof(ReadingIntervalRequest.ActiveSeconds));
+        await ReadingTestSupport.AssertValidationProblemAsync(response, "Intervals[1]", nameof(ReadingIntervalRequest.ActiveSeconds));
         await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
     }
 
@@ -250,6 +250,22 @@ public class ReadingControllerTests : IntegrationTestBase
             client, Enumerable.Repeat(Interval(LargePage, 10, 10), Options.MaxIntervalsPerRequest + 1).ToArray());
 
         await ReadingTestSupport.AssertValidationProblemAsync(response, nameof(ReadingSessionRequest.Intervals));
+        await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
+    }
+
+    [Test]
+    public async Task PostSession_NullIntervalEntry_IsRejectedOnThatEntry()
+    {
+        string userId = await CreateUserWithBaselineProfileAsync();
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/reading/session")
+        {
+            Content = JsonBody($$"""{"intervals":[{"pageKey":"{{LargePage}}","wordsRead":10,"activeSeconds":10},null]}""")
+        };
+
+        using HttpResponseMessage response = await client.SendAsync(request);
+
+        await ReadingTestSupport.AssertValidationProblemAsync(response, "Intervals[1]");
         await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
     }
 
@@ -317,7 +333,7 @@ public class ReadingControllerTests : IntegrationTestBase
         using HttpResponseMessage response = await PostSessionAsync(
             client, Interval(new string('k', ReadingIntervalRequest.PageKeyMaxLength + 1), 10, 10));
 
-        await ReadingTestSupport.AssertValidationProblemAsync(response, nameof(ReadingIntervalRequest.PageKey));
+        await ReadingTestSupport.AssertValidationProblemAsync(response, "Intervals[0]", nameof(ReadingIntervalRequest.PageKey));
         await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
     }
 
@@ -370,7 +386,7 @@ public class ReadingControllerTests : IntegrationTestBase
 
         using HttpResponseMessage response = await PostSessionAsync(client, Interval("no-such-page", 10, 10));
 
-        await ReadingTestSupport.AssertValidationProblemAsync(response, nameof(ReadingIntervalRequest.PageKey));
+        await ReadingTestSupport.AssertValidationProblemAsync(response, "Intervals[0]", nameof(ReadingIntervalRequest.PageKey));
         await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
     }
 
@@ -383,7 +399,7 @@ public class ReadingControllerTests : IntegrationTestBase
         // A page with no countable prose cannot be read, so the service rejects it as it does an unknown key.
         using HttpResponseMessage response = await PostSessionAsync(client, Interval(ReadingTestSupport.EmptyPage, 10, 10));
 
-        await ReadingTestSupport.AssertValidationProblemAsync(response, nameof(ReadingIntervalRequest.PageKey));
+        await ReadingTestSupport.AssertValidationProblemAsync(response, "Intervals[0]", nameof(ReadingIntervalRequest.PageKey));
         await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
     }
 
@@ -396,7 +412,7 @@ public class ReadingControllerTests : IntegrationTestBase
         using HttpResponseMessage response = await PostSessionAsync(
             client, Interval(LargePage, 100, 60), Interval("no-such-page", 10, 10));
 
-        await ReadingTestSupport.AssertValidationProblemAsync(response, nameof(ReadingIntervalRequest.PageKey));
+        await ReadingTestSupport.AssertValidationProblemAsync(response, "Intervals[1]", nameof(ReadingIntervalRequest.PageKey));
         await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
     }
 
