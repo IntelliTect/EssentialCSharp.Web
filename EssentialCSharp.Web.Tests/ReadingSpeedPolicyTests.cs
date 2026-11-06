@@ -3,130 +3,104 @@ using EssentialCSharp.Web.Services;
 namespace EssentialCSharp.Web.Tests;
 
 /// <summary>
-/// Worked examples for the interval outlier rules. All numbers are literal: with a 900 WPM cutoff, a 0.25 slow factor
-/// and a 200 WPM reference reader, intervals under 50 WPM are slow outliers and intervals over 900 WPM are ignored.
+/// The outlier rules for a reported reading interval. Intervals faster than the hard cutoff are ignored; intervals
+/// slower than <c>SlowOutlierFactor * referenceWpm</c> are credited as if read at that speed (so idle time does not
+/// drag the reader's WPM down); everything else is credited as reported. The credited word count never changes.
 /// </summary>
 public class ReadingSpeedPolicyTests
 {
-    private static readonly ReadingOptions Options = new() { HardCutoffWpm = 900, SlowOutlierFactor = 0.25 };
-
     private const double ReferenceWpm = 200;
 
-    [Test]
-    public async Task Evaluate_IntervalAtHardCutoff_IsCreditedInFull()
+    private static ReadingOptions Options => ReadingTestSupport.CreateOptions();
+
+    private static double IntervalWpm(int words, int seconds) => words * 60.0 / seconds;
+
+    public static IEnumerable<(int Words, int Seconds, double ReferenceWpm)> IntervalGrid()
     {
-        // 300 words in 20 s is exactly 900 WPM.
-        ReadingCredit? credit = ReadingSpeedPolicy.Evaluate(300, 20, ReferenceWpm, Options);
-
-        await Assert.That(credit).IsEqualTo(new ReadingCredit(300, 20));
-    }
-
-    [Test]
-    public async Task Evaluate_IntervalJustAboveHardCutoff_IsIgnored()
-    {
-        // 301 words in 20 s is 903 WPM.
-        ReadingCredit? credit = ReadingSpeedPolicy.Evaluate(301, 20, ReferenceWpm, Options);
-
-        await Assert.That(credit).IsNull();
-    }
-
-    [Test]
-    public async Task Evaluate_IntervalClearlyAboveSlowThreshold_IsCreditedInFull()
-    {
-        // 100 words in 60 s is 100 WPM, twice the 50 WPM slow threshold.
-        ReadingCredit? credit = ReadingSpeedPolicy.Evaluate(100, 60, ReferenceWpm, Options);
-
-        await Assert.That(credit).IsEqualTo(new ReadingCredit(100, 60));
-    }
-
-    [Test]
-    public async Task Evaluate_IntervalClearlyBelowSlowThreshold_IsCreditedAsIfReadAtTheThreshold()
-    {
-        // 100 words in 1200 s is 5 WPM. At the 50 WPM threshold those 100 words take 120 s.
-        ReadingCredit? credit = ReadingSpeedPolicy.Evaluate(100, 1200, ReferenceWpm, Options);
-
-        await Assert.That(credit).IsEqualTo(new ReadingCredit(100, 120));
-    }
-
-    [Test]
-    public async Task Evaluate_IntervalJustBelowSlowThreshold_IsClamped()
-    {
-        // 100 words in 130 s is 46.2 WPM, just under the 50 WPM threshold; at 50 WPM those words take 120 s.
-        ReadingCredit? credit = ReadingSpeedPolicy.Evaluate(100, 130, ReferenceWpm, Options);
-
-        await Assert.That(credit).IsEqualTo(new ReadingCredit(100, 120));
-    }
-
-    [Test]
-    public async Task Evaluate_SlowFactorComesFromOptions()
-    {
-        var lenient = new ReadingOptions { HardCutoffWpm = 900, SlowOutlierFactor = 0.5 };
-
-        // Threshold is now 100 WPM: 100 words in 600 s (10 WPM) are credited 60 s.
-        ReadingCredit? credit = ReadingSpeedPolicy.Evaluate(100, 600, ReferenceWpm, lenient);
-
-        await Assert.That(credit).IsEqualTo(new ReadingCredit(100, 60));
-    }
-
-    [Test]
-    public async Task Evaluate_SlowIntervalWithNoReference_IsCreditedInFull()
-    {
-        ReadingCredit? credit = ReadingSpeedPolicy.Evaluate(10, 600, 0, Options);
-
-        await Assert.That(credit).IsEqualTo(new ReadingCredit(10, 600));
-    }
-
-    [Test]
-    public async Task Evaluate_OneWordAgainstVeryFastReference_IsCreditedExactlyOneSecond()
-    {
-        // Threshold 25 000 WPM: one word takes 0.0024 s, rounded up to a whole second.
-        ReadingCredit? credit = ReadingSpeedPolicy.Evaluate(1, 3600, 100_000, Options);
-
-        await Assert.That(credit).IsEqualTo(new ReadingCredit(1, 1));
-    }
-
-    [Test]
-    [Arguments(0, 10)]
-    [Arguments(10, 0)]
-    [Arguments(-5, 10)]
-    [Arguments(10, -5)]
-    public async Task Evaluate_NonPositiveInput_IsIgnored(int words, int seconds)
-    {
-        ReadingCredit? credit = ReadingSpeedPolicy.Evaluate(words, seconds, ReferenceWpm, Options);
-
-        await Assert.That(credit).IsNull();
-    }
-
-    [Test]
-    public async Task Evaluate_AcrossManyIntervals_NeverCreditsMoreTimeThanElapsedOrLessSpeedThanTheFloor()
-    {
-        const double floorWpm = 50; // 0.25 * 200
-        var failures = new List<string>();
-
-        foreach (int words in new[] { 100, 400, 1000, 5000 })
+        foreach (int words in new[] { 1, 100, 400, 1000, 5000 })
         {
-            foreach (int seconds in new[] { 5, 30, 60, 300, 1800, 3600 })
+            foreach (int seconds in new[] { 1, 5, 30, 60, 300, 1800, 3600 })
             {
-                ReadingCredit? credit = ReadingSpeedPolicy.Evaluate(words, seconds, ReferenceWpm, Options);
-                double intervalWpm = words * 60.0 / seconds;
-                if (credit is null)
+                foreach (double reference in new double[] { 0, 50, ReferenceWpm, 1000 })
                 {
-                    if (intervalWpm <= 900)
-                    {
-                        failures.Add($"{words}w/{seconds}s ({intervalWpm:F0} WPM) was ignored");
-                    }
-                    continue;
+                    yield return (words, seconds, reference);
                 }
-
-                if (credit.Value.Words != words) failures.Add($"{words}w/{seconds}s credited {credit.Value.Words} words");
-                if (credit.Value.Seconds > seconds) failures.Add($"{words}w/{seconds}s credited {credit.Value.Seconds} s, more than elapsed");
-                if (credit.Value.Seconds < 1) failures.Add($"{words}w/{seconds}s credited no time");
-                double creditedWpm = words * 60.0 / credit.Value.Seconds;
-                // Rounding the clamped time up to a whole second may land slightly under the floor, never meaningfully so.
-                if (creditedWpm < floorWpm * 0.99) failures.Add($"{words}w/{seconds}s credited at {creditedWpm:F1} WPM, below the {floorWpm} WPM floor");
             }
         }
+    }
 
-        await Assert.That(failures).IsEmpty();
+    [Test]
+    [MethodDataSource(nameof(IntervalGrid))]
+    public async Task Evaluate_UpholdsTheCreditInvariants(int words, int seconds, double referenceWpm)
+    {
+        ReadingOptions options = Options;
+        double intervalWpm = IntervalWpm(words, seconds);
+
+        ReadingCredit? credit = ReadingSpeedPolicy.Evaluate(words, seconds, referenceWpm, options);
+
+        if (intervalWpm > options.HardCutoffWpm)
+        {
+            await Assert.That(credit).IsNull().Because($"{intervalWpm:F0} WPM is above the {options.HardCutoffWpm} WPM cutoff");
+            return;
+        }
+
+        await Assert.That(credit).IsNotNull();
+        ReadingCredit value = credit!.Value;
+        double slowThreshold = options.SlowOutlierFactor * referenceWpm;
+        bool isSlowOutlier = referenceWpm > 0 && intervalWpm < slowThreshold;
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(value.Words).IsEqualTo(words);
+            await Assert.That(value.Seconds).IsBetween(1, seconds);
+            if (isSlowOutlier)
+            {
+                // Credited as if read at the slow threshold: never faster than it, and at most one whole-second rounding slower.
+                double secondsAtThreshold = words * 60.0 / slowThreshold;
+                await Assert.That((double)value.Seconds).IsGreaterThanOrEqualTo(secondsAtThreshold);
+                await Assert.That((double)value.Seconds).IsLessThan(secondsAtThreshold + 1);
+            }
+            else
+            {
+                await Assert.That(value.Seconds).IsEqualTo(seconds);
+            }
+        }
+    }
+
+    /// <summary>Worked examples; <c>null</c> means the interval is ignored, otherwise the credited seconds (words are unchanged).</summary>
+    [Test]
+    // Hard cutoff 900 WPM: 300 words in 20 s is exactly 900 WPM (kept), 301 words is 903 WPM (ignored).
+    [Arguments(300, 20, 200.0, 900, 0.25, 20)]
+    [Arguments(301, 20, 200.0, 900, 0.25, null)]
+    [Arguments(301, 20, 0.0, 900, 0.25, null)]
+    // Slow threshold 0.25 * 200 = 50 WPM: exactly at it is kept; clearly or slightly below it is clamped to the threshold speed.
+    [Arguments(50, 60, 200.0, 900, 0.25, 60)]
+    [Arguments(100, 60, 200.0, 900, 0.25, 60)]
+    [Arguments(100, 130, 200.0, 900, 0.25, 120)]
+    [Arguments(100, 1200, 200.0, 900, 0.25, 120)]
+    // The slow factor comes from the options: a 0.5 factor makes the threshold 100 WPM.
+    [Arguments(100, 600, 200.0, 900, 0.5, 60)]
+    // A factor of 0 disables slow-outlier handling; a factor of 1 treats anything below the reference as slow.
+    [Arguments(10, 600, 200.0, 900, 0.0, 600)]
+    [Arguments(100, 60, 200.0, 900, 1.0, 30)]
+    [Arguments(100, 30, 200.0, 900, 1.0, 30)]
+    // No reference speed: nothing is a slow outlier.
+    [Arguments(10, 600, 0.0, 900, 0.25, 600)]
+    // One word against a very fast reference rounds up to one whole second.
+    [Arguments(1, 3600, 100_000.0, 900, 0.25, 1)]
+    // Non-positive input is ignored.
+    [Arguments(0, 10, 200.0, 900, 0.25, null)]
+    [Arguments(10, 0, 200.0, 900, 0.25, null)]
+    [Arguments(-5, 10, 200.0, 900, 0.25, null)]
+    [Arguments(10, -5, 200.0, 900, 0.25, null)]
+    public async Task Evaluate_WorkedExamples(
+        int words, int seconds, double referenceWpm, int hardCutoffWpm, double slowFactor, int? expectedSeconds)
+    {
+        var options = new ReadingOptions { HardCutoffWpm = hardCutoffWpm, SlowOutlierFactor = slowFactor };
+
+        ReadingCredit? credit = ReadingSpeedPolicy.Evaluate(words, seconds, referenceWpm, options);
+
+        ReadingCredit? expected = expectedSeconds is { } s ? new ReadingCredit(words, s) : null;
+        await Assert.That(credit).IsEqualTo(expected);
     }
 }
