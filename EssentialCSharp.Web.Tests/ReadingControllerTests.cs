@@ -46,11 +46,10 @@ public class ReadingControllerTests : IntegrationTestBase
     private sealed class FakeWordCountService : IWordCountService
     {
         public int GetPageWordCount(string pageKey) => PageWordCounts.GetValueOrDefault(pageKey);
-        public int GetChapterWordCount(int chapterNumber) =>
-            ChapterWordCounts.Where(c => c.ChapterNumber == chapterNumber).Sum(c => c.WordCount);
         public int GetBookWordCount() => ChapterWordCounts.Sum(c => c.WordCount);
-        public int GetWordsBeforePage(string pageKey) => 0;
-        public int GetChapterStartWords(string pageKey) => 0;
+        public bool IsReady => true;
+        public PageWordStats? GetPageStats(string pageKey) =>
+            PageWordCounts.TryGetValue(pageKey, out int words) ? new PageWordStats(words, words, 0, 0, GetBookWordCount()) : null;
         public IReadOnlyList<ChapterWordCount> GetChapterWordCounts() => ChapterWordCounts;
     }
 
