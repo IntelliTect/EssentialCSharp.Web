@@ -1,327 +1,201 @@
 /**
- * useReadingTracker — Kindle-style active-reading time tracker.
+ * useReadingTracker - thin orchestrator for the reading-time feature.
  *
- * State machine: READING → IDLE (after IDLE_THRESHOLD s of no input)
- *                        → HIDDEN (tab not visible)
- * Only accumulates activeSeconds while in READING state.
+ * Runs once at app level (see App.vue) and shares state with the header widget
+ * through provide/inject (READING_TRACKER_KEY). Pages are full server-rendered
+ * reloads, so flushing is driven by the page lifecycle (visibilitychange to
+ * hidden, pagehide), never by component unmount.
  *
- * Persists a rolling aggregate to:
- *   - Server (POST /api/reading/session) when authenticated.
- *   - localStorage key "readingProfile" for anonymous users and as a backup.
+ *  - Anonymous visitors are not tracked: they only get a scroll fraction and the
+ *    DEFAULT_WPM estimate. No timers, input listeners or requests.
+ *  - Signed-in visitors: the server is authoritative for WPM (fetched once per
+ *    page load) and receives delta-based session intervals.
  *
- * On first authenticated page load, uploads the localStorage aggregate to the
- * server and clears local storage (one-time sync after login).
+ * Pieces: useActivityState (idle/visibility/focus/input), services/readingApi
+ * (fetch + CSRF + typed results), utils/readingProgress (pure scroll math).
+ */
+import { onScopeDispose, readonly, ref } from "vue";
+import { STATE_READING, useActivityState } from "./useActivityState.js";
+import {
+    STATUS_AUTH_FAILURE,
+    STATUS_OK,
+    fetchProfile,
+    postSession
+} from "../services/readingApi.js";
+import {
+    COMPLETION_THRESHOLD,
+    DEFAULT_WPM,
+    MAX_CREDIT_WPM,
+    MAX_TICK_DELTA_S,
+    PERIODIC_FLUSH_ACTIVE_S,
+    TICK_INTERVAL_MS
+} from "../utils/readingConstants.js";
+import {
+    creditWords,
+    displayFraction,
+    findContentElement,
+    fractionAboveViewportBottom,
+    fractionAboveViewportTop,
+    measureContent
+} from "../utils/readingProgress.js";
+
+/** Injection key for the tracker state consumed by ReadingTimeRemaining. */
+export const READING_TRACKER_KEY = Symbol("readingTracker");
+
+/**
+ * @typedef {Object} ReadingTracker
+ * @property {import("vue").Ref<number>} wpm words per minute used for estimates
+ * @property {import("vue").Ref<number>} scrollFraction 0..1 progress through the page content
+ * @property {import("../utils/readingContext.js").ReadingContext} context
  */
 
-import { ref, onMounted, onBeforeUnmount, readonly } from "vue";
-import { getDocumentScrollFraction } from "../utils/readingProgress.js";
-import { applyOutlierRules, deriveWpm, getSessionWordsRead } from "../utils/readingAlgorithm.js";
-
-// ----- Constants -----
-const IDLE_THRESHOLD_S = 300; // 5 minutes
-const TICK_INTERVAL_MS = 1000; // 1 second timer
-const DEFAULT_WPM = 200; // cold-start display default
-const MOUSEMOVE_THROTTLE_MS = 1000;
-const LOCAL_STORAGE_KEY = "readingProfile";
-
-// ----- States -----
-const STATE_READING = "READING";
-const STATE_IDLE = "IDLE";
-const STATE_HIDDEN = "HIDDEN";
-
-// ----- localStorage helpers -----
-
-function loadLocalProfile() {
-    try {
-        const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (!raw) return { totalWords: 0, totalActiveSeconds: 0 };
-        return JSON.parse(raw);
-    } catch {
-        return { totalWords: 0, totalActiveSeconds: 0 };
-    }
-}
-
-function saveLocalProfile(profile) {
-    try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(profile));
-    } catch {
-        // Ignore storage errors (private browsing quota exceeded, etc.)
-    }
-}
-
-function clearLocalProfile() {
-    try {
-        localStorage.removeItem(LOCAL_STORAGE_KEY);
-    } catch {
-        // Ignore
-    }
-}
-
-// ----- API helpers -----
-
-async function fetchServerProfile() {
-    try {
-        const res = await fetch("/api/reading/profile");
-        if (!res.ok) return null;
-        return await res.json();
-    } catch {
-        return null;
-    }
-}
-
-async function postSession(intervals, { keepalive = false } = {}) {
-    if (!intervals || intervals.length === 0) return null;
-    try {
-        const res = await fetch("/api/reading/session", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "RequestVerificationToken": document.querySelector('meta[name="csrf-token"]')?.content ?? ""
-            },
-            body: JSON.stringify(intervals),
-            keepalive
-        });
-        if (!res.ok) return null;
-        return await res.json();
-    } catch {
-        return null;
-    }
-}
-
-// ----- Composable -----
-
-export function useReadingTracker() {
-    // Reactive WPM shown in the UI.
+/**
+ * @param {import("../utils/readingContext.js").ReadingContext} context
+ * @returns {ReadingTracker}
+ */
+export function useReadingTracker(context) {
     const wpm = ref(DEFAULT_WPM);
-    const activeSeconds = ref(0);
+    const scrollFraction = ref(0);
 
-    // Reading state machine.
-    let state = document.visibilityState === "visible" ? STATE_READING : STATE_HIDDEN;
-    let lastActivityAt = Date.now();
-    let tickIntervalId = null;
-    let lastMousemoveAt = 0;
+    const tracking = context.isAuthenticated && context.pageWords > 0;
+    const activity = tracking ? useActivityState() : null;
 
-    // Scroll tracking. Session credit is measured from the initial position, so
-    // deep links and restored scroll positions do not credit skipped content.
-    let sessionStartScrollFraction = getDocumentScrollFraction();
-    let maxScrollFraction = sessionStartScrollFraction;
-    let hasUserInput = false;
+    let disposed = false;
+    let authFailed = false;
+    let inFlight = false;
+    let rafId = 0;
+    let tickId = 0;
 
-    // Page context (from window globals set by _Layout.cshtml).
-    const pageKey = window.CURRENT_PAGE_KEY ?? null;
-    const pageWordCount = window.PAGE_WORD_COUNT ?? 0;
-    const isAuthenticated = Boolean(window.IS_AUTHENTICATED);
+    // Unsent active time (fractional seconds) and scroll baseline/high-water
+    // mark, both as fractions of the page content. Flushes send the delta and
+    // rebase these so nothing is ever sent twice.
+    let pendingSeconds = 0;
+    let baseline = 0;
+    let maxBottom = 0;
+    let lastTickAt = performance.now();
 
-    // In-session server profile for reference WPM (loaded on mount).
-    let serverProfile = null;
+    const contentElement = findContentElement();
 
-    // ----- Scroll fraction -----
-
-    // ----- State machine -----
-
-    function markActivity() {
-        lastActivityAt = Date.now();
-        if (state === STATE_IDLE || state === STATE_HIDDEN) {
-            state = STATE_READING;
+    function updateProgress() {
+        const measure = measureContent(contentElement);
+        scrollFraction.value = displayFraction(measure);
+        const bottom = fractionAboveViewportBottom(measure);
+        if (!activity?.hasUserInput()) {
+            // Anchors / scroll restoration before real input only move the baseline.
+            baseline = fractionAboveViewportTop(measure);
+            maxBottom = bottom;
+        } else if (bottom > maxBottom) {
+            maxBottom = bottom;
         }
     }
 
-    function markUserInput() {
-        hasUserInput = true;
-        markActivity();
+    function scheduleProgressUpdate() {
+        if (rafId) return;
+        rafId = requestAnimationFrame(() => {
+            rafId = 0;
+            if (!disposed) updateProgress();
+        });
+    }
+
+    function tick() {
+        const now = performance.now();
+        const deltaS = Math.min((now - lastTickAt) / 1000, MAX_TICK_DELTA_S);
+        lastTickAt = now;
+        if (activity.getState() === STATE_READING) pendingSeconds += deltaS;
+        updateProgress();
+        if (pendingSeconds >= PERIODIC_FLUSH_ACTIVE_S) void flush();
+    }
+
+    /**
+     * Sends the unsent delta. Lifecycle flushes (keepalive) always send; the
+     * periodic one yields to an in-flight request.
+     */
+    async function flush({ keepalive = false } = {}) {
+        if (!tracking || authFailed || (inFlight && !keepalive)) return;
+
+        updateProgress();
+        const activeSeconds = Math.floor(pendingSeconds);
+        if (activeSeconds < 1) return;
+
+        const wordsRead = creditWords(
+            context.pageWords, maxBottom - baseline, activeSeconds, MAX_CREDIT_WPM);
+        // Nothing progressed: keep the time pending for when the reader scrolls.
+        if (wordsRead <= 0) return;
+
+        const interval = {
+            pageKey: context.pageKey,
+            activeSeconds,
+            wordsRead,
+            completed: maxBottom >= COMPLETION_THRESHOLD
+        };
+
+        // Rebase before sending so a second flush cannot re-send this delta.
+        pendingSeconds -= activeSeconds;
+        baseline = maxBottom;
+
+        inFlight = true;
+        const result = await postSession([interval], { keepalive });
+        inFlight = false;
+        // Failures are dropped (no retry queue), but an expired session stops further posts.
+        if (result.status === STATUS_AUTH_FAILURE) authFailed = true;
     }
 
     function onVisibilityChange() {
-        if (document.visibilityState !== "visible") {
-            state = STATE_HIDDEN;
+        if (document.visibilityState === "hidden") {
+            void flush({ keepalive: true });
         } else {
-            // Tab became visible — READING if recently active, else IDLE.
-            const idleDuration = (Date.now() - lastActivityAt) / 1000;
-            state = idleDuration <= IDLE_THRESHOLD_S ? STATE_READING : STATE_IDLE;
+            lastTickAt = performance.now();
         }
     }
 
-    function onMousemove() {
-        const now = Date.now();
-        if (now - lastMousemoveAt >= MOUSEMOVE_THROTTLE_MS) {
-            lastMousemoveAt = now;
-            markUserInput();
-        }
-    }
-
-    function onScroll() {
-        const fraction = getDocumentScrollFraction();
-        if (!hasUserInput) {
-            // Browser anchor/restoration scrolls before reader input reset the baseline.
-            sessionStartScrollFraction = fraction;
-            maxScrollFraction = fraction;
-            return;
-        }
-
-        markActivity();
-        if (fraction > maxScrollFraction) {
-            maxScrollFraction = fraction;
-        }
-    }
-
-    // ----- Tick -----
-
-    function tick() {
-        const now = Date.now();
-        const idleDuration = (now - lastActivityAt) / 1000;
-
-        if (state === STATE_READING && idleDuration > IDLE_THRESHOLD_S) {
-            state = STATE_IDLE;
-        }
-
-        if (state === STATE_READING) {
-            activeSeconds.value++;
-        }
-    }
-
-    // ----- Flush (send data on navigation away / unmount) -----
-
-    async function flush({ keepalive = false } = {}) {
-        if (!pageKey || activeSeconds.value <= 0 || pageWordCount <= 0) return;
-
-        const wordsRead = getSessionWordsRead(
-            pageWordCount,
-            sessionStartScrollFraction,
-            maxScrollFraction);
-        const scrollFraction = maxScrollFraction;
-        // Near-bottom (within 5%) = completed.
-        const completed = scrollFraction >= 0.95;
-
-        const interval = {
-            pageKey,
-            activeSeconds: activeSeconds.value,
-            wordsRead,
-            completed
-        };
-
-        if (isAuthenticated) {
-            const updated = await postSession([interval], { keepalive });
-            if (updated) {
-                serverProfile = updated;
-                if (updated.wpm) {
-                    wpm.value = updated.wpm;
-                }
-            }
-        } else {
-            // Update localStorage profile with the same outlier rules as the server.
-            const local = loadLocalProfile();
-            const totalWords = local.totalWords || 0;
-            const totalActiveSeconds = local.totalActiveSeconds || 0;
-            const accepted = applyOutlierRules(
-                wordsRead,
-                activeSeconds.value,
-                deriveWpm(totalWords, totalActiveSeconds));
-            if (!accepted) return;
-
-            local.totalWords = totalWords + accepted.words;
-            local.totalActiveSeconds = totalActiveSeconds + accepted.seconds;
-            saveLocalProfile(local);
-
-            const localWpm = deriveWpm(local.totalWords, local.totalActiveSeconds);
-            if (localWpm > 0) {
-                wpm.value = localWpm;
-            }
-        }
-    }
-
-    // ----- One-time sync: localStorage → server on first authenticated load -----
-
-    async function syncLocalToServer() {
-        if (!isAuthenticated) return;
-
-        const local = loadLocalProfile();
-        if (!local || (local.totalWords === 0 && local.totalActiveSeconds === 0)) return;
-
-        // Only upload if server has no data yet.
-        const profile = await fetchServerProfile();
-        if (profile && (profile.totalWordsRead > 0 || profile.totalActiveSeconds > 0)) {
-            // Server already has data — just clear local.
-            clearLocalProfile();
-            return;
-        }
-
-        // Upload local aggregate as a synthetic interval.
-        if (local.totalWords <= 0 || local.totalActiveSeconds <= 0) return;
-
-        const uploaded = await postSession([{
-            pageKey: "__localStorage_sync__",
-            activeSeconds: local.totalActiveSeconds,
-            wordsRead: local.totalWords,
-            completed: false
-        }]);
-        if (!uploaded) return;
-
-        clearLocalProfile();
-    }
-
-    function onBeforeUnload() {
+    function onPageHide() {
         void flush({ keepalive: true });
     }
 
-    // ----- Init -----
+    function onPageShow(event) {
+        if (!event.persisted) return;
+        // Restored from the back/forward cache: start fresh and IDLE.
+        activity?.reset();
+        lastTickAt = performance.now();
+        updateProgress();
+    }
 
-    onMounted(async () => {
-        state = document.visibilityState === "visible" ? STATE_READING : STATE_HIDDEN;
-        if (!hasUserInput) {
-            sessionStartScrollFraction = getDocumentScrollFraction();
-            maxScrollFraction = sessionStartScrollFraction;
+    async function loadProfile() {
+        const result = await fetchProfile();
+        if (disposed) return;
+        if (result.status === STATUS_AUTH_FAILURE) {
+            authFailed = true;
+        } else if (result.status === STATUS_OK && result.data?.wpm > 0) {
+            wpm.value = result.data.wpm;
         }
+    }
 
-        tickIntervalId = setInterval(tick, TICK_INTERVAL_MS);
+    // Progress display works for everyone.
+    const onScrollOrResize = () => scheduleProgressUpdate();
+    window.addEventListener("scroll", onScrollOrResize, { passive: true });
+    window.addEventListener("resize", onScrollOrResize, { passive: true });
+    window.addEventListener("load", onScrollOrResize);
+    updateProgress();
 
+    if (tracking) {
         document.addEventListener("visibilitychange", onVisibilityChange);
-        document.addEventListener("mousemove", onMousemove, { passive: true });
-        document.addEventListener("keydown", markUserInput);
-        document.addEventListener("wheel", markUserInput, { passive: true });
-        window.addEventListener("scroll", onScroll, { passive: true });
-        document.addEventListener("touchstart", markUserInput, { passive: true });
-        document.addEventListener("pointerdown", markUserInput);
-        window.addEventListener("focus", markActivity);
-        window.addEventListener("beforeunload", onBeforeUnload);
+        window.addEventListener("pagehide", onPageHide);
+        window.addEventListener("pageshow", onPageShow);
+        tickId = window.setInterval(tick, TICK_INTERVAL_MS);
+        void loadProfile();
+    }
 
-        // Load initial WPM.
-        if (isAuthenticated) {
-            // Try to sync localStorage first (one-time, idempotent).
-            await syncLocalToServer();
-
-            serverProfile = await fetchServerProfile();
-            if (serverProfile?.wpm) {
-                wpm.value = serverProfile.wpm;
-            }
-        } else {
-            const local = loadLocalProfile();
-            const localWpm = local.totalActiveSeconds > 0
-                ? local.totalWords / (local.totalActiveSeconds / 60)
-                : 0;
-            if (localWpm > 0) {
-                wpm.value = localWpm;
-            }
-        }
-    });
-
-    onBeforeUnmount(async () => {
-        clearInterval(tickIntervalId);
-
+    onScopeDispose(() => {
+        disposed = true;
+        clearInterval(tickId);
+        if (rafId) cancelAnimationFrame(rafId);
+        window.removeEventListener("scroll", onScrollOrResize);
+        window.removeEventListener("resize", onScrollOrResize);
+        window.removeEventListener("load", onScrollOrResize);
         document.removeEventListener("visibilitychange", onVisibilityChange);
-        document.removeEventListener("mousemove", onMousemove);
-        document.removeEventListener("keydown", markUserInput);
-        document.removeEventListener("wheel", markUserInput);
-        window.removeEventListener("scroll", onScroll);
-        document.removeEventListener("touchstart", markUserInput);
-        document.removeEventListener("pointerdown", markUserInput);
-        window.removeEventListener("focus", markActivity);
-        window.removeEventListener("beforeunload", onBeforeUnload);
-
-        await flush();
+        window.removeEventListener("pagehide", onPageHide);
+        window.removeEventListener("pageshow", onPageShow);
     });
 
-    return {
-        wpm: readonly(wpm),
-        activeSeconds: readonly(activeSeconds)
-    };
+    return { wpm: readonly(wpm), scrollFraction: readonly(scrollFraction), context };
 }

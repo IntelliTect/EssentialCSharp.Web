@@ -21,6 +21,7 @@ export default defineConfig({
         rollupOptions: {
             input: {
                 "site-shell": resolve(rootDir, "src", "main.js"),
+                "reading-reset": resolve(rootDir, "src", "reading-reset.js"),
                 "password-strength": resolve(rootDir, "wwwroot", "js", "password-strength.js")
             },
             output: {
