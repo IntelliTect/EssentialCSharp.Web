@@ -31,6 +31,10 @@ public class WordCountServiceTests
     [Arguments("<div class=\"element-section code-block-section\"><div class=\"code-block-heading\">Listing 1.16: Using it</div><div class=\"code-line\">public&nbsp;class HeyYou</div></div>")]
     [Arguments("<div><section><pre>deeply nested code here</pre></section></div>")]
     [Arguments("<div class=\"code-block-section\"><pre>pre inside a generated listing</pre><script>x()</script></div>")]
+    [Arguments("<div class=\"code-block-section\"><div class=\"code-block-section\">inner listing words</div>outer listing words</div>")]
+    [Arguments("<PRE>UPPERCASE TAG LISTING</PRE>")]
+    [Arguments("<SCRIPT>var upper = 1;</SCRIPT>")]
+    [Arguments("<!-- a comment holding several words -->")]
     public async Task CodeListingsAndNonProseTags_DoNotAddToTheCount(string excludedHtml)
     {
         using TempContentDirectory dir = new();
@@ -39,6 +43,17 @@ public class WordCountServiceTests
         WordCountService service = await dir.BuildAsync(Map("page", "page.html", 1, 1));
 
         await Assert.That(service.GetPageWordCount("page")).IsEqualTo(2 * BaselineWords);
+    }
+
+    [Test]
+    public async Task UnclosedPreAtEndOfPage_ExcludesItsContent()
+    {
+        using TempContentDirectory dir = new();
+        dir.Write("page.html", $"<html><body>{Baseline}<pre>unclosed listing words here</body></html>");
+
+        WordCountService service = await dir.BuildAsync(Map("page", "page.html", 1, 1));
+
+        await Assert.That(service.GetPageWordCount("page")).IsEqualTo(BaselineWords);
     }
 
     [Test]
@@ -80,7 +95,23 @@ public class WordCountServiceTests
     }
 
     [Test]
-    public async Task UnknownKeyHasNoStats_ButMappedKeyWithMissingFileCountsZero()
+    public async Task UnknownKey_HasNoStats()
+    {
+        using TempContentDirectory dir = new();
+        dir.Write("present.html", $"<body>{Baseline}</body>");
+
+        WordCountService service = await dir.BuildAsync(Map("present", "present.html", 1, 1));
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(service.GetPageStats("not-a-key")).IsNull();
+            await Assert.That(service.GetPageWordCount("not-a-key")).IsEqualTo(0);
+            await Assert.That(service.GetPageWordCount("present")).IsEqualTo(BaselineWords);
+        }
+    }
+
+    [Test]
+    public async Task MappedKeyWithMissingFile_CountsZeroKeepsStatsAndLogsAWarning()
     {
         using TempContentDirectory dir = new();
         dir.Write("present.html", $"<body>{Baseline}</body>");
@@ -93,26 +124,23 @@ public class WordCountServiceTests
 
         using (Assert.Multiple())
         {
-            await Assert.That(service.GetPageStats("not-a-key")).IsNull();
-            await Assert.That(service.GetPageWordCount("not-a-key")).IsEqualTo(0);
             await Assert.That(service.GetPageStats("missing")).IsNotNull();
             await Assert.That(service.GetPageWordCount("missing")).IsEqualTo(0);
             await Assert.That(service.GetPageWordCount("present")).IsEqualTo(BaselineWords);
-            await Assert.That(logger.Warnings).HasSingleItem();
+            await Assert.That(logger.Warnings).Contains(w => w.Contains("nonexistent.html", StringComparison.Ordinal));
         }
     }
 
     [Test]
-    public async Task UnreadableFile_IsLoggedAndDoesNotAffectOtherPages()
+    public async Task PathThatIsNotAReadableFile_IsLoggedAndDoesNotAffectOtherPages()
     {
         using TempContentDirectory dir = new();
         dir.Write("a.html", $"<body>{Baseline}</body>");
-        dir.Write("locked.html", $"<body>{Baseline}</body>");
         dir.Write("c.html", $"<body>{Baseline}</body>");
+        // A directory where a page file should be: not readable as a page on any operating system.
+        Directory.CreateDirectory(dir.PathOf("locked.html"));
         CapturingLogger<WordCountService> logger = new();
 
-        // An exclusive handle makes the read fail with an IOException.
-        using FileStream exclusive = new(dir.PathOf("locked.html"), FileMode.Open, FileAccess.Read, FileShare.None);
         WordCountService service = await dir.BuildAsync(
             logger,
             Map("a", "a.html", 1, 1),
@@ -126,7 +154,7 @@ public class WordCountServiceTests
             await Assert.That(service.GetPageWordCount("locked")).IsEqualTo(0);
             await Assert.That(service.GetPageWordCount("c")).IsEqualTo(BaselineWords);
             await Assert.That(service.GetPageStats("c")?.WordsBeforePage).IsEqualTo(BaselineWords);
-            await Assert.That(logger.Warnings).HasSingleItem();
+            await Assert.That(logger.Warnings).Contains(w => w.Contains("locked.html", StringComparison.Ordinal));
         }
     }
 
@@ -146,7 +174,7 @@ public class WordCountServiceTests
         {
             await Assert.That(service.GetPageStats("escape")).IsNull();
             await Assert.That(service.GetPageWordCount("ok")).IsEqualTo(BaselineWords);
-            await Assert.That(logger.Warnings).HasSingleItem();
+            await Assert.That(logger.Warnings).Contains(w => w.Contains("escape", StringComparison.Ordinal));
         }
     }
 
