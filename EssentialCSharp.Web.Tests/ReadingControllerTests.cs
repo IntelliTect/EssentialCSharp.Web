@@ -1,354 +1,587 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.RegularExpressions;
+using System.Text;
+using System.Text.Json;
+using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Controllers;
 using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Models;
+using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Tests;
 
 public class ReadingControllerTests : IntegrationTestBase
 {
-    [Test]
-    public async Task GetBookStats_IsPublic_Returns200()
+    // Baseline profile: 1200 words in 360 seconds = 200 WPM.
+    private const long BaselineWords = 1200;
+    private const long BaselineSeconds = 360;
+    private const double BaselineWpm = 200;
+
+    // The content package is a placeholder in many environments, so use fixed, known page word counts.
+    private static readonly Dictionary<string, int> PageWordCounts = new()
     {
-        using HttpClient client = CreateClientWithoutAutoRedirect();
-        using HttpResponseMessage response = await client.GetAsync("/api/reading/book-stats");
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        ["reading-test-small"] = 150,
+        ["reading-test-large"] = 5000
+    };
+
+    private static readonly ChapterWordCount[] ChapterWordCounts =
+    [
+        new(1, 3000),
+        new(2, 2150)
+    ];
+
+    protected override void ConfigureTestServices(IServiceCollection services)
+    {
+        services.RemoveAll<IWordCountService>();
+        services.AddSingleton<IWordCountService>(new FakeWordCountService());
     }
 
-    [Test]
-    public async Task GetBookStats_ReturnsExpectedShape()
+    private sealed class FakeWordCountService : IWordCountService
     {
-        using HttpClient client = CreateClientWithoutAutoRedirect();
-        using HttpResponseMessage response = await client.GetAsync("/api/reading/book-stats");
-
-        var body = await response.Content.ReadFromJsonAsync<BookStatsResponse>();
-        await Assert.That(body).IsNotNull();
-        await Assert.That(body.TotalWordCount).IsGreaterThanOrEqualTo(0);
-        await Assert.That(body.Chapters).IsNotNull();
+        public int GetPageWordCount(string pageKey) => PageWordCounts.GetValueOrDefault(pageKey);
+        public int GetChapterWordCount(int chapterNumber) =>
+            ChapterWordCounts.Where(c => c.ChapterNumber == chapterNumber).Sum(c => c.WordCount);
+        public int GetBookWordCount() => ChapterWordCounts.Sum(c => c.WordCount);
+        public int GetWordsBeforePage(string pageKey) => 0;
+        public int GetChapterStartWords(string pageKey) => 0;
+        public IReadOnlyList<ChapterWordCount> GetChapterWordCounts() => ChapterWordCounts;
     }
 
-    // ---- profile (requires auth) ----
+    private ReadingOptions Options =>
+        Factory.Services.GetRequiredService<IOptions<ReadingOptions>>().Value;
+
+    // ---- authentication ----
 
     [Test]
-    public async Task GetProfile_Anonymous_Returns401()
+    [Arguments("GET", "/api/reading/profile")]
+    [Arguments("POST", "/api/reading/session")]
+    [Arguments("POST", "/api/reading/reset")]
+    public async Task ProtectedEndpoints_Anonymous_Return401WithoutRedirect(string method, string url)
     {
+        PageInfo page = GetLargestPage();
         using HttpClient client = CreateClientWithoutAutoRedirect();
-        using HttpResponseMessage response = await client.GetAsync("/api/reading/profile");
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
-    }
-
-    // ---- POST session (requires auth) ----
-
-    [Test]
-    public async Task PostSession_Anonymous_Returns401()
-    {
-        using HttpClient client = CreateClientWithoutAutoRedirect();
-        var intervals = new[]
+        using var request = new HttpRequestMessage(new HttpMethod(method), url);
+        if (method == "POST")
         {
-            new ReadingController.ReadingIntervalDto("page1", 60, 100, false)
+            request.Content = JsonBody($$"""{"intervals":[{"pageKey":"{{page.Key}}","wordsRead":10,"activeSeconds":10}]}""");
+        }
+
+        using HttpResponseMessage response = await client.SendAsync(request);
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
+            await Assert.That(response.Headers.Location).IsNull();
+        }
+    }
+
+    [Test]
+    [Arguments("/api/reading/session")]
+    [Arguments("/api/reading/reset")]
+    public async Task WriteEndpoints_WithoutAntiforgeryToken_AreRejectedAndDoNotChangeProfile(string url)
+    {
+        PageInfo page = GetLargestPage();
+        string userId = await CreateUserWithBaselineProfileAsync();
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId, includeAntiforgery: false);
+        using var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = JsonBody($$"""{"intervals":[{"pageKey":"{{page.Key}}","wordsRead":10,"activeSeconds":10}]}""")
         };
-        using HttpResponseMessage response = await client.PostAsJsonAsync("/api/reading/session", intervals);
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
+
+        using HttpResponseMessage response = await client.SendAsync(request);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+        await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
     }
 
-    // ---- POST reset (requires auth) ----
+    // ---- GET profile ----
 
     [Test]
-    public async Task PostReset_Anonymous_Returns401()
+    public async Task GetProfile_UserWithoutData_ReturnsZeroTotalsAndNullWpm()
     {
-        using HttpClient client = CreateClientWithoutAutoRedirect();
+        string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-empty");
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+
+        using HttpResponseMessage response = await client.GetAsync("/api/reading/profile");
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        JsonElement body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        using (Assert.Multiple())
+        {
+            await Assert.That(body.GetProperty("totalWordsRead").GetInt64()).IsEqualTo(0L);
+            await Assert.That(body.GetProperty("totalActiveSeconds").GetInt64()).IsEqualTo(0L);
+            await Assert.That(body.GetProperty("wpm").ValueKind).IsEqualTo(JsonValueKind.Null);
+        }
+    }
+
+    [Test]
+    public async Task GetProfile_UserWithData_ReturnsTotalsAndDerivedWpm()
+    {
+        string userId = await CreateUserWithBaselineProfileAsync();
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+
+        using HttpResponseMessage response = await client.GetAsync("/api/reading/profile");
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        JsonElement body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        using (Assert.Multiple())
+        {
+            await Assert.That(body.GetProperty("totalWordsRead").GetInt64()).IsEqualTo(BaselineWords);
+            await Assert.That(body.GetProperty("totalActiveSeconds").GetInt64()).IsEqualTo(BaselineSeconds);
+            await Assert.That(body.GetProperty("wpm").GetDouble()).IsEqualTo(BaselineWpm).Within(0.001);
+        }
+    }
+
+    // ---- POST session: scoring behavior ----
+
+    [Test]
+    public async Task PostSession_NormalInterval_AddsWordsAndTimeAndReturnsUpdatedProfile()
+    {
+        PageInfo page = GetLargestPage();
+        string userId = await CreateUserWithBaselineProfileAsync();
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+        int words = Math.Min(page.WordCount, 100);
+        int seconds = 30;
+
+        using HttpResponseMessage response = await PostSessionAsync(client, Interval(page.Key, words, seconds));
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        JsonElement body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        long expectedWords = BaselineWords + words;
+        long expectedSeconds = BaselineSeconds + seconds;
+        using (Assert.Multiple())
+        {
+            await Assert.That(body.GetProperty("totalWordsRead").GetInt64()).IsEqualTo(expectedWords);
+            await Assert.That(body.GetProperty("totalActiveSeconds").GetInt64()).IsEqualTo(expectedSeconds);
+            await Assert.That(body.GetProperty("wpm").GetDouble())
+                .IsEqualTo(expectedWords / (expectedSeconds / 60.0)).Within(0.001);
+        }
+        await AssertProfileAsync(userId, expectedWords, expectedSeconds);
+    }
+
+    [Test]
+    public async Task PostSession_VerySlowInterval_CountsForLessThanItsWallClockTime()
+    {
+        PageInfo page = GetLargestPage();
+        string userId = await CreateUserWithBaselineProfileAsync();
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+        int words = Math.Min(page.WordCount, 50);
+        int wallClockSeconds = 3600;
+
+        using HttpResponseMessage response = await PostSessionAsync(client, Interval(page.Key, words, wallClockSeconds));
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        UserReadingProfile profile = await GetProfileAsync(userId);
+        long creditedSeconds = profile.TotalActiveSeconds - BaselineSeconds;
+        using (Assert.Multiple())
+        {
+            await Assert.That(profile.TotalWordsRead).IsEqualTo(BaselineWords + words);
+            await Assert.That(creditedSeconds).IsGreaterThan(0L);
+            await Assert.That(creditedSeconds).IsLessThan((long)wallClockSeconds);
+            // Credited at roughly the slow-outlier floor speed.
+            double creditedWpm = words / (creditedSeconds / 60.0);
+            await Assert.That(creditedWpm).IsEqualTo(Options.SlowOutlierFactor * BaselineWpm).Within(1.0);
+        }
+    }
+
+    [Test]
+    public async Task PostSession_IntervalAtHardCutoff_IsAccepted()
+    {
+        PageInfo page = GetLargestPage();
+        int seconds = 20;
+        int words = (int)(Options.HardCutoffWpm * seconds / 60.0);
+        await Assert.That(page.WordCount).IsGreaterThanOrEqualTo(words + 1);
+        string userId = await CreateUserWithBaselineProfileAsync();
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+
+        using HttpResponseMessage response = await PostSessionAsync(client, Interval(page.Key, words, seconds));
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await AssertProfileAsync(userId, BaselineWords + words, BaselineSeconds + seconds);
+    }
+
+    [Test]
+    public async Task PostSession_ImplausiblyFastInterval_IsIgnoredAndStillSucceeds()
+    {
+        PageInfo page = GetLargestPage();
+        int seconds = 20;
+        int words = (int)(Options.HardCutoffWpm * seconds / 60.0) + 1;
+        await Assert.That(page.WordCount).IsGreaterThanOrEqualTo(words);
+        string userId = await CreateUserWithBaselineProfileAsync();
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+
+        using HttpResponseMessage response = await PostSessionAsync(client, Interval(page.Key, words, seconds));
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
+    }
+
+    [Test]
+    public async Task PostSession_WordsAbovePageWordCount_AreCappedAtPageWordCount()
+    {
+        PageInfo page = GetSmallestPage();
+        string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-cap");
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+        int claimedWords = page.WordCount + 1;
+        // Long enough that the interval stays below the hard cutoff.
+        int seconds = (int)Math.Ceiling(claimedWords * 60.0 / Options.HardCutoffWpm) + 5;
+
+        using HttpResponseMessage response = await PostSessionAsync(client, Interval(page.Key, claimedWords, seconds));
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        UserReadingProfile profile = await GetProfileAsync(userId);
+        await Assert.That(profile.TotalWordsRead).IsEqualTo((long)page.WordCount);
+    }
+
+    [Test]
+    public async Task PostSession_AtMaximumIntervalsPerRequest_IsAccepted()
+    {
+        PageInfo page = GetLargestPage();
+        string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-batch-max");
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+        int count = Options.MaxIntervalsPerRequest;
+
+        using HttpResponseMessage response = await PostSessionAsync(
+            client,
+            Enumerable.Repeat(Interval(page.Key, 10, 10), count).ToArray());
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await AssertProfileAsync(userId, 10L * count, 10L * count);
+    }
+
+    [Test]
+    public async Task PostSession_OneOverMaximumIntervalsPerRequest_IsRejectedAndDoesNotChangeProfile()
+    {
+        PageInfo page = GetLargestPage();
+        string userId = await CreateUserWithBaselineProfileAsync();
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+        int count = Options.MaxIntervalsPerRequest + 1;
+
+        using HttpResponseMessage response = await PostSessionAsync(
+            client,
+            Enumerable.Repeat(Interval(page.Key, 10, 10), count).ToArray());
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+        await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
+    }
+
+    [Test]
+    public async Task PostSession_PageKeyLength_AtLimitIsUnknownKeyAndOneOverFailsLengthValidation()
+    {
+        string userId = await CreateUserWithBaselineProfileAsync();
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+
+        using HttpResponseMessage atLimit = await PostSessionAsync(
+            client, Interval(new string('p', ReadingIntervalRequest.PageKeyMaxLength), 10, 10));
+        using HttpResponseMessage overLimit = await PostSessionAsync(
+            client, Interval(new string('p', ReadingIntervalRequest.PageKeyMaxLength + 1), 10, 10));
+
+        string atLimitBody = await atLimit.Content.ReadAsStringAsync();
+        string overLimitBody = await overLimit.Content.ReadAsStringAsync();
+        using (Assert.Multiple())
+        {
+            await Assert.That(atLimit.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+            await Assert.That(atLimitBody).Contains("Unknown page key");
+            await Assert.That(overLimit.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+            await Assert.That(overLimitBody).DoesNotContain("Unknown page key");
+        }
+        await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
+    }
+
+    // ---- POST session: invalid input ----
+
+    [Test]
+    [Arguments("empty body", "")]
+    [Arguments("JSON null", "null")]
+    [Arguments("malformed JSON", "{not json")]
+    [Arguments("bare array (old wire format)", """[{"pageKey":"{KEY}","wordsRead":10,"activeSeconds":10}]""")]
+    [Arguments("missing intervals", "{}")]
+    [Arguments("null intervals", """{"intervals":null}""")]
+    [Arguments("empty intervals", """{"intervals":[]}""")]
+    [Arguments("null interval entry", """{"intervals":[null]}""")]
+    [Arguments("zero words", """{"intervals":[{"pageKey":"{KEY}","wordsRead":0,"activeSeconds":10}]}""")]
+    [Arguments("negative words", """{"intervals":[{"pageKey":"{KEY}","wordsRead":-1,"activeSeconds":10}]}""")]
+    [Arguments("zero seconds", """{"intervals":[{"pageKey":"{KEY}","wordsRead":10,"activeSeconds":0}]}""")]
+    [Arguments("negative seconds", """{"intervals":[{"pageKey":"{KEY}","wordsRead":10,"activeSeconds":-1}]}""")]
+    [Arguments("int.MaxValue words", """{"intervals":[{"pageKey":"{KEY}","wordsRead":2147483647,"activeSeconds":10}]}""")]
+    [Arguments("int.MaxValue seconds", """{"intervals":[{"pageKey":"{KEY}","wordsRead":10,"activeSeconds":2147483647}]}""")]
+    [Arguments("missing page key", """{"intervals":[{"wordsRead":10,"activeSeconds":10}]}""")]
+    [Arguments("empty page key", """{"intervals":[{"pageKey":"","wordsRead":10,"activeSeconds":10}]}""")]
+    [Arguments("unknown page key", """{"intervals":[{"pageKey":"no-such-page","wordsRead":10,"activeSeconds":10}]}""")]
+    [Arguments("one bad interval among good ones", """{"intervals":[{"pageKey":"{KEY}","wordsRead":10,"activeSeconds":10},{"pageKey":"{KEY}","wordsRead":0,"activeSeconds":10}]}""")]
+    public async Task PostSession_InvalidInput_IsRejectedAndLeavesProfileUnchanged(string scenario, string bodyTemplate)
+    {
+        PageInfo page = GetLargestPage();
+        string userId = await CreateUserWithBaselineProfileAsync();
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/reading/session")
+        {
+            Content = JsonBody(bodyTemplate.Replace("{KEY}", page.Key, StringComparison.Ordinal))
+        };
+
+        using HttpResponseMessage response = await client.SendAsync(request);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest).Because(scenario);
+        await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
+    }
+
+    [Test]
+    public async Task PostSession_ValidationFailure_ReturnsProblemDetails()
+    {
+        string userId = await CreateUserWithBaselineProfileAsync();
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+
+        using HttpResponseMessage response = await PostSessionAsync(client, Interval("no-such-page", 10, 10));
+
+        JsonElement body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        using (Assert.Multiple())
+        {
+            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+            await Assert.That(response.Content.Headers.ContentType?.MediaType).IsEqualTo("application/problem+json");
+            await Assert.That(body.GetProperty("status").GetInt32()).IsEqualTo(400);
+            await Assert.That(body.TryGetProperty("errors", out _)).IsTrue();
+        }
+    }
+
+    // ---- user isolation ----
+
+    [Test]
+    public async Task PostSession_UpdatesOnlyTheAuthenticatedUsersProfile()
+    {
+        PageInfo page = GetLargestPage();
+        string callerId = await CreateUserWithBaselineProfileAsync();
+        string otherId = await CreateUserWithBaselineProfileAsync();
+        using HttpClient client = await CreateAuthenticatedClientAsync(callerId);
+
+        using HttpResponseMessage response = await PostSessionAsync(client, Interval(page.Key, 50, 30));
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await AssertProfileAsync(callerId, BaselineWords + 50, BaselineSeconds + 30);
+        await AssertProfileAsync(otherId, BaselineWords, BaselineSeconds);
+    }
+
+    [Test]
+    public async Task GetProfile_ReturnsOnlyTheAuthenticatedUsersTotals()
+    {
+        string callerId = await McpTestHelper.CreateUserAsync(Factory, "reading-caller");
+        await SeedProfileAsync(await McpTestHelper.CreateUserAsync(Factory, "reading-other"), 5000, 100);
+        using HttpClient client = await CreateAuthenticatedClientAsync(callerId);
+
+        using HttpResponseMessage response = await client.GetAsync("/api/reading/profile");
+
+        JsonElement body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        await Assert.That(body.GetProperty("totalWordsRead").GetInt64()).IsEqualTo(0L);
+    }
+
+    // ---- reset ----
+
+    [Test]
+    public async Task Reset_RemovesOnlyTheCallersProfile()
+    {
+        string callerId = await CreateUserWithBaselineProfileAsync();
+        string otherId = await CreateUserWithBaselineProfileAsync();
+        using HttpClient client = await CreateAuthenticatedClientAsync(callerId);
+
         using HttpResponseMessage response = await client.PostAsync("/api/reading/reset", null);
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NoContent);
+        bool callerHasProfile = await InServiceScopeAsync(services =>
+            services.GetRequiredService<EssentialCSharpWebContext>()
+                .UserReadingProfiles.AnyAsync(p => p.UserId == callerId));
+        await Assert.That(callerHasProfile).IsFalse();
+        await AssertProfileAsync(otherId, BaselineWords, BaselineSeconds);
     }
 
     [Test]
-    public async Task PostSession_IntervalAboveHardCutoff_DoesNotChangePersistedProfile()
+    public async Task Reset_UserWithoutData_Returns204()
     {
-        string userId = await CreateUserWithBaselineProfileAsync();
+        string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-reset-empty");
         using HttpClient client = await CreateAuthenticatedClientAsync(userId);
-        using var request = CreateSessionRequest(
-            [new ReadingController.ReadingIntervalDto("fast-page", 60, 901, false)]);
 
-        using HttpResponseMessage response = await client.SendAsync(request);
+        using HttpResponseMessage response = await client.PostAsync("/api/reading/reset", null);
 
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        UserReadingProfile profile = await GetProfileAsync(userId);
-        await Assert.That(profile.TotalWordsRead).IsEqualTo(1200L);
-        await Assert.That(profile.TotalActiveSeconds).IsEqualTo(360L);
-        await Assert.That(profile.DeriveWpm()).IsEqualTo(200.0);
-        await Assert.That(await GetActivityCountAsync(userId)).IsEqualTo(0);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NoContent);
     }
 
+    // ---- concurrency ----
+
     [Test]
-    public async Task PostSession_SlowInterval_ClampsTimeInPersistedProfile()
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task PostSession_ConcurrentRequests_SumCorrectly(bool userAlreadyHasProfile)
     {
-        string userId = await CreateUserWithBaselineProfileAsync();
-        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
-        using var request = CreateSessionRequest(
-            [new ReadingController.ReadingIntervalDto("slow-page", 300, 10, false)]);
+        PageInfo page = GetLargestPage();
+        // Stay below the per-user write rate limit.
+        const int parallelRequests = 16;
+        const int wordsPerRequest = 40;
+        const int secondsPerRequest = 20;
+        string userId = userAlreadyHasProfile
+            ? await CreateUserWithBaselineProfileAsync()
+            : await McpTestHelper.CreateUserAsync(Factory, "reading-concurrent");
+        long baselineWords = userAlreadyHasProfile ? BaselineWords : 0;
+        long baselineSeconds = userAlreadyHasProfile ? BaselineSeconds : 0;
 
-        using HttpResponseMessage response = await client.SendAsync(request);
+        // Authenticate every client up front so the requests themselves start together.
+        var clients = new List<HttpClient>();
+        try
+        {
+            for (int i = 0; i < parallelRequests; i++)
+            {
+                clients.Add(await CreateAuthenticatedClientAsync(userId));
+            }
 
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        UserReadingProfile profile = await GetProfileAsync(userId);
-        await Assert.That(profile.TotalWordsRead).IsEqualTo(1210L);
-        await Assert.That(profile.TotalActiveSeconds).IsEqualTo(372L);
-        await Assert.That(
-            Math.Abs(profile.DeriveWpm()!.Value - 1210.0 / (372.0 / 60.0)) < 0.001).IsTrue();
+            using var startBarrier = new ManualResetEventSlim(false);
+            Task<HttpStatusCode>[] requests = clients.Select(client => Task.Run(async () =>
+            {
+                startBarrier.Wait();
+                using HttpResponseMessage response = await PostSessionAsync(
+                    client, Interval(page.Key, wordsPerRequest, secondsPerRequest));
+                return response.StatusCode;
+            })).ToArray();
 
-        ReadingActivity activity = await GetSingleActivityAsync(userId);
-        await Assert.That(activity.PageKey).IsEqualTo("slow-page");
-        await Assert.That(activity.WordsRead).IsEqualTo(10);
-        await Assert.That(activity.ActiveSeconds).IsEqualTo(300);
+            startBarrier.Set();
+            HttpStatusCode[] statuses = await Task.WhenAll(requests);
+
+            await Assert.That(statuses.All(status => status == HttpStatusCode.OK)).IsTrue();
+            await AssertProfileAsync(
+                userId,
+                baselineWords + (long)parallelRequests * wordsPerRequest,
+                baselineSeconds + (long)parallelRequests * secondsPerRequest);
+        }
+        finally
+        {
+            foreach (HttpClient client in clients)
+            {
+                client.Dispose();
+            }
+        }
     }
 
-    [Test]
-    public async Task PostSession_SmallSlowInterval_UsesAtLeastOneClampedSecond()
-    {
-        string userId = await CreateUserWithBaselineProfileAsync();
-        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
-        using var request = CreateSessionRequest(
-            [new ReadingController.ReadingIntervalDto("tiny-slow-page", 300, 1, false)]);
-
-        using HttpResponseMessage response = await client.SendAsync(request);
-
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        UserReadingProfile profile = await GetProfileAsync(userId);
-        await Assert.That(profile.TotalWordsRead).IsEqualTo(1201L);
-        await Assert.That(profile.TotalActiveSeconds).IsEqualTo(362L);
-        ReadingActivity activity = await GetSingleActivityAsync(userId);
-        await Assert.That(activity.WordsRead).IsEqualTo(1);
-    }
+    // ---- book stats ----
 
     [Test]
-    public async Task PostSession_NormalInterval_AddsUnmodifiedWordsAndTimeToPersistedProfile()
-    {
-        string userId = await CreateUserWithBaselineProfileAsync();
-        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
-        using var request = CreateSessionRequest(
-            [new ReadingController.ReadingIntervalDto("normal-page", 60, 180, true)]);
-
-        using HttpResponseMessage response = await client.SendAsync(request);
-
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        UserReadingProfile profile = await GetProfileAsync(userId);
-        await Assert.That(profile.TotalWordsRead).IsEqualTo(1380L);
-        await Assert.That(profile.TotalActiveSeconds).IsEqualTo(420L);
-        await Assert.That(
-            Math.Abs(profile.DeriveWpm()!.Value - 1380.0 / (420.0 / 60.0)) < 0.001).IsTrue();
-
-        ReadingActivity activity = await GetSingleActivityAsync(userId);
-        await Assert.That(activity.PageKey).IsEqualTo("normal-page");
-        await Assert.That(activity.WordsRead).IsEqualTo(180);
-        await Assert.That(activity.ActiveSeconds).IsEqualTo(60);
-        await Assert.That(activity.Completed).IsTrue();
-    }
-
-    [Test]
-    public async Task PostSession_RejectsMoreThanMaximumIntervalBatch()
-    {
-        string userId = await CreateUserWithBaselineProfileAsync();
-        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
-        ReadingController.ReadingIntervalDto[] intervals = Enumerable
-            .Range(0, 51)
-            .Select(index => new ReadingController.ReadingIntervalDto($"page-{index}", 60, 100, false))
-            .ToArray();
-        using var request = CreateSessionRequest(intervals);
-
-        using HttpResponseMessage response = await client.SendAsync(request);
-
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
-        UserReadingProfile profile = await GetProfileAsync(userId);
-        await Assert.That(profile.TotalWordsRead).IsEqualTo(1200L);
-        await Assert.That(profile.TotalActiveSeconds).IsEqualTo(360L);
-        await Assert.That(await GetActivityCountAsync(userId)).IsEqualTo(0);
-    }
-
-    [Test]
-    public async Task PostSession_RejectsPageKeyLongerThanPersistenceLimit()
-    {
-        string userId = await CreateUserWithBaselineProfileAsync();
-        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
-        using var request = CreateSessionRequest(
-        [
-            new ReadingController.ReadingIntervalDto(new string('p', 257), 60, 100, false)
-        ]);
-
-        using HttpResponseMessage response = await client.SendAsync(request);
-
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
-        UserReadingProfile profile = await GetProfileAsync(userId);
-        await Assert.That(profile.TotalWordsRead).IsEqualTo(1200L);
-        await Assert.That(profile.TotalActiveSeconds).IsEqualTo(360L);
-        await Assert.That(await GetActivityCountAsync(userId)).IsEqualTo(0);
-    }
-
-    [Test]
-    public async Task PostSession_ConcurrentRequests_PreserveBothAggregateIncrements()
-    {
-        string userId = await CreateUserWithBaselineProfileAsync();
-        using HttpClient firstClient = await CreateAuthenticatedClientAsync(userId);
-        using HttpClient secondClient = await CreateAuthenticatedClientAsync(userId);
-        using HttpRequestMessage firstRequest = CreateSessionRequest(
-            [new ReadingController.ReadingIntervalDto("first-page", 60, 100, false)]);
-        using HttpRequestMessage secondRequest = CreateSessionRequest(
-            [new ReadingController.ReadingIntervalDto("second-page", 60, 100, false)]);
-
-        Task<HttpResponseMessage> firstTask = firstClient.SendAsync(firstRequest);
-        Task<HttpResponseMessage> secondTask = secondClient.SendAsync(secondRequest);
-        using HttpResponseMessage firstResponse = await firstTask;
-        using HttpResponseMessage secondResponse = await secondTask;
-
-        await Assert.That(firstResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        await Assert.That(secondResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        UserReadingProfile profile = await GetProfileAsync(userId);
-        await Assert.That(profile.TotalWordsRead).IsEqualTo(1400L);
-        await Assert.That(profile.TotalActiveSeconds).IsEqualTo(480L);
-        await Assert.That(await GetActivityCountAsync(userId)).IsEqualTo(2);
-    }
-
-    [Test]
-    public async Task PostSession_ConcurrentFirstRequests_CreateOneProfileAndPreserveBothIncrements()
-    {
-        string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-first-session");
-        using HttpClient firstClient = await CreateAuthenticatedClientAsync(userId);
-        using HttpClient secondClient = await CreateAuthenticatedClientAsync(userId);
-        using HttpRequestMessage firstRequest = CreateSessionRequest(
-            [new ReadingController.ReadingIntervalDto("first-page", 60, 100, false)]);
-        using HttpRequestMessage secondRequest = CreateSessionRequest(
-            [new ReadingController.ReadingIntervalDto("second-page", 60, 100, false)]);
-
-        Task<HttpResponseMessage> firstTask = firstClient.SendAsync(firstRequest);
-        Task<HttpResponseMessage> secondTask = secondClient.SendAsync(secondRequest);
-        using HttpResponseMessage firstResponse = await firstTask;
-        using HttpResponseMessage secondResponse = await secondTask;
-
-        await Assert.That(firstResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        await Assert.That(secondResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        UserReadingProfile profile = await GetProfileAsync(userId);
-        await Assert.That(profile.TotalWordsRead).IsEqualTo(200L);
-        await Assert.That(profile.TotalActiveSeconds).IsEqualTo(120L);
-        await Assert.That(await GetActivityCountAsync(userId)).IsEqualTo(2);
-    }
-
-    [Test]
-    public async Task GetBookStats_Returns200WithChapters()
+    public async Task GetBookStats_IsPublicAndTotalsMatchChapters()
     {
         using HttpClient client = CreateClientWithoutAutoRedirect();
+
         using HttpResponseMessage response = await client.GetAsync("/api/reading/book-stats");
-        await Assert.That((int)response.StatusCode).IsEqualTo(200);
 
-        var body = await response.Content.ReadFromJsonAsync<BookStatsResponse>();
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        BookStatsResponse? body = await response.Content.ReadFromJsonAsync<BookStatsResponse>(
+            new JsonSerializerOptions(JsonSerializerDefaults.Web));
         await Assert.That(body).IsNotNull();
+        using (Assert.Multiple())
+        {
+            await Assert.That(body!.Chapters).IsNotEmpty();
+            await Assert.That(body.TotalWordCount).IsGreaterThan(0);
+            await Assert.That(body.Chapters.Sum(c => c.WordCount)).IsEqualTo(body.TotalWordCount);
+            await Assert.That(body.Chapters.All(c => c.ChapterNumber > 0)).IsTrue();
+        }
     }
 
-    // ---- DTO for deserializing book-stats response ----
+    // ---- helpers ----
 
-    private sealed class BookStatsResponse
-    {
-        public int TotalWordCount { get; set; }
-        public IEnumerable<ChapterInfo>? Chapters { get; set; }
-    }
+    private sealed record PageInfo(string Key, int WordCount);
 
-    private sealed class ChapterInfo
-    {
-        public int ChapterNumber { get; set; }
-        public int WordCount { get; set; }
-    }
+    private static PageInfo GetLargestPage() => new("reading-test-large", PageWordCounts["reading-test-large"]);
+
+    private static PageInfo GetSmallestPage() => new("reading-test-small", PageWordCounts["reading-test-small"]);
+
+    private static StringContent JsonBody(string json) => new(json, Encoding.UTF8, "application/json");
+
+    private static object Interval(string pageKey, int wordsRead, int activeSeconds) =>
+        new { pageKey, wordsRead, activeSeconds, completed = false };
+
+    private static Task<HttpResponseMessage> PostSessionAsync(HttpClient client, params object[] intervals) =>
+        client.PostAsJsonAsync("/api/reading/session", new { intervals });
 
     private async Task<string> CreateUserWithBaselineProfileAsync()
     {
         string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-test");
-        await InServiceScopeAsync(async services =>
-        {
-            EssentialCSharpWebContext context =
-                services.GetRequiredService<EssentialCSharpWebContext>();
-            context.UserReadingProfiles.Add(new UserReadingProfile
-            {
-                UserId = userId,
-                TotalWordsRead = 1200,
-                TotalActiveSeconds = 360
-            });
-            await context.SaveChangesAsync();
-        });
+        await SeedProfileAsync(userId, BaselineWords, BaselineSeconds);
         return userId;
     }
 
-    private async Task<HttpClient> CreateAuthenticatedClientAsync(string userId)
+    private async Task SeedProfileAsync(string userId, long words, long seconds) =>
+        await InServiceScopeAsync(async services =>
+        {
+            EssentialCSharpWebContext context = services.GetRequiredService<EssentialCSharpWebContext>();
+            context.UserReadingProfiles.Add(new UserReadingProfile
+            {
+                UserId = userId,
+                TotalWordsRead = words,
+                TotalActiveSeconds = seconds,
+                UpdatedAtUtc = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+        });
+
+    private async Task<UserReadingProfile> GetProfileAsync(string userId) =>
+        await InServiceScopeAsync(services =>
+            services.GetRequiredService<EssentialCSharpWebContext>()
+                .UserReadingProfiles.AsNoTracking().SingleAsync(p => p.UserId == userId));
+
+    private async Task AssertProfileAsync(string userId, long expectedWords, long expectedSeconds)
+    {
+        UserReadingProfile profile = await GetProfileAsync(userId);
+        using (Assert.Multiple())
+        {
+            await Assert.That(profile.TotalWordsRead).IsEqualTo(expectedWords);
+            await Assert.That(profile.TotalActiveSeconds).IsEqualTo(expectedSeconds);
+        }
+    }
+
+    /// <summary>
+    /// Creates a client signed in as <paramref name="userId"/>. The antiforgery cookie and request
+    /// token are minted directly from <see cref="IAntiforgery"/> for the same principal the app would
+    /// build at sign-in, so no page needs to be scraped.
+    /// </summary>
+    private async Task<HttpClient> CreateAuthenticatedClientAsync(string userId, bool includeAntiforgery = true)
     {
         HttpClient client = McpTestHelper.CreateClient(Factory);
         (string cookieName, string cookieValue) =
             await McpTestHelper.CreateIdentityApplicationCookieAsync(Factory, userId);
-        client.DefaultRequestHeaders.Add("Cookie", $"{cookieName}={cookieValue}");
+        string cookieHeader = $"{cookieName}={cookieValue}";
 
-        using HttpResponseMessage pageResponse = await client.GetAsync("/about");
-        string pageContent = await pageResponse.Content.ReadAsStringAsync();
-        Match requestToken = Regex.Match(
-            pageContent,
-            "<meta name=\"csrf-token\" content=\"([^\"]+)\"");
-        if (!requestToken.Success)
+        if (includeAntiforgery)
         {
-            throw new InvalidOperationException(
-                $"The test page returned {(int)pageResponse.StatusCode} without an antiforgery token.");
+            (string antiforgeryCookie, string requestToken, string headerName) = await InServiceScopeAsync(async services =>
+            {
+                EssentialCSharpWebUser user = await services.GetRequiredService<UserManager<EssentialCSharpWebUser>>()
+                    .FindByIdAsync(userId)
+                    ?? throw new InvalidOperationException($"User {userId} does not exist.");
+                var context = new DefaultHttpContext
+                {
+                    RequestServices = services,
+                    User = await services.GetRequiredService<IUserClaimsPrincipalFactory<EssentialCSharpWebUser>>()
+                        .CreateAsync(user)
+                };
+
+                AntiforgeryTokenSet tokens = services.GetRequiredService<IAntiforgery>().GetAndStoreTokens(context);
+                string antiforgeryCookieName = services.GetRequiredService<IOptions<AntiforgeryOptions>>().Value.Cookie.Name
+                    ?? throw new InvalidOperationException("The antiforgery cookie name is not configured.");
+                string cookie = context.Response.Headers.SetCookie
+                    .Select(value => value?.Split(';', 2)[0])
+                    .OfType<string>()
+                    .Single(value => value.StartsWith(antiforgeryCookieName + "=", StringComparison.Ordinal));
+                return (
+                    cookie,
+                    tokens.RequestToken ?? throw new InvalidOperationException("No antiforgery request token."),
+                    tokens.HeaderName ?? "RequestVerificationToken");
+            });
+
+            cookieHeader += $"; {antiforgeryCookie}";
+            client.DefaultRequestHeaders.Add(headerName, requestToken);
         }
 
-        string antiforgeryCookieName = Factory.Services
-            .GetRequiredService<IOptions<AntiforgeryOptions>>()
-            .Value.Cookie.Name
-            ?? throw new InvalidOperationException("The antiforgery cookie name is not configured.");
-        string antiforgeryCookie = pageResponse.Headers.GetValues("Set-Cookie")
-            .Select(value => value.Split(';', 2)[0])
-            .Single(value => value.StartsWith(
-                $"{antiforgeryCookieName}=",
-                StringComparison.Ordinal));
-
-        client.DefaultRequestHeaders.Remove("Cookie");
-        client.DefaultRequestHeaders.Add(
-            "Cookie",
-            $"{cookieName}={cookieValue}; {antiforgeryCookie}");
-        client.DefaultRequestHeaders.Add(
-            "RequestVerificationToken",
-            requestToken.Groups[1].Value);
-
+        client.DefaultRequestHeaders.Add("Cookie", cookieHeader);
         return client;
-    }
-
-    private static HttpRequestMessage CreateSessionRequest(
-        IEnumerable<ReadingController.ReadingIntervalDto> intervals)
-    {
-        return new HttpRequestMessage(HttpMethod.Post, "/api/reading/session")
-        {
-            Content = JsonContent.Create(intervals)
-        };
-    }
-
-    private async Task<UserReadingProfile> GetProfileAsync(string userId)
-    {
-        using IServiceScope scope =
-            Factory.Services.GetRequiredService<IServiceScopeFactory>().CreateScope();
-        return await scope.ServiceProvider.GetRequiredService<EssentialCSharpWebContext>()
-            .UserReadingProfiles.SingleAsync(profile => profile.UserId == userId);
-    }
-
-    private async Task<int> GetActivityCountAsync(string userId)
-    {
-        using IServiceScope scope =
-            Factory.Services.GetRequiredService<IServiceScopeFactory>().CreateScope();
-        return await scope.ServiceProvider.GetRequiredService<EssentialCSharpWebContext>()
-            .ReadingActivities.CountAsync(activity => activity.UserId == userId);
-    }
-
-    private async Task<ReadingActivity> GetSingleActivityAsync(string userId)
-    {
-        using IServiceScope scope =
-            Factory.Services.GetRequiredService<IServiceScopeFactory>().CreateScope();
-        return await scope.ServiceProvider.GetRequiredService<EssentialCSharpWebContext>()
-            .ReadingActivities.SingleAsync(activity => activity.UserId == userId);
     }
 }
