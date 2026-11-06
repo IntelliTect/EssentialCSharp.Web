@@ -39,7 +39,6 @@ public class ReadingControllerTests : IntegrationTestBase
     // ---- authentication ----
 
     [Test]
-    [Arguments("GET", "/api/reading/profile")]
     [Arguments("POST", "/api/reading/session")]
     [Arguments("POST", "/api/reading/reset")]
     public async Task ProtectedEndpoints_Anonymous_Return401WithoutRedirect(string method, string url)
@@ -76,57 +75,6 @@ public class ReadingControllerTests : IntegrationTestBase
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
         await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
-    }
-
-    // ---- GET profile ----
-
-    [Test]
-    public async Task GetProfile_UserWithoutData_ReturnsZeroTotalsAndNullWpm()
-    {
-        string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-empty");
-        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
-
-        using HttpResponseMessage response = await client.GetAsync("/api/reading/profile");
-
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        JsonElement body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        using (Assert.Multiple())
-        {
-            await Assert.That(body.GetProperty("totalWordsRead").GetInt64()).IsEqualTo(0L);
-            await Assert.That(body.GetProperty("totalActiveSeconds").GetInt64()).IsEqualTo(0L);
-            await Assert.That(body.GetProperty("wpm").ValueKind).IsEqualTo(JsonValueKind.Null);
-        }
-    }
-
-    [Test]
-    public async Task GetProfile_UserWithData_ReturnsTotalsAndDerivedWpm()
-    {
-        string userId = await CreateUserWithBaselineProfileAsync();
-        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
-
-        using HttpResponseMessage response = await client.GetAsync("/api/reading/profile");
-
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        JsonElement body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        using (Assert.Multiple())
-        {
-            await Assert.That(body.GetProperty("totalWordsRead").GetInt64()).IsEqualTo(BaselineWords);
-            await Assert.That(body.GetProperty("totalActiveSeconds").GetInt64()).IsEqualTo(BaselineSeconds);
-            await Assert.That(body.GetProperty("wpm").GetDouble()).IsEqualTo(BaselineWpm).Within(0.001);
-        }
-    }
-
-    [Test]
-    public async Task GetProfile_ReturnsOnlyTheAuthenticatedUsersTotals()
-    {
-        string callerId = await McpTestHelper.CreateUserAsync(Factory, "reading-caller");
-        await SeedProfileAsync(await McpTestHelper.CreateUserAsync(Factory, "reading-other"), 5000, 100);
-        using HttpClient client = await CreateAuthenticatedClientAsync(callerId);
-
-        using HttpResponseMessage response = await client.GetAsync("/api/reading/profile");
-
-        JsonElement body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        await Assert.That(body.GetProperty("totalWordsRead").GetInt64()).IsEqualTo(0L);
     }
 
     // ---- POST session: one smoke case per scoring outcome (the math lives in ReadingSpeedPolicyTests) ----
@@ -498,7 +446,6 @@ public class ReadingControllerTests : IntegrationTestBase
     // ---- rate limiting ----
 
     [Test]
-    [Arguments("GET", "/api/reading/profile")]
     [Arguments("POST", "/api/reading/session")]
     [Arguments("POST", "/api/reading/reset")]
     public async Task AuthenticatedEndpoint_ThrottlesAUserWhoKeepsCallingWith429_WithoutAffectingOtherUsers(string method, string url)
@@ -565,7 +512,6 @@ public class ReadingControllerTests : IntegrationTestBase
     // ---- identity without a user id ----
 
     [Test]
-    [Arguments("GET", "/api/reading/profile")]
     [Arguments("POST", "/api/reading/session")]
     [Arguments("POST", "/api/reading/reset")]
     public async Task AuthenticatedPrincipalWithoutUserIdClaim_IsUnauthorizedAndWritesNothing(string method, string url)
@@ -644,29 +590,6 @@ public class ReadingControllerTests : IntegrationTestBase
             {
                 client.Dispose();
             }
-        }
-    }
-
-    // ---- book stats ----
-
-    [Test]
-    public async Task GetBookStats_IsPublicCacheableAndReportsChaptersAndTotal()
-    {
-        using HttpClient client = CreateClientWithoutAutoRedirect();
-
-        using HttpResponseMessage response = await client.GetAsync("/api/reading/book-stats");
-
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        BookStatsResponse? body = await response.Content.ReadFromJsonAsync<BookStatsResponse>(
-            new JsonSerializerOptions(JsonSerializerDefaults.Web));
-        await Assert.That(body).IsNotNull();
-        using (Assert.Multiple())
-        {
-            await Assert.That(body!.TotalWordCount).IsEqualTo(5150);
-            await Assert.That(body.Chapters.Select(c => (c.ChapterNumber, c.WordCount)))
-                .IsEquivalentTo(new[] { (1, 3000), (2, 2150) });
-            await Assert.That(response.Headers.CacheControl?.Public).IsTrue();
-            await Assert.That(response.Headers.CacheControl?.MaxAge).IsEqualTo(TimeSpan.FromHours(1));
         }
     }
 

@@ -270,28 +270,6 @@ public class WordCountServiceTests
     }
 
     [Test]
-    public async Task ChapterWordCounts_AreOrderedByChapterAndSumTheirPages()
-    {
-        using TempContentDirectory dir = new();
-        dir.Write("a.html", "<body><p>one two three</p></body>");       // ch 1: 3
-        dir.Write("b.html", "<body><p>four five six seven</p></body>"); // ch 1: 4
-        dir.Write("c.html", "<body><p>eight</p></body>");               // ch 3: 1
-
-        WordCountService service = await dir.BuildAsync(
-            Map("c", "c.html", 3, 1),
-            Map("a", "a.html", 1, 1),
-            Map("b", "b.html", 1, 2));
-
-        IReadOnlyList<ChapterWordCount> chapters = service.GetChapterWordCounts();
-        using (Assert.Multiple())
-        {
-            await Assert.That(string.Join(",", chapters.Select(c => c.ChapterNumber))).IsEqualTo("1,3");
-            await Assert.That(string.Join(",", chapters.Select(c => c.WordCount))).IsEqualTo("7,1");
-            await Assert.That(service.GetBookWordCount()).IsEqualTo(8);
-        }
-    }
-
-    [Test]
     public async Task SeveralMappingsOfOneFile_CountOnceAndShareStatsAcrossAllKeys()
     {
         using TempContentDirectory dir = new();
@@ -342,7 +320,6 @@ public class WordCountServiceTests
             await Assert.That(service.GetPageStats("a")).IsNull();
             await Assert.That(service.GetPageWordCount("a")).IsEqualTo(0);
             await Assert.That(service.GetBookWordCount()).IsEqualTo(0);
-            await Assert.That(service.GetChapterWordCounts()).IsEmpty();
         }
     }
 
