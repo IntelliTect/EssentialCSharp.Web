@@ -12,4 +12,9 @@ public class EssentialCSharpWebContext(DbContextOptions<EssentialCSharpWebContex
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
     public DbSet<McpApiToken> McpApiTokens { get; set; } = null!;
     public DbSet<UserReadingProfile> UserReadingProfiles { get; set; } = null!;
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+    }
 }

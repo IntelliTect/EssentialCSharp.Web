@@ -34,8 +34,9 @@ public static class ReadingSpeedPolicy
         double slowThreshold = options.SlowOutlierFactor * referenceWpm;
         if (referenceWpm > 0 && intervalWpm < slowThreshold)
         {
-            int clampedSeconds = (int)Math.Max(1, Math.Ceiling(words / slowThreshold * 60.0));
-            return new ReadingCredit(words, Math.Min(seconds, clampedSeconds));
+            // words >= 1 and slowThreshold > 0 here, so the ceiling is at least 1.
+            double clampedSeconds = Math.Ceiling(words / slowThreshold * 60.0);
+            return new ReadingCredit(words, (int)Math.Min(seconds, clampedSeconds));
         }
 
         return new ReadingCredit(words, seconds);

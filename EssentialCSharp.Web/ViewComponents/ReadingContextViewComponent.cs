@@ -1,7 +1,9 @@
+using System.Security.Claims;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.ViewComponents;
 
@@ -9,30 +11,69 @@ namespace EssentialCSharp.Web.ViewComponents;
 /// Emits <c>window.READING_CONTEXT</c> for the reading-time tracker. Renders nothing on pages that
 /// are not book content (no <c>ViewBag.CurrentPageKey</c>), such as Identity pages and errors.
 /// </summary>
-public class ReadingContextViewComponent(
+public partial class ReadingContextViewComponent(
     IWordCountService wordCountService,
-    SignInManager<EssentialCSharpWebUser> signInManager) : ViewComponent
+    IReadingProfileService readingProfileService,
+    SignInManager<EssentialCSharpWebUser> signInManager,
+    IOptions<ReadingOptions> options,
+    ILogger<ReadingContextViewComponent> logger) : ViewComponent
 {
-    public IViewComponentResult Invoke()
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Could not load the reading profile for the reading context; continuing without a personal WPM")]
+    private static partial void LogProfileUnavailable(ILogger logger, Exception exception);
+
+    public async Task<IViewComponentResult> InvokeAsync()
     {
         if (ViewData["CurrentPageKey"] is not string { Length: > 0 } pageKey)
         {
             return Content(string.Empty);
         }
 
+        bool isAuthenticated = signInManager.IsSignedIn(UserClaimsPrincipal);
+        int? wpm = isAuthenticated ? await GetWpmAsync() : null;
+        ReadingOptions reading = options.Value;
+
         PageWordStats? stats = wordCountService.GetPageStats(pageKey);
         return View(new ReadingContextViewModel(
-            IsAuthenticated: signInManager.IsSignedIn(UserClaimsPrincipal),
+            IsAuthenticated: isAuthenticated,
             PageKey: pageKey,
             PageWords: stats?.PageWords ?? 0,
             ChapterWords: stats?.ChapterWords ?? 0,
             WordsBeforePage: stats?.WordsBeforePage ?? 0,
             ChapterStartWords: stats?.ChapterStartWords ?? 0,
-            BookWords: stats?.BookWords ?? wordCountService.GetBookWordCount()));
+            BookWords: stats?.BookWords ?? wordCountService.GetBookWordCount(),
+            Wpm: wpm,
+            DefaultWpm: reading.DefaultWpm,
+            MaxCreditWpm: reading.MaxCreditWpm,
+            IdleThresholdSeconds: reading.IdleThresholdSeconds,
+            PeriodicFlushActiveSeconds: reading.PeriodicFlushActiveSeconds));
+    }
+
+    /// <summary>The signed-in reader's derived WPM rounded to whole words per minute, or null when unknown.</summary>
+    private async Task<int?> GetWpmAsync()
+    {
+        if (UserClaimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier) is not { } userId)
+        {
+            return null;
+        }
+
+        try
+        {
+            ReadingProfileSummary profile = await readingProfileService.GetProfileAsync(userId, HttpContext.RequestAborted);
+            return profile.Wpm is { } value ? (int)Math.Round(value) : null;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // A reading-profile outage must not break rendering of book pages.
+            LogProfileUnavailable(logger, ex);
+            return null;
+        }
     }
 }
 
-/// <summary>Serialized (camelCase) as <c>window.READING_CONTEXT</c>; property names are a contract with the client.</summary>
+/// <summary>
+/// Serialized (camelCase) as <c>window.READING_CONTEXT</c>; property names are a contract with the client.
+/// <paramref name="Wpm"/> is null for anonymous readers or readers with no recorded reading time.
+/// </summary>
 public record ReadingContextViewModel(
     bool IsAuthenticated,
     string PageKey,
@@ -40,4 +81,9 @@ public record ReadingContextViewModel(
     int ChapterWords,
     int WordsBeforePage,
     int ChapterStartWords,
-    int BookWords);
+    int BookWords,
+    int? Wpm,
+    int DefaultWpm,
+    int MaxCreditWpm,
+    int IdleThresholdSeconds,
+    int PeriodicFlushActiveSeconds);

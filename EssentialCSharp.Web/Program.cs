@@ -276,7 +276,11 @@ public partial class Program
         builder.Services.AddSingleton<WordCountService>();
         builder.Services.AddSingleton<IWordCountService>(sp => sp.GetRequiredService<WordCountService>());
         builder.Services.AddHostedService(sp => sp.GetRequiredService<WordCountService>());
-        builder.Services.Configure<ReadingOptions>(builder.Configuration.GetSection(ReadingOptions.SectionName));
+        builder.Services.AddOptions<ReadingOptions>()
+            .BindConfiguration(ReadingOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        builder.Services.AddSingleton<IValidateOptions<ReadingOptions>, ReadingOptionsValidator>();
         builder.Services.AddScoped<IReadingProfileService, ReadingProfileService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
 

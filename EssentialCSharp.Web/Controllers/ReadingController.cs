@@ -79,6 +79,15 @@ public class ReadingController(
             return ValidationProblem(ModelState);
         }
 
+        int maxActiveSeconds = options.Value.MaxActiveSecondsPerInterval;
+        if (request.Intervals.Any(i => i.ActiveSeconds > maxActiveSeconds))
+        {
+            ModelState.AddModelError(
+                nameof(ReadingIntervalRequest.ActiveSeconds),
+                $"An interval may contain at most {maxActiveSeconds} active seconds.");
+            return ValidationProblem(ModelState);
+        }
+
         ReadingInterval[] intervals = request.Intervals
             .Select(i => new ReadingInterval(i.PageKey, i.WordsRead, i.ActiveSeconds))
             .ToArray();
