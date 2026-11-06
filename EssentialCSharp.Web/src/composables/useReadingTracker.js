@@ -129,25 +129,27 @@ export function useReadingTracker(context) {
      * is credited by later time.
      */
     function collect() {
-        const activeSeconds = Math.floor(pendingSeconds);
-        if (activeSeconds < 1) return;
-
-        const { wordsRead, progressConsumed } = creditInterval({
-            pageWords: context.pageWords,
-            progress: maxBottom - baseline,
-            activeSeconds,
-            maxWpm: context.maxCreditWpm
-        });
-        if (wordsRead <= 0) {
-            // Nothing progressed. Keep at most one flush period of time for a
-            // coming scroll so long stationary reading cannot inflate later credit.
-            pendingSeconds = Math.min(pendingSeconds, context.periodicFlushActiveSeconds);
-            return;
+        // The server rejects intervals above its per-interval cap, so never emit
+        // one longer than the idle threshold: split long pending time into several
+        // intervals of the same batch.
+        while (Math.floor(pendingSeconds) >= 1) {
+            const activeSeconds = Math.min(Math.floor(pendingSeconds), context.idleThresholdSeconds);
+            const { wordsRead, progressConsumed } = creditInterval({
+                pageWords: context.pageWords,
+                progress: maxBottom - baseline,
+                activeSeconds,
+                maxWpm: context.maxCreditWpm
+            });
+            if (wordsRead <= 0) {
+                // Nothing progressed. Keep at most one flush period of time for a
+                // coming scroll so long stationary reading cannot inflate later credit.
+                pendingSeconds = Math.min(pendingSeconds, context.periodicFlushActiveSeconds);
+                return;
+            }
+            pendingSeconds -= activeSeconds;
+            baseline += progressConsumed;
+            outbox.push({ pageKey: context.pageKey, activeSeconds, wordsRead });
         }
-
-        pendingSeconds -= activeSeconds;
-        baseline += progressConsumed;
-        outbox.push({ pageKey: context.pageKey, activeSeconds, wordsRead });
         trimOutbox();
     }
 

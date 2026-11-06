@@ -32,21 +32,26 @@ export function getCsrfToken() {
 
 /**
  * Classifies a response. Isolated here because the rule for telling an
- * antiforgery rejection from a validation failure depends on server behavior:
- * both are 400, but validation failures carry an application/problem+json body
- * while a rejected antiforgery token does not.
+ * antiforgery rejection from a validation failure depends on server behavior
+ * (verified by the server's ReadingAntiforgeryContractTests): both are 400
+ * application/problem+json, but only a validation failure carries an `errors`
+ * object. Any other 400 (no `errors`, empty or unparseable body) is treated as
+ * an antiforgery rejection.
  * @param {Response} response
- * @returns {ApiStatus}
+ * @returns {Promise<ApiStatus>}
  */
-export function statusFor(response) {
+export async function statusFor(response) {
     if (response.ok) return STATUS_OK;
     const { status } = response;
     if (status === 401 || status === 403) return STATUS_AUTH_FAILURE;
     if (status === 400) {
-        const contentType = response.headers?.get("content-type") ?? "";
-        return contentType.toLowerCase().includes("application/problem+json")
-            ? STATUS_BAD_DATA
-            : STATUS_AUTH_FAILURE;
+        try {
+            const body = await response.clone().json();
+            const errors = body?.errors;
+            return errors && typeof errors === "object" ? STATUS_BAD_DATA : STATUS_AUTH_FAILURE;
+        } catch {
+            return STATUS_AUTH_FAILURE;
+        }
     }
     if (status === 408 || status === 429 || status >= 500) return STATUS_TRANSIENT;
     return STATUS_BAD_DATA;
@@ -74,7 +79,7 @@ export async function postSession(intervals, { keepalive = false } = {}) {
             body: JSON.stringify({ intervals }),
             keepalive
         });
-        const status = statusFor(res);
+        const status = await statusFor(res);
         if (status !== STATUS_OK) return { status };
         let data;
         try {
@@ -97,7 +102,7 @@ export async function resetProfile() {
             method: "POST",
             headers: { RequestVerificationToken: token }
         });
-        return { status: statusFor(res) };
+        return { status: await statusFor(res) };
     } catch {
         return { status: STATUS_TRANSIENT };
     }
