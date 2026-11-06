@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getCsrfToken, postSession, resetProfile, statusFor } from "./readingApi.js";
+import {
+    STATUS_AUTH_FAILURE, STATUS_BAD_DATA, STATUS_OK, STATUS_TRANSIENT,
+    getCsrfToken, postSession, resetProfile, statusFor
+} from "./readingApi.js";
 
 const PROBLEM = "application/problem+json; charset=utf-8";
 
@@ -20,34 +23,34 @@ const response = (status, body, contentType) => new Response(body === undefined 
 
 describe("statusFor", () => {
     it("maps 2xx to ok", async () => {
-        expect(await statusFor(response(200))).toBe("ok");
-        expect(await statusFor(response(204))).toBe("ok");
+        expect(await statusFor(response(200))).toBe(STATUS_OK);
+        expect(await statusFor(response(204))).toBe(STATUS_OK);
     });
 
     it.each([401, 403])("treats %s as an auth failure", async (status) => {
-        expect(await statusFor(response(status))).toBe("auth-failure");
+        expect(await statusFor(response(status))).toBe(STATUS_AUTH_FAILURE);
     });
 
     it("treats a 400 validation problem (has an errors object) as bad data (drop)", async () => {
-        expect(await statusFor(response(400, JSON.stringify(validationBody), PROBLEM))).toBe("bad-data");
+        expect(await statusFor(response(400, JSON.stringify(validationBody), PROBLEM))).toBe(STATUS_BAD_DATA);
     });
 
     it("treats a 400 antiforgery problem (no errors member) as an auth failure (stop)", async () => {
-        expect(await statusFor(response(400, JSON.stringify(antiforgeryBody), PROBLEM))).toBe("auth-failure");
+        expect(await statusFor(response(400, JSON.stringify(antiforgeryBody), PROBLEM))).toBe(STATUS_AUTH_FAILURE);
     });
 
     it("treats a 400 with an empty or non-JSON body as an auth failure (stop)", async () => {
-        expect(await statusFor(response(400))).toBe("auth-failure");
-        expect(await statusFor(response(400, "<html>bad</html>", "text/html"))).toBe("auth-failure");
+        expect(await statusFor(response(400))).toBe(STATUS_AUTH_FAILURE);
+        expect(await statusFor(response(400, "<html>bad</html>", "text/html"))).toBe(STATUS_AUTH_FAILURE);
     });
 
     it.each([408, 429, 500, 502, 503])("treats %s as transient (retry)", async (status) => {
-        expect(await statusFor(response(status))).toBe("transient");
+        expect(await statusFor(response(status))).toBe(STATUS_TRANSIENT);
     });
 
     it("drops other client errors", async () => {
-        expect(await statusFor(response(404))).toBe("bad-data");
-        expect(await statusFor(response(413))).toBe("bad-data");
+        expect(await statusFor(response(404))).toBe(STATUS_BAD_DATA);
+        expect(await statusFor(response(413))).toBe(STATUS_BAD_DATA);
     });
 
     it("leaves the body readable for the caller", async () => {
@@ -87,23 +90,23 @@ describe("postSession / resetProfile", () => {
         expect(init.headers.RequestVerificationToken).toBe("tok123");
         expect(JSON.parse(init.body)).toEqual({ intervals });
         expect(init.body).not.toContain("completed");
-        expect(result).toEqual({ status: "ok", data: { wpm: 250 } });
+        expect(result).toEqual({ status: STATUS_OK, data: { wpm: 250 } });
     });
 
     it("still reports ok when the response body is not JSON", async () => {
         fetchMock.mockResolvedValue(new Response("", { status: 200 }));
-        expect((await postSession([])).status).toBe("ok");
+        expect((await postSession([])).status).toBe(STATUS_OK);
     });
 
     it("never sends a request without a CSRF token and reports an auth failure", async () => {
         document.head.innerHTML = "";
-        expect((await postSession([{ pageKey: "p", activeSeconds: 1, wordsRead: 1 }])).status).toBe("auth-failure");
-        expect((await resetProfile()).status).toBe("auth-failure");
+        expect((await postSession([{ pageKey: "p", activeSeconds: 1, wordsRead: 1 }])).status).toBe(STATUS_AUTH_FAILURE);
+        expect((await resetProfile()).status).toBe(STATUS_AUTH_FAILURE);
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
     it("reports a network error as transient", async () => {
         fetchMock.mockRejectedValue(new TypeError("offline"));
-        expect((await postSession([])).status).toBe("transient");
+        expect((await postSession([])).status).toBe(STATUS_TRANSIENT);
     });
 });
