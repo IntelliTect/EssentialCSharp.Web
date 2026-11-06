@@ -55,7 +55,7 @@ export async function postSession(intervals, { keepalive = false } = {}) {
                 RequestVerificationToken: getCsrfToken()
             },
             // The server currently binds the body to a bare array of intervals.
-            body: JSON.stringify(intervals),
+            body: JSON.stringify({ intervals }),
             keepalive
         });
         return { status: statusFor(res) };
