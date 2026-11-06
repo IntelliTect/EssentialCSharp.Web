@@ -4,32 +4,45 @@ namespace EssentialCSharp.Web.Services;
 /// Provides pre-computed prose word counts for content pages, enabling
 /// Kindle-style reading time estimates.
 /// </summary>
+/// <remarks>
+/// The cache is built when the host starts. Until then (<see cref="IsReady"/> is <see langword="false"/>)
+/// every query returns "no data": <see cref="GetPageStats"/> returns <see langword="null"/>,
+/// counts are 0 and <see cref="GetChapterWordCounts"/> is empty.
+/// </remarks>
 public interface IWordCountService
 {
-    /// <summary>Gets the prose word count for a specific page key.</summary>
-    int GetPageWordCount(string pageKey);
+    /// <summary>Gets whether the word-count cache has been built.</summary>
+    bool IsReady { get; }
 
-    /// <summary>Gets the total prose word count for a chapter.</summary>
-    int GetChapterWordCount(int chapterNumber);
+    /// <summary>
+    /// Gets all word statistics for a page key, or <see langword="null"/> if the key is unknown
+    /// (or the cache is not ready yet). A known key whose content file is missing or unreadable
+    /// yields stats with zero page words.
+    /// </summary>
+    PageWordStats? GetPageStats(string pageKey);
+
+    /// <summary>Gets the prose word count for a specific page key (0 if unknown).</summary>
+    int GetPageWordCount(string pageKey);
 
     /// <summary>Gets the total prose word count for the entire book.</summary>
     int GetBookWordCount();
 
-    /// <summary>
-    /// Gets the number of prose words before the given page (across the entire book).
-    /// Used for "words remaining in book" math.
-    /// </summary>
-    int GetWordsBeforePage(string pageKey);
-
-    /// <summary>
-    /// Gets the number of prose words before the given page within its chapter.
-    /// Used for "words remaining in chapter" math.
-    /// </summary>
-    int GetChapterStartWords(string pageKey);
-
-    /// <summary>Gets per-chapter word count summary for the book-stats API response.</summary>
+    /// <summary>Gets per-chapter word count summary (ordered by chapter number) for the book-stats API response.</summary>
     IReadOnlyList<ChapterWordCount> GetChapterWordCounts();
 }
 
 /// <summary>Per-chapter word count summary returned by the book-stats API.</summary>
 public record ChapterWordCount(int ChapterNumber, int WordCount);
+
+/// <summary>Immutable prose word statistics for one page.</summary>
+/// <param name="PageWords">Prose words on the page.</param>
+/// <param name="ChapterWords">Prose words in the page's whole chapter.</param>
+/// <param name="WordsBeforePage">Prose words on all pages before this one across the book.</param>
+/// <param name="ChapterStartWords">Prose words on pages before this one within its chapter.</param>
+/// <param name="BookWords">Prose words in the whole book.</param>
+public sealed record PageWordStats(
+    int PageWords,
+    int ChapterWords,
+    int WordsBeforePage,
+    int ChapterStartWords,
+    int BookWords);
