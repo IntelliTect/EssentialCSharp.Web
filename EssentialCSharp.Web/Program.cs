@@ -272,7 +272,10 @@ public partial class Program
         builder.Services.AddSingleton<IRouteConfigurationService, RouteConfigurationService>();
         builder.Services.AddSingleton<IListingSourceCodeService, ListingSourceCodeService>();
         builder.Services.AddSingleton<IBookToolQueryService, BookToolQueryService>();
-        builder.Services.AddSingleton<IWordCountService, WordCountService>();
+        // One instance serves both the query interface and the startup hook that builds the cache.
+        builder.Services.AddSingleton<WordCountService>();
+        builder.Services.AddSingleton<IWordCountService>(sp => sp.GetRequiredService<WordCountService>());
+        builder.Services.AddHostedService(sp => sp.GetRequiredService<WordCountService>());
         builder.Services.Configure<ReadingOptions>(builder.Configuration.GetSection(ReadingOptions.SectionName));
         builder.Services.AddScoped<IReadingProfileService, ReadingProfileService>();
         builder.Services.AddScoped<IReferralService, ReferralService>();
@@ -466,9 +469,6 @@ public partial class Program
         }
 
         WebApplication app = builder.Build();
-
-        // Build the page word-count cache during startup instead of on the first content request.
-        _ = app.Services.GetRequiredService<IWordCountService>();
 
         if (profilerSkippedUnsupportedPlatform)
             LogSkippingUnsupportedAzureMonitorProfiler(
