@@ -107,7 +107,7 @@ public class PwnedPasswordValidatorTests
         await validator.ValidateAsync(manager, new IdentityUser("testuser"), "password");
 
         await Assert.That(capturedRequest).IsNotNull();
-        await Assert.That(capturedRequest!.RequestUri!.PathAndQuery).IsEqualTo("/range/5BAA6");
+        await Assert.That(capturedRequest.RequestUri!.PathAndQuery).IsEqualTo("/range/5BAA6");
         await Assert.That(capturedRequest.Headers.Contains("Add-Padding")).IsTrue();
         await Assert.That(capturedRequest.Headers.GetValues("Add-Padding").Single()).IsEqualTo("true");
     }
