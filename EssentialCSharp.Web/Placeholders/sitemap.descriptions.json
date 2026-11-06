@@ -1,0 +1,158 @@
+[
+  {
+    "Key": "introducing-c",
+    "Value": "Placeholder description for Introducing C# in Essential C#."
+  },
+  {
+    "Key": "hello-world",
+    "Value": "Placeholder description for Hello, World in Essential C#."
+  },
+  {
+    "Key": "creating-editing-compiling-and-running-c-source-code",
+    "Value": "Placeholder description for Creating, Editing, Compiling, and Running C# Source Code in Essential C#."
+  },
+  {
+    "Key": "with-dotnet-cli",
+    "Value": "Placeholder description for With Dotnet CLI in Essential C#."
+  },
+  {
+    "Key": "with-visual-studio-2022-windows-or-mac",
+    "Value": "Placeholder description for With Visual Studio 2022 (Windows or Mac) in Essential C#."
+  },
+  {
+    "Key": "understanding-a-project",
+    "Value": "Placeholder description for Understanding a Project in Essential C#."
+  },
+  {
+    "Key": "compilation-and-execution",
+    "Value": "Placeholder description for Compilation and Execution in Essential C#."
+  },
+  {
+    "Key": "essential-c-source-code",
+    "Value": "Placeholder description for Essential C# Source Code in Essential C#."
+  },
+  {
+    "Key": "c-syntax-fundamentals",
+    "Value": "Placeholder description for C# Syntax Fundamentals in Essential C#."
+  },
+  {
+    "Key": "statements-and-statement-delimiters",
+    "Value": "Placeholder description for Statements and Statement Delimiters in Essential C#."
+  },
+  {
+    "Key": "introducing-a-class-and-a-method",
+    "Value": "Placeholder description for Introducing a Class and a Method in Essential C#."
+  },
+  {
+    "Key": "c-keywords",
+    "Value": "Placeholder description for C# Keywords in Essential C#."
+  },
+  {
+    "Key": "identifiers",
+    "Value": "Placeholder description for Identifiers in Essential C#."
+  },
+  {
+    "Key": "type-definition",
+    "Value": "Placeholder description for Type Definition in Essential C#."
+  },
+  {
+    "Key": "main-method",
+    "Value": "Placeholder description for Main Method in Essential C#."
+  },
+  {
+    "Key": "whitespace",
+    "Value": "Placeholder description for Whitespace in Essential C#."
+  },
+  {
+    "Key": "working-with-variables",
+    "Value": "Placeholder description for Working with Variables in Essential C#."
+  },
+  {
+    "Key": "introducing-data-types",
+    "Value": "Placeholder description for Introducing Data Types in Essential C#."
+  },
+  {
+    "Key": "declaring-a-variable",
+    "Value": "Placeholder description for Declaring a Variable in Essential C#."
+  },
+  {
+    "Key": "assigning-a-variable",
+    "Value": "Placeholder description for Assigning a Variable in Essential C#."
+  },
+  {
+    "Key": "using-a-variable",
+    "Value": "Placeholder description for Using a Variable in Essential C#."
+  },
+  {
+    "Key": "console-input-and-output",
+    "Value": "Placeholder description for Console Input and Output in Essential C#."
+  },
+  {
+    "Key": "getting-input-from-the-console",
+    "Value": "Placeholder description for Getting Input from the Console in Essential C#."
+  },
+  {
+    "Key": "writing-output-to-the-console",
+    "Value": "Placeholder description for Writing Output to the Console in Essential C#."
+  },
+  {
+    "Key": "comments",
+    "Value": "Placeholder description for Comments in Essential C#."
+  },
+  {
+    "Key": "debugging",
+    "Value": "Placeholder description for Debugging in Essential C#."
+  },
+  {
+    "Key": "managed-execution-and-the-common-language-infrastructure",
+    "Value": "Placeholder description for Managed Execution and the Common Language Infrastructure in Essential C#."
+  },
+  {
+    "Key": "common-intermediate-language-and-ildasm",
+    "Value": "Placeholder description for Common Intermediate Language and Ildasm in Essential C#."
+  },
+  {
+    "Key": "multiple-net-frameworks",
+    "Value": "Placeholder description for Multiple .NET Frameworks in Essential C#."
+  },
+  {
+    "Key": "application-programming-interface",
+    "Value": "Placeholder description for Application Programming Interface in Essential C#."
+  },
+  {
+    "Key": "c-and-net-versioning",
+    "Value": "Placeholder description for C# and .NET Versioning in Essential C#."
+  },
+  {
+    "Key": "chapter-1-summary",
+    "Value": "Placeholder description for Chapter 1: Summary in Essential C#."
+  },
+  {
+    "Key": "data-types",
+    "Value": "Placeholder description for Data Types in Essential C#."
+  },
+  {
+    "Key": "type-name-forms",
+    "Value": "Placeholder description for Type Name Forms in Essential C#."
+  },
+  {
+    "Key": "fundamental-numeric-types",
+    "Value": "Placeholder description for Fundamental Numeric Types in Essential C#."
+  },
+  {
+    "Key": "integer-types",
+    "Value": "Placeholder description for Integer Types in Essential C#."
+  },
+  {
+    "Key": "floating-point-types-float-double",
+    "Value": "Placeholder description for Floating-Point Types (float, double) in Essential C#."
+  },
+  {
+    "Key": "decimal-type",
+    "Value": "Placeholder description for Decimal Type in Essential C#."
+  },
+  {
+    "Key": "literal-values",
+    "Value": "Placeholder description for Literal Values in Essential C#."
+  }
+]
