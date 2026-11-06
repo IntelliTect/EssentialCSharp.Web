@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using EssentialCSharp.Web.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace EssentialCSharp.Web.Tests;
 
@@ -113,6 +114,18 @@ public partial class ReadingContextRenderingTests : IntegrationTestBase
     }
 
     [Test]
+    public async Task SignedInUser_WpmIsRoundedToTheNearestWholeNumber()
+    {
+        string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-context-round");
+        // 1300 words in 420 seconds is 185.71 WPM, which rounds up (truncating would give 185).
+        await ReadingTestSupport.SeedProfileAsync(Factory.Services, userId, 1300, 420);
+
+        using JsonDocument context = ParseReadingContext(await GetSignedInHtmlAsync(userId));
+
+        await Assert.That(context.RootElement.GetProperty("wpm").GetInt32()).IsEqualTo(186);
+    }
+
+    [Test]
     public async Task SignedInUserWithoutReadingHistory_GetsNullWpm()
     {
         string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-context-new");
@@ -194,5 +207,49 @@ public class ReadingContextUnknownPageTests : IntegrationTestBase
             await Assert.That(root.GetProperty("chapterStartWords").GetInt32()).IsEqualTo(0);
             await Assert.That(root.GetProperty("bookWords").GetInt32()).IsEqualTo(5150);
         }
+    }
+}
+
+/// <summary>A reading-profile outage must not break book pages.</summary>
+public class ReadingContextProfileFailureTests : IntegrationTestBase
+{
+    protected override void ConfigureTestServices(IServiceCollection services)
+    {
+        ReadingTestSupport.UseFakes(services, new ReadingTestSupport.FakeWordCountService());
+        services.RemoveAll<IReadingProfileService>();
+        services.AddScoped<IReadingProfileService, ThrowingReadingProfileService>();
+    }
+
+    [Test]
+    public async Task ProfileServiceFailure_StillRendersThePageWithNullWpm()
+    {
+        string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-context-outage");
+        (string cookieName, string cookieValue) = await McpTestHelper.CreateIdentityApplicationCookieAsync(Factory, userId);
+        using HttpClient client = CreateClientWithoutAutoRedirect();
+        using HttpRequestMessage request = new(HttpMethod.Get, "/hello-world");
+        McpTestHelper.AddCookie(request, cookieName, cookieValue);
+
+        using HttpResponseMessage response = await client.SendAsync(request);
+        string html = await response.Content.ReadAsStringAsync();
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        using JsonDocument context = ReadingContextRenderingTests.ParseReadingContext(html);
+        using (Assert.Multiple())
+        {
+            await Assert.That(context.RootElement.GetProperty("isAuthenticated").GetBoolean()).IsTrue();
+            await Assert.That(context.RootElement.GetProperty("wpm").ValueKind).IsEqualTo(JsonValueKind.Null);
+        }
+    }
+
+    private sealed class ThrowingReadingProfileService : IReadingProfileService
+    {
+        public Task<RecordSessionResult> RecordSessionAsync(string userId, IReadOnlyList<ReadingInterval> intervals, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("profile store unavailable");
+
+        public Task<ReadingProfileSummary> GetProfileAsync(string userId, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("profile store unavailable");
+
+        public Task ResetAsync(string userId, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("profile store unavailable");
     }
 }

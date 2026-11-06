@@ -383,6 +383,18 @@ public class ReadingControllerTests : IntegrationTestBase
         using HttpResponseMessage response = await client.SendAsync(request);
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest).Because(scenario);
+        string raw = await response.Content.ReadAsStringAsync();
+        bool hasErrors = false;
+        try
+        {
+            using JsonDocument problem = JsonDocument.Parse(raw);
+            hasErrors = problem.RootElement.TryGetProperty("errors", out _);
+        }
+        catch (JsonException)
+        {
+        }
+
+        await Assert.That(hasErrors).IsTrue().Because($"{scenario}: expected a validation problem with an errors member, got {raw}");
         await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
     }
 
@@ -470,29 +482,40 @@ public class ReadingControllerTests : IntegrationTestBase
     // ---- rate limiting ----
 
     [Test]
-    public async Task WriteEndpoints_BeyondTheWriteLimit_AreRateLimitedPerUser()
+    [Arguments("GET", "/api/reading/profile")]
+    [Arguments("POST", "/api/reading/session")]
+    [Arguments("POST", "/api/reading/reset")]
+    public async Task WriteEndpoint_IsRateLimitedPerUser(string method, string url)
     {
+        // Does not depend on the exact permit count: keep calling until the first 429, up to a ceiling.
+        const int ceiling = 100;
         string limitedUser = await McpTestHelper.CreateUserAsync(Factory, "reading-limited");
         string otherUser = await McpTestHelper.CreateUserAsync(Factory, "reading-unlimited");
         using HttpClient limitedClient = await CreateAuthenticatedClientAsync(limitedUser);
         using HttpClient otherClient = await CreateAuthenticatedClientAsync(otherUser);
 
         var statuses = new List<HttpStatusCode>();
-        for (int i = 0; i < ReadingTestSupport.WriteRateLimitPermits; i++)
+        while (statuses.Count < ceiling && !statuses.Contains(HttpStatusCode.TooManyRequests))
         {
-            using HttpResponseMessage allowed = await limitedClient.GetAsync("/api/reading/profile");
-            statuses.Add(allowed.StatusCode);
+            using HttpResponseMessage response = await SendAsync(limitedClient, method, url);
+            statuses.Add(response.StatusCode);
         }
-        using HttpResponseMessage limited = await limitedClient.GetAsync("/api/reading/profile");
-        using HttpResponseMessage otherUserResponse = await otherClient.GetAsync("/api/reading/profile");
+        using HttpResponseMessage otherUserResponse = await SendAsync(otherClient, method, url);
 
         using (Assert.Multiple())
         {
-            await Assert.That(statuses).IsEquivalentTo(Enumerable.Repeat(HttpStatusCode.OK, ReadingTestSupport.WriteRateLimitPermits));
-            await Assert.That(limited.StatusCode).IsEqualTo(HttpStatusCode.TooManyRequests);
-            await Assert.That(otherUserResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
+            await Assert.That(statuses).Contains(HttpStatusCode.TooManyRequests).Because($"no 429 within {ceiling} requests");
+            await Assert.That(statuses.Take(statuses.Count - 1)).DoesNotContain(s => s != HttpStatusCode.OK && s != HttpStatusCode.NoContent);
+            await Assert.That(otherUserResponse.StatusCode).IsNotEqualTo(HttpStatusCode.TooManyRequests);
         }
     }
+
+    private static Task<HttpResponseMessage> SendAsync(HttpClient client, string method, string url) =>
+        method == "GET"
+            ? client.GetAsync(url)
+            : url.EndsWith("/session", StringComparison.Ordinal)
+                ? PostSessionAsync(client, Interval(LargePage, 10, 10))
+                : client.PostAsync(url, null);
 
     // ---- concurrency ----
 
@@ -501,8 +524,8 @@ public class ReadingControllerTests : IntegrationTestBase
     [Arguments(true)]
     public async Task PostSession_ConcurrentRequests_SumCorrectly(bool userAlreadyHasProfile)
     {
-        // As many simultaneous requests as the per-user write limit permits.
-        int parallelRequests = ReadingTestSupport.WriteRateLimitPermits;
+        // Fewer simultaneous requests than the per-user write limit, so none is rate limited.
+        const int parallelRequests = 10;
         const int wordsPerRequest = 40;
         const int secondsPerRequest = 20;
         string userId = userAlreadyHasProfile

@@ -49,6 +49,15 @@ public class ReadingSpeedPolicyTests
     }
 
     [Test]
+    public async Task Evaluate_IntervalJustBelowSlowThreshold_IsClamped()
+    {
+        // 100 words in 130 s is 46.2 WPM, just under the 50 WPM threshold; at 50 WPM those words take 120 s.
+        ReadingCredit? credit = ReadingSpeedPolicy.Evaluate(100, 130, ReferenceWpm, Options);
+
+        await Assert.That(credit).IsEqualTo(new ReadingCredit(100, 120));
+    }
+
+    [Test]
     public async Task Evaluate_SlowFactorComesFromOptions()
     {
         var lenient = new ReadingOptions { HardCutoffWpm = 900, SlowOutlierFactor = 0.5 };

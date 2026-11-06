@@ -132,12 +132,45 @@ public class WordCountServiceTests
     }
 
     [Test]
-    public async Task PathThatIsNotAReadableFile_IsLoggedAndDoesNotAffectOtherPages()
+    public async Task FileThatCannotBeRead_IsLoggedCountsZeroAndDoesNotAffectOtherPages()
+    {
+        // FileShare.None makes the page read fail with an IOException on Windows. Other platforms use advisory locks,
+        // so the read would succeed there and the test cannot provoke the failure.
+        if (!OperatingSystem.IsWindows())
+        {
+            Skip.Test("Exclusive file locks are only enforced on Windows; the read-failure catch cannot be provoked elsewhere.");
+        }
+
+        using TempContentDirectory dir = new();
+        dir.Write("a.html", $"<body>{Baseline}</body>");
+        dir.Write("locked.html", $"<body>{Baseline}</body>");
+        dir.Write("c.html", $"<body>{Baseline}</body>");
+        CapturingLogger<WordCountService> logger = new();
+
+        using FileStream exclusive = new(dir.PathOf("locked.html"), FileMode.Open, FileAccess.Read, FileShare.None);
+        WordCountService service = await dir.BuildAsync(
+            logger,
+            Map("a", "a.html", 1, 1),
+            Map("locked", "locked.html", 1, 2),
+            Map("c", "c.html", 1, 3));
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(service.IsReady).IsTrue();
+            await Assert.That(service.GetPageWordCount("a")).IsEqualTo(BaselineWords);
+            await Assert.That(service.GetPageWordCount("locked")).IsEqualTo(0);
+            await Assert.That(service.GetPageWordCount("c")).IsEqualTo(BaselineWords);
+            await Assert.That(logger.Warnings).Contains(w => w.Contains("locked.html", StringComparison.Ordinal));
+        }
+    }
+
+    [Test]
+    public async Task MappedPathThatIsADirectory_IsTreatedAsMissingLoggedAndDoesNotAffectOtherPages()
     {
         using TempContentDirectory dir = new();
         dir.Write("a.html", $"<body>{Baseline}</body>");
         dir.Write("c.html", $"<body>{Baseline}</body>");
-        // A directory where a page file should be: not readable as a page on any operating system.
+        // A directory where a page file should be. File.Exists is false for it, so this covers the missing/non-file path, not the read-failure catch.
         Directory.CreateDirectory(dir.PathOf("locked.html"));
         CapturingLogger<WordCountService> logger = new();
 

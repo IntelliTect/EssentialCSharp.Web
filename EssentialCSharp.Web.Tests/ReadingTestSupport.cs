@@ -18,9 +18,6 @@ namespace EssentialCSharp.Web.Tests;
 /// </summary>
 internal static class ReadingTestSupport
 {
-    /// <summary>Per-user limit of the ReadingWrite policy (PermitLimit in Program.cs, 20 per minute). Pinned here because the policy is not configurable.</summary>
-    public const int WriteRateLimitPermits = 20;
-
     public const string SmallPage = "reading-test-small";
     public const int SmallPageWords = 150;
     public const string LargePage = "reading-test-large";
