@@ -16,6 +16,12 @@ public sealed partial class ReadingProfileService(
     [LoggerMessage(Level = LogLevel.Debug, Message = "Ignored interval for {PageKey}: {Words} words in {Seconds}s is not credited")]
     private static partial void LogIntervalIgnored(ILogger logger, string pageKey, int words, int seconds);
 
+    /// <remarks>
+    /// Not idempotent: if a client retries a request whose response was lost, the same intervals are credited
+    /// twice. This is accepted (no idempotency store); the effect is a small skew in the derived WPM.
+    /// The reference WPM used for the slow-outlier rule is read once before the batch is written, so concurrent
+    /// requests from the same user may evaluate against a slightly stale reference. This is also accepted.
+    /// </remarks>
     public async Task<RecordSessionResult> RecordSessionAsync(
         string userId, IReadOnlyList<ReadingInterval> intervals, CancellationToken cancellationToken)
     {
@@ -81,39 +87,49 @@ public sealed partial class ReadingProfileService(
             .ExecuteDeleteAsync(cancellationToken);
 
     /// <summary>
-    /// Atomically creates the profile row or adds the deltas to it in a single statement,
-    /// so concurrent requests for the same user never lose an increment or violate the key.
+    /// Adds the deltas to the user's profile, creating the row on first use, without a provider-specific upsert:
+    /// try an atomic <c>UPDATE ... SET x = x + delta</c>; if no row exists insert one; if a concurrent request
+    /// inserted it first (duplicate key), retry the update once. Concurrent requests therefore never lose an increment.
     /// </summary>
     private async Task AddToProfileAsync(
         string userId, long words, long seconds, DateTime now, CancellationToken cancellationToken)
     {
-        if (context.Database.IsSqlServer())
+        if (await TryAddToExistingAsync(userId, words, seconds, now, cancellationToken) > 0)
         {
-            await context.Database.ExecuteSqlAsync(
-                $"""
-                MERGE UserReadingProfiles WITH (HOLDLOCK) AS target
-                USING (SELECT {userId} AS UserId) AS source ON target.UserId = source.UserId
-                WHEN MATCHED THEN UPDATE SET
-                    TotalWordsRead = target.TotalWordsRead + {words},
-                    TotalActiveSeconds = target.TotalActiveSeconds + {seconds},
-                    UpdatedAtUtc = {now}
-                WHEN NOT MATCHED THEN INSERT (UserId, TotalWordsRead, TotalActiveSeconds, UpdatedAtUtc)
-                    VALUES ({userId}, {words}, {seconds}, {now});
-                """,
-                cancellationToken);
+            return;
         }
-        else // SQLite (used by the integration tests)
+
+        var created = new UserReadingProfile
         {
-            await context.Database.ExecuteSqlAsync(
-                $"""
-                INSERT INTO UserReadingProfiles (UserId, TotalWordsRead, TotalActiveSeconds, UpdatedAtUtc)
-                VALUES ({userId}, {words}, {seconds}, {now})
-                ON CONFLICT (UserId) DO UPDATE SET
-                    TotalWordsRead = TotalWordsRead + excluded.TotalWordsRead,
-                    TotalActiveSeconds = TotalActiveSeconds + excluded.TotalActiveSeconds,
-                    UpdatedAtUtc = excluded.UpdatedAtUtc
-                """,
-                cancellationToken);
+            UserId = userId,
+            TotalWordsRead = words,
+            TotalActiveSeconds = seconds,
+            UpdatedAtUtc = now,
+        };
+        context.UserReadingProfiles.Add(created);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            // Most likely a concurrent request created the row between our UPDATE and INSERT.
+            context.Entry(created).State = EntityState.Detached;
+            if (await TryAddToExistingAsync(userId, words, seconds, now, cancellationToken) == 0)
+            {
+                throw; // Not a duplicate key (for example the user no longer exists).
+            }
         }
     }
+
+    private Task<int> TryAddToExistingAsync(
+        string userId, long words, long seconds, DateTime now, CancellationToken cancellationToken) =>
+        context.UserReadingProfiles
+            .Where(p => p.UserId == userId)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(p => p.TotalWordsRead, p => p.TotalWordsRead + words)
+                    .SetProperty(p => p.TotalActiveSeconds, p => p.TotalActiveSeconds + seconds)
+                    .SetProperty(p => p.UpdatedAtUtc, now),
+                cancellationToken);
 }

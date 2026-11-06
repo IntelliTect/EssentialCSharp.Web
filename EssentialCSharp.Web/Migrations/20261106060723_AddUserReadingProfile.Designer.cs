@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EssentialCSharp.Web.Migrations
 {
     [DbContext(typeof(EssentialCSharpWebContext))]
-    [Migration("20261106050505_AddUserReadingProfile")]
+    [Migration("20261106060723_AddUserReadingProfile")]
     partial class AddUserReadingProfile
     {
         /// <inheritdoc />
