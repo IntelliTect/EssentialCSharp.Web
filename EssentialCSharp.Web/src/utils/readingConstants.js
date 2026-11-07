@@ -21,6 +21,14 @@ export const RETRY_MAX_DELAY_MS = 120000;
  */
 export const MAX_QUEUED_INTERVALS = 20;
 
+/**
+ * How long a persisted batch being sent is reserved for its tab before another tab may take
+ * it over. A periodic request is aborted after half of it, so a hung request never outlives
+ * its lease.
+ */
+export const LEASE_MS = 2 * 60 * 1000;
+export const SEND_TIMEOUT_MS = LEASE_MS / 2;
+
 /** Cross-tab notification that the reading profile was reset. */
 export const READING_RESET_CHANNEL = "essentialcsharp-reading-reset";
 

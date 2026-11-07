@@ -12,7 +12,7 @@ public class ReadingOptionsStartupTests : IntegrationTestBase
 {
     [Test]
     [Arguments("Reading:HardCutoffWpm", "0")]   // violates a data-annotation range
-    [Arguments("Reading:MaxCreditWpm", "100000")] // violates only a cross-field rule (credit above the cutoff)
+    [Arguments("Reading:MaxIntervalsPerRequest", "5")] // in range, violates only a cross-field rule (below the client outbox size)
     public async Task InvalidReadingConfiguration_PreventsTheHostFromStarting(string key, string value)
     {
         using var factory = Factory.Inner.WithWebHostBuilder(builder =>

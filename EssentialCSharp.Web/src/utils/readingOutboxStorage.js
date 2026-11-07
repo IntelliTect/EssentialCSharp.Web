@@ -15,12 +15,9 @@
  *    Lifecycle (keepalive) sends are not leased by their caller: they remove the record
  *    before sending, because they can never be acknowledged (at-most-once).
  */
-import { MAX_QUEUED_INTERVALS } from "./readingConstants.js";
+import { LEASE_MS, MAX_QUEUED_INTERVALS } from "./readingConstants.js";
 
 const KEY_PREFIX = "essentialcsharp-reading-outbox:";
-
-/** How long a record being sent is reserved for its tab before others may take it over. */
-const LEASE_MS = 2 * 60 * 1000;
 
 // The server DTO uses integers: a fractional value would be rejected (400) and drop the whole batch.
 const isPositiveInteger = (value) => Number.isInteger(value) && value > 0;
@@ -53,13 +50,27 @@ export function newOutboxKey() {
     return KEY_PREFIX + id;
 }
 
-/** Replaces the record under `key` (removes it when there is nothing to keep). */
+/**
+ * Replaces the record under `key` (removes it when there is nothing to keep).
+ * @returns {boolean} false when storage failed, so the record may not hold `intervals`
+ */
 export function saveOutbox(key, userId, intervals) {
     try {
         if (intervals.length === 0) localStorage.removeItem(key);
         else localStorage.setItem(key, JSON.stringify({ userId, intervals }));
+        return true;
     } catch {
         // Storage unavailable or full: persistence is best effort.
+        return false;
+    }
+}
+
+/** @returns {boolean} false only when the record is confirmed gone (taken by another tab) */
+export function isOutboxStored(key) {
+    try {
+        return localStorage.getItem(key) !== null;
+    } catch {
+        return true;
     }
 }
 
@@ -72,7 +83,8 @@ export const CLAIM_ERROR = "error";
  * Reserves the record under `key` for sending: it stays stored (leased) until the caller
  * acknowledges it with removeOutbox or re-saves it with saveOutbox.
  * @returns {"claimed" | "gone" | "error"} gone: confirmed absent, or leased by another sender;
- *   error: storage failed, so nothing is known about the record
+ *   error: storage failed, so nothing is known about the record; the record is removed on a
+ *   best-effort basis (this also frees space), so the caller sends at most once
  */
 export function claimOutbox(key) {
     try {
@@ -81,6 +93,7 @@ export function claimOutbox(key) {
         localStorage.setItem(key, JSON.stringify({ ...record, leaseUntil: Date.now() + LEASE_MS }));
         return CLAIM_CLAIMED;
     } catch {
+        removeOutbox(key);
         return CLAIM_ERROR;
     }
 }
