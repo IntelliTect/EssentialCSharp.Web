@@ -10,7 +10,7 @@ import {
     RETRY_MAX_DELAY_MS,
     TICK_INTERVAL_MS
 } from "../utils/readingConstants.js";
-import { newOutboxKey, saveOutbox } from "../utils/readingOutboxStorage.js";
+import { newOutboxKey, saveOutbox, takeStoredIntervals } from "../utils/readingOutboxStorage.js";
 import { installFakeBroadcastChannel } from "../test-utils/fakeBroadcastChannel.js";
 
 // These tests assert requirements (what is credited, delivered, dropped or stopped),
@@ -694,6 +694,55 @@ describe("useReadingTracker", () => {
             await advance(TICK_INTERVAL_MS / 1000 + 1);
             expect(delivered.filter((i) => i.wordsRead === 5)).toHaveLength(1);
             expect(sum(delivered, "activeSeconds")).toBe(10 + 10); // the batch (10s) and the newer data (10s)
+        });
+
+        it("sends newer data taken by another tab once, while still keeping a batch that failed after that", async () => {
+            const release = await startWithHungSendAndNewerRecord();
+            // Another tab loads and takes the newer record (the lifecycle send that failed), then sends it.
+            const otherTab = effectScope();
+            otherTab.run(() => useReadingTracker(context({ pageKey: "chapter-9/page-9" })));
+
+            // The hung send fails right away, before this tab's next tick can notice the record is gone.
+            release(jsonResponse(503));
+            await advance(0);
+            await advance(2 * BASE_DELAY_S);
+            otherTab.stop();
+            scope.stop();
+            await advance(PAST_LEASE_S);
+            start();
+            await advance(TICK_INTERVAL_MS / 1000 + 1);
+
+            // The failed batch (10s) was kept and delivered, the newer data (10s) was delivered once.
+            expect(sum(delivered.filter((i) => i.pageKey === context().pageKey), "activeSeconds")).toBe(10 + 10);
+        });
+
+        it("keeps no stale record when re-saving a grown batch fails (storage full)", async () => {
+            const ctx = context({ periodicFlushActiveSeconds: 1 });
+            seed([interval(5)]);
+            handler = (n) => (n === 1 ? jsonResponse(503) : ok());
+            start(ctx);
+            await advance(TICK_INTERVAL_MS / 1000 + 1);
+            expect(calls).toHaveLength(1); // failed: [5] stays persisted
+
+            failWritesWhen((value) => !value.includes("leaseUntil") && JSON.parse(value).intervals.length > 1);
+            readThroughPage();
+            await advance(3); // new data is queued during the backoff, its record no longer fits
+            await advance(2 * BASE_DELAY_S);
+            expect(delivered.filter((i) => i.wordsRead === 5)).toHaveLength(1); // sent from memory
+
+            scope.stop();
+            await advance(PAST_LEASE_S);
+            await nextPageLoad();
+            expect(delivered.filter((i) => i.wordsRead === 5)).toHaveLength(1); // the old record was not left behind
+        });
+
+        it("auth failure discards only this account's records, not another account's", async () => {
+            const release = await startWithHungSendAndNewerRecord();
+            seed([interval(7)], "someone-else"); // another account signed in in another tab
+            release(jsonResponse(401));
+            await advance(0);
+            expect(takeStoredIntervals("someone-else")).toEqual([interval(7)]);
+            expect(localStorage.length).toBe(0); // and nothing of this account is left either
         });
 
         it("discards every persisted record when the server rejects the session (auth failure)", async () => {
