@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { effectScope } from "vue";
 import { useReadingTracker } from "./useReadingTracker.js";
 import {
+    LEASE_MS,
     MAX_QUEUED_INTERVALS,
     MAX_TICK_DELTA_S,
     READING_RESET_CHANNEL,
@@ -42,6 +43,7 @@ const context = (overrides = {}) => ({
 const SLOW = { maxCreditWpm: 100 };
 const FLUSH_S = context().periodicFlushActiveSeconds;
 const BASE_DELAY_S = RETRY_BASE_DELAY_MS / 1000;
+const PAST_LEASE_S = LEASE_MS / 1000 + 60; // long enough for any lease to have expired
 
 const PROBLEM_JSON = "application/problem+json";
 const jsonResponse = (status, body, contentType = "application/json") => new Response(
@@ -490,23 +492,6 @@ describe("useReadingTracker", () => {
                 await advance(TICK_INTERVAL_MS / 1000 + 1);
                 expect(delivered).toEqual(calls[0].intervals);
             });
-
-            it("is not sent again by a later page load once it succeeded", async () => {
-                // Failed periodic send leaves a persisted batch; the lifecycle flush then delivers it.
-                handler = (n) => (n === 1 ? jsonResponse(503) : ok());
-                start(context(SLOW));
-                readThroughPage();
-                await advance(FLUSH_S + 1);
-                await leavePage();
-                const deliveredBefore = deliveredSeconds();
-                expect(deliveredBefore).toBe(elapsed);
-                scope.stop();
-
-                await advance(60 * 60); // far beyond any lease
-                start();
-                await advance(TICK_INTERVAL_MS / 1000 + 1);
-                expect(deliveredSeconds()).toBe(deliveredBefore);
-            });
         });
 
         it("drops a batch rejected as invalid, never resends it, but keeps tracking", async () => {
@@ -627,7 +612,7 @@ describe("useReadingTracker", () => {
 
             // Much later it is recovered.
             scope.stop();
-            await advance(60 * 60);
+            await advance(PAST_LEASE_S);
             await nextPageLoad();
             expect(delivered).toEqual([interval(5)]);
         });
@@ -639,9 +624,136 @@ describe("useReadingTracker", () => {
             expect(delivered).toEqual([interval(5)]);
 
             scope.stop();
-            await advance(60 * 60);
+            await advance(PAST_LEASE_S);
             await nextPageLoad();
             expect(calls).toHaveLength(1);
+        });
+
+        it("never resends a batch whose lifecycle (keepalive) request was in flight when the page was destroyed", async () => {
+            // A keepalive request cannot be acknowledged by a page that is going away, and it
+            // may well have succeeded: it must not be sent again later (that would double count).
+            seed([interval(5)]);
+            handler = (n) => (n === 1 ? new Promise(() => {}) : ok());
+            start();
+            window.dispatchEvent(new Event("pagehide"));
+            await advance(0);
+            expect(calls).toHaveLength(1);
+            expect(calls[0].keepalive).toBe(true);
+            scope.stop();
+
+            await advance(PAST_LEASE_S);
+            await nextPageLoad();
+            expect(calls).toHaveLength(1);
+        });
+
+        // Simulates a full storage: writes of matching values throw, everything else works.
+        function failWritesWhen(matches) {
+            const real = localStorage;
+            vi.stubGlobal("localStorage", {
+                get length() { return real.length; },
+                key: (i) => real.key(i),
+                getItem: (k) => real.getItem(k),
+                removeItem: (k) => real.removeItem(k),
+                setItem: (k, v) => {
+                    if (matches(String(v))) throw new DOMException("full", "QuotaExceededError");
+                    real.setItem(k, v);
+                }
+            });
+        }
+
+        // Starts a tab whose periodic send of a persisted batch (interval 5) hangs; while it
+        // hangs, a lifecycle send of newer data fails and is persisted in a second record.
+        async function startWithHungSendAndNewerRecord() {
+            seed([interval(5)]);
+            let release;
+            handler = (n) => {
+                if (n === 1) return new Promise((resolve) => { release = resolve; });
+                if (n === 2) throw new TypeError("aborted");
+                return ok();
+            };
+            start();
+            await advance(TICK_INTERVAL_MS / 1000 + 1);
+            expect(calls).toHaveLength(1);
+            readThroughPage();
+            await advance(10);
+            hide();
+            await advance(0);
+            expect(calls).toHaveLength(2);
+            expect(localStorage.length).toBeGreaterThan(0);
+            return release;
+        }
+
+        it("does not leave a stale copy of a batch behind when its send fails while newer data is persisted", async () => {
+            const release = await startWithHungSendAndNewerRecord();
+            release(jsonResponse(503));
+            await advance(0);
+            scope.stop();
+
+            await advance(PAST_LEASE_S);
+            start();
+            await advance(TICK_INTERVAL_MS / 1000 + 1);
+            expect(delivered.filter((i) => i.wordsRead === 5)).toHaveLength(1);
+            expect(sum(delivered, "activeSeconds")).toBe(10 + 10); // the batch (10s) and the newer data (10s)
+        });
+
+        it("discards every persisted record when the server rejects the session (auth failure)", async () => {
+            const release = await startWithHungSendAndNewerRecord();
+            release(jsonResponse(401));
+            await advance(0);
+            expect(localStorage.length).toBe(0);
+        });
+
+        it("sends a batch taken by another tab only once, even if this tab keeps collecting", async () => {
+            handler = (n) => (n === 1 ? jsonResponse(503) : ok());
+            start(context(SLOW));
+            readThroughPage();
+            await advance(FLUSH_S + 1);
+            expect(calls).toHaveLength(1);
+
+            // Another tab loads, takes the stored batch and sends it.
+            const otherTab = effectScope();
+            // (It reads another page, so its own reading is distinguishable by page key.)
+            otherTab.run(() => useReadingTracker(context({ pageKey: "chapter-9/page-9" })));
+            await advance(TICK_INTERVAL_MS / 1000 + 1);
+            expect(delivered).toHaveLength(calls[0].intervals.length); // the other tab sent it
+
+            // This tab flushes (hidden, then visible again) while still holding its failed batch
+            // in the retry backoff, then goes on reading.
+            hide();
+            await advance(0);
+            show();
+            press();
+            await advance(FLUSH_S + 2 * BASE_DELAY_S);
+            await leavePage();
+            otherTab.stop();
+
+            // Every second read here is counted exactly once: a resent batch would exceed the time elapsed.
+            expect(sum(delivered.filter((i) => i.pageKey === context().pageKey), "activeSeconds")).toBe(elapsed);
+        });
+
+        it("sends the batch once and leaves no record behind when marking it as being sent fails (storage full)", async () => {
+            seed([interval(5)]);
+            failWritesWhen((value) => value.includes("leaseUntil"));
+            start();
+            await advance(TICK_INTERVAL_MS / 1000 + 1);
+            expect(delivered).toEqual([interval(5)]);
+
+            scope.stop();
+            await advance(PAST_LEASE_S);
+            await nextPageLoad();
+            expect(calls).toHaveLength(1);
+        });
+
+        it("does not drop its own data when storing a failed batch fails (storage full)", async () => {
+            seed([interval(5)]);
+            handler = (n) => (n === 1 ? jsonResponse(503) : ok());
+            start();
+            failWritesWhen((value) => !value.includes("leaseUntil"));
+            await advance(TICK_INTERVAL_MS / 1000 + 1);
+            expect(calls).toHaveLength(1);
+
+            await advance(2 * BASE_DELAY_S);
+            expect(delivered).toEqual([interval(5)]); // retried from memory, not dropped
         });
 
         it("never sends data persisted for a different account", async () => {

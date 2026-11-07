@@ -88,6 +88,14 @@ describe("postSession / resetProfile", () => {
         expect((await resetProfile()).status).toBe(STATUS_TRANSIENT);
     });
 
+    it("aborts a periodic send that hangs, but never a lifecycle (keepalive) send", async () => {
+        fetchMock.mockResolvedValue(new Response("{}", { status: 200 }));
+        await postSession([], { keepalive: false });
+        await postSession([], { keepalive: true });
+        expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+        expect(fetchMock.mock.calls[1][1].signal).toBeUndefined();
+    });
+
     it("resets with a POST carrying the antiforgery header and no body", async () => {
         fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
 

@@ -1,4 +1,4 @@
-import { READING_RESET_URL, READING_SESSION_URL } from "../utils/readingConstants.js";
+import { READING_RESET_URL, READING_SESSION_URL, SEND_TIMEOUT_MS } from "../utils/readingConstants.js";
 
 /**
  * - ok: request succeeded
@@ -54,10 +54,10 @@ export function statusFor(response) {
  * Sends a CSRF-protected POST and classifies the outcome. Never sends a request
  * without a CSRF token (it cannot succeed): that is reported as an auth failure.
  * @param {string} url
- * @param {{ headers?: Record<string, string>, body?: string, keepalive?: boolean, readJson?: boolean }} [options]
+ * @param {{ headers?: Record<string, string>, body?: string, keepalive?: boolean, readJson?: boolean, timeoutMs?: number }} [options]
  * @returns {Promise<ApiResult<any>>}
  */
-async function postWithCsrf(url, { headers = {}, body, keepalive, readJson = false } = {}) {
+async function postWithCsrf(url, { headers = {}, body, keepalive, readJson = false, timeoutMs } = {}) {
     const token = getCsrfToken();
     if (!token) return { status: STATUS_AUTH_FAILURE };
     try {
@@ -65,7 +65,8 @@ async function postWithCsrf(url, { headers = {}, body, keepalive, readJson = fal
             method: "POST",
             headers: { ...headers, RequestVerificationToken: token },
             body,
-            keepalive
+            keepalive,
+            signal: timeoutMs ? AbortSignal.timeout(timeoutMs) : undefined // a timeout is transient
         });
         const status = statusFor(res);
         if (status !== STATUS_OK || !readJson) return { status };
@@ -94,7 +95,10 @@ export function postSession(intervals, { keepalive = false } = {}) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ intervals }),
         keepalive,
-        readJson: true
+        readJson: true,
+        // A hung periodic request must not outlive the lease on its persisted record.
+        // A lifecycle request is fire-and-forget and keeps running after the page is gone.
+        timeoutMs: keepalive ? undefined : SEND_TIMEOUT_MS
     });
 }
 

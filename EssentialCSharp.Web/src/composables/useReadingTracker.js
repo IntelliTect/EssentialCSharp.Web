@@ -52,6 +52,7 @@ import {
     CLAIM_GONE,
     claimOutbox,
     clearStoredIntervals,
+    isOutboxStored,
     newOutboxKey,
     removeOutbox,
     saveOutbox,
@@ -120,8 +121,15 @@ export function useReadingTracker(context) {
             storedKey = null;
             return;
         }
-        storedKey ??= newOutboxKey();
-        saveOutbox(storedKey, context.userId, outbox);
+        const key = storedKey ?? newOutboxKey();
+        if (saveOutbox(key, context.userId, outbox)) {
+            storedKey = key;
+        } else {
+            // Storage full: nothing reliable is stored, so keep the data in memory only
+            // (a stale record would later be mistaken for this tab's data).
+            removeOutbox(key);
+            storedKey = null;
+        }
     }
 
     function discardPersistedOutbox() {
@@ -215,6 +223,13 @@ export function useReadingTracker(context) {
     async function flush({ keepalive = false, collect: doCollect = true } = {}) {
         if (!tracking || stopped) return;
 
+        // If another tab already took our persisted record (it sends those entries), drop them
+        // before collect() could write them back and have them sent twice.
+        if (storedKey && !isOutboxStored(storedKey)) {
+            storedKey = null;
+            outbox = [];
+        }
+
         if (doCollect) {
             updateProgress();
             collect();
@@ -274,8 +289,10 @@ export function useReadingTracker(context) {
         } else {
             // Transient: put the batch back in front of anything queued meanwhile.
             outbox = batch.concat(outbox);
-            if (storedKey && sentKey) removeOutbox(sentKey); // a newer record already holds the data
-            else storedKey = sentKey;
+            // Drop the leased record: persistOutbox re-saves everything (under a newer record
+            // if one exists, else a fresh one), and our own lease must not make the next retry
+            // treat the record as another tab's.
+            if (sentKey) removeOutbox(sentKey);
             trimOutbox();
             persistOutbox();
             failures++;

@@ -136,6 +136,20 @@ public class ReadingContextRenderingTests : IntegrationTestBase
     }
 
     [Test]
+    public async Task SignedInUser_OnManageProfilePage_GetsCsrfMetaForTheResetButton()
+    {
+        string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-context-manage");
+        using HttpClient client = CreateClientWithoutAutoRedirect();
+        using HttpRequestMessage request = new(HttpMethod.Get, "/Identity/Account/Manage");
+        request.Headers.Add("Cookie", await ReadingTestSupport.CreateSignedInCookieHeaderAsync(Factory, userId));
+
+        using HttpResponseMessage response = await client.SendAsync(request);
+        string html = await ReadingTestSupport.ReadOkHtmlAsync(response);
+
+        await Assert.That(ReadingTestSupport.CsrfToken(html)).IsNotNull().And.IsNotEmpty();
+    }
+
+    [Test]
     public async Task SignedInUser_WpmIsRoundedToTheNearestWholeNumber()
     {
         string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-context-round");
