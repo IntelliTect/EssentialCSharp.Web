@@ -548,6 +548,37 @@ describe("useReadingTracker", () => {
             expect(delivered).toEqual([interval(5), interval(6)]);
         });
 
+        it("does not lose a persisted batch whose request never completed (page destroyed mid-send)", async () => {
+            seed([interval(5)]);
+            handler = (n) => (n === 1 ? new Promise(() => {}) : ok());
+            start();
+            await advance(TICK_INTERVAL_MS / 1000 + 1);
+            expect(calls).toHaveLength(1);
+            scope.stop(); // page destroyed, response never seen
+
+            // A page loaded while the request may still be running does not send it a second time.
+            await nextPageLoad();
+            expect(delivered).toHaveLength(0);
+
+            // Much later it is recovered.
+            scope.stop();
+            await advance(60 * 60);
+            await nextPageLoad();
+            expect(delivered).toEqual([interval(5)]);
+        });
+
+        it("does not resend a persisted batch once its request was acknowledged", async () => {
+            seed([interval(5)]);
+            start();
+            await advance(TICK_INTERVAL_MS / 1000 + 1);
+            expect(delivered).toEqual([interval(5)]);
+
+            scope.stop();
+            await advance(60 * 60);
+            await nextPageLoad();
+            expect(calls).toHaveLength(1);
+        });
+
         it("never sends data persisted for a different account", async () => {
             seed([interval(5)], "someone-else");
             start();
@@ -564,6 +595,8 @@ describe("useReadingTracker", () => {
                 { pageKey: "p", activeSeconds: -1, wordsRead: 5 },
                 { pageKey: "p", activeSeconds: 10, wordsRead: "many" },
                 { pageKey: "p", activeSeconds: Infinity, wordsRead: 5 },
+                { pageKey: "p", activeSeconds: 10.5, wordsRead: 5 },
+                { pageKey: "p", activeSeconds: 10, wordsRead: 5.5 },
                 null
             ]);
             start();

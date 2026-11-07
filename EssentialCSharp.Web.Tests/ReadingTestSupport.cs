@@ -91,7 +91,6 @@ internal static class ReadingTestSupport
             return result;
         }
 
-        public bool IsReady => true;
         public int GetPageWordCount(string pageKey) => pages.TryGetValue(pageKey, out PageWordStats? s) ? s.PageWords : 0;
         public int GetBookWordCount() => pages.Values.Select(p => p.BookWords).DefaultIfEmpty(0).Max();
         public PageWordStats? GetPageStats(string pageKey) => pages.GetValueOrDefault(pageKey);

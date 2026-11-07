@@ -32,7 +32,6 @@ public class ReadingContextRenderingTests : IntegrationTestBase
         using (Assert.Multiple())
         {
             await Assert.That(ReadingTestSupport.Field(root, "isAuthenticated").GetBoolean()).IsFalse();
-            await Assert.That(ReadingTestSupport.Field(root, "userId").ValueKind).IsEqualTo(JsonValueKind.Null);
             await Assert.That(ReadingTestSupport.Field(root, "pageKey").GetString()).IsEqualTo(ReadingTestSupport.ContentPageKey);
             await Assert.That(ReadingTestSupport.Field(root, "pageWords").GetInt32()).IsEqualTo(expected.PageWords);
             await Assert.That(ReadingTestSupport.Field(root, "chapterWords").GetInt32()).IsEqualTo(expected.ChapterWords);
@@ -116,9 +115,24 @@ public class ReadingContextRenderingTests : IntegrationTestBase
         {
             await Assert.That(ReadingTestSupport.Field(context.RootElement, "isAuthenticated").GetBoolean()).IsTrue();
             await Assert.That(ReadingTestSupport.Field(context.RootElement, "wpm").GetInt32()).IsEqualTo(200);
-            await Assert.That(ReadingTestSupport.Field(context.RootElement, "userId").GetString()).IsEqualTo(userId);
+            await Assert.That(context.RootElement.TryGetProperty("userId", out _)).IsFalse()
+                .Because("the user id is read from a meta tag so it is not exposed on a window global");
             await Assert.That(ReadingTestSupport.CsrfToken(html)).IsNotNull().And.IsNotEmpty();
         }
+    }
+
+    [Test]
+    public async Task SignedInUser_OnPageWithoutReadingTracker_GetsNoCsrfMeta()
+    {
+        string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-context-about");
+        using HttpClient client = CreateClientWithoutAutoRedirect();
+        using HttpRequestMessage request = new(HttpMethod.Get, "/about");
+        request.Headers.Add("Cookie", await ReadingTestSupport.CreateSignedInCookieHeaderAsync(Factory, userId));
+
+        using HttpResponseMessage response = await client.SendAsync(request);
+        string html = await ReadingTestSupport.ReadOkHtmlAsync(response);
+
+        await Assert.That(ReadingTestSupport.CsrfToken(html)).IsNull();
     }
 
     [Test]

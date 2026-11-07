@@ -30,10 +30,10 @@
     }
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    @if (SignInManager.IsSignedIn(User))
+    @if (SignInManager.IsSignedIn(User) && (ViewData["CurrentPageKey"] is string { Length: > 0 } || ViewData["NeedsReadingCsrf"] is true))
     {
-        // Only signed-in users call the antiforgery-protected reading API; GetAndStoreTokens sets
-        // cookie/no-cache headers, so never call it for anonymous visitors on public pages.
+        // Only the reading tracker (content pages) and the reset button (ViewData["NeedsReadingCsrf"]) call the
+        // antiforgery-protected reading API; GetAndStoreTokens sets cookie/no-cache headers, so never call it elsewhere.
         <meta name="csrf-token" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
     }
     <meta property="og:type" content="website" />

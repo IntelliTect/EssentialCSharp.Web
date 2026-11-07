@@ -155,7 +155,6 @@ public class WordCountServiceTests
 
         using (Assert.Multiple())
         {
-            await Assert.That(service.IsReady).IsTrue();
             await Assert.That(service.GetPageWordCount("a")).IsEqualTo(BaselineWords);
             await Assert.That(service.GetPageWordCount("locked")).IsEqualTo(0);
             await Assert.That(service.GetPageWordCount("c")).IsEqualTo(BaselineWords);
@@ -181,7 +180,6 @@ public class WordCountServiceTests
 
         using (Assert.Multiple())
         {
-            await Assert.That(service.IsReady).IsTrue();
             await Assert.That(service.GetPageWordCount("a")).IsEqualTo(BaselineWords);
             await Assert.That(service.GetPageWordCount("locked")).IsEqualTo(0);
             await Assert.That(service.GetPageWordCount("c")).IsEqualTo(BaselineWords);
@@ -316,7 +314,6 @@ public class WordCountServiceTests
 
         using (Assert.Multiple())
         {
-            await Assert.That(service.IsReady).IsFalse();
             await Assert.That(service.GetPageStats("a")).IsNull();
             await Assert.That(service.GetPageWordCount("a")).IsEqualTo(0);
             await Assert.That(service.GetBookWordCount()).IsEqualTo(0);
@@ -334,7 +331,6 @@ public class WordCountServiceTests
 
         using (Assert.Multiple())
         {
-            await Assert.That(service.IsReady).IsTrue();
             await Assert.That(service.GetPageWordCount("a")).IsEqualTo(BaselineWords);
         }
     }
@@ -349,7 +345,6 @@ public class WordCountServiceTests
         await cts.CancelAsync();
 
         await Assert.That(async () => await service.BuildAsync(cts.Token)).Throws<OperationCanceledException>();
-        await Assert.That(service.IsReady).IsFalse();
     }
 
     // ---- Helpers ----

@@ -51,29 +51,24 @@ export function statusFor(response) {
 }
 
 /**
- * Posts intervals. Never sends a request without a CSRF token (it cannot
- * succeed): that is reported as an auth failure.
- * Retrying a request whose response was lost can double count the interval on
- * the server (accepted trade-off; there is no idempotency key).
- * @param {ReadingInterval[]} intervals
- * @param {{ keepalive?: boolean }} [options]
- * @returns {Promise<ApiResult<{ wpm?: number | null }>>}
+ * Sends a CSRF-protected POST and classifies the outcome. Never sends a request
+ * without a CSRF token (it cannot succeed): that is reported as an auth failure.
+ * @param {string} url
+ * @param {{ headers?: Record<string, string>, body?: string, keepalive?: boolean, readJson?: boolean }} [options]
+ * @returns {Promise<ApiResult<any>>}
  */
-export async function postSession(intervals, { keepalive = false } = {}) {
+async function postWithCsrf(url, { headers = {}, body, keepalive, readJson = false } = {}) {
     const token = getCsrfToken();
     if (!token) return { status: STATUS_AUTH_FAILURE };
     try {
-        const res = await fetch(READING_SESSION_URL, {
+        const res = await fetch(url, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                RequestVerificationToken: token
-            },
-            body: JSON.stringify({ intervals }),
+            headers: { ...headers, RequestVerificationToken: token },
+            body,
             keepalive
         });
         const status = statusFor(res);
-        if (status !== STATUS_OK) return { status };
+        if (status !== STATUS_OK || !readJson) return { status };
         let data;
         try {
             data = await res.json();
@@ -86,17 +81,24 @@ export async function postSession(intervals, { keepalive = false } = {}) {
     }
 }
 
+/**
+ * Posts intervals.
+ * Retrying a request whose response was lost can double count the interval on
+ * the server (accepted trade-off; there is no idempotency key).
+ * @param {ReadingInterval[]} intervals
+ * @param {{ keepalive?: boolean }} [options]
+ * @returns {Promise<ApiResult<{ wpm?: number | null }>>}
+ */
+export function postSession(intervals, { keepalive = false } = {}) {
+    return postWithCsrf(READING_SESSION_URL, {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ intervals }),
+        keepalive,
+        readJson: true
+    });
+}
+
 /** @returns {Promise<ApiResult<undefined>>} */
-export async function resetProfile() {
-    const token = getCsrfToken();
-    if (!token) return { status: STATUS_AUTH_FAILURE };
-    try {
-        const res = await fetch(READING_RESET_URL, {
-            method: "POST",
-            headers: { RequestVerificationToken: token }
-        });
-        return { status: statusFor(res) };
-    } catch {
-        return { status: STATUS_TRANSIENT };
-    }
+export function resetProfile() {
+    return postWithCsrf(READING_RESET_URL);
 }

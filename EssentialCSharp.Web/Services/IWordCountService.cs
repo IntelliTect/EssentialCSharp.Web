@@ -5,18 +5,15 @@ namespace EssentialCSharp.Web.Services;
 /// Kindle-style reading time estimates.
 /// </summary>
 /// <remarks>
-/// The cache is built when the host starts. Until then (<see cref="IsReady"/> is <see langword="false"/>)
+/// The cache is built when the host starts, before requests are served. Before it is built
 /// every query returns "no data": <see cref="GetPageStats"/> returns <see langword="null"/>,
 /// counts are 0.
 /// </remarks>
 public interface IWordCountService
 {
-    /// <summary>Gets whether the word-count cache has been built.</summary>
-    bool IsReady { get; }
-
     /// <summary>
     /// Gets all word statistics for a page key, or <see langword="null"/> if the key is unknown
-    /// (or the cache is not ready yet). A known key whose content file is missing or unreadable
+    /// (or the cache is not built yet). A known key whose content file is missing or unreadable
     /// yields stats with zero page words.
     /// </summary>
     PageWordStats? GetPageStats(string pageKey);

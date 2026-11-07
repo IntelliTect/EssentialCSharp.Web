@@ -11,7 +11,7 @@ namespace EssentialCSharp.Web.ViewComponents;
 /// Emits <c>window.READING_CONTEXT</c> for the reading-time tracker. Renders nothing on pages that
 /// are not book content (no <c>ViewBag.CurrentPageKey</c>), such as Identity pages and errors.
 /// </summary>
-public partial class ReadingContextViewComponent(
+public sealed partial class ReadingContextViewComponent(
     IWordCountService wordCountService,
     IReadingProfileService readingProfileService,
     SignInManager<EssentialCSharpWebUser> signInManager,
@@ -36,7 +36,6 @@ public partial class ReadingContextViewComponent(
         PageWordStats? stats = wordCountService.GetPageStats(pageKey);
         return View(new ReadingContextViewModel(
             IsAuthenticated: isAuthenticated,
-            UserId: userId,
             PageKey: pageKey,
             PageWords: stats?.PageWords ?? 0,
             ChapterWords: stats?.ChapterWords ?? 0,
@@ -70,12 +69,9 @@ public partial class ReadingContextViewComponent(
 /// <summary>
 /// Serialized (camelCase) as <c>window.READING_CONTEXT</c>; property names are a contract with the client.
 /// <paramref name="Wpm"/> is null for anonymous readers or readers with no recorded reading time.
-/// <paramref name="UserId"/> is the signed-in reader's own id (null when anonymous); the client scopes
-/// locally persisted unsent reading data to it so it is never sent for a different account.
 /// </summary>
 public record ReadingContextViewModel(
     bool IsAuthenticated,
-    string? UserId,
     string PageKey,
     int PageWords,
     int ChapterWords,

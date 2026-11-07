@@ -27,11 +27,13 @@ public sealed partial class ReadingProfileService(
     {
         ArgumentNullException.ThrowIfNull(intervals);
 
-        foreach (ReadingInterval interval in intervals)
+        int[] pageWords = new int[intervals.Count];
+        for (int i = 0; i < intervals.Count; i++)
         {
-            if (wordCountService.GetPageWordCount(interval.PageKey) <= 0)
+            pageWords[i] = wordCountService.GetPageWordCount(intervals[i].PageKey);
+            if (pageWords[i] <= 0)
             {
-                return new RecordSessionResult(null, interval.PageKey);
+                return new RecordSessionResult(null, intervals[i].PageKey);
             }
         }
 
@@ -43,9 +45,10 @@ public sealed partial class ReadingProfileService(
 
         long deltaWords = 0;
         long deltaSeconds = 0;
-        foreach (ReadingInterval interval in intervals)
+        for (int i = 0; i < intervals.Count; i++)
         {
-            int words = Math.Min(interval.WordsRead, wordCountService.GetPageWordCount(interval.PageKey));
+            ReadingInterval interval = intervals[i];
+            int words = Math.Min(interval.WordsRead, pageWords[i]);
             ReadingCredit? credit = ReadingSpeedPolicy.Evaluate(words, interval.ActiveSeconds, referenceWpm, _options);
             if (credit is null)
             {
