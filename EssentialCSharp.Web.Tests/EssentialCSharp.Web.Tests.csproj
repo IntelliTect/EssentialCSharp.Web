@@ -12,6 +12,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     <PackageReference Include="Moq" />
     <PackageReference Include="Moq.AutoMock" />
+    <PackageReference Include="Testcontainers.MsSql" />
     <PackageReference Include="TUnit" />
     <PackageReference Include="TUnit.AspNetCore" />
     <PackageReference Include="Newtonsoft.Json" />
