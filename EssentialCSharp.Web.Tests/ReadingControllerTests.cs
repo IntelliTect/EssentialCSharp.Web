@@ -594,7 +594,7 @@ public class ReadingControllerTests : IntegrationTestBase
     public async Task PostSession_ManyParallelRequests_AreAllAcceptedAndTheTotalsAddUp(bool userAlreadyHasProfile)
     {
         // On SQLite this proves the endpoint is wired for a burst and the final sum is right; it does not prove
-        // lost-update safety (the SQL Server tests in ReadingProfileSqlServerTests exercise real concurrent writes).
+        // lost-update safety, because SQLite serializes writers. That needs a real SQL Server (tracked separately).
         // The burst is kept small enough that no request is rate limited.
         const int parallelRequests = 10;
         const int wordsPerRequest = 40;
