@@ -203,6 +203,22 @@ describe("useReadingTracker", () => {
             expect(ctx.pageWords - total).toBeLessThanOrEqual(ctx.maxCreditWpm / 60 + 1);
         });
 
+        it("keeps stationary reading time so a slow reader is credited at their real speed", async () => {
+            const ctx = context();
+            start(ctx);
+            press();
+            const stationaryS = FLUSH_S * 3;
+            for (let waited = 0; waited < stationaryS; waited += 30) {
+                await advance(30);
+                press(); // still reading, not idle
+            }
+            scrollTo(-(CONTENT_HEIGHT - VIEWPORT)); // finally scrolls
+            await advance(1);
+            await leavePage();
+
+            expect(deliveredSeconds()).toBeGreaterThanOrEqual(stationaryS);
+        });
+
         it("credits only the first screen when the reader never scrolls", async () => {
             const ctx = context();
             start(ctx);

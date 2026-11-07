@@ -9,12 +9,9 @@ public sealed record ReadingInterval(string PageKey, int WordsRead, int ActiveSe
 /// </summary>
 public sealed record ReadingProfileSummary(long TotalWordsRead, long TotalActiveSeconds, double? Wpm);
 
-/// <summary>Outcome of recording a session: either the updated profile or the first unknown page key.</summary>
-public sealed record RecordSessionResult(ReadingProfileSummary? Profile, string? UnknownPageKey);
-
 public interface IReadingProfileService
 {
-    Task<RecordSessionResult> RecordSessionAsync(
+    Task<ReadingProfileSummary> RecordSessionAsync(
         string userId, IReadOnlyList<ReadingInterval> intervals, CancellationToken cancellationToken);
 
     Task<ReadingProfileSummary> GetProfileAsync(string userId, CancellationToken cancellationToken);

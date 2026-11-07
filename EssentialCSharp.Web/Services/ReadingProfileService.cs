@@ -16,39 +16,43 @@ public sealed partial class ReadingProfileService(
     [LoggerMessage(Level = LogLevel.Debug, Message = "Ignored interval for {PageKey}: {Words} words in {Seconds}s is not credited")]
     private static partial void LogIntervalIgnored(ILogger logger, string pageKey, int words, int seconds);
 
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Ignored interval for page {PageKey}: unknown page or no countable words")]
+    private static partial void LogUnknownPage(ILogger logger, string pageKey);
+
     /// <remarks>
     /// Not idempotent: if a client retries a request whose response was lost, the same intervals are credited
     /// twice. This is accepted (no idempotency store); the effect is a small skew in the derived WPM.
     /// The reference WPM used for the slow-outlier rule is read once before the batch is written, so concurrent
     /// requests from the same user may evaluate against a slightly stale reference. This is also accepted.
     /// </remarks>
-    public async Task<RecordSessionResult> RecordSessionAsync(
+    public async Task<ReadingProfileSummary> RecordSessionAsync(
         string userId, IReadOnlyList<ReadingInterval> intervals, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(intervals);
-
-        int[] pageWords = new int[intervals.Count];
-        for (int i = 0; i < intervals.Count; i++)
-        {
-            pageWords[i] = wordCountService.GetPageWordCount(intervals[i].PageKey);
-            if (pageWords[i] <= 0)
-            {
-                return new RecordSessionResult(null, intervals[i].PageKey);
-            }
-        }
 
         DateTime now = DateTime.UtcNow;
 
         // One consistent reference speed for the whole batch.
         ReadingProfileSummary current = await GetProfileAsync(userId, cancellationToken);
-        double referenceWpm = current.Wpm ?? 0;
+        // A reader without a derived speed yet is held to the default speed, so a first (or just-reset) batch of
+        // idle-inflated intervals cannot set their speed unchecked.
+        double referenceWpm = current.Wpm ?? _options.DefaultWpm;
 
         long deltaWords = 0;
         long deltaSeconds = 0;
         for (int i = 0; i < intervals.Count; i++)
         {
             ReadingInterval interval = intervals[i];
-            int words = Math.Min(interval.WordsRead, pageWords[i]);
+            // An unknown or empty page (for example a key renamed by a content deploy) skips only this interval:
+            // rejecting the batch would make the client drop every interval queued with it.
+            int pageWords = wordCountService.GetPageWordCount(interval.PageKey);
+            if (pageWords <= 0)
+            {
+                LogUnknownPage(logger, interval.PageKey);
+                continue;
+            }
+
+            int words = Math.Min(interval.WordsRead, pageWords);
             ReadingCredit? credit = ReadingSpeedPolicy.Evaluate(words, interval.ActiveSeconds, referenceWpm, _options);
             if (credit is null)
             {
@@ -65,7 +69,7 @@ public sealed partial class ReadingProfileService(
             await AddToProfileAsync(userId, deltaWords, deltaSeconds, now, cancellationToken);
         }
 
-        return new RecordSessionResult(await GetProfileAsync(userId, cancellationToken), null);
+        return await GetProfileAsync(userId, cancellationToken);
     }
 
     public async Task<ReadingProfileSummary> GetProfileAsync(string userId, CancellationToken cancellationToken)

@@ -4,6 +4,7 @@
  */
 import { STATUS_AUTH_FAILURE, STATUS_OK, resetProfile } from "./services/readingApi.js";
 import { READING_RESET_CHANNEL } from "./utils/readingConstants.js";
+import { getUserId } from "./utils/readingContext.js";
 import { clearStoredIntervals } from "./utils/readingOutboxStorage.js";
 
 const STATUS_CLASSES = ["text-muted", "text-success", "text-danger"];
@@ -38,7 +39,9 @@ function init() {
         const result = await resetProfile();
         button.disabled = false;
         if (result.status === STATUS_OK) {
-            clearStoredIntervals(); // unsent data of tabs that are no longer open
+            // Unsent data of tabs that are no longer open. Only this account's: others may share the browser.
+            const userId = getUserId(window);
+            if (userId) clearStoredIntervals(userId);
             broadcastReset();
             showStatus(status, "Reading speed reset successfully.", "text-success");
             return;

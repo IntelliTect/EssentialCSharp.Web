@@ -23,7 +23,7 @@ function toCount(value) {
 const isPositiveNumber = (value) => typeof value === "number" && Number.isFinite(value) && value > 0;
 
 /** The layout exposes the signed-in user id in a meta tag (not a window global); anonymous has none. */
-function getUserId(win) {
+export function getUserId(win) {
     const id = win.document?.querySelector('meta[name="ecs-auth-user-id"]')?.content;
     return id ? id : null;
 }

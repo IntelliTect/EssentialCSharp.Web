@@ -60,7 +60,7 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
             string headHtml = doc.DocumentNode.Element("html")?.Element("head")?.InnerHtml ?? string.Empty;
             string html = doc.DocumentNode.Element("html")?.Element("body")?.InnerHtml ?? string.Empty;
 
-            // PrimaryKey is not serialized in sitemap.json, so it is null after deserialization; Keys is authoritative.
+            // Placeholder sitemaps (CI, local dev) may omit PrimaryKey, so fall back to the first key.
             string pageKey = siteMapping.Keys.FirstOrDefault() ?? siteMapping.PrimaryKey ?? string.Empty;
             ViewBag.PageTitle = siteMapping.IndentLevel is 0 ? siteMapping.ChapterTitle + " " + siteMapping.RawHeading : siteMapping.RawHeading;
             ViewData["Description"] = chapterDescriptionService.GetDescription(siteMapping);
