@@ -19,8 +19,10 @@
  *  - transient: the batch goes back to the queue and is retried with exponential
  *    backoff on a later tick; lifecycle flushes (hidden/pagehide) ignore the
  *    backoff. The queue is also saved to localStorage (see readingOutboxStorage)
- *    so the next page load of the same user sends it. A request still in flight
- *    when its page is destroyed is lost (at-most-once delivery, accepted).
+ *    so the next page load of the same user sends it. While a persisted batch is
+ *    being sent its record stays stored (leased) until the response arrives, so a
+ *    request aborted with its page is recovered later (at-least-once, see
+ *    readingOutboxStorage).
  *
  * Pieces: useActivityState (idle/visibility/focus/input), services/readingApi
  * (fetch + CSRF + typed results), utils/readingProgress (pure scroll math).
@@ -31,6 +33,7 @@ import {
     STATUS_AUTH_FAILURE,
     STATUS_BAD_DATA,
     STATUS_OK,
+    STATUS_TRANSIENT,
     postSession
 } from "../services/readingApi.js";
 import {
@@ -42,9 +45,12 @@ import {
     TICK_INTERVAL_MS
 } from "../utils/readingConstants.js";
 import {
+    CLAIM_CLAIMED,
+    CLAIM_GONE,
     claimOutbox,
     clearStoredIntervals,
     newOutboxKey,
+    removeOutbox,
     saveOutbox,
     takeStoredIntervals
 } from "../utils/readingOutboxStorage.js";
@@ -154,9 +160,9 @@ export function useReadingTracker(context) {
         if (activity.getState() === STATE_READING) pendingSeconds += deltaS;
         updateProgress();
         if (pendingSeconds >= context.periodicFlushActiveSeconds) {
-            void flush();
+            safeFlush();
         } else if (outbox.length > 0) {
-            void flush({ collect: false }); // retry of previously failed intervals
+            safeFlush({ collect: false }); // retry of previously failed intervals
         }
     }
 
@@ -166,30 +172,33 @@ export function useReadingTracker(context) {
      * is credited by later time.
      */
     function collect() {
-        // The server rejects intervals above MaxActiveSecondsPerInterval (its options
-        // validator enforces idle threshold <= that cap), so never emit
-        // one longer than the idle threshold: split long pending time into several
-        // intervals of the same batch.
-        while (Math.floor(pendingSeconds) >= 1) {
-            const activeSeconds = Math.min(Math.floor(pendingSeconds), context.idleThresholdSeconds);
-            const { wordsRead, progressConsumed } = creditInterval({
-                pageWords: context.pageWords,
-                progress: maxBottom - baseline,
-                activeSeconds,
-                maxWpm: context.maxCreditWpm
-            });
-            if (wordsRead <= 0) {
-                // Nothing progressed. Keep at most one flush period of time for a
-                // coming scroll so long stationary reading cannot inflate later credit.
-                pendingSeconds = Math.min(pendingSeconds, context.periodicFlushActiveSeconds);
-                return;
+        try {
+            // The server rejects intervals above MaxActiveSecondsPerInterval (its options
+            // validator enforces idle threshold <= that cap), so never emit
+            // one longer than the idle threshold: split long pending time into several
+            // intervals of the same batch.
+            while (Math.floor(pendingSeconds) >= 1) {
+                const activeSeconds = Math.min(Math.floor(pendingSeconds), context.idleThresholdSeconds);
+                const { wordsRead, progressConsumed } = creditInterval({
+                    pageWords: context.pageWords,
+                    progress: maxBottom - baseline,
+                    activeSeconds,
+                    maxWpm: context.maxCreditWpm
+                });
+                if (wordsRead <= 0) {
+                    // Nothing progressed. Keep at most one flush period of time for a
+                    // coming scroll so long stationary reading cannot inflate later credit.
+                    pendingSeconds = Math.min(pendingSeconds, context.periodicFlushActiveSeconds);
+                    return;
+                }
+                pendingSeconds -= activeSeconds;
+                baseline += progressConsumed;
+                outbox.push({ pageKey: context.pageKey, activeSeconds, wordsRead });
             }
-            pendingSeconds -= activeSeconds;
-            baseline += progressConsumed;
-            outbox.push({ pageKey: context.pageKey, activeSeconds, wordsRead });
+        } finally {
+            trimOutbox();
+            if (storedKey) persistOutbox();
         }
-        trimOutbox();
-        if (storedKey) persistOutbox();
     }
 
     function trimOutbox() {
@@ -210,14 +219,21 @@ export function useReadingTracker(context) {
         if (outbox.length === 0) return;
         if (!keepalive && (inFlight > 0 || performance.now() < retryAt)) return;
 
-        // A persisted batch is sent only by the tab that still holds its record: if another
-        // tab took it, that tab sends it and this copy is dropped.
-        if (storedKey && !claimOutbox(storedKey)) {
+        // A persisted batch is sent only by the tab that holds its record: if another tab
+        // took it, that tab sends it and this copy is dropped. If storage itself fails nothing
+        // is known about the record, so the batch is still sent (never dropped on a guess).
+        // The record stays stored (leased) until the response is acknowledged.
+        let sentKey = null;
+        if (storedKey) {
+            const claim = claimOutbox(storedKey);
+            if (claim === CLAIM_GONE) {
+                storedKey = null;
+                outbox = [];
+                return;
+            }
+            if (claim === CLAIM_CLAIMED) sentKey = storedKey;
             storedKey = null;
-            outbox = [];
-            return;
         }
-        storedKey = null;
         const batch = outbox;
         outbox = [];
         const batchGeneration = generation;
@@ -229,6 +245,9 @@ export function useReadingTracker(context) {
         } finally {
             inFlight--;
         }
+        // Acknowledged (delivered or rejected for good): the record is no longer needed.
+        // Transient failures keep it, re-saved below.
+        if (sentKey && result.status !== STATUS_TRANSIENT) removeOutbox(sentKey);
         if (disposed || batchGeneration !== generation) return;
 
         if (result.status === STATUS_OK) {
@@ -248,6 +267,8 @@ export function useReadingTracker(context) {
         } else {
             // Transient: put the batch back in front of anything queued meanwhile.
             outbox = batch.concat(outbox);
+            if (storedKey && sentKey) removeOutbox(sentKey); // a newer record already holds the data
+            else storedKey = sentKey;
             trimOutbox();
             persistOutbox();
             failures++;
@@ -256,16 +277,21 @@ export function useReadingTracker(context) {
         }
     }
 
+    // Fire-and-forget flush for timers and page lifecycle events: never an unhandled rejection.
+    function safeFlush(options) {
+        flush(options).catch(() => {});
+    }
+
     function onVisibilityChange() {
         if (document.visibilityState === "hidden") {
-            void flush({ keepalive: true });
+            safeFlush({ keepalive: true });
         } else {
             lastTickAt = performance.now();
         }
     }
 
     function onPageHide() {
-        void flush({ keepalive: true });
+        safeFlush({ keepalive: true });
     }
 
     function onPageShow(event) {

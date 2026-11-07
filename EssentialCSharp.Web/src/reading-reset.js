@@ -34,23 +34,19 @@ function init() {
 
         button.disabled = true;
         showStatus(status, "Resetting…", "text-muted");
-        try {
-            const result = await resetProfile();
-            if (result.status === STATUS_OK) {
-                clearStoredIntervals(); // unsent data of tabs that are no longer open
-                broadcastReset();
-                showStatus(status, "Reading speed reset successfully.", "text-success");
-                return;
-            }
-            const message = result.status === STATUS_AUTH_FAILURE
-                ? "Your session has expired. Please sign in again."
-                : "Reset failed. Please try again.";
-            showStatus(status, message, "text-danger");
-        } catch {
-            showStatus(status, "Reset failed. Please try again.", "text-danger");
-        } finally {
-            button.disabled = false;
+        // resetProfile reports failures as a status and never throws.
+        const result = await resetProfile();
+        button.disabled = false;
+        if (result.status === STATUS_OK) {
+            clearStoredIntervals(); // unsent data of tabs that are no longer open
+            broadcastReset();
+            showStatus(status, "Reading speed reset successfully.", "text-success");
+            return;
         }
+        const message = result.status === STATUS_AUTH_FAILURE
+            ? "Your session has expired. Please sign in again."
+            : "Reset failed. Please try again.";
+        showStatus(status, message, "text-danger");
     });
 }
 

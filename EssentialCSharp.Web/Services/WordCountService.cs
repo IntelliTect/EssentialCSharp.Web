@@ -19,16 +19,14 @@ public sealed partial class WordCountService(
     private const string ExcludedXPath =
         "//pre | //script | //style | //*[contains(concat(' ', normalize-space(@class), ' '), ' code-block-section ')]";
 
-    private volatile Snapshot? _snapshot;
-
-    public bool IsReady => _snapshot is not null;
+    private volatile Snapshot _snapshot = new(FrozenDictionary<string, PageWordStats>.Empty, 0);
 
     public PageWordStats? GetPageStats(string pageKey) =>
-        _snapshot?.Pages.GetValueOrDefault(pageKey);
+        _snapshot.Pages.GetValueOrDefault(pageKey);
 
     public int GetPageWordCount(string pageKey) => GetPageStats(pageKey)?.PageWords ?? 0;
 
-    public int GetBookWordCount() => _snapshot?.BookWords ?? 0;
+    public int GetBookWordCount() => _snapshot.BookWords;
 
     /// <summary>
     /// Reads every mapped content page and publishes the word-count snapshot. A page that is

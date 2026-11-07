@@ -6,7 +6,6 @@ import { getReadingContext } from "./readingContext.js";
 // the parser and this fixture cannot silently drift apart (see the key-set test below).
 const complete = () => ({
     isAuthenticated: true,
-    userId: "user-1",
     pageKey: "chapter-1/page-2",
     pageWords: 1200,
     chapterWords: 5000,
@@ -22,17 +21,42 @@ const complete = () => ({
 
 const raw = (overrides = {}) => ({ READING_CONTEXT: { ...complete(), ...overrides } });
 
+// The user id is not part of READING_CONTEXT: the layout exposes it in a meta tag.
+const withUserIdMeta = (content) => {
+    const doc = document.implementation.createHTMLDocument("");
+    if (content !== undefined) {
+        const meta = doc.createElement("meta");
+        meta.name = "ecs-auth-user-id";
+        meta.content = content;
+        doc.head.append(meta);
+    }
+    return { ...raw(), document: doc };
+};
+
 describe("getReadingContext", () => {
     it("returns null when there is no context (not a content page)", () => {
         expect(getReadingContext({})).toBeNull();
     });
 
     it("reads the server-provided values", () => {
-        expect(getReadingContext(raw())).toEqual(complete());
+        expect(getReadingContext(raw())).toEqual({ ...complete(), userId: null });
     });
 
-    it("parses exactly the fields of the fixture: a field added to one side but not the other fails here", () => {
-        expect(Object.keys(getReadingContext(raw())).sort()).toEqual(Object.keys(complete()).sort());
+    it("reads the signed-in user id from the layout's meta tag", () => {
+        expect(getReadingContext(withUserIdMeta("user-1")).userId).toBe("user-1");
+    });
+
+    it("has no user id for anonymous visitors (no meta tag) or an empty one", () => {
+        expect(getReadingContext(withUserIdMeta()).userId).toBeNull();
+        expect(getReadingContext(withUserIdMeta("")).userId).toBeNull();
+    });
+
+    it("ignores a userId in READING_CONTEXT: the meta tag is the only source", () => {
+        expect(getReadingContext(raw({ userId: "from-window" })).userId).toBeNull();
+    });
+
+    it("parses exactly the fields of the fixture (plus the meta-tag user id): a field added to one side but not the other fails here", () => {
+        expect(Object.keys(getReadingContext(raw())).sort()).toEqual([...Object.keys(complete()), "userId"].sort());
     });
 
     it("uses null wpm when the server has none", () => {

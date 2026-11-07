@@ -10,14 +10,15 @@ namespace EssentialCSharp.Web.Controllers;
 [Authorize]
 [Route("api/reading")]
 [ReadingAntiforgeryFailureHeader]
-public class ReadingController(IReadingProfileService readingProfileService) : ControllerBase
+// Class-level so every action is limited: /api/reading is exempt from the global limiter in Program.cs.
+[EnableRateLimiting(WriteRateLimitPolicy)]
+public sealed class ReadingController(IReadingProfileService readingProfileService) : ControllerBase
 {
     public const string WriteRateLimitPolicy = "ReadingWrite";
 
     private const int MaxSessionRequestBytes = 32 * 1024;
 
     [HttpPost("session")]
-    [EnableRateLimiting(WriteRateLimitPolicy)]
     [RequestSizeLimit(MaxSessionRequestBytes)]
     [ProducesResponseType<ReadingProfileSummary>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -50,7 +51,6 @@ public class ReadingController(IReadingProfileService readingProfileService) : C
     }
 
     [HttpPost("reset")]
-    [EnableRateLimiting(WriteRateLimitPolicy)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Reset(CancellationToken cancellationToken)

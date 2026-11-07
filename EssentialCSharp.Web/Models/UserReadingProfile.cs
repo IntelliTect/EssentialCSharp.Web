@@ -29,8 +29,6 @@ public class UserReadingProfile
     public EssentialCSharpWebUser? User { get; set; }
 
     /// <summary>Derives the words-per-minute estimate. Returns null if there is no active time.</summary>
-    public double? DeriveWpm() => DeriveWpm(TotalWordsRead, TotalActiveSeconds);
-
     public static double? DeriveWpm(long totalWordsRead, long totalActiveSeconds) =>
         totalActiveSeconds > 0 ? totalWordsRead / (totalActiveSeconds / 60.0) : null;
 }
