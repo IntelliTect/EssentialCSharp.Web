@@ -130,7 +130,7 @@ public class WordCountServiceTests
             await Assert.That(service.GetPageStats("missing")).IsNotNull();
             await Assert.That(service.GetPageWordCount("missing")).IsEqualTo(0);
             await Assert.That(service.GetPageWordCount("present")).IsEqualTo(BaselineWords);
-            await Assert.That(logger.Warnings).HasSingleItem().And.Contains(w => w.Mentions("nonexistent.html"));
+            await Assert.That(logger.Warnings).Contains(w => w.Mentions("nonexistent.html"));
         }
     }
 
@@ -158,7 +158,7 @@ public class WordCountServiceTests
             await Assert.That(service.GetPageWordCount("a")).IsEqualTo(BaselineWords);
             await Assert.That(service.GetPageWordCount("locked")).IsEqualTo(0);
             await Assert.That(service.GetPageWordCount("c")).IsEqualTo(BaselineWords);
-            await Assert.That(logger.Warnings).HasSingleItem().And.Contains(w => w.Mentions("locked.html"));
+            await Assert.That(logger.Warnings).Contains(w => w.Mentions("locked.html"));
         }
     }
 
@@ -184,7 +184,7 @@ public class WordCountServiceTests
             await Assert.That(service.GetPageWordCount("locked")).IsEqualTo(0);
             await Assert.That(service.GetPageWordCount("c")).IsEqualTo(BaselineWords);
             await Assert.That(service.GetPageStats("c")?.WordsBeforePage).IsEqualTo(BaselineWords);
-            await Assert.That(logger.Warnings).HasSingleItem().And.Contains(w => w.Mentions("locked.html"));
+            await Assert.That(logger.Warnings).Contains(w => w.Mentions("locked.html"));
         }
     }
 

@@ -20,9 +20,12 @@
  *    backoff on a later tick; lifecycle flushes (hidden/pagehide) ignore the
  *    backoff. The queue is also saved to localStorage (see readingOutboxStorage)
  *    so the next page load of the same user sends it. While a persisted batch is
- *    being sent its record stays stored (leased) until the response arrives, so a
- *    request aborted with its page is recovered later (at-least-once, see
- *    readingOutboxStorage).
+ *    sent by a periodic flush its record stays stored (leased) until the response
+ *    arrives. A lifecycle (keepalive) send removes its record first: the page is
+ *    about to be destroyed, so the response can never acknowledge it, and keeping
+ *    the record would resend (double count) every successful send. A keepalive
+ *    request that is aborted with its page is therefore lost (accepted: a rare
+ *    undercount is better than routine double counting).
  *
  * Pieces: useActivityState (idle/visibility/focus/input), services/readingApi
  * (fetch + CSRF + typed results), utils/readingProgress (pure scroll math).
@@ -222,7 +225,8 @@ export function useReadingTracker(context) {
         // A persisted batch is sent only by the tab that holds its record: if another tab
         // took it, that tab sends it and this copy is dropped. If storage itself fails nothing
         // is known about the record, so the batch is still sent (never dropped on a guess).
-        // The record stays stored (leased) until the response is acknowledged.
+        // For a periodic send the record stays stored (leased) until the response is
+        // acknowledged; a keepalive send cannot be acknowledged, so its record is removed now.
         let sentKey = null;
         if (storedKey) {
             const claim = claimOutbox(storedKey);
@@ -231,7 +235,10 @@ export function useReadingTracker(context) {
                 outbox = [];
                 return;
             }
-            if (claim === CLAIM_CLAIMED) sentKey = storedKey;
+            if (claim === CLAIM_CLAIMED) {
+                if (keepalive) removeOutbox(storedKey);
+                else sentKey = storedKey;
+            }
             storedKey = null;
         }
         const batch = outbox;

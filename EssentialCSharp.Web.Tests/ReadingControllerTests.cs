@@ -22,10 +22,8 @@ namespace EssentialCSharp.Web.Tests;
 /// </summary>
 public class ReadingControllerTests : IntegrationTestBase
 {
-    // Baseline profile: 1200 words in 360 seconds = 200 WPM, i.e. a slow-outlier threshold of 50 WPM.
-    private const long BaselineWords = 1200;
-    private const long BaselineSeconds = 360;
-    private const double BaselineWpm = 200;
+    private const long BaselineWords = ReadingTestSupport.BaselineWords;
+    private const long BaselineSeconds = ReadingTestSupport.BaselineSeconds;
 
     private const string LargePage = ReadingTestSupport.LargePage;
 
@@ -39,16 +37,15 @@ public class ReadingControllerTests : IntegrationTestBase
     // ---- authentication ----
 
     [Test]
-    [Arguments("POST", "/api/reading/session")]
-    [Arguments("POST", "/api/reading/reset")]
-    public async Task ProtectedEndpoints_Anonymous_Return401WithoutRedirect(string method, string url)
+    [Arguments("/api/reading/session")]
+    [Arguments("/api/reading/reset")]
+    public async Task ProtectedEndpoints_Anonymous_Return401WithoutRedirect(string url)
     {
         using HttpClient client = CreateClientWithoutAutoRedirect();
-        using var request = new HttpRequestMessage(new HttpMethod(method), url);
-        if (method == "POST")
+        using var request = new HttpRequestMessage(HttpMethod.Post, url)
         {
-            request.Content = JsonBody($$"""{"intervals":[{"pageKey":"{{LargePage}}","wordsRead":10,"activeSeconds":10}]}""");
-        }
+            Content = JsonBody($$"""{"intervals":[{"pageKey":"{{LargePage}}","wordsRead":10,"activeSeconds":10}]}""")
+        };
 
         using HttpResponseMessage response = await client.SendAsync(request);
 
@@ -59,23 +56,7 @@ public class ReadingControllerTests : IntegrationTestBase
         }
     }
 
-    [Test]
-    [Arguments("/api/reading/session")]
-    [Arguments("/api/reading/reset")]
-    public async Task WriteEndpoints_WithoutAntiforgeryToken_AreRejectedAndDoNotChangeProfile(string url)
-    {
-        string userId = await CreateUserWithBaselineProfileAsync();
-        using HttpClient client = await CreateAuthenticatedClientAsync(userId, includeAntiforgery: false);
-        using var request = new HttpRequestMessage(HttpMethod.Post, url)
-        {
-            Content = JsonBody($$"""{"intervals":[{"pageKey":"{{LargePage}}","wordsRead":10,"activeSeconds":10}]}""")
-        };
-
-        using HttpResponseMessage response = await client.SendAsync(request);
-
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
-        await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
-    }
+    // A missing or invalid antiforgery token is covered by ReadingAntiforgeryContractTests.
 
     // ---- POST session: one smoke case per scoring outcome (the math lives in ReadingSpeedPolicyTests) ----
 
@@ -282,7 +263,7 @@ public class ReadingControllerTests : IntegrationTestBase
     }
 
     [Test]
-    public async Task PostSession_HasARequestSizeLimitThatFitsAMaximalLegitimateRequestButIsFarBelowTheServerDefault()
+    public async Task PostSession_DeclaresARequestSizeLimitInItsMetadataThatFitsAMaximalLegitimateRequestButIsFarBelowTheServerDefault()
     {
         // The in-memory TestServer does not enforce Kestrel's body-size feature, so an oversized request cannot be
         // rejected here; read the limit the endpoint declares (which Kestrel enforces) from the endpoint metadata.
@@ -459,12 +440,47 @@ public class ReadingControllerTests : IntegrationTestBase
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NoContent);
     }
 
+    [Test]
+    public async Task Reset_CalledTwice_IsIdempotent()
+    {
+        string userId = await CreateUserWithBaselineProfileAsync();
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+
+        using HttpResponseMessage first = await client.PostAsync("/api/reading/reset", null);
+        using HttpResponseMessage second = await client.PostAsync("/api/reading/reset", null);
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(first.StatusCode).IsEqualTo(HttpStatusCode.NoContent);
+            await Assert.That(second.StatusCode).IsEqualTo(HttpStatusCode.NoContent);
+            await Assert.That(await HasProfileRowAsync(userId)).IsFalse();
+        }
+    }
+
+    [Test]
+    public async Task Reset_ThenRecording_StartsAFreshProfileWithNoReferenceSpeed()
+    {
+        string userId = await CreateUserWithBaselineProfileAsync();
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+
+        using HttpResponseMessage reset = await client.PostAsync("/api/reading/reset", null);
+        // 50 words in 1800 s would be clamped for the baseline reader, but after a reset there is no reference speed.
+        using HttpResponseMessage record = await PostSessionAsync(client, Interval(LargePage, 50, 1800));
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(reset.StatusCode).IsEqualTo(HttpStatusCode.NoContent);
+            await Assert.That(record.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        }
+        await AssertProfileAsync(userId, 50, 1800);
+    }
+
     // ---- rate limiting ----
 
     [Test]
-    [Arguments("POST", "/api/reading/session")]
-    [Arguments("POST", "/api/reading/reset")]
-    public async Task AuthenticatedEndpoint_ThrottlesAUserWhoKeepsCallingWith429_WithoutAffectingOtherUsers(string method, string url)
+    [Arguments("/api/reading/session")]
+    [Arguments("/api/reading/reset")]
+    public async Task AuthenticatedEndpoint_ThrottlesAUserWhoKeepsCallingWith429_WithoutAffectingOtherUsers(string url)
     {
         // The permit count is a production tuning value and is deliberately not asserted: keep calling until the
         // first 429. The ceiling is only a sanity bound that turns "never throttled" into a failure.
@@ -475,30 +491,45 @@ public class ReadingControllerTests : IntegrationTestBase
         using HttpClient otherClient = await CreateAuthenticatedClientAsync(otherUser);
 
         var statuses = new List<HttpStatusCode>();
-        while (statuses.Count < Ceiling && !statuses.Contains(HttpStatusCode.TooManyRequests))
+        HttpResponseMessage? throttled = null;
+        try
         {
-            using HttpResponseMessage response = await SendAsync(limitedClient, method, url);
-            statuses.Add(response.StatusCode);
+            while (throttled is null && statuses.Count < Ceiling)
+            {
+                HttpResponseMessage response = await SendAsync(limitedClient, url);
+                statuses.Add(response.StatusCode);
+                if (response.StatusCode == HttpStatusCode.TooManyRequests)
+                {
+                    throttled = response;
+                }
+                else
+                {
+                    response.Dispose();
+                }
+            }
+
+            using HttpResponseMessage otherUserResponse = await SendAsync(otherClient, url);
+
+            using (Assert.Multiple())
+            {
+                await Assert.That(throttled).IsNotNull().Because($"no 429 within {Ceiling} requests");
+                await Assert.That(throttled?.Headers.RetryAfter).IsNotNull().Because("a throttled response tells the client when to retry");
+                await Assert.That(statuses.Take(statuses.Count - 1))
+                    .DoesNotContain(s => s != HttpStatusCode.OK && s != HttpStatusCode.NoContent)
+                    .Because("every request before the throttle must succeed");
+                await Assert.That(otherUserResponse.StatusCode).IsNotEqualTo(HttpStatusCode.TooManyRequests);
+            }
         }
-
-        using HttpResponseMessage otherUserResponse = await SendAsync(otherClient, method, url);
-
-        using (Assert.Multiple())
+        finally
         {
-            await Assert.That(statuses).Contains(HttpStatusCode.TooManyRequests).Because($"no 429 within {Ceiling} requests");
-            await Assert.That(statuses.Take(statuses.Count - 1))
-                .DoesNotContain(s => s != HttpStatusCode.OK && s != HttpStatusCode.NoContent)
-                .Because("every request before the throttle must succeed");
-            await Assert.That(otherUserResponse.StatusCode).IsNotEqualTo(HttpStatusCode.TooManyRequests);
+            throttled?.Dispose();
         }
     }
 
-    private static Task<HttpResponseMessage> SendAsync(HttpClient client, string method, string url) =>
-        method == "GET"
-            ? client.GetAsync(url)
-            : url.EndsWith("/session", StringComparison.Ordinal)
-                ? PostSessionAsync(client, Interval(LargePage, 10, 10))
-                : client.PostAsync(url, null);
+    private static Task<HttpResponseMessage> SendAsync(HttpClient client, string url) =>
+        url.EndsWith("/session", StringComparison.Ordinal)
+            ? PostSessionAsync(client, Interval(LargePage, 10, 10))
+            : client.PostAsync(url, null);
 
     // ---- profile timestamps ----
 
@@ -528,9 +559,9 @@ public class ReadingControllerTests : IntegrationTestBase
     // ---- identity without a user id ----
 
     [Test]
-    [Arguments("POST", "/api/reading/session")]
-    [Arguments("POST", "/api/reading/reset")]
-    public async Task AuthenticatedPrincipalWithoutUserIdClaim_IsUnauthorizedAndWritesNothing(string method, string url)
+    [Arguments("/api/reading/session")]
+    [Arguments("/api/reading/reset")]
+    public async Task AuthenticatedPrincipalWithoutUserIdClaim_IsUnauthorizedAndWritesNothing(string url)
     {
         // A signed-in principal that carries no NameIdentifier claim has no user to act for. The antiforgery token is
         // minted for the same stripped principal so the request is rejected for the missing id, not for the token.
@@ -542,13 +573,12 @@ public class ReadingControllerTests : IntegrationTestBase
                 principal.Claims.Where(c => c.Type != ClaimTypes.NameIdentifier),
                 principal.Identity?.AuthenticationType)));
         using HttpClient client = CreateClientWithoutAutoRedirect();
-        using var request = new HttpRequestMessage(new HttpMethod(method), url);
+        using var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = JsonBody($$"""{"intervals":[{"pageKey":"{{LargePage}}","wordsRead":10,"activeSeconds":10}]}""")
+        };
         request.Headers.Add("Cookie", credentials.CookieHeader);
         request.Headers.Add(credentials.HeaderName, credentials.RequestToken);
-        if (method == "POST")
-        {
-            request.Content = JsonBody($$"""{"intervals":[{"pageKey":"{{LargePage}}","wordsRead":10,"activeSeconds":10}]}""");
-        }
 
         using HttpResponseMessage response = await client.SendAsync(request);
 
@@ -561,9 +591,11 @@ public class ReadingControllerTests : IntegrationTestBase
     [Test]
     [Arguments(false)]
     [Arguments(true)]
-    public async Task PostSession_ConcurrentRequests_SumCorrectly(bool userAlreadyHasProfile)
+    public async Task PostSession_ManyParallelRequests_AreAllAcceptedAndTheTotalsAddUp(bool userAlreadyHasProfile)
     {
-        // Fewer simultaneous requests than the per-user write limit, so none is rate limited.
+        // On SQLite this proves the endpoint is wired for a burst and the final sum is right; it does not prove
+        // lost-update safety (the SQL Server tests in ReadingProfileSqlServerTests exercise real concurrent writes).
+        // The burst is kept small enough that no request is rate limited.
         const int parallelRequests = 10;
         const int wordsPerRequest = 40;
         const int secondsPerRequest = 20;
@@ -652,9 +684,6 @@ public class ReadingControllerTests : IntegrationTestBase
         await ReadingTestSupport.SeedProfileAsync(Factory.Services, userId, BaselineWords, BaselineSeconds, updatedAtUtc);
         return userId;
     }
-
-    private Task SeedProfileAsync(string userId, long words, long seconds) =>
-        ReadingTestSupport.SeedProfileAsync(Factory.Services, userId, words, seconds);
 
     private async Task<bool> HasProfileRowAsync(string userId) =>
         await InServiceScopeAsync(services =>

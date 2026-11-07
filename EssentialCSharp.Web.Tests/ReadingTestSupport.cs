@@ -37,6 +37,10 @@ internal static class ReadingTestSupport
 
     public const int BookWords = 5150;
 
+    /// <summary>A typical seeded reading profile: 1200 words in 360 seconds is 200 WPM, i.e. a slow-outlier threshold of 50 WPM.</summary>
+    public const long BaselineWords = 1200;
+    public const long BaselineSeconds = 360;
+
     /// <summary>
     /// Explicit options, a fresh instance per call so no test can leak mutations into another. Nothing here relies on
     /// <see cref="ReadingOptions"/> defaults, and every value differs from its default.
@@ -62,7 +66,7 @@ internal static class ReadingTestSupport
     }
 
     /// <summary>A word-count service backed by a fixed dictionary; unknown pages have no stats and zero words.</summary>
-    public sealed class FakeWordCountService(IReadOnlyDictionary<string, PageWordStats> pages) : IWordCountService
+    public sealed class FakeWordCountService(IReadOnlyDictionary<string, PageWordStats> pages, int bookWords = BookWords) : IWordCountService
     {
         /// <summary>The standard fixture pages (<see cref="SmallPage"/>, <see cref="LargePage"/>, ...).</summary>
         public FakeWordCountService(bool includeContentPage = true)
@@ -72,7 +76,7 @@ internal static class ReadingTestSupport
 
         /// <summary>A service in which only <paramref name="pageKey"/> is readable, with <paramref name="words"/> words.</summary>
         public static FakeWordCountService WithSinglePage(string pageKey, int words) =>
-            new(new Dictionary<string, PageWordStats> { [pageKey] = new(words, words, 0, 0, words) });
+            new(new Dictionary<string, PageWordStats> { [pageKey] = new(words, words, 0, 0, words) }, bookWords: words);
 
         private static Dictionary<string, PageWordStats> CreateDefaultPages(bool includeContentPage)
         {
@@ -92,7 +96,7 @@ internal static class ReadingTestSupport
         }
 
         public int GetPageWordCount(string pageKey) => pages.TryGetValue(pageKey, out PageWordStats? s) ? s.PageWords : 0;
-        public int GetBookWordCount() => pages.Values.Select(p => p.BookWords).DefaultIfEmpty(0).Max();
+        public int GetBookWordCount() => bookWords;
         public PageWordStats? GetPageStats(string pageKey) => pages.GetValueOrDefault(pageKey);
     }
 

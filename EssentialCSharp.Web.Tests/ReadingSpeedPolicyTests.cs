@@ -6,6 +6,7 @@ namespace EssentialCSharp.Web.Tests;
 /// The outlier rules for a reported reading interval. Intervals faster than the hard cutoff are ignored; intervals
 /// slower than <c>SlowOutlierFactor * referenceWpm</c> are credited as if read at that speed (so idle time does not
 /// drag the reader's WPM down); everything else is credited as reported. The credited word count never changes.
+/// The grid test states only invariants; the exact clamp arithmetic is pinned by the worked examples.
 /// </summary>
 public class ReadingSpeedPolicyTests
 {
@@ -46,23 +47,17 @@ public class ReadingSpeedPolicyTests
 
         await Assert.That(credit).IsNotNull();
         ReadingCredit value = credit!.Value;
-        double slowThreshold = options.SlowOutlierFactor * referenceWpm;
-        bool isSlowOutlier = referenceWpm > 0 && intervalWpm < slowThreshold;
+        double creditedWpm = IntervalWpm(value.Words, value.Seconds);
 
+        // Independent properties of any accepted interval, stated without re-deriving the clamp formula.
         using (Assert.Multiple())
         {
-            await Assert.That(value.Words).IsEqualTo(words);
-            await Assert.That(value.Seconds).IsBetween(1, seconds);
-            if (isSlowOutlier)
+            await Assert.That(value.Words).IsEqualTo(words).Because("words are never rescaled");
+            await Assert.That(value.Seconds).IsBetween(1, seconds).Because("credit only ever shortens the time, never below one second");
+            await Assert.That(creditedWpm).IsGreaterThanOrEqualTo(intervalWpm - 1e-9).Because("crediting never makes the reader look slower");
+            if (referenceWpm <= 0)
             {
-                // Credited as if read at the slow threshold: never faster than it, and at most one whole-second rounding slower.
-                double secondsAtThreshold = words * 60.0 / slowThreshold;
-                await Assert.That((double)value.Seconds).IsGreaterThanOrEqualTo(secondsAtThreshold);
-                await Assert.That((double)value.Seconds).IsLessThan(secondsAtThreshold + 1);
-            }
-            else
-            {
-                await Assert.That(value.Seconds).IsEqualTo(seconds);
+                await Assert.That(value.Seconds).IsEqualTo(seconds).Because("without a reference speed nothing is a slow outlier");
             }
         }
     }

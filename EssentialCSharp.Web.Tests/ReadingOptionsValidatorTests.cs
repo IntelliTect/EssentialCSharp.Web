@@ -16,7 +16,11 @@ public class ReadingOptionsValidatorTests
         return results.SelectMany(r => r.MemberNames).ToList();
     }
 
-    /// <summary>Each integer option with its inclusive valid range and a way to set just that option.</summary>
+    /// <summary>
+    /// Each integer option with its inclusive valid range and a way to set just that option. These bounds are the
+    /// documented contract of the options (a configured value outside them must be rejected), deliberately restated
+    /// here rather than read back from the <c>[Range]</c> attributes, which would only test the attributes against themselves.
+    /// </summary>
     private static readonly (string Property, int Min, int Max, Func<int, ReadingOptions> With)[] IntegerRanges =
     [
         (nameof(ReadingOptions.HardCutoffWpm), 1, 10_000, v => new ReadingOptions { HardCutoffWpm = v }),
