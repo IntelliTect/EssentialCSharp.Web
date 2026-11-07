@@ -56,7 +56,7 @@ public static class SiteMappingListExtensions
                         currentMappingCount++;
                     }
                     overallMappingCount++;
-                    if (siteMapping.PrimaryKey == key)
+                    if (siteMapping.Keys.Contains(key))
                     {
                         currentPageFound = true;
                     }

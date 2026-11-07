@@ -250,7 +250,7 @@ public class ReadingContextProfileFailureTests : IntegrationTestBase
 
     private sealed class ThrowingReadingProfileService : IReadingProfileService
     {
-        public Task<RecordSessionResult> RecordSessionAsync(string userId, IReadOnlyList<ReadingInterval> intervals, CancellationToken cancellationToken) =>
+        public Task<ReadingProfileSummary> RecordSessionAsync(string userId, IReadOnlyList<ReadingInterval> intervals, CancellationToken cancellationToken) =>
             throw new InvalidOperationException("profile store unavailable");
 
         public Task<ReadingProfileSummary> GetProfileAsync(string userId, CancellationToken cancellationToken) =>

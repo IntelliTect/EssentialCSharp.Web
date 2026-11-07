@@ -36,18 +36,8 @@ public sealed class ReadingController(IReadingProfileService readingProfileServi
             .Select(i => new ReadingInterval(i.PageKey, i.WordsRead, i.ActiveSeconds))
             .ToArray();
 
-        RecordSessionResult result = await readingProfileService.RecordSessionAsync(userId, intervals, cancellationToken);
-        if (result.Profile is null)
-        {
-            // The service rejects the first interval whose page is unknown, so the first match is that interval.
-            int index = request.Intervals.FindIndex(i => i.PageKey == result.UnknownPageKey);
-            ModelState.AddModelError(
-                $"{nameof(ReadingSessionRequest.Intervals)}[{index}].{nameof(ReadingIntervalRequest.PageKey)}",
-                $"Unknown page key '{result.UnknownPageKey}'.");
-            return ValidationProblem(ModelState);
-        }
-
-        return result.Profile;
+        // Intervals for unknown pages are skipped by the service rather than failing the request.
+        return await readingProfileService.RecordSessionAsync(userId, intervals, cancellationToken);
     }
 
     [HttpPost("reset")]

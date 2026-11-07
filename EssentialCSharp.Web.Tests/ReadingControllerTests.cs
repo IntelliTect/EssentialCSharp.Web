@@ -94,16 +94,17 @@ public class ReadingControllerTests : IntegrationTestBase
     }
 
     [Test]
-    public async Task PostSession_VerySlowIntervalForColdStartUser_IsCreditedInFull()
+    public async Task PostSession_VerySlowIntervalForColdStartUser_IsClampedAgainstTheDefaultSpeed()
     {
         string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-cold");
         using HttpClient client = await CreateAuthenticatedClientAsync(userId);
 
-        // With no reading history there is no reference speed, so nothing counts as a slow outlier.
+        // With no reading history the default speed (210 WPM) is the reference, so the slow threshold is 52.5 WPM:
+        // 50 words are credited ceil(50 / 52.5 * 60) = 58 s rather than 1800 s.
         using HttpResponseMessage response = await PostSessionAsync(client, Interval(LargePage, 50, 1800));
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        await AssertProfileAsync(userId, 50, 1800);
+        await AssertProfileAsync(userId, 50, 58);
     }
 
     [Test]
@@ -145,11 +146,11 @@ public class ReadingControllerTests : IntegrationTestBase
         string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-cap");
         using HttpClient client = await CreateAuthenticatedClientAsync(userId);
 
-        // The small page has 150 words; claiming 151 is credited as 150.
+        // The small page has 150 words; claiming 151 is credited as 150 (172 s at the 52.5 WPM slow threshold).
         using HttpResponseMessage response = await PostSessionAsync(client, Interval(ReadingTestSupport.SmallPage, 151, 600));
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        await AssertProfileAsync(userId, 150, 600);
+        await AssertProfileAsync(userId, 150, 172);
     }
 
     // ---- POST session: boundaries ----
@@ -191,7 +192,7 @@ public class ReadingControllerTests : IntegrationTestBase
             client, Interval(LargePage, 100, Options.MaxActiveSecondsPerInterval));
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        await AssertProfileAsync(userId, 100, Options.MaxActiveSecondsPerInterval);
+        await AssertProfileAsync(userId, 100, 115); // clamped to the 52.5 WPM slow threshold
     }
 
     [Test]
@@ -360,32 +361,31 @@ public class ReadingControllerTests : IntegrationTestBase
     }
 
     [Test]
-    public async Task PostSession_UnknownPageKey_IsRejectedWithProblemDetailsOnPageKey()
+    public async Task PostSession_UnknownPageKey_IsSkippedWithoutFailingTheRequest()
     {
         string userId = await CreateUserWithBaselineProfileAsync();
         using HttpClient client = await CreateAuthenticatedClientAsync(userId);
 
         using HttpResponseMessage response = await PostSessionAsync(client, Interval("no-such-page", 10, 10));
 
-        await ReadingTestSupport.AssertValidationProblemAsync(response, "Intervals[0]", nameof(ReadingIntervalRequest.PageKey));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
     }
 
     [Test]
-    public async Task PostSession_KnownPageWithZeroWords_IsTreatedLikeAnUnknownPage()
+    public async Task PostSession_KnownPageWithZeroWords_IsSkippedLikeAnUnknownPage()
     {
         string userId = await CreateUserWithBaselineProfileAsync();
         using HttpClient client = await CreateAuthenticatedClientAsync(userId);
 
-        // A page with no countable prose cannot be read, so the service rejects it as it does an unknown key.
         using HttpResponseMessage response = await PostSessionAsync(client, Interval(ReadingTestSupport.EmptyPage, 10, 10));
 
-        await ReadingTestSupport.AssertValidationProblemAsync(response, "Intervals[0]", nameof(ReadingIntervalRequest.PageKey));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
     }
 
     [Test]
-    public async Task PostSession_ValidIntervalAlongsideUnknownPageKey_RejectsTheWholeBatch()
+    public async Task PostSession_ValidIntervalAlongsideUnknownPageKey_CreditsTheValidInterval()
     {
         string userId = await CreateUserWithBaselineProfileAsync();
         using HttpClient client = await CreateAuthenticatedClientAsync(userId);
@@ -393,8 +393,8 @@ public class ReadingControllerTests : IntegrationTestBase
         using HttpResponseMessage response = await PostSessionAsync(
             client, Interval(LargePage, 100, 60), Interval("no-such-page", 10, 10));
 
-        await ReadingTestSupport.AssertValidationProblemAsync(response, "Intervals[1]", nameof(ReadingIntervalRequest.PageKey));
-        await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await AssertProfileAsync(userId, BaselineWords + 100, BaselineSeconds + 60);
     }
 
     // ---- user isolation ----
@@ -458,13 +458,13 @@ public class ReadingControllerTests : IntegrationTestBase
     }
 
     [Test]
-    public async Task Reset_ThenRecording_StartsAFreshProfileWithNoReferenceSpeed()
+    public async Task Reset_ThenRecording_StartsAFreshProfileAgainstTheDefaultSpeed()
     {
         string userId = await CreateUserWithBaselineProfileAsync();
         using HttpClient client = await CreateAuthenticatedClientAsync(userId);
 
         using HttpResponseMessage reset = await client.PostAsync("/api/reading/reset", null);
-        // 50 words in 1800 s would be clamped for the baseline reader, but after a reset there is no reference speed.
+        // After a reset the reader is held to the default speed again, so 50 words in 1800 s are credited 58 s.
         using HttpResponseMessage record = await PostSessionAsync(client, Interval(LargePage, 50, 1800));
 
         using (Assert.Multiple())
@@ -472,7 +472,7 @@ public class ReadingControllerTests : IntegrationTestBase
             await Assert.That(reset.StatusCode).IsEqualTo(HttpStatusCode.NoContent);
             await Assert.That(record.StatusCode).IsEqualTo(HttpStatusCode.OK);
         }
-        await AssertProfileAsync(userId, 50, 1800);
+        await AssertProfileAsync(userId, 50, 58);
     }
 
     // ---- rate limiting ----

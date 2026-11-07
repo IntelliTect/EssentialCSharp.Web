@@ -198,9 +198,8 @@ export function useReadingTracker(context) {
                     maxWpm: context.maxCreditWpm
                 });
                 if (wordsRead <= 0) {
-                    // Nothing progressed. Keep at most one flush period of time for a
-                    // coming scroll so long stationary reading cannot inflate later credit.
-                    pendingSeconds = Math.min(pendingSeconds, context.periodicFlushActiveSeconds);
+                    // Nothing progressed. Keep the time (idle time was already excluded) so a slow
+                    // reader's later scroll is credited at their real, slower speed.
                     return;
                 }
                 pendingSeconds -= activeSeconds;

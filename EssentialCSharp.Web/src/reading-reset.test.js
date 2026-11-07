@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { READING_RESET_CHANNEL, READING_RESET_URL } from "./utils/readingConstants.js";
+import { isOutboxStored, newOutboxKey, saveOutbox } from "./utils/readingOutboxStorage.js";
 import { installFakeBroadcastChannel } from "./test-utils/fakeBroadcastChannel.js";
 
 describe("reading-reset (Manage Profile button)", () => {
@@ -63,6 +64,27 @@ describe("reading-reset (Manage Profile button)", () => {
         expect(status.classList.contains("text-success")).toBe(true);
         expect(status.classList.contains("text-muted")).toBe(false);
         expect(received).toEqual([{ type: "reset" }]);
+    });
+
+    it("clears only the signed-in account's unsent intervals", async () => {
+        const meta = document.createElement("meta");
+        meta.name = "ecs-auth-user-id";
+        meta.content = "user-1";
+        document.head.appendChild(meta);
+        const key = (userId) => {
+            const k = newOutboxKey();
+            saveOutbox(k, userId, [{ pageKey: "p", activeSeconds: 5, wordsRead: 5 }]);
+            return k;
+        };
+        const mine = key("user-1");
+        const theirs = key("user-2");
+
+        await load();
+        click();
+        await settled();
+
+        expect(isOutboxStored(mine)).toBe(false);
+        expect(isOutboxStored(theirs)).toBe(true);
     });
 
     it("shows an error and does not broadcast when the server fails", async () => {
