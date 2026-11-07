@@ -4,7 +4,7 @@
  *
  * Every function tolerates unavailable, full or corrupt storage (it behaves as empty).
  * Safety rules:
- *  - A record belongs to one user (READING_CONTEXT.userId); records of any other user
+ *  - A record belongs to one user (the id in the layout's ecs-auth-user-id meta tag); records of any other user
  *    are discarded, so data from another account is never sent.
  *  - Each tab writes its own record (its own key), so tabs never overwrite each other.
  *  - A record is taken at page load by removal, or leased by its own tab while that tab
@@ -138,10 +138,24 @@ export function takeStoredIntervals(userId) {
     return intervals.slice(-MAX_QUEUED_INTERVALS);
 }
 
-/** Removes every stored record (profile reset, auth failure). */
-export function clearStoredIntervals() {
+/**
+ * Removes stored records: every record, or only those of `userId` (and unreadable ones)
+ * when given, so one account's cleanup never deletes another account's unsent data.
+ */
+export function clearStoredIntervals(userId) {
     try {
-        for (const key of storedKeys()) localStorage.removeItem(key);
+        for (const key of storedKeys()) {
+            if (userId !== undefined) {
+                let record = null;
+                try {
+                    record = JSON.parse(localStorage.getItem(key) ?? "null");
+                } catch {
+                    // Unreadable: removed below.
+                }
+                if (record && record.userId !== userId) continue;
+            }
+            localStorage.removeItem(key);
+        }
     } catch {
         // Storage unavailable: nothing to clear.
     }

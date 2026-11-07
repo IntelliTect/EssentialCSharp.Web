@@ -134,7 +134,8 @@ export function useReadingTracker(context) {
 
     function discardPersistedOutbox() {
         storedKey = null;
-        clearStoredIntervals();
+        // Only this account's records: another signed-in account may share the browser.
+        if (context.userId) clearStoredIntervals(context.userId);
     }
 
     // Intervals left by an earlier page load (never another user's) are sent like new ones.
@@ -287,7 +288,13 @@ export function useReadingTracker(context) {
         } else if (result.status === STATUS_BAD_DATA) {
             failures = 0; // batch dropped; the data was the problem, not the server
         } else {
-            // Transient: put the batch back in front of anything queued meanwhile.
+            // Transient: put the batch back in front of anything queued meanwhile. If another
+            // tab took our record meanwhile, it sends what that record held (everything queued
+            // since this send started); only this batch, which that record never held, is kept.
+            if (storedKey && !isOutboxStored(storedKey)) {
+                storedKey = null;
+                outbox = [];
+            }
             outbox = batch.concat(outbox);
             // Drop the leased record: persistOutbox re-saves everything (under a newer record
             // if one exists, else a fresh one), and our own lease must not make the next retry

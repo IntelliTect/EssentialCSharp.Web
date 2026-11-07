@@ -6,11 +6,11 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace EssentialCSharp.Web.Controllers;
 
+// The rate limit is class-level so every action is limited: /api/reading is exempt from the global limiter in Program.cs.
 [ApiController]
 [Authorize]
 [Route("api/reading")]
 [ReadingAntiforgeryFailureHeader]
-// Class-level so every action is limited: /api/reading is exempt from the global limiter in Program.cs.
 [EnableRateLimiting(WriteRateLimitPolicy)]
 public sealed class ReadingController(IReadingProfileService readingProfileService) : ControllerBase
 {
