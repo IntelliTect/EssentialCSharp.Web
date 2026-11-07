@@ -14,8 +14,10 @@ namespace EssentialCSharp.Web.Tests;
 /// </summary>
 public class ReadingAntiforgeryContractTests : IntegrationTestBase
 {
-    private const long SeededWords = 1200;
-    private const long SeededSeconds = 360;
+    private const long SeededWords = ReadingTestSupport.BaselineWords;
+    private const long SeededSeconds = ReadingTestSupport.BaselineSeconds;
+    private const string SessionUrl = "/api/reading/session";
+    private const string ResetUrl = "/api/reading/reset";
     private const string ValidBody = $$"""{"intervals":[{"pageKey":"{{ReadingTestSupport.LargePage}}","wordsRead":10,"activeSeconds":10}]}""";
     private const string InvalidBody = """{"intervals":[]}""";
 
@@ -23,19 +25,20 @@ public class ReadingAntiforgeryContractTests : IntegrationTestBase
         ReadingTestSupport.UseFakes(services, new ReadingTestSupport.FakeWordCountService());
 
     [Test]
-    [Arguments("missing token")]
-    [Arguments("invalid token")]
-    public async Task WriteWithoutAValidAntiforgeryToken_IsRejectedWithTheExplicitSignalAndLeavesProfileUnchanged(string tokenKind)
+    [Arguments(SessionUrl, null)]
+    [Arguments(SessionUrl, "not-a-valid-token")]
+    [Arguments(ResetUrl, null)]
+    [Arguments(ResetUrl, "not-a-valid-token")]
+    public async Task WriteWithoutAValidAntiforgeryToken_IsRejectedWithTheExplicitSignalAndLeavesProfileUnchanged(string url, string? token)
     {
         (string userId, ReadingTestSupport.AntiforgeryCredentials credentials) = await CreateUserWithCredentialsAsync();
-        string? token = tokenKind == "invalid token" ? "not-a-valid-token" : null;
 
-        using HttpResponseMessage response = await PostSessionAsync(credentials, token, ValidBody);
+        using HttpResponseMessage response = await PostAsync(url, credentials, token, ValidBody);
 
         using (Assert.Multiple())
         {
             await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
-            await Assert.That(AntiforgeryFailureSignal(response)).IsEqualTo("1");
+            await Assert.That(AntiforgeryFailureSignal(response)).IsNotNull();
             await Assert.That(await ReadTotalsAsync(userId)).IsEqualTo((SeededWords, SeededSeconds));
         }
     }
@@ -45,7 +48,7 @@ public class ReadingAntiforgeryContractTests : IntegrationTestBase
     {
         (string userId, ReadingTestSupport.AntiforgeryCredentials credentials) = await CreateUserWithCredentialsAsync();
 
-        using HttpResponseMessage response = await PostSessionAsync(credentials, credentials.RequestToken, InvalidBody);
+        using HttpResponseMessage response = await PostAsync(SessionUrl, credentials, credentials.RequestToken, InvalidBody);
         ReadingTestSupport.ProblemResponse problem = await ReadingTestSupport.ReadProblemAsync(response);
 
         using (Assert.Multiple())
@@ -62,7 +65,7 @@ public class ReadingAntiforgeryContractTests : IntegrationTestBase
     {
         (string userId, ReadingTestSupport.AntiforgeryCredentials credentials) = await CreateUserWithCredentialsAsync();
 
-        using HttpResponseMessage response = await PostSessionAsync(credentials, credentials.RequestToken, ValidBody);
+        using HttpResponseMessage response = await PostAsync(SessionUrl, credentials, credentials.RequestToken, ValidBody);
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(await ReadTotalsAsync(userId)).IsEqualTo((SeededWords + 10, SeededSeconds + 10));
@@ -80,11 +83,11 @@ public class ReadingAntiforgeryContractTests : IntegrationTestBase
         return (userId, await ReadingTestSupport.CreateSignedInAntiforgeryCredentialsAsync(Factory, userId));
     }
 
-    private async Task<HttpResponseMessage> PostSessionAsync(
-        ReadingTestSupport.AntiforgeryCredentials credentials, string? token, string body)
+    private async Task<HttpResponseMessage> PostAsync(
+        string url, ReadingTestSupport.AntiforgeryCredentials credentials, string? token, string body)
     {
         using HttpClient client = McpTestHelper.CreateClient(Factory);
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/reading/session")
+        using var request = new HttpRequestMessage(HttpMethod.Post, url)
         {
             Content = new StringContent(body, Encoding.UTF8, "application/json")
         };

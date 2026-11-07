@@ -27,7 +27,6 @@ describe("reading-reset (Manage Profile button)", () => {
 
         confirmMock = vi.fn(() => true);
         vi.stubGlobal("confirm", confirmMock);
-        window.confirm = confirmMock;
         fetchMock = vi.fn(async () => new Response(null, { status: 200 }));
         vi.stubGlobal("fetch", fetchMock);
 
@@ -48,7 +47,7 @@ describe("reading-reset (Manage Profile button)", () => {
         confirmMock.mockReturnValue(false);
         await load();
         click();
-        await Promise.resolve();
+        await new Promise((resolve) => setTimeout(resolve, 0)); // let any async handler work run
         expect(confirmMock).toHaveBeenCalledWith("Really reset?");
         expect(fetchMock).not.toHaveBeenCalled();
         expect(status.textContent).toBe("");

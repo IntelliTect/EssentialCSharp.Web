@@ -279,13 +279,14 @@ describe("useReadingTracker", () => {
         });
 
         it("stops crediting once the reader is idle for longer than the idle threshold", async () => {
-            const ctx = context();
+            const ctx = context(SLOW);
             start(ctx);
             readThroughPage();
             await advance(ctx.idleThresholdSeconds + 200);
             await leavePage();
+            // About the idle threshold is credited (within a tick of rounding), not half of it, not more.
             expect(deliveredSeconds()).toBeLessThanOrEqual(ctx.idleThresholdSeconds);
-            expect(deliveredSeconds()).toBeGreaterThan(0);
+            expect(deliveredSeconds()).toBeGreaterThanOrEqual(ctx.idleThresholdSeconds - TICK_INTERVAL_MS / 1000 - 1);
         });
 
         it("stops crediting when the window loses focus", async () => {
@@ -297,7 +298,7 @@ describe("useReadingTracker", () => {
             await advance(100);
             await leavePage();
             expect(deliveredSeconds()).toBeLessThanOrEqual(focusedSeconds);
-            expect(deliveredSeconds()).toBeGreaterThan(0);
+            expect(deliveredSeconds()).toBeGreaterThanOrEqual(focusedSeconds - TICK_INTERVAL_MS / 1000 - 1);
         });
 
         it("does not credit time while hidden, sends nothing then, and resumes when visible again", async () => {
@@ -330,6 +331,7 @@ describe("useReadingTracker", () => {
             await advance(TICK_INTERVAL_MS / 1000);
             await leavePage();
             expect(deliveredSeconds()).toBeLessThanOrEqual(before + MAX_TICK_DELTA_S);
+            expect(deliveredSeconds()).toBeGreaterThanOrEqual(before - TICK_INTERVAL_MS / 1000 - 1);
         });
     });
 
@@ -397,22 +399,27 @@ describe("useReadingTracker", () => {
             expect(deliveredSeconds()).toBe(elapsed);
         });
 
-        it("backs off further after repeated failures, within the maximum delay", async () => {
+        it("backs off further after repeated failures, then stays at the maximum delay", async () => {
             handler = () => jsonResponse(429);
             start();
             readThroughPage();
             await advance(FLUSH_S);
-            for (let i = 0; i < 2 * RETRY_MAX_DELAY_MS / 1000 && calls.length < 4; i++) await advance(1);
-            expect(calls.length).toBeGreaterThanOrEqual(4);
+            // Long enough for the delays to reach the maximum and stay there for several attempts.
+            for (let i = 0; i < 6 * RETRY_MAX_DELAY_MS / 1000 && calls.length < 12; i++) await advance(1);
 
             const gaps = calls.slice(1).map((c, i) => c.at - calls[i].at);
             expect(gaps[0]).toBeGreaterThanOrEqual(RETRY_BASE_DELAY_MS);
-            for (let i = 1; i < gaps.length; i++) expect(gaps[i]).toBeGreaterThan(gaps[i - 1]);
+            const plateau = gaps.slice(-3);
+            expect(plateau).toHaveLength(3);
+            for (const gap of plateau) {
+                expect(gap).toBeGreaterThanOrEqual(RETRY_MAX_DELAY_MS);
+                expect(gap).toBeLessThanOrEqual(RETRY_MAX_DELAY_MS + TICK_INTERVAL_MS);
+            }
             for (const gap of gaps) expect(gap).toBeLessThanOrEqual(RETRY_MAX_DELAY_MS + TICK_INTERVAL_MS);
         });
 
-        it("stops tracking for the page after an auth failure (403) and never sends again", async () => {
-            handler = () => jsonResponse(403);
+        it.each([401, 403])("stops tracking for the page after an auth failure (%s) and never sends again", async (status) => {
+            handler = () => jsonResponse(status);
             start();
             readThroughPage();
             await advance(FLUSH_S + 1);
@@ -434,6 +441,7 @@ describe("useReadingTracker", () => {
             await advance(200);
             await leavePage();
             expect(calls).toHaveLength(1);
+            expect(localStorage.length).toBe(0); // nothing kept for a later page load
         });
 
         it("treats an unflagged 400 (e.g. from a proxy) as bad data and keeps tracking", async () => {
@@ -441,7 +449,64 @@ describe("useReadingTracker", () => {
             start();
             readThroughPage();
             await advance(2 * FLUSH_S + 5);
-            expect(calls.length).toBeGreaterThan(1);
+            await leavePage();
+
+            const rejectedSeconds = sum(calls[0].intervals, "activeSeconds");
+            expect(deliveredSeconds()).toBeGreaterThan(0); // tracking continued
+            expect(deliveredSeconds() + rejectedSeconds).toBe(elapsed); // the rejected batch was dropped, not resent
+        });
+
+        it.each([
+            ["is missing", {}],
+            ["is null", { wpm: null }],
+            ["is not a number", { wpm: "fast" }],
+            ["is zero", { wpm: 0 }],
+            ["is negative", { wpm: -5 }]
+        ])("keeps the current wpm when the server's wpm %s", async (_name, body) => {
+            handler = () => jsonResponse(200, body);
+            const tracker = start(context({ wpm: 240 }));
+            readThroughPage();
+            await advance(FLUSH_S + 1);
+            expect(calls.length).toBeGreaterThan(0);
+            expect(tracker.wpm.value).toBe(240);
+        });
+
+        describe("a failed lifecycle flush", () => {
+            it.each([
+                ["the page becomes hidden", hide],
+                ["pagehide", () => window.dispatchEvent(new Event("pagehide"))]
+            ])("is not lost when %s: the next page load delivers it", async (_name, trigger) => {
+                handler = (n) => { if (n === 1) throw new TypeError("aborted"); return ok(); };
+                start();
+                readThroughPage();
+                await advance(10);
+                trigger();
+                await advance(0);
+                expect(calls).toHaveLength(1);
+                expect(delivered).toHaveLength(0);
+                scope.stop();
+
+                start();
+                await advance(TICK_INTERVAL_MS / 1000 + 1);
+                expect(delivered).toEqual(calls[0].intervals);
+            });
+
+            it("is not sent again by a later page load once it succeeded", async () => {
+                // Failed periodic send leaves a persisted batch; the lifecycle flush then delivers it.
+                handler = (n) => (n === 1 ? jsonResponse(503) : ok());
+                start(context(SLOW));
+                readThroughPage();
+                await advance(FLUSH_S + 1);
+                await leavePage();
+                const deliveredBefore = deliveredSeconds();
+                expect(deliveredBefore).toBe(elapsed);
+                scope.stop();
+
+                await advance(60 * 60); // far beyond any lease
+                start();
+                await advance(TICK_INTERVAL_MS / 1000 + 1);
+                expect(deliveredSeconds()).toBe(deliveredBefore);
+            });
         });
 
         it("drops a batch rejected as invalid, never resends it, but keeps tracking", async () => {

@@ -8,10 +8,12 @@
  *    are discarded, so data from another account is never sent.
  *  - Each tab writes its own record (its own key), so tabs never overwrite each other.
  *  - A record is taken at page load by removal, or leased by its own tab while that tab
- *    sends it. A leased record stays stored until the send is acknowledged, so a request
- *    aborted with its page is recovered once the lease expires (at-least-once: a send whose
- *    response was lost can be counted twice, there is no idempotency key). Other tabs skip
- *    a record whose lease is still active, so two tabs do not send the same entries.
+ *    sends it (periodic sends). A leased record stays stored until the send is acknowledged,
+ *    so a request lost with its page is recovered once the lease expires (a send whose
+ *    response was lost can then be counted twice, there is no idempotency key). Other tabs
+ *    skip a record whose lease is still active, so two tabs do not send the same entries.
+ *    Lifecycle (keepalive) sends are not leased by their caller: they remove the record
+ *    before sending, because they can never be acknowledged (at-most-once).
  */
 import { MAX_QUEUED_INTERVALS } from "./readingConstants.js";
 

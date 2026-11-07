@@ -3,6 +3,7 @@ import {
     STATUS_AUTH_FAILURE, STATUS_BAD_DATA, STATUS_OK, STATUS_TRANSIENT,
     getCsrfToken, postSession, resetProfile, statusFor
 } from "./readingApi.js";
+import { READING_RESET_URL } from "../utils/readingConstants.js";
 
 const response = (status, body, headers = {}) => new Response(body === undefined ? null : body, { status, headers });
 
@@ -84,5 +85,19 @@ describe("postSession / resetProfile", () => {
     it("reports a network error as transient", async () => {
         fetchMock.mockRejectedValue(new TypeError("offline"));
         expect((await postSession([])).status).toBe(STATUS_TRANSIENT);
+        expect((await resetProfile()).status).toBe(STATUS_TRANSIENT);
+    });
+
+    it("resets with a POST carrying the antiforgery header and no body", async () => {
+        fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
+
+        const result = await resetProfile();
+
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe(READING_RESET_URL);
+        expect(init.method).toBe("POST");
+        expect(init.headers.RequestVerificationToken).toBe("tok123");
+        expect(init.body).toBeUndefined();
+        expect(result).toEqual({ status: STATUS_OK });
     });
 });

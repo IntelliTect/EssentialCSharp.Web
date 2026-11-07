@@ -19,5 +19,4 @@ export function installFakeBroadcastChannel(vi) {
         close() { open.delete(this); }
     }
     vi.stubGlobal("BroadcastChannel", FakeBroadcastChannel);
-    return { openCount: () => open.size };
 }

@@ -52,7 +52,7 @@ public class ReadingProfileSqlServerTests
         public EssentialCSharpWebContext CreateContext() => _services.GetRequiredService<EssentialCSharpWebContext>();
 
         public static ReadingProfileService CreateService(EssentialCSharpWebContext context) =>
-            new(context, ReadingTestSupport.FakeWordCountService.WithSinglePage(PageKey, PageWords), Options.Create(new ReadingOptions()), NullLogger<ReadingProfileService>.Instance);
+            new(context, ReadingTestSupport.FakeWordCountService.WithSinglePage(PageKey, PageWords), Options.Create(ReadingTestSupport.CreateOptions()), NullLogger<ReadingProfileService>.Instance);
 
         public async ValueTask DisposeAsync()
         {
@@ -191,6 +191,7 @@ public class ReadingProfileSqlServerTests
         bool tableAfterReapply = await TableExistsAsync(context);
 
         await context.Database.MigrateAsync();
+        string[] columns = await ColumnNamesAsync(context);
 
         using (Assert.Multiple())
         {
@@ -198,8 +199,22 @@ public class ReadingProfileSqlServerTests
             await Assert.That(tableAfterDown).IsFalse();
             await Assert.That(tableAfterReapply).IsTrue();
             await Assert.That(await context.Database.GetPendingMigrationsAsync()).IsEmpty();
+            await Assert.That(context.Database.HasPendingModelChanges()).IsFalse()
+                .Because("the migrations must fully describe the current model");
+            await Assert.That(columns).IsEquivalentTo(new[]
+            {
+                nameof(UserReadingProfile.UserId),
+                nameof(UserReadingProfile.TotalWordsRead),
+                nameof(UserReadingProfile.TotalActiveSeconds),
+                nameof(UserReadingProfile.UpdatedAtUtc),
+            });
         }
     }
+
+    private static async Task<string[]> ColumnNamesAsync(EssentialCSharpWebContext context) =>
+        await context.Database
+            .SqlQuery<string>($"SELECT COLUMN_NAME AS [Value] FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'UserReadingProfiles'")
+            .ToArrayAsync();
 
     private static async Task<bool> TableExistsAsync(EssentialCSharpWebContext context) =>
         await context.Database
@@ -234,7 +249,7 @@ public class ReadingProfileSqlServerTests
         const int Concurrency = 50;
         TestDatabase database = await GetSharedDatabaseAsync();
         string userId = await CreateUserAsync(database);
-        var gate = new TaskCompletionSource();
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
         Task[] calls = Enumerable.Range(0, Concurrency)
             .Select(_ => Task.Run(async () =>
@@ -251,11 +266,35 @@ public class ReadingProfileSqlServerTests
     }
 
     [Test]
+    [Timeout(120_000)]
+    public async Task ConcurrentWritesForSameExistingUser_SumExactlyWithNoLostUpdatesOrErrors(CancellationToken cancellationToken)
+    {
+        const int Concurrency = 50;
+        TestDatabase database = await GetSharedDatabaseAsync();
+        string userId = await CreateUserAsync(database);
+        await RecordAsync(database, userId); // the row exists before the concurrent burst
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        Task[] calls = Enumerable.Range(0, Concurrency)
+            .Select(_ => Task.Run(async () =>
+            {
+                await gate.Task;
+                await RecordAsync(database, userId);
+            }))
+            .ToArray();
+        gate.SetResult();
+        await Task.WhenAll(calls).WaitAsync(cancellationToken);
+
+        (long, long)? totals = await ReadTotalsAsync(database, userId);
+        await Assert.That(totals).IsEqualTo((100L * (Concurrency + 1), 60L * (Concurrency + 1)));
+    }
+
+    [Test]
     public async Task ConcurrentWritesForDifferentUsers_DoNotInterfere()
     {
         TestDatabase database = await GetSharedDatabaseAsync();
         string[] users = await Task.WhenAll(Enumerable.Range(0, 5).Select(_ => CreateUserAsync(database)));
-        var gate = new TaskCompletionSource();
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
         // User i gets (i + 1) * 10 concurrent writes.
         Task[] calls = users
@@ -279,14 +318,29 @@ public class ReadingProfileSqlServerTests
     }
 
     [Test]
-    public async Task WriteForANonexistentUser_SurfacesAnErrorAndCreatesNoRow()
+    public async Task WriteForANonexistentUser_FailsOnTheForeignKeyAndCreatesNoRow()
     {
+        const int SqlServerForeignKeyViolation = 547;
         TestDatabase database = await GetSharedDatabaseAsync();
         string missingUserId = Guid.NewGuid().ToString();
 
-        await Assert.That(async () => await RecordAsync(database, missingUserId)).Throws<DbUpdateException>();
+        DbUpdateException? failure = null;
+        try
+        {
+            await RecordAsync(database, missingUserId);
+        }
+        catch (DbUpdateException ex)
+        {
+            failure = ex;
+        }
 
-        await Assert.That(await ReadTotalsAsync(database, missingUserId)).IsNull();
+        using (Assert.Multiple())
+        {
+            await Assert.That(failure).IsNotNull();
+            await Assert.That(failure?.InnerException).IsTypeOf<SqlException>();
+            await Assert.That((failure?.InnerException as SqlException)?.Number).IsEqualTo(SqlServerForeignKeyViolation);
+            await Assert.That(await ReadTotalsAsync(database, missingUserId)).IsNull();
+        }
     }
 
     [Test]
