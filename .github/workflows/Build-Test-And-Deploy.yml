@@ -56,6 +56,10 @@ jobs:
         working-directory: EssentialCSharp.Web
         run: npm run build
 
+      - name: Test frontend
+        working-directory: EssentialCSharp.Web
+        run: npm test
+
   build-and-test:
     name: Build and test (Ubuntu)
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
@@ -63,6 +67,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: "BuildAndUploadImage"
+
+    # Real SQL Server for the reading-profile upsert/concurrency and migration tests
+    # (ReadingProfileSqlServerTests); they fail rather than skip when running in CI without it.
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: CiOnly_Passw0rd!
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P $MSSQL_SA_PASSWORD -Q 'SELECT 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - uses: actions/checkout@v7.0.1
@@ -102,6 +122,8 @@ jobs:
 
       - name: Run .NET Tests
         run: dotnet test --no-build --configuration Release
+        env:
+          ESSENTIALCSHARP_TEST_SQLSERVER: Server=localhost,1433;User Id=sa;Password=CiOnly_Passw0rd!;TrustServerCertificate=true
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4

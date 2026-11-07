@@ -6,10 +6,12 @@
 @using EssentialCSharp.Common
 @using Microsoft.AspNetCore.Identity
 @using EssentialCSharp.Web.Areas.Identity.Data
+@using Microsoft.AspNetCore.Antiforgery
 @using Microsoft.Extensions.Configuration
 @using Microsoft.Extensions.Options
 @inject ISiteMappingService _SiteMappings
 @inject SignInManager<EssentialCSharpWebUser> SignInManager
+@inject IAntiforgery Antiforgery
 @inject IConfiguration Configuration
 @inject IOptions<CaptchaOptions> _CaptchaOptions
 @inject IOptions<SiteSettings> SiteSettings
@@ -28,6 +30,12 @@
     }
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    @if (SignInManager.IsSignedIn(User) && (ViewData["CurrentPageKey"] is string { Length: > 0 } || ViewData["NeedsReadingCsrf"] is true))
+    {
+        // Only the reading tracker (content pages) and the reset button (ViewData["NeedsReadingCsrf"]) call the
+        // antiforgery-protected reading API; GetAndStoreTokens sets cookie/no-cache headers, so never call it elsewhere.
+        <meta name="csrf-token" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
+    }
     <meta property="og:type" content="website" />
     <meta property="og:url" content="@canonicalUrl" />
     @if (Context.Response.StatusCode < 400 && !Context.Request.Path.StartsWithSegments("/Identity"))
@@ -222,6 +230,7 @@
         window.ENABLE_CHAT_WIDGET = @Json.Serialize(!Context.Request.Path.StartsWithSegments("/Identity"));
         window.HCAPTCHA_SITE_KEY = @Json.Serialize(chatCaptchaSiteKey);
     </script>
+    @await Component.InvokeAsync("ReadingContext")
     <script src="~/dist/assets/site-shell.js" type="module" asp-append-version="true"></script>
 </body>
 </html>

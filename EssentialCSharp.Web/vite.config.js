@@ -14,6 +14,10 @@ export default defineConfig({
             "@": resolve(rootDir, "src")
         }
     },
+    test: {
+        environment: "happy-dom",
+        include: ["src/**/*.test.js"]
+    },
     build: {
         outDir: resolve(rootDir, "wwwroot", "dist"),
         emptyOutDir: true,
@@ -21,6 +25,7 @@ export default defineConfig({
         rollupOptions: {
             input: {
                 "site-shell": resolve(rootDir, "src", "main.js"),
+                "reading-reset": resolve(rootDir, "src", "reading-reset.js"),
                 "password-strength": resolve(rootDir, "wwwroot", "js", "password-strength.js")
             },
             output: {

@@ -60,11 +60,13 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
             string headHtml = doc.DocumentNode.Element("html")?.Element("head")?.InnerHtml ?? string.Empty;
             string html = doc.DocumentNode.Element("html")?.Element("body")?.InnerHtml ?? string.Empty;
 
+            // PrimaryKey is not serialized in sitemap.json, so it is null after deserialization; Keys is authoritative.
+            string pageKey = siteMapping.Keys.FirstOrDefault() ?? siteMapping.PrimaryKey ?? string.Empty;
             ViewBag.PageTitle = siteMapping.IndentLevel is 0 ? siteMapping.ChapterTitle + " " + siteMapping.RawHeading : siteMapping.RawHeading;
             ViewData["Description"] = chapterDescriptionService.GetDescription(siteMapping);
             ViewData["CanonicalUrl"] = $"{siteSettings.Value.BaseUrl.TrimEnd('/')}{Request.PathBase}{canonicalPath}";
             ViewBag.NextPage = FlipPage(siteMapping!.ChapterNumber, siteMapping.PageNumber, true);
-            ViewBag.CurrentPageKey = siteMapping.PrimaryKey;
+            ViewBag.CurrentPageKey = pageKey;
             ViewBag.PreviousPage = FlipPage(siteMapping.ChapterNumber, siteMapping.PageNumber, false);
             ViewBag.HeadContents = headHtml;
             ViewBag.Contents = html;
