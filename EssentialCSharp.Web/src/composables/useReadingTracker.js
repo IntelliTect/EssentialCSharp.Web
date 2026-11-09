@@ -260,12 +260,14 @@ export function useReadingTracker(context) {
         outbox = [];
         const batchGeneration = generation;
 
-        inFlight++;
+        // A keepalive send has no timeout and can stay pending on a stalled network. Its batch has left the
+        // outbox already, so it must not hold back the periodic flushes (inFlight only gates those).
+        if (!keepalive) inFlight++;
         let result;
         try {
             result = await postSession(batch, { keepalive });
         } finally {
-            inFlight--;
+            if (!keepalive) inFlight--;
         }
         // Acknowledged (delivered or rejected for good): the record is no longer needed.
         // Transient failures keep it, re-saved below.
