@@ -37,7 +37,7 @@ steps:
       fetch-depth: 0
       persist-credentials: false
   - name: Set up .NET
-    uses: actions/setup-dotnet@v6.0.0
+    uses: actions/setup-dotnet@v6.1.0
     with:
       global-json-file: global.json
   - name: Set up Node.js
