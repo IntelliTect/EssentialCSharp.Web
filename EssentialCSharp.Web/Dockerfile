@@ -26,6 +26,8 @@ COPY EssentialCSharp.Chat.Tests/EssentialCSharp.Chat.Tests.csproj ./EssentialCSh
 COPY EssentialCSharp.Chat/EssentialCSharp.Chat.csproj ./EssentialCSharp.Chat/
 COPY EssentialCSharp.Web.Tests/EssentialCSharp.Web.Tests.csproj ./EssentialCSharp.Web.Tests/
 COPY EssentialCSharp.Web/EssentialCSharp.Web.csproj ./EssentialCSharp.Web/
+COPY EssentialCSharp.Web.Hosting/EssentialCSharp.Web.Hosting.csproj ./EssentialCSharp.Web.Hosting/
+COPY dev/EssentialCSharp.Web.AppHost/EssentialCSharp.Web.AppHost.csproj ./dev/EssentialCSharp.Web.AppHost/
 RUN mkdir -p /root/.nuget/NuGet
 RUN --mount=type=secret,id=nuget_config,required=false,target=/root/.nuget/NuGet/NuGet.Config \
     --mount=type=cache,id=essentialcsharp-web-nuget,target=/root/.nuget/packages \

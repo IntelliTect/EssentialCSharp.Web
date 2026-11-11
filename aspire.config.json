@@ -1,0 +1,6 @@
+{
+  "appHostPath": "dev/EssentialCSharp.Web.AppHost/EssentialCSharp.Web.AppHost.csproj",
+  "appHost": {
+    "path": "dev/EssentialCSharp.Web.AppHost/EssentialCSharp.Web.AppHost.csproj"
+  }
+}

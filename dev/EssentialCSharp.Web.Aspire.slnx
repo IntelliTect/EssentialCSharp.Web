@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="../EssentialCSharp.Web/EssentialCSharp.Web.csproj" />
+  <Project Path="../EssentialCSharp.Chat.Shared/EssentialCSharp.Chat.Common.csproj" />
+  <Project Path="../EssentialCSharp.Web.Hosting/EssentialCSharp.Web.Hosting.csproj" />
+  <Project Path="EssentialCSharp.Web.AppHost/EssentialCSharp.Web.AppHost.csproj" />
+  <Project Path="EssentialCSharp.Web.AppHost.Tests/EssentialCSharp.Web.AppHost.Tests.csproj" />
+</Solution>

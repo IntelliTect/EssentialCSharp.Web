@@ -13,6 +13,15 @@
     <PackageVersion Include="ContentFeedNuget" Version="$(ToolingPackagesVersion)" />
   </ItemGroup>
   <ItemGroup>
+    <PackageVersion Include="Aspire.Hosting" Version="13.6.5" />
+    <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.6.5" />
+    <PackageVersion Include="Aspire.Hosting.Testing" Version="13.6.5" />
+    <PackageVersion Include="Aspire.Hosting.SqlServer" Version="13.6.5" />
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.6.5" />
+    <PackageVersion Include="Aspire.Hosting.Browsers" Version="13.5.0-preview.1.26417.10" />
+    <PackageVersion Include="Aspire.Hosting.EntityFrameworkCore" Version="13.5.0-preview.1.26417.10" />
+    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Ollama" Version="13.6.1" />
+    <PackageVersion Include="TUnit.Aspire" Version="1.74.0" />
     <PackageVersion Include="Azure.Extensions.AspNetCore.DataProtection.Keys" Version="1.6.5" />
     <PackageVersion Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.13" />
     <PackageVersion Include="AspNet.Security.OAuth.GitHub" Version="10.0.0" />

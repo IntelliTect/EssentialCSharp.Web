@@ -156,5 +156,5 @@ csharp_style_expression_bodied_lambdas = true:silent
 csharp_style_expression_bodied_local_functions = false:silent
 
 # Test files - allow underscore-separated test method names (CA1707)
-[{EssentialCSharp.Web.Tests,EssentialCSharp.Chat.Tests}/**]
+[{EssentialCSharp.Web.Tests,EssentialCSharp.Chat.Tests,dev/EssentialCSharp.Web.AppHost.Tests}/**]
 dotnet_diagnostic.CA1707.severity = none
