@@ -292,3 +292,7 @@ EssentialCSharp.Web/wwwroot/dist/
 
 # DevContainer environment files with sensitive data
 .devcontainer/.env
+
+# Personal overrides of repository agent settings
+.github/copilot/settings.local.json
+.claude/settings.local.json
