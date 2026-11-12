@@ -17,15 +17,20 @@ The standalone `run-tests` skill is intentionally not vendored: it refers to `fi
 ### Aspire agent setup
 
 The Aspire bundle was generated with Aspire CLI 13.6.4 using `aspire agent init`, not hand-written.
-The `aspire` router invokes six companion skills, so keep the complete bundle and its reference
+The `aspire` router routes to companion skills, so keep the installed skills and their reference
 files together. Refresh both repository-local copies from the repository root:
 
 ```powershell
 aspire agent init --non-interactive --workspace-root . `
     --skill-locations standard,claudecode `
-    --skills aspire,aspire-init,aspireify,aspire-orchestration,aspire-monitoring,aspire-deployment,aspire-project-v2-migration `
+    --skills aspire,aspireify,aspire-orchestration,aspire-monitoring,aspire-deployment `
     --mcp=false
 ```
+
+`aspire-init` (first-run scaffolding) and `aspire-project-v2-migration` (one-time `ProjectResource`
+to `DotnetProjectResource` migration) are intentionally omitted: this repository already has an
+AppHost, and Project v2 is not adopted. The router still names them; reinstall with
+`aspire agent init --skills <name>` only if that work is actually planned.
 
 The explicit skill list excludes optional companion tools such as `playwright-cli` and
 `dotnet-inspect`. `--mcp=false` leaves existing MCP configuration unchanged; these skills use

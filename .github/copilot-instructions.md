@@ -126,7 +126,7 @@ and tests in the single root `EssentialCSharp.Web.slnx`.
 Aspire is for **local development only**. Production uses the existing Docker/CI pipeline;
 the Dockerfile builds and publishes the Web project and its dependencies, not the solution.
 Do not add `aspire deploy` or publish-mode infrastructure provisioning to this AppHost.
-Installed deployment and migration skills are guidance, not approval to change that policy
+The installed deployment skill is guidance, not approval to change that policy
 or migrate the resource APIs. See [the agent setup guide](../docs/coding-agents.md#aspire-agent-setup)
 for the reproducible CLI installation and [the README](../README.md#standalone-aspire-development)
 for startup commands and prerequisites.
