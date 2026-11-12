@@ -11,7 +11,7 @@ This is a comprehensive ASP.NET Core 10.0 web application ecosystem for the **Es
 This solution follows a modular architecture with clear separation of concerns:
 
 ```
-EssentialCSharp.Web.sln
+EssentialCSharp.Web.slnx
 ├── EssentialCSharp.Web/              # Main ASP.NET Core web application
 │   ├── Areas/                        # Identity and feature-specific areas
 │   ├── Controllers/                  # MVC controllers
@@ -22,6 +22,9 @@ EssentialCSharp.Web.sln
 │   └── wwwroot/                      # Static assets (CSS, JS, images)
 ├── EssentialCSharp.Chat/             # Console application for AI chat
 ├── EssentialCSharp.Chat.Shared/      # Shared models and services
+├── EssentialCSharp.Web.Hosting/      # Shared Aspire resource registration
+├── dev/EssentialCSharp.Web.AppHost/  # Standalone local-development orchestrator
+├── dev/EssentialCSharp.Web.AppHost.Tests/ # Aspire graph and Docker smoke tests
 ├── EssentialCSharp.Web.Tests/        # Integration tests for web app
 └── EssentialCSharp.Chat.Tests/       # Unit tests for chat functionality
 ```
@@ -111,6 +114,22 @@ public async Task MethodName_Scenario_ExpectedBehavior()
 ```
 
 ## Build & Development Commands
+
+### Aspire agent workflow
+
+Use the checked-in `aspire` skill bundle in `.agents/skills/` or `.claude/skills/` for Aspire
+work. The standalone AppHost is `dev/EssentialCSharp.Web.AppHost/EssentialCSharp.Web.AppHost.csproj`;
+it does not require the aggregate Host repository. Shared Web registration belongs in
+`EssentialCSharp.Web.Hosting`, which is also consumed by the aggregate Host. Keep all projects
+and tests in the single root `EssentialCSharp.Web.slnx`.
+
+Aspire is for **local development only**. Production uses the existing Docker/CI pipeline;
+the Dockerfile builds and publishes the Web project and its dependencies, not the solution.
+Do not add `aspire deploy` or publish-mode infrastructure provisioning to this AppHost.
+Installed deployment and migration skills are guidance, not approval to change that policy
+or migrate the resource APIs. See [the agent setup guide](../docs/coding-agents.md#aspire-agent-setup)
+for the reproducible CLI installation and [the README](../README.md#standalone-aspire-development)
+for startup commands and prerequisites.
 
 ### Essential Commands
 ```bash

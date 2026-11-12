@@ -76,7 +76,7 @@ The application references neither hosting project, and production deployment re
 
 ## Coding agent skills and optional plugins
 
-The repository includes TUnit and EF Core query guidance for Copilot, Claude Code, and other compatible clients. Broader testing and refactoring capabilities are available through optional upstream plugins. See the [coding agent setup guide](docs/coding-agents.md) for client-specific installation, compatibility limits, and maintenance guidance.
+The repository includes CLI-generated Aspire skills plus TUnit and EF Core query guidance for Copilot, Claude Code, and other compatible clients. Broader testing and refactoring capabilities are available through optional upstream plugins. See the [coding agent setup guide](docs/coding-agents.md) for client-specific installation, compatibility limits, and maintenance guidance.
 
 ## Page metadata
 

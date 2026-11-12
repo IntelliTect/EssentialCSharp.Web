@@ -6,12 +6,38 @@ This repository uses a hybrid setup: essential, self-contained skills are checke
 
 | Skill | Purpose |
 | --- | --- |
+| `aspire` and its companion workflow skills | Official Aspire guidance for AppHost wiring, lifecycle, diagnostics, and approval-first deployment or migration workflows. |
 | `tunit` | Official TUnit guidance for tests, assertions, fixtures, and framework-specific execution. |
 | `optimizing-ef-core-queries` | EF Core query performance guidance. |
 
 The same skill content is stored under `.agents/skills/` and `.claude/skills/`. Claude Code discovers the latter; compatible clients such as OpenCode can discover either. Keep matching copies synchronized, including source-tracking metadata. Do not create another copy for OpenCode.
 
 The standalone `run-tests` skill is intentionally not vendored: it refers to `filter-syntax`, `platform-detection`, and other testing skills. Use the complete optional testing plugin rather than copying individual interdependent skills or assuming they are available to every contributor.
+
+### Aspire agent setup
+
+The Aspire bundle was generated with Aspire CLI 13.6.4 using `aspire agent init`, not hand-written.
+The `aspire` router invokes six companion skills, so keep the complete bundle and its reference
+files together. Refresh both repository-local copies from the repository root:
+
+```powershell
+aspire agent init --non-interactive --workspace-root . `
+    --skill-locations standard,claudecode `
+    --skills aspire,aspire-init,aspireify,aspire-orchestration,aspire-monitoring,aspire-deployment,aspire-project-v2-migration `
+    --mcp=false
+```
+
+The explicit skill list excludes optional companion tools such as `playwright-cli` and
+`dotnet-inspect`. `--mcp=false` leaves existing MCP configuration unchanged; these skills use
+the Aspire CLI without requiring an MCP server. The installer also refreshes user-level
+`~/.agents/skills` and installs agent usage telemetry hooks by default. Set
+`ASPIRE_CLI_TELEMETRY_OPTOUT=true` to opt out of telemetry.
+
+Installing guidance does not execute or approve its workflows. This repository's AppHost is
+for **local development only**. Production continues through the existing Docker/CI pipeline,
+not `aspire deploy`; do not introduce publish-mode provisioning or migrate project resources
+merely because those skills are installed. See the [standalone Aspire instructions](../README.md#standalone-aspire-development)
+for the AppHost path and runtime prerequisites.
 
 ## Optional upstream plugins
 
@@ -91,7 +117,7 @@ For optional testing guidance in a client without a compatible plugin loader, us
 
 After installation or an update:
 
-1. Confirm the checked-in TUnit and EF Core skills are discoverable.
+1. Confirm the checked-in Aspire bundle, TUnit, and EF Core skills are discoverable.
 2. Confirm the testing bundle exposes `run-tests`, `filter-syntax`, and `platform-detection`.
 3. Inspect available agents separately; skill discovery does not prove custom-agent compatibility.
 4. Exercise a representative task in your client and report missing references or components.
