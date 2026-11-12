@@ -11,8 +11,7 @@ public class StandaloneWebFixture : AspireFixture<Projects.EssentialCSharp_Web_A
 {
     protected override string[] Args =>
     [
-        "--Parameters:UseLocalAI=false",
-        "--Parameters:UseNugetContentFeed=false",
+        "--AIOptions:UseLocalAI=false",
         "--EssentialCSharpWeb:EphemeralDatabases=true",
     ];
 
@@ -51,6 +50,21 @@ public class StandaloneWebSmokeTests(StandaloneWebFixture fixture)
         using var response = await client.GetAsync(path);
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+    }
+
+    [Test]
+    public async Task SecondAppHost_DynamicPorts_RunsAlongsideFirst()
+    {
+        await using var second = new StandaloneWebFixture();
+        await second.InitializeAsync();
+        using var firstClient = fixture.CreateHttpClient("essentialcsharp-web", "http");
+        using var secondClient = second.CreateHttpClient("essentialcsharp-web", "http");
+
+        await Assert.That(secondClient.BaseAddress).IsNotEqualTo(firstClient.BaseAddress);
+        using var firstResponse = await firstClient.GetAsync("/health");
+        using var secondResponse = await secondClient.GetAsync("/health");
+        await Assert.That(firstResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(secondResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
 
     [Test]

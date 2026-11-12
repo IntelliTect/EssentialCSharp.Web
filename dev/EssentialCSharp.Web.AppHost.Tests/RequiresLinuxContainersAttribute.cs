@@ -27,7 +27,7 @@ public sealed class RequiresLinuxContainersAttribute()
         string runtime = Environment.GetEnvironmentVariable("ASPIRE_CONTAINER_RUNTIME") ?? "docker";
         try
         {
-            using Process process = Process.Start(new ProcessStartInfo(runtime, ["info", "--format", "{{.OSType}}"])
+            using Process process = Process.Start(new ProcessStartInfo(runtime, ["version", "--format", "{{.Server.Os}}"])
             {
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,

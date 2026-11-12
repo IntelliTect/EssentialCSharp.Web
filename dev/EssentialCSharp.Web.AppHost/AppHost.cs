@@ -20,9 +20,7 @@ if (!ephemeralDatabases)
 var sql = sqlServer.AddDatabase("EssentialCSharpWebContextConnection");
 var postgres = postgresServer.AddDatabase("PostgresVectorStore");
 
-var feed = builder.AddEssentialCSharpContentFeedParameter();
 builder.AddEssentialCSharpWeb(webProjectPath, sql, postgres)
-    .WithEnvironment("AccessToNugetFeed", feed)
     .WithEssentialCSharpLocalAI();
 
 builder.Build().Run();

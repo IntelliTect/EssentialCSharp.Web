@@ -36,20 +36,38 @@ Local AI defaults to Ollama (`qwen2.5-coder:7b`, approximately 5 GB download); l
 is not enabled. Disable model downloads before starting when chat is unnecessary:
 
 ```powershell
-dotnet user-secrets set "Parameters:UseLocalAI" "false" --project dev\EssentialCSharp.Web.AppHost
+dotnet user-secrets set "AIOptions:UseLocalAI" "false" --project dev\EssentialCSharp.Web.AppHost
 ```
 
-An AppHost `AIOptions:Endpoint` takes precedence over local AI. Configure that endpoint and
-optional `AIOptions:ChatDeploymentName`, `AIOptions:VectorGenerationDeploymentName`, and
-`AIOptions:SystemPrompt` in the **AppHost** secrets/configuration to forward them to Web.
+This is startup configuration: restart the AppHost after changing it. It is not a dashboard
+toggle. Existing `Parameters:UseLocalAI` secrets remain a fallback, but `AIOptions:UseLocalAI`
+takes precedence. Invalid Boolean values fail startup instead of enabling a model download.
+
+An AppHost `AIOptions:Endpoint` takes precedence over local AI. The **AppHost** forwards that
+endpoint and optional `AIOptions:ChatDeploymentName`, `AIOptions:VectorGenerationDeploymentName`,
+and `AIOptions:SystemPrompt` to Web, with local AI forced off. Other application options,
+including MCP tool permissions, remain Web-owned; configure them directly in Web.
 Cloud authentication remains the existing Web application's responsibility.
 
 Standalone content defaults to the existing placeholders (`/hello-world` is a useful smoke page).
 No Tooling, Try.NET, or Host clone is needed. The private content feed requires Azure DevOps
-feed authentication and an opt-in AppHost `Parameters:UseNugetContentFeed=true`.
-For a cold content-feed build, also restore/build Web with `-p:AccessToNugetFeed=true` before
-starting Aspire; changing a runtime environment variable alone does not redo NuGet restore.
-Keep the default `false` for public-feed builds.
+feed authentication. Content selection is an MSBuild setting, not a dashboard parameter:
+set the environment variable **before** Aspire restores/builds the AppHost and its Web project reference.
+
+```powershell
+$env:AccessToNugetFeed = "true"
+aspire start --apphost dev\EssentialCSharp.Web.AppHost\EssentialCSharp.Web.AppHost.csproj --isolated
+```
+
+Keep it unset or `false` for public-feed builds. To switch sources, stop Aspire, change the
+environment variable, then start again with a rebuild; do not use `--no-build` or conflicting
+`-p:AccessToNugetFeed` overrides. The old `Parameters:UseNugetContentFeed` dashboard setting
+cannot control MSBuild and has been removed. If previously enabled, remove it from AppHost
+secrets/configuration before starting:
+
+```powershell
+dotnet user-secrets remove "Parameters:UseNugetContentFeed" --project dev\EssentialCSharp.Web.AppHost
+```
 
 Run all tests, including the Docker-backed Aspire smoke tests, from the root solution:
 
@@ -60,9 +78,12 @@ dotnet test --solution EssentialCSharp.Web.slnx
 Graph tests do not start containers. The shared `TUnit.Aspire` smoke fixture passes
 `--EssentialCSharpWeb:EphemeralDatabases=true` for fresh, session-lifetime databases without data
 volumes, disables AI/feed, and checks that migrations finished before Web became healthy, then
-`/health`, `/alive`, and placeholder HTML. Smoke tests are skipped when no Linux container engine is
+`/health`, `/alive`, and placeholder HTML. It also starts a second AppHost and verifies both Web
+instances remain healthy on distinct URLs. Smoke tests are skipped when no Linux container engine is
 reachable (for example hosted macOS runners or Windows runners with only Windows containers), except
-in Linux CI where they always run. To run only graph checks, use
+in Linux CI where they always run. Graph tests also generate a local manifest to verify that publish
+mode contains no migration tools, browser helpers, local AI, or Development environment override.
+To run only graph checks, use
 `dotnet test --project dev\EssentialCSharp.Web.AppHost.Tests --treenode-filter "/*/*/(AppHostGraphTests|WebHostingExtensionsTests)/*"`.
 
 The AppHost references the Web project so building the AppHost builds Web before the EF migration
@@ -70,10 +91,11 @@ resource runs its `--no-build` database update; Web starts only after that updat
 
 `EssentialCSharp.Web.Hosting` exposes ordinary Aspire extensions reused by the standalone
 AppHost and the aggregate `IntelliTect-dev/EssentialCSharp.Host`:
-`AddEssentialCSharpWeb(absoluteWebProjectPath, sqlDatabase, vectorDatabase)` returns Web,
-`AddEssentialCSharpContentFeedParameter()` returns the shared parameter handle, and
+`AddEssentialCSharpWeb(absoluteWebProjectPath, sqlDatabase, vectorDatabase)` returns Web with
+Aspire-allocated ports and named database references, and
 `web.WithEssentialCSharpLocalAI()` applies the local/cloud policy.
-The aggregate Host owns publish infrastructure, content generation, Try.NET, and cross-repo tools.
+Migrations and browser helpers are registered only in run mode. The aggregate Host owns
+full-stack infrastructure, content generation, Try.NET, and cross-repo tools.
 The application references neither hosting project, and production deployment remains independent.
 
 ## Coding agent skills and optional plugins

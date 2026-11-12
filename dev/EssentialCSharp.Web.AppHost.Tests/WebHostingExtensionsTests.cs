@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using EssentialCSharp.Web.Hosting;
@@ -22,7 +23,9 @@ public class WebHostingExtensionsTests
         await Assert.That(builder.Resources.Select(r => r.Name)).Contains("essentialcsharp-web-ef-migrations");
 
         var endpoint = web.Resource.Annotations.OfType<EndpointAnnotation>().Single(e => e.Name == "http");
-        await Assert.That(endpoint.TargetPort).IsEqualTo(5000);
+        await Assert.That(endpoint.Port).IsNull();
+        await Assert.That(endpoint.TargetPort).IsNull();
+        await Assert.That(endpoint.IsProxied).IsTrue();
 
         var env = await GraphInspection.GetEnvironmentAsync(web.Resource, builder.ExecutionContext);
         await Assert.That(env["ASPNETCORE_ENVIRONMENT"]).IsEqualTo("Development");
@@ -72,17 +75,43 @@ public class WebHostingExtensionsTests
     }
 
     [Test]
-    public async Task AddEssentialCSharpWeb_PublishMode_DoesNotForceDevelopmentEnvironment()
+    public async Task AddEssentialCSharpWeb_PublishMode_ProducesManifestWithoutDevelopmentResources()
     {
-        var builder = GraphInspection.CreateBuilder(
-            "--operation", "publish", "--publisher", "manifest", "--output-path", Path.GetTempPath());
-        var (sql, vector) = AddSuppliedDatabases(builder);
+        var outputDirectory = Directory.CreateTempSubdirectory("essentialcsharp-manifest-");
+        try
+        {
+            string manifestPath = Path.Combine(outputDirectory.FullName, "manifest.json");
+            var builder = GraphInspection.CreateBuilder(
+                "--operation", "publish", "--publisher", "manifest", "--output-path", manifestPath);
+            var (sql, vector) = AddSuppliedDatabases(builder);
 
-        var web = builder.AddEssentialCSharpWeb(GraphInspection.WebProjectPath, sql, vector);
+            var web = builder.AddEssentialCSharpWeb(GraphInspection.WebProjectPath, sql, vector)
+                .WithEssentialCSharpLocalAI();
 
-        await Assert.That(builder.ExecutionContext.IsPublishMode).IsTrue();
-        var env = await GraphInspection.GetEnvironmentAsync(web.Resource, builder.ExecutionContext);
-        await Assert.That(env.Keys).DoesNotContain("ASPNETCORE_ENVIRONMENT");
+            await Assert.That(builder.ExecutionContext.IsPublishMode).IsTrue();
+            await Assert.That(builder.Resources.Select(r => r.Name))
+                .IsEquivalentTo(["supplied-sql", "supplied-vector", "essentialcsharp-web"]);
+            await Assert.That(web.Resource.Annotations.OfType<WaitAnnotation>()
+                .Any(wait => wait.WaitType == WaitType.WaitForCompletion)).IsFalse();
+            var env = await GraphInspection.GetEnvironmentAsync(web.Resource, builder.ExecutionContext);
+            await Assert.That(env.Keys).DoesNotContain("ASPNETCORE_ENVIRONMENT");
+            await Assert.That(env.Keys).DoesNotContain("AIOptions__UseLocalAI");
+
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            await using (var app = builder.Build())
+            {
+                await app.RunAsync(timeout.Token);
+            }
+
+            using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(manifestPath));
+            var resources = manifest.RootElement.GetProperty("resources");
+            await Assert.That(resources.EnumerateObject().Select(resource => resource.Name))
+                .IsEquivalentTo(["supplied-sql", "supplied-vector", "essentialcsharp-web"]);
+        }
+        finally
+        {
+            outputDirectory.Delete(recursive: true);
+        }
     }
 
     [Test]
@@ -99,19 +128,14 @@ public class WebHostingExtensionsTests
     }
 
     [Test]
-    [Arguments(new string[0], "false")]
-    [Arguments(new[] { "--Parameters:UseNugetContentFeed=true" }, "true")]
-    public async Task AddEssentialCSharpContentFeedParameter_Configuration_ResolvesSameReusableHandle(
-        string[] args, string expected)
+    public async Task AddEssentialCSharpWeb_RetiredContentFeedParameter_ExplainsBuildTimeSelection()
     {
-        var builder = GraphInspection.CreateBuilder(args);
+        var builder = GraphInspection.CreateBuilder("--Parameters:UseNugetContentFeed=true");
+        var (sql, vector) = AddSuppliedDatabases(builder);
 
-        var feed = builder.AddEssentialCSharpContentFeedParameter();
-
-        await Assert.That(feed.Resource.Name).IsEqualTo("UseNugetContentFeed");
-        await Assert.That(builder.Resources.OfType<ParameterResource>().Single(p => p.Name == "UseNugetContentFeed"))
-            .IsSameReferenceAs(feed.Resource);
-        await Assert.That(await feed.Resource.GetValueAsync(CancellationToken.None)).IsEqualTo(expected);
+        await Assert.That(() => builder.AddEssentialCSharpWeb(GraphInspection.WebProjectPath, sql, vector))
+            .Throws<InvalidOperationException>()
+            .WithMessageContaining("AccessToNugetFeed environment variable");
     }
 
     [Test]
@@ -120,7 +144,8 @@ public class WebHostingExtensionsTests
         var builder = GraphInspection.CreateBuilder(
             "--AIOptions:Endpoint=https://example.openai.azure.com/",
             "--AIOptions:ChatDeploymentName=chat",
-            "--Parameters:UseLocalAI=true");
+            "--AIOptions:AllowedMcpTools:0=SearchBook",
+            "--AIOptions:UseLocalAI=true");
         var (sql, vector) = AddSuppliedDatabases(builder);
 
         var web = builder.AddEssentialCSharpWeb(GraphInspection.WebProjectPath, sql, vector).WithEssentialCSharpLocalAI();
@@ -129,13 +154,17 @@ public class WebHostingExtensionsTests
         await Assert.That(env["AIOptions__UseLocalAI"]).IsEqualTo("false");
         await Assert.That(env["AIOptions__Endpoint"]).IsEqualTo("https://example.openai.azure.com/");
         await Assert.That(env["AIOptions__ChatDeploymentName"]).IsEqualTo("chat");
+        await Assert.That(env.Keys).DoesNotContain("AIOptions__AllowedMcpTools__0");
         await Assert.That(builder.Resources.Any(r => r.Name is "ollama" or "UseLocalAI")).IsFalse();
     }
 
     [Test]
+    [Arguments(new[] { "--AIOptions:UseLocalAI=false" }, false)]
     [Arguments(new[] { "--Parameters:UseLocalAI=false" }, false)]
+    [Arguments(new[] { "--AIOptions:UseLocalAI=false", "--Parameters:UseLocalAI=true" }, false)]
     [Arguments(new string[0], true)]
-    public async Task WithEssentialCSharpLocalAI_UseLocalAIParameter_ControlsOllama(string[] args, bool expectOllama)
+    public async Task WithEssentialCSharpLocalAI_StartupConfiguration_ControlsOllamaWithoutDashboardParameter(
+        string[] args, bool expectOllama)
     {
         var builder = GraphInspection.CreateBuilder(args);
         var (sql, vector) = AddSuppliedDatabases(builder);
@@ -146,6 +175,7 @@ public class WebHostingExtensionsTests
         await Assert.That(env["AIOptions__UseLocalAI"]).IsEqualTo(expectOllama ? "true" : "false");
         await Assert.That(builder.Resources.Any(r => r.Name == "ollama")).IsEqualTo(expectOllama);
         await Assert.That(builder.Resources.Any(r => r.Name == "ollama-chat")).IsEqualTo(expectOllama);
+        await Assert.That(builder.Resources.Any(r => r.Name == "UseLocalAI")).IsFalse();
         if (expectOllama)
         {
             var ollama = builder.Resources.Single(r => r.Name == "ollama");
@@ -161,8 +191,20 @@ public class WebHostingExtensionsTests
         }
     }
 
+    [Test]
+    public async Task WithEssentialCSharpLocalAI_InvalidStartupConfiguration_DoesNotSilentlyEnableDownloads()
+    {
+        var builder = GraphInspection.CreateBuilder("--AIOptions:UseLocalAI=invalid");
+        var (sql, vector) = AddSuppliedDatabases(builder);
+        var web = builder.AddEssentialCSharpWeb(GraphInspection.WebProjectPath, sql, vector);
+
+        await Assert.That(() => web.WithEssentialCSharpLocalAI())
+            .Throws<InvalidOperationException>();
+        await Assert.That(builder.Resources.Any(r => r.Name == "ollama")).IsFalse();
+    }
+
     private static (IResourceBuilder<IResourceWithConnectionString> Sql, IResourceBuilder<IResourceWithConnectionString> Vector)
         AddSuppliedDatabases(IDistributedApplicationBuilder builder) =>
-        (builder.AddConnectionString("EssentialCSharpWebContextConnection"),
-            builder.AddConnectionString("PostgresVectorStore"));
+        (builder.AddConnectionString("supplied-sql"),
+            builder.AddConnectionString("supplied-vector"));
 }

@@ -12,13 +12,13 @@ public class AppHostGraphTests
     public async Task StandaloneGraph_Default_UsesPersistentLocalInfrastructureAndPreservedNames()
     {
         await using var builder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.EssentialCSharp_Web_AppHost>(
-            ["--Parameters:UseLocalAI=false"]);
+            ["--AIOptions:UseLocalAI=false"]);
 
         var names = builder.Resources.Select(r => r.Name).ToList();
         foreach (string expected in new[]
         {
             "sqlserver", "postgres", "EssentialCSharpWebContextConnection", "PostgresVectorStore",
-            "essentialcsharp-web", "essentialcsharp-web-ef-migrations", "UseNugetContentFeed",
+            "essentialcsharp-web", "essentialcsharp-web-ef-migrations",
         })
         {
             await Assert.That(names).Contains(expected);
@@ -37,7 +37,9 @@ public class AppHostGraphTests
 
         var web = builder.Resources.Single(r => r.Name == "essentialcsharp-web");
         var env = await GraphInspection.GetEnvironmentAsync(web, builder.ExecutionContext);
-        await Assert.That(((ParameterResource)env["AccessToNugetFeed"]).Name).IsEqualTo("UseNugetContentFeed");
+        await Assert.That(env.Keys).DoesNotContain("AccessToNugetFeed");
+        await Assert.That(names).DoesNotContain("UseNugetContentFeed");
+        await Assert.That(names).DoesNotContain("UseLocalAI");
         await Assert.That(env["AIOptions__UseLocalAI"]).IsEqualTo("false");
     }
 
@@ -45,7 +47,7 @@ public class AppHostGraphTests
     public async Task StandaloneGraph_EphemeralDatabases_RemovesVolumesAndPersistence()
     {
         await using var builder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.EssentialCSharp_Web_AppHost>(
-            ["--Parameters:UseLocalAI=false", "--EssentialCSharpWeb:EphemeralDatabases=true"]);
+            ["--AIOptions:UseLocalAI=false", "--EssentialCSharpWeb:EphemeralDatabases=true"]);
 
         foreach (var container in builder.Resources.OfType<ContainerResource>().Where(r => r.Name is "sqlserver" or "postgres"))
         {

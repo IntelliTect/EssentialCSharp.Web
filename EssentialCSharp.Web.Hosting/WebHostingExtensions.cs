@@ -1,5 +1,6 @@
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
+using Microsoft.Extensions.Configuration;
 
 namespace EssentialCSharp.Web.Hosting;
 
@@ -34,59 +35,45 @@ public static class WebHostingExtensions
                 nameof(webProjectPath));
         }
 
+        if (builder.ExecutionContext.IsRunMode
+            && builder.Configuration.GetValue<bool>("Parameters:UseNugetContentFeed"))
+        {
+            throw new InvalidOperationException(
+                "Parameters:UseNugetContentFeed cannot select build-time content. Remove that AppHost setting " +
+                "and set the AccessToNugetFeed environment variable to true before building and starting Aspire.");
+        }
+
         var web = builder.AddProject("essentialcsharp-web", webProjectPath, launchProfileName: null)
+            .WithReference(webDatabase, connectionName: "EssentialCSharpWebContextConnection")
+            .WithReference(vectorDatabase, connectionName: "PostgresVectorStore")
             .WaitFor(webDatabase)
             .WaitFor(vectorDatabase)
-            .WithHttpEndpoint(targetPort: 5000)
-            .WithHttpHealthCheck("/health", endpointName: "http")
-            .WithEnvironment("ConnectionStrings__EssentialCSharpWebContextConnection", webDatabase)
-            .WithEnvironment("ConnectionStrings__PostgresVectorStore", vectorDatabase);
+            .WithHttpEndpoint()
+            .WithHttpHealthCheck("/health", endpointName: "http");
         web.WithEnvironment("SiteSettings__BaseUrl", web.GetEndpoint("http"));
         if (builder.ExecutionContext.IsRunMode)
         {
             // Local only: deployed environments must keep production migrations and DataProtection policy.
             web.WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development");
-        }
 
-        var resourcesBeforeMigrations = builder.Resources.ToHashSet(ReferenceEqualityComparer.Instance);
-        var migrations = web.AddEFMigrations(
-                "essentialcsharp-web-ef-migrations",
-                "EssentialCSharp.Web.Data.EssentialCSharpWebContext")
-            .WithReference(webDatabase)
-            .WaitFor(webDatabase)
-            .RunDatabaseUpdateOnStart();
-        IsolateSharedEnvironmentCallbacks(
-            web.Resource,
-            builder.Resources.Where(resource => !resourcesBeforeMigrations.Contains(resource)));
-        // EF reports Running before applying migrations; only completion proves the update succeeded.
-        web.WaitForCompletion(migrations);
+            var resourcesBeforeMigrations = builder.Resources.ToHashSet(ReferenceEqualityComparer.Instance);
+            var migrations = web.AddEFMigrations(
+                    "essentialcsharp-web-ef-migrations",
+                    "EssentialCSharp.Web.Data.EssentialCSharpWebContext")
+                .WithReference(webDatabase, connectionName: "EssentialCSharpWebContextConnection")
+                .WaitFor(webDatabase)
+                .RunDatabaseUpdateOnStart();
+            IsolateSharedEnvironmentCallbacks(
+                web.Resource,
+                builder.Resources.Where(resource => !resourcesBeforeMigrations.Contains(resource)));
+            // EF reports Running before applying migrations; only completion proves the update succeeded.
+            web.WaitForCompletion(migrations);
 
 #pragma warning disable ASPIREBROWSERLOGS001
-        web.WithBrowserLogs();
+            web.WithBrowserLogs();
 #pragma warning restore ASPIREBROWSERLOGS001
+        }
         return web;
-    }
-
-    /// <summary>Creates the content-feed switch; callers bind and reuse this same parameter handle.</summary>
-    public static IResourceBuilder<ParameterResource> AddEssentialCSharpContentFeedParameter(
-        this IDistributedApplicationBuilder builder)
-    {
-        ArgumentNullException.ThrowIfNull(builder);
-#pragma warning disable ASPIREINTERACTION001
-        return builder.AddParameter("UseNugetContentFeed", new ConstantParameterDefault("false"))
-            .WithDescription(
-                "Use the private Azure DevOps NuGet content feed (requires authentication). " +
-                "Leave unchecked for the caller's local content: standalone Web uses placeholders; " +
-                "the aggregate Host can generate content with ParserCli.")
-            .WithCustomInput(parameter => new()
-            {
-                InputType = InputType.Boolean,
-                Value = "false",
-                Name = parameter.Name,
-                Label = "Use NuGet Content Feed (requires auth)",
-                Description = parameter.Description
-            });
-#pragma warning restore ASPIREINTERACTION001
     }
 
     /// <summary>Applies local AI policy; AppHost Azure/Foundry configuration takes precedence over Ollama.</summary>
@@ -102,32 +89,18 @@ public static class WebHostingExtensions
 
         string? endpoint = builder.Configuration["AIOptions:Endpoint"];
         bool azureConfigured = !string.IsNullOrWhiteSpace(endpoint);
-        bool useLocalAI = false;
-        if (!azureConfigured)
-        {
-#pragma warning disable ASPIREINTERACTION001
-            builder.AddParameter("UseLocalAI", new ConstantParameterDefault("true"))
-                .WithDescription(
-                    "Use Ollama for local chat with qwen2.5-coder:7b (about 5 GB). " +
-                    "Local vector search is disabled. Uncheck to disable local models. " +
-                    "This changes the graph and requires an AppHost restart.")
-                .WithCustomInput(parameter => new()
-                {
-                    InputType = InputType.Boolean,
-                    Value = "true",
-                    Name = parameter.Name,
-                    Label = "Use Local AI (Ollama)",
-                    Description = parameter.Description
-                });
-#pragma warning restore ASPIREINTERACTION001
-            useLocalAI = !bool.TryParse(builder.Configuration["Parameters:UseLocalAI"], out bool configured)
-                || configured;
-        }
+        // Graph selection is startup configuration, not a dashboard parameter. Keep existing saved
+        // disables working so upgrading does not unexpectedly download a local model.
+        bool useLocalAI = !azureConfigured
+            && (builder.Configuration.GetValue<bool?>("AIOptions:UseLocalAI")
+                ?? builder.Configuration.GetValue<bool?>("Parameters:UseLocalAI")
+                ?? true);
 
-        web.WithEnvironment("AIOptions__UseLocalAI", useLocalAI ? "true" : "false");
         if (azureConfigured)
         {
             web.WithEnvironment("AIOptions__Endpoint", endpoint);
+            // Web owns its tool permissions. Forward only the Azure connection/model/prompt settings;
+            // indexed environment overrides would merge a partial tool allowlist with Web's defaults.
             foreach (string key in new[] { "ChatDeploymentName", "VectorGenerationDeploymentName", "SystemPrompt" })
             {
                 string? value = builder.Configuration[$"AIOptions:{key}"];
@@ -137,6 +110,7 @@ public static class WebHostingExtensions
                 }
             }
         }
+        web.WithEnvironment("AIOptions__UseLocalAI", useLocalAI ? "true" : "false");
 
         if (useLocalAI)
         {
@@ -174,14 +148,5 @@ public static class WebHostingExtensions
                 }
             }
         }
-    }
-
-    // Unlike AddParameter(name, Func<string>), configuration still overrides this fallback value.
-    private sealed class ConstantParameterDefault(string value) : ParameterDefault
-    {
-        public override string GetDefaultValue() => value;
-
-        public override void WriteToManifest(Aspire.Hosting.Publishing.ManifestPublishingContext context) =>
-            context.Writer.WriteString("value", value);
     }
 }
