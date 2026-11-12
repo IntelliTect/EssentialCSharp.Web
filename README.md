@@ -60,7 +60,9 @@ dotnet test --solution EssentialCSharp.Web.slnx
 Graph tests do not start containers. The shared `TUnit.Aspire` smoke fixture passes
 `--EssentialCSharpWeb:EphemeralDatabases=true` for fresh, session-lifetime databases without data
 volumes, disables AI/feed, and checks that migrations finished before Web became healthy, then
-`/health`, `/alive`, and placeholder HTML. To run only graph checks, use
+`/health`, `/alive`, and placeholder HTML. Smoke tests are skipped when no Linux container engine is
+reachable (for example hosted macOS runners or Windows runners with only Windows containers), except
+in Linux CI where they always run. To run only graph checks, use
 `dotnet test --project dev\EssentialCSharp.Web.AppHost.Tests --treenode-filter "/*/*/(AppHostGraphTests|WebHostingExtensionsTests)/*"`.
 
 The AppHost references the Web project so building the AppHost builds Web before the EF migration

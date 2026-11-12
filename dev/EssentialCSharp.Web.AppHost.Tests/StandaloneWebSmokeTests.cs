@@ -25,6 +25,7 @@ public class StandaloneWebFixture : AspireFixture<Projects.EssentialCSharp_Web_A
 }
 
 [Category("Docker")]
+[RequiresLinuxContainers]
 [ClassDataSource<StandaloneWebFixture>(Shared = SharedType.PerTestSession)]
 public class StandaloneWebSmokeTests(StandaloneWebFixture fixture)
 {
