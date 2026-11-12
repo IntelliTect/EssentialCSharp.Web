@@ -19,28 +19,22 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0.403 AS build
 ARG ACCESS_TO_NUGET_FEED=true
 ENV ACCESS_TO_NUGET_FEED=$ACCESS_TO_NUGET_FEED
 WORKDIR /src
-COPY EssentialCSharp.Web.slnx ./
 COPY Directory.Build.props Directory.Build.targets Directory.Packages.props global.json nuget.config ./
 COPY EssentialCSharp.Chat.Shared/EssentialCSharp.Chat.Common.csproj ./EssentialCSharp.Chat.Shared/
-COPY EssentialCSharp.Chat.Tests/EssentialCSharp.Chat.Tests.csproj ./EssentialCSharp.Chat.Tests/
-COPY EssentialCSharp.Chat/EssentialCSharp.Chat.csproj ./EssentialCSharp.Chat/
-COPY EssentialCSharp.Web.Tests/EssentialCSharp.Web.Tests.csproj ./EssentialCSharp.Web.Tests/
 COPY EssentialCSharp.Web/EssentialCSharp.Web.csproj ./EssentialCSharp.Web/
-COPY EssentialCSharp.Web.Hosting/EssentialCSharp.Web.Hosting.csproj ./EssentialCSharp.Web.Hosting/
-COPY dev/EssentialCSharp.Web.AppHost/EssentialCSharp.Web.AppHost.csproj ./dev/EssentialCSharp.Web.AppHost/
 RUN mkdir -p /root/.nuget/NuGet
 RUN --mount=type=secret,id=nuget_config,required=false,target=/root/.nuget/NuGet/NuGet.Config \
     --mount=type=cache,id=essentialcsharp-web-nuget,target=/root/.nuget/packages \
     if [ "$ACCESS_TO_NUGET_FEED" = "true" ] && [ ! -s /root/.nuget/NuGet/NuGet.Config ]; then \
       echo "ERROR: ACCESS_TO_NUGET_FEED=true but nuget_config secret is missing or empty" >&2; exit 1; \
     fi && \
-    dotnet restore "EssentialCSharp.Web.slnx" -p:AccessToNugetFeed=$ACCESS_TO_NUGET_FEED
+    dotnet restore "EssentialCSharp.Web/EssentialCSharp.Web.csproj" -p:AccessToNugetFeed=$ACCESS_TO_NUGET_FEED
 COPY . .
 COPY --from=frontend-build /frontend/EssentialCSharp.Web/wwwroot/dist ./EssentialCSharp.Web/wwwroot/dist
 RUN --mount=type=cache,id=essentialcsharp-web-nuget,target=/root/.nuget/packages \
-    dotnet build "EssentialCSharp.Web.slnx" -c Release --no-restore -p:AccessToNugetFeed=$ACCESS_TO_NUGET_FEED -p:ReleaseDateAttribute=True -p:SkipFrontendBuild=true
+    dotnet build "EssentialCSharp.Web/EssentialCSharp.Web.csproj" -c Release --no-restore -p:AccessToNugetFeed=$ACCESS_TO_NUGET_FEED -p:ReleaseDateAttribute=True -p:SkipFrontendBuild=true
 RUN --mount=type=cache,id=essentialcsharp-web-nuget,target=/root/.nuget/packages \
-    dotnet publish "EssentialCSharp.Web.slnx" -c Release -p:PublishDir=/app/publish -p:UseAppHost=false -p:SkipFrontendBuild=true --no-build
+    dotnet publish "EssentialCSharp.Web/EssentialCSharp.Web.csproj" -c Release -p:PublishDir=/app/publish -p:UseAppHost=false -p:AccessToNugetFeed=$ACCESS_TO_NUGET_FEED -p:SkipFrontendBuild=true --no-build
 RUN --mount=type=cache,id=essentialcsharp-web-nuget,target=/root/.nuget/packages \
     dotnet tool restore && \
     ASPNETCORE_ENVIRONMENT=Development SkipFrontendBuild=true dotnet ef migrations bundle \

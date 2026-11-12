@@ -14,8 +14,9 @@ For information on setting up your local development environment, please see the
 
 Only this repository is required. Install the .NET SDK selected by `global.json`, Node.js/npm,
 the [Aspire CLI](https://aspire.dev/get-started/install-cli/), and a Docker-compatible container runtime.
-Start the container runtime first. The root solution builds the hosting library and AppHost but
-does **not** include the Docker-backed Aspire tests.
+Start the container runtime first. The single root solution includes the application, hosting
+library, AppHost, and all tests. The production Dockerfile restores, builds, and publishes only
+the Web project and its dependencies, without loading the Aspire projects.
 
 ```powershell
 dotnet build EssentialCSharp.Web.slnx
@@ -50,17 +51,17 @@ For a cold content-feed build, also restore/build Web with `-p:AccessToNugetFeed
 starting Aspire; changing a runtime environment variable alone does not redo NuGet restore.
 Keep the default `false` for public-feed builds.
 
-Run the dedicated development test solution explicitly:
+Run all tests, including the Docker-backed Aspire smoke tests, from the root solution:
 
 ```powershell
-dotnet test --solution dev\EssentialCSharp.Web.Aspire.slnx
+dotnet test --solution EssentialCSharp.Web.slnx
 ```
 
 Graph tests do not start containers. The shared `TUnit.Aspire` smoke fixture passes
 `--EssentialCSharpWeb:EphemeralDatabases=true` for fresh, session-lifetime databases without data
 volumes, disables AI/feed, and checks that migrations finished before Web became healthy, then
 `/health`, `/alive`, and placeholder HTML. To run only graph checks, use
-`--treenode-filter "/*/*/(AppHostGraphTests|WebHostingExtensionsTests)/*"`.
+`dotnet test --project dev\EssentialCSharp.Web.AppHost.Tests --treenode-filter "/*/*/(AppHostGraphTests|WebHostingExtensionsTests)/*"`.
 
 The AppHost references the Web project so building the AppHost builds Web before the EF migration
 resource runs its `--no-build` database update; Web starts only after that update completes successfully.
