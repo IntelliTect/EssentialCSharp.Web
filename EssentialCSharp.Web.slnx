@@ -16,4 +16,7 @@
   <Project Path="EssentialCSharp.Chat/EssentialCSharp.Chat.csproj" />
   <Project Path="EssentialCSharp.Web.Tests/EssentialCSharp.Web.Tests.csproj" />
   <Project Path="EssentialCSharp.Web/EssentialCSharp.Web.csproj" />
+  <Project Path="EssentialCSharp.Web.Hosting/EssentialCSharp.Web.Hosting.csproj" />
+  <Project Path="dev/EssentialCSharp.Web.AppHost/EssentialCSharp.Web.AppHost.csproj" />
+  <Project Path="dev/EssentialCSharp.Web.AppHost.Tests/EssentialCSharp.Web.AppHost.Tests.csproj" />
 </Solution>

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsPublishable>false</IsPublishable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="TUnit.Aspire" />
+    <PackageReference Include="Aspire.Hosting.Testing" />
+    <ProjectReference Include="..\EssentialCSharp.Web.AppHost\EssentialCSharp.Web.AppHost.csproj" />
+    <ProjectReference Include="..\..\EssentialCSharp.Web.Hosting\EssentialCSharp.Web.Hosting.csproj" />
+  </ItemGroup>
+</Project>

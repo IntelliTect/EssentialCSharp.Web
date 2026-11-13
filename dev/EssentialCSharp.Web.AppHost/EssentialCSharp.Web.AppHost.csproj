@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Sdk Name="Aspire.AppHost.Sdk" Version="13.6.5" />
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsAspireHost>true</IsAspireHost>
+    <AspireUseCliBundle>true</AspireUseCliBundle>
+    <IsPublishable>false</IsPublishable>
+    <UserSecretsId>essentialcsharp-web-standalone-apphost</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" />
+    <PackageReference Include="Aspire.Hosting.SqlServer" />
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+    <!-- Building the AppHost restores and builds Web before EF's no-build startup update. -->
+    <ProjectReference Include="..\..\EssentialCSharp.Web\EssentialCSharp.Web.csproj" />
+    <ProjectReference Include="..\..\EssentialCSharp.Web.Hosting\EssentialCSharp.Web.Hosting.csproj"
+                      IsAspireProjectResource="false" />
+  </ItemGroup>
+</Project>
