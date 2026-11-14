@@ -12,6 +12,12 @@ on:
 
 if: ${{ github.event.workflow_run.conclusion == 'failure' }}
 
+engine:
+  id: copilot
+  model-routing:
+    goal: cost
+    mode: auto
+
 permissions:
   actions: read
   copilot-requests: write

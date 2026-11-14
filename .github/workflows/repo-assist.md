@@ -45,6 +45,12 @@ if: needs.pre_activation.outputs.check_result == 'success'
 
 timeout-minutes: 60
 
+engine:
+  id: copilot
+  model-routing:
+    goal: cost
+    mode: auto
+
 permissions:
   actions: read
   attestations: read
