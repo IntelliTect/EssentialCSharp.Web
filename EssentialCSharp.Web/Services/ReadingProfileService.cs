@@ -16,6 +16,9 @@ public sealed partial class ReadingProfileService(
     [LoggerMessage(Level = LogLevel.Debug, Message = "Ignored interval for {PageKey}: {Words} words in {Seconds}s is not credited")]
     private static partial void LogIntervalIgnored(ILogger logger, string pageKey, int words, int seconds);
 
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Dropped reading credit: the authenticated user no longer exists")]
+    private static partial void LogUserMissing(ILogger logger);
+
     [LoggerMessage(Level = LogLevel.Warning, Message = "Ignored interval for page {PageKey}: unknown page or no countable words")]
     private static partial void LogUnknownPage(ILogger logger, string pageKey);
 
@@ -24,6 +27,8 @@ public sealed partial class ReadingProfileService(
     /// twice. This is accepted (no idempotency store); the effect is a small skew in the derived WPM.
     /// The reference WPM used for the slow-outlier rule is read once before the batch is written, so concurrent
     /// requests from the same user may evaluate against a slightly stale reference. This is also accepted.
+    /// A batch already in flight when <see cref="ResetAsync"/> runs is credited after the reset (requests carry no
+    /// epoch to tell them apart); the client discards its own unsent data on reset, so only that narrow window remains.
     /// </remarks>
     public async Task<ReadingProfileSummary> RecordSessionAsync(
         string userId, IReadOnlyList<ReadingInterval> intervals, CancellationToken cancellationToken)
@@ -124,7 +129,15 @@ public sealed partial class ReadingProfileService(
             context.Entry(created).State = EntityState.Detached;
             if (await TryAddToExistingAsync(userId, words, seconds, now, cancellationToken) == 0)
             {
-                throw; // Not a duplicate key (for example the user no longer exists).
+                // Not a duplicate key. A user deleted while their cookie is still valid cannot own a profile row
+                // (foreign key); drop the credit rather than failing every flush, which the client would retry forever.
+                if (!await context.Users.AnyAsync(u => u.Id == userId, cancellationToken))
+                {
+                    LogUserMissing(logger);
+                    return;
+                }
+
+                throw;
             }
         }
     }

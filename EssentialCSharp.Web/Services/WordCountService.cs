@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using HtmlAgilityPack;
 using Microsoft.Extensions.Hosting;
@@ -40,16 +41,23 @@ public sealed partial class WordCountService(
             .ThenBy(m => m.PageNumber)
             .ThenBy(m => m.OrderOnPage);
 
+        // Resolve every distinct file once and parse them in parallel; parsing is the only expensive step.
+        List<(SiteMapping Mapping, string? Path)> resolved = orderedMappings.Select(m => (m, ResolvePath(m))).ToList();
+        ConcurrentDictionary<string, int> wordsByPath = new(StringComparer.Ordinal);
+        Parallel.ForEach(
+            resolved.Select(r => r.Path).OfType<string>().Distinct(StringComparer.Ordinal),
+            new ParallelOptions { CancellationToken = cancellationToken },
+            path => wordsByPath[path] = CountProseWords(path));
+
         // One entry per distinct file, in reading order. Later mappings of the same file only add keys.
         Dictionary<string, FileEntry> filesByPath = new(StringComparer.Ordinal);
         List<FileEntry> files = [];
         Dictionary<string, FileEntry> fileByKey = new(StringComparer.Ordinal);
 
-        foreach (SiteMapping mapping in orderedMappings)
+        foreach ((SiteMapping mapping, string? path) in resolved)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            string? path = ResolvePath(mapping);
             if (path is null)
             {
                 LogPathEscapesRoot(logger, (mapping.Keys ?? []).FirstOrDefault() ?? mapping.PrimaryKey);
@@ -58,7 +66,7 @@ public sealed partial class WordCountService(
 
             if (!filesByPath.TryGetValue(path, out FileEntry? entry))
             {
-                entry = new FileEntry(mapping.ChapterNumber, CountProseWords(path));
+                entry = new FileEntry(mapping.ChapterNumber, wordsByPath[path]);
                 filesByPath[path] = entry;
                 files.Add(entry);
             }

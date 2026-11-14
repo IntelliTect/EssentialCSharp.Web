@@ -556,6 +556,28 @@ public class ReadingControllerTests : IntegrationTestBase
         }
     }
 
+    // ---- user deleted while the cookie is still valid ----
+
+    [Test]
+    public async Task PostSession_UserDeletedWithValidCookie_DropsTheCreditWithoutFailing()
+    {
+        string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-deleted");
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+        using (IServiceScope scope = Factory.Services.CreateScope())
+        {
+            EssentialCSharpWebContext context = scope.ServiceProvider.GetRequiredService<EssentialCSharpWebContext>();
+            await context.Users.Where(u => u.Id == userId).ExecuteDeleteAsync();
+        }
+
+        using HttpResponseMessage response = await PostSessionAsync(client, Interval(LargePage, 10, 10));
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+            await Assert.That(await HasProfileRowAsync(userId)).IsFalse();
+        }
+    }
+
     // ---- identity without a user id ----
 
     [Test]
