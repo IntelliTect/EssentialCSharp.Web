@@ -24,6 +24,10 @@ function getTraceHeaders() {
     return headers;
 }
 
+// The server rejects contextual search for backends that do not support it (e.g. local Ollama),
+// so only request it when the layout says the selected backend can perform it.
+const chatSupportsContextualSearch = window.CHAT_SUPPORTS_CONTEXTUAL_SEARCH !== false;
+
 // hCaptcha integration — invisible widget renders once and is reused across messages.
 // When HCAPTCHA_SITE_KEY is null (dev / captcha not configured), all captcha calls are no-ops.
 const captchaSiteKey = window.HCAPTCHA_SITE_KEY || null;
@@ -341,7 +345,7 @@ export function useChatWidget() {
 
             const requestBody = {
                 message: userMessage,
-                enableContextualSearch: true,
+                enableContextualSearch: chatSupportsContextualSearch,
                 previousResponseId: lastResponseId.value,
                 captchaResponse: captchaResponse
             };
