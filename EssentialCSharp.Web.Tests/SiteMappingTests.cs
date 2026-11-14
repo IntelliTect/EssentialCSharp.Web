@@ -137,6 +137,23 @@ public class SiteMappingTests
     }
 
     [Test]
+    public async Task FindPercentComplete_MappingsWithoutPrimaryKey_MatchOnKeys()
+    {
+        // The placeholder sitemap.json used by CI and local dev has no PrimaryKey.
+        IList<SiteMapping> siteMappings =
+        [
+            new(keys: ["first"], primaryKey: null!, pagePath: ["a.html"], chapterNumber: 1, pageNumber: 1, orderOnPage: 1,
+                chapterTitle: "C", rawHeading: "First", anchorId: "first", indentLevel: 0),
+            new(keys: ["second"], primaryKey: null!, pagePath: ["b.html"], chapterNumber: 1, pageNumber: 2, orderOnPage: 1,
+                chapterTitle: "C", rawHeading: "Second", anchorId: "second", indentLevel: 0),
+        ];
+
+        string? percent = siteMappings.FindPercentComplete("first");
+
+        await Assert.That(percent).IsEqualTo("50.00");
+    }
+
+    [Test]
     public async Task FindPercentComplete_EmptySiteMappings_ReturnsZeroPercent()
     {
         // Arrange
