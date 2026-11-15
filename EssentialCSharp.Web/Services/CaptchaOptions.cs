@@ -15,7 +15,7 @@ public class CaptchaOptions
     /// <summary>
     /// The hCaptcha base URL
     /// </summary>
-    public string ApiBaseUrl { get; set; } = "https://hcaptcha.com/";
+    public string ApiBaseUrl { get; set; } = "https://api.hcaptcha.com/";
 
     /// <summary>
     /// The HTTP Post Form Key to get the token from

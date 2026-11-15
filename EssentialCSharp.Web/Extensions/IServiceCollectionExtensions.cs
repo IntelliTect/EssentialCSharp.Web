@@ -15,9 +15,9 @@ public static class IServiceCollectionExtensions
         services.AddSingleton<IValidateOptions<CaptchaOptions>, CaptchaOptionsValidator>();
         services.AddSingleton<ICaptchaService, CaptchaService>();
         services.AddSingleton<ICaptchaValidationService, CaptchaValidationService>();
-        services.AddHttpClient("hCaptcha", c =>
+        services.AddHttpClient("hCaptcha", (serviceProvider, client) =>
         {
-            c.BaseAddress = new Uri("https://api.hcaptcha.com");
+            client.BaseAddress = new Uri(serviceProvider.GetRequiredService<IOptions<CaptchaOptions>>().Value.ApiBaseUrl);
         });
     }
 

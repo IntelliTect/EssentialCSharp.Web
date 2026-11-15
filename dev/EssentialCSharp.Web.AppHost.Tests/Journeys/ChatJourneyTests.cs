@@ -15,12 +15,14 @@ public class ChatJourneyTests(JourneyFixture fixture) : PageTest
     private const string ConsentCookieValue = "%7B%22analytics_storage%22%3A%22granted%22%2C%22_version%22%3A%223%22%7D";
 
     [Before(Test)]
-    public async Task AcceptCookieConsent()
+    public async Task PrepareBrowser()
     {
         await Context.AddCookiesAsync(
         [
             new Cookie { Name = "essential-csharp-consent", Value = ConsentCookieValue, Url = fixture.WebUrl.GetLeftPart(UriPartial.Authority) },
         ]);
+        await Context.RouteAsync("https://js.hcaptcha.com/**", route =>
+            route.FulfillAsync(new() { ContentType = "application/javascript", Body = FakeHCaptcha.BrowserScript }));
     }
 
     [Test]
@@ -85,7 +87,6 @@ public class ChatJourneyTests(JourneyFixture fixture) : PageTest
         await GoToAsync("/Identity/Account/Login");
         await Page.Locator("#Input_Email").FillAsync(user.Email);
         await Page.Locator("#Input_Password").FillAsync(user.Password);
-        // Development's hCaptcha test keys pass automatically but need network access to hcaptcha.com.
         await Page.Locator("#login-submit").ClickAsync();
 
         await Expect(Page.Locator("#logout")).ToBeVisibleAsync(new() { Timeout = 30_000 });

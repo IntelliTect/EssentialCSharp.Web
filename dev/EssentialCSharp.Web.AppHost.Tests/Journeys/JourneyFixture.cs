@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace EssentialCSharp.Web.AppHost.Tests.Journeys;
 
 /// <summary>
-/// The standalone Web AppHost with its chat backend pointed at <see cref="FakeChatModelServer"/>.
+/// The standalone Web AppHost with its chat backend and hCaptcha verification pointed at in-process fakes.
 /// Also used by <see cref="StandaloneWebSmokeTests"/> so a test run boots the app once.
 /// </summary>
 public class JourneyFixture : StandaloneWebFixture
@@ -18,17 +18,22 @@ public class JourneyFixture : StandaloneWebFixture
     public const string WebResource = "essentialcsharp-web";
     private const string WebDatabase = "EssentialCSharpWebContextConnection";
 
-    // Started before the AppHost is built because ConfigureBuilder needs its address.
+    // Started before the AppHost is built because ConfigureBuilder needs their addresses.
     private FakeChatModelServer? _chatModel;
+    private FakeHCaptcha? _hCaptcha;
 
     public FakeChatModelServer ChatModel =>
         _chatModel ?? throw new InvalidOperationException($"{nameof(JourneyFixture)} has not been initialized.");
+
+    private FakeHCaptcha HCaptcha =>
+        _hCaptcha ?? throw new InvalidOperationException($"{nameof(JourneyFixture)} has not been initialized.");
 
     public Uri WebUrl => App.GetEndpoint(WebResource, "http");
 
     public override async Task InitializeAsync()
     {
         _chatModel = await FakeChatModelServer.StartAsync();
+        _hCaptcha = await FakeHCaptcha.StartAsync();
         await base.InitializeAsync();
     }
 
@@ -38,12 +43,14 @@ public class JourneyFixture : StandaloneWebFixture
 
         ProjectResource web = builder.Resources.OfType<ProjectResource>().Single(resource => resource.Name == WebResource);
         Uri chatModelEndpoint = ChatModel.Endpoint;
+        Uri hCaptchaApi = HCaptcha.ApiBaseUrl;
 
         // Added after the AppHost's callbacks, so these override them and select the local chat backend.
         builder.CreateResourceBuilder(web).WithEnvironment(context =>
         {
             context.EnvironmentVariables["AIOptions__LocalEndpoint"] = chatModelEndpoint.ToString();
             context.EnvironmentVariables["AIOptions__LocalChatModel"] = "fake-model";
+            context.EnvironmentVariables["HCaptcha__ApiBaseUrl"] = hCaptchaApi.ToString();
         });
     }
 
@@ -86,6 +93,10 @@ public class JourneyFixture : StandaloneWebFixture
         if (_chatModel is not null)
         {
             await _chatModel.DisposeAsync();
+        }
+        if (_hCaptcha is not null)
+        {
+            await _hCaptcha.DisposeAsync();
         }
         GC.SuppressFinalize(this);
     }
