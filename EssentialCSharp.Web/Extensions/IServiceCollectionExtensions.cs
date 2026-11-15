@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Extensions;
 
@@ -8,12 +9,15 @@ public static class IServiceCollectionExtensions
 {
     public static void AddCaptchaService(this IServiceCollection services, IConfigurationSection CaptchaOptions)
     {
-        services.Configure<CaptchaOptions>(CaptchaOptions);
+        services.AddOptions<CaptchaOptions>()
+            .Bind(CaptchaOptions)
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<CaptchaOptions>, CaptchaOptionsValidator>();
         services.AddSingleton<ICaptchaService, CaptchaService>();
         services.AddSingleton<ICaptchaValidationService, CaptchaValidationService>();
-        services.AddHttpClient("hCaptcha", c =>
+        services.AddHttpClient("hCaptcha", (serviceProvider, client) =>
         {
-            c.BaseAddress = new Uri("https://api.hcaptcha.com");
+            client.BaseAddress = new Uri(serviceProvider.GetRequiredService<IOptions<CaptchaOptions>>().Value.ApiBaseUrl);
         });
     }
 

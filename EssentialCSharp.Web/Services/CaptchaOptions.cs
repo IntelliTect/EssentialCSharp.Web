@@ -7,9 +7,15 @@ public class CaptchaOptions
     public required string SiteKey { get; set; }
 
     /// <summary>
+    /// Allows hCaptcha's public test keys outside Development, e.g. on a dev deployment that automated
+    /// tests log in to. Never honoured in Production.
+    /// </summary>
+    public bool AllowTestKeys { get; set; }
+
+    /// <summary>
     /// The hCaptcha base URL
     /// </summary>
-    public string ApiBaseUrl { get; set; } = "https://hcaptcha.com/";
+    public string ApiBaseUrl { get; set; } = "https://api.hcaptcha.com/";
 
     /// <summary>
     /// The HTTP Post Form Key to get the token from

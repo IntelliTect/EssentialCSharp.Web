@@ -60,8 +60,7 @@ public partial class Program
             logging.IncludeScopes = true;
         });
 
-        // Health probe paths excluded from tracing unconditionally — applies to both
-        // manual instrumentation and Azure Monitor's auto-instrumentation.
+        // Probe and /version polling stay out of traces, for both manual and Azure Monitor instrumentation.
         builder.Services.Configure<AspNetCoreTraceInstrumentationOptions>(options =>
         {
             options.Filter = ctx =>
@@ -527,9 +526,15 @@ public partial class Program
                 $"form-action 'self' https://login.microsoftonline.com https://github.com"
             );
 
-            app.UseSecurityHeadersMiddleware(new SecurityHeadersBuilder()
+            SecurityHeadersBuilder securityHeaders = new SecurityHeadersBuilder()
                 .AddDefaultSecurePolicy()
-                .AddContentSecurityPolicy(csp));
+                .AddContentSecurityPolicy(csp);
+            if (!app.Environment.IsProduction())
+            {
+                // Keeps non-production deployments (e.g. dev.essentialcsharp.com) out of search results.
+                securityHeaders.AddCustomHeader("X-Robots-Tag", "noindex, nofollow");
+            }
+            app.UseSecurityHeadersMiddleware(securityHeaders);
 
             // Redirect configured www host to configured apex host (permanent 301).
             // Must be after UseForwardedHeaders so the Host header reflects the real hostname.
@@ -559,7 +564,7 @@ public partial class Program
             Predicate = r => r.Tags.Contains("live")
         }).DisableRateLimiting();
 
-        // Machine-readable build identity for deployment checks (not linked from or shown in the UI).
+        // Build identity for deployment checks.
         app.MapMethods("/version", [HttpMethods.Get, HttpMethods.Head], (HttpResponse response) =>
         {
             response.Headers.CacheControl = "no-store";

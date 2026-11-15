@@ -53,9 +53,7 @@ internal sealed class ContentRateLimiterPolicy : IRateLimiterPolicy<string>
 }
 
 /// <summary>
-/// A <see cref="RateLimiter"/> that acquires permits from two inner limiters in sequence.
-/// Both must grant a permit for the request to proceed. If the second limiter rejects,
-/// the first limiter's permit is returned so no permit is consumed.
+/// Acquires from both inner limiters in sequence; a rejection by the second returns the first's permit.
 /// </summary>
 internal sealed class CombinedRateLimiter(RateLimiter perMinute, RateLimiter perHour) : RateLimiter
 {
@@ -117,8 +115,7 @@ internal sealed class CombinedRateLimiter(RateLimiter perMinute, RateLimiter per
 }
 
 /// <summary>
-/// A lease that holds two inner leases and disposes both on release,
-/// ensuring permits are returned to both underlying limiters.
+/// Holds two inner leases and disposes both on release.
 /// </summary>
 internal sealed class CombinedRateLimitLease(RateLimitLease a, RateLimitLease b) : RateLimitLease
 {

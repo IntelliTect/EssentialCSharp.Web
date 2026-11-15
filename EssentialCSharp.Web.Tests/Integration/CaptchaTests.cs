@@ -3,6 +3,8 @@ using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting.Internal;
 
 namespace EssentialCSharp.Web.Tests.Integration;
 
@@ -36,8 +38,8 @@ public class CaptchaServiceProvider : IDisposable, IAsyncDisposable
             .SetBasePath(IntelliTect.Multitool.RepositoryPaths.GetDefaultRepoRoot())
             .AddJsonFile($"{nameof(EssentialCSharp)}.{nameof(Web)}/appsettings.json")
             .Build();
+        services.AddSingleton<IHostEnvironment>(new HostingEnvironment { EnvironmentName = Environments.Development });
         services.AddCaptchaService(configuration.GetSection(CaptchaOptions.CaptchaSender));
-        // Add other necessary services here
 
         return services.BuildServiceProvider();
     }
