@@ -16,13 +16,21 @@ public class VersionEndpointTests : IntegrationTestBase
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(response.Headers.CacheControl?.NoStore).IsTrue();
+        await Assert.That(response).HasJsonContent();
 
+        string body = await response.Content.ReadAsStringAsync();
+        await Assert.That(body).IsValidJsonObject();
+
+        // Deep equality pins the whole contract that deployment checks rely on: no renamed or extra fields.
         string? expectedVersion = typeof(Program).Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-        using JsonDocument payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        await Assert.That(payload.RootElement.GetProperty("version").GetString()).IsEqualTo(expectedVersion);
-        await Assert.That(payload.RootElement.GetProperty("commit").GetString())
-            .IsEqualTo(BuildInfo.FromInformationalVersion(expectedVersion).Commit);
+        using JsonDocument expected = JsonDocument.Parse(JsonSerializer.Serialize(new
+        {
+            version = expectedVersion,
+            commit = BuildInfo.FromInformationalVersion(expectedVersion).Commit,
+        }));
+        using JsonDocument actual = JsonDocument.Parse(body);
+        await Assert.That(actual.RootElement).IsDeepEqualTo(expected.RootElement);
     }
 
     [Test]
