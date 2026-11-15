@@ -31,16 +31,13 @@ RUN --mount=type=secret,id=nuget_config,required=false,target=/root/.nuget/NuGet
     dotnet restore "EssentialCSharp.Web/EssentialCSharp.Web.csproj" -p:AccessToNugetFeed=$ACCESS_TO_NUGET_FEED
 COPY . .
 COPY --from=frontend-build /frontend/EssentialCSharp.Web/wwwroot/dist ./EssentialCSharp.Web/wwwroot/dist
-# Commit SHA the image is built from. .git is excluded from the build context, so CI passes it in;
-# it becomes the "+<sha>" suffix of AssemblyInformationalVersion and is reported by GET /version.
-# Declared here (after COPY . .) so a new value does not invalidate the cached restore layer.
+# CI passes the commit SHA (.git is not in the build context). Declared after COPY so it doesn't bust the restore cache.
 ARG SOURCE_REVISION=
 RUN --mount=type=cache,id=essentialcsharp-web-nuget,target=/root/.nuget/packages \
     dotnet build "EssentialCSharp.Web/EssentialCSharp.Web.csproj" -c Release --no-restore -p:AccessToNugetFeed=$ACCESS_TO_NUGET_FEED -p:ReleaseDateAttribute=True -p:SkipFrontendBuild=true -p:SourceRevisionId=$SOURCE_REVISION
 RUN --mount=type=cache,id=essentialcsharp-web-nuget,target=/root/.nuget/packages \
     dotnet publish "EssentialCSharp.Web/EssentialCSharp.Web.csproj" -c Release -p:PublishDir=/app/publish -p:UseAppHost=false -p:AccessToNugetFeed=$ACCESS_TO_NUGET_FEED -p:SkipFrontendBuild=true --no-build
-# The bundle step rebuilds without SourceRevisionId; that's fine because /app/publish already holds the
-# stamped web assembly and the bundle only writes efbundle. Keep publish before this step.
+# Keep this after publish: the bundle step rebuilds without SourceRevisionId.
 RUN --mount=type=cache,id=essentialcsharp-web-nuget,target=/root/.nuget/packages \
     dotnet tool restore && \
     ASPNETCORE_ENVIRONMENT=Development SkipFrontendBuild=true dotnet ef migrations bundle \
