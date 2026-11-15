@@ -365,8 +365,7 @@ export function useChatWidget() {
                 } else if (response.status === 403) {
                     throw new Error('captcha-failed: Human verification failed. Please try again.');
                 } else if (response.status === 503) {
-                    // 503 means either the AI backend (errorCode chat_unavailable) or hCaptcha (captcha_unavailable)
-                    // is down; tell them apart so readers aren't told verification failed when the model did.
+                    // 503 comes from either the AI backend (chat_unavailable) or hCaptcha (captcha_unavailable).
                     let errorData = null;
                     try {
                         errorData = await response.json();

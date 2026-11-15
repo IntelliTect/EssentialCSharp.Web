@@ -12,17 +12,12 @@ using Microsoft.Extensions.Logging;
 
 namespace EssentialCSharp.Web.AppHost.Tests.Journeys;
 
-/// <summary>
-/// An in-process stand-in for an OpenAI-compatible model (<c>POST /v1/chat/completions</c>), which the web app's
-/// local chat backend calls. Journeys get a deterministic reply, and can make the model fail on demand, without
-/// Docker images, model downloads, or Azure credentials.
-/// </summary>
+/// <summary>An in-process OpenAI-compatible model (<c>POST /v1/chat/completions</c>) with a fixed reply.</summary>
 public sealed class FakeChatModelServer : IAsyncDisposable
 {
-    /// <summary>The reply returned for every prompt that does not contain <see cref="FailTrigger"/>.</summary>
     public const string CannedReply = "Fake model reply: a class is a template for creating objects.";
 
-    /// <summary>Prompts containing this text get an HTTP 500, to exercise the chat error path.</summary>
+    /// <summary>Prompts containing this text get an HTTP 500.</summary>
     public const string FailTrigger = "[fake-model:fail]";
 
     private readonly WebApplication _app;
@@ -34,10 +29,8 @@ public sealed class FakeChatModelServer : IAsyncDisposable
         ReceivedPrompts = receivedPrompts;
     }
 
-    /// <summary>Base address the web app should use as <c>AIOptions:LocalEndpoint</c>.</summary>
     public Uri Endpoint { get; }
 
-    /// <summary>User prompts received, most recent last.</summary>
     public ConcurrentQueue<string> ReceivedPrompts { get; }
 
     public static async Task<FakeChatModelServer> StartAsync()

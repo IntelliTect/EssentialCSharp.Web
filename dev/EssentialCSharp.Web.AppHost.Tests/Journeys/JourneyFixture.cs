@@ -10,16 +10,15 @@ using Microsoft.Extensions.DependencyInjection;
 namespace EssentialCSharp.Web.AppHost.Tests.Journeys;
 
 /// <summary>
-/// The standalone Web AppHost (fresh databases, no private feed) wired for browser journeys: its local chat backend
-/// points at an in-process <see cref="FakeChatModelServer"/>, and tests can create confirmed users directly.
-/// Shared per test session with <see cref="StandaloneWebSmokeTests"/> so a run boots the app once.
+/// The standalone Web AppHost with its chat backend pointed at <see cref="FakeChatModelServer"/>.
+/// Also used by <see cref="StandaloneWebSmokeTests"/> so a test run boots the app once.
 /// </summary>
 public class JourneyFixture : StandaloneWebFixture
 {
     public const string WebResource = "essentialcsharp-web";
     private const string WebDatabase = "EssentialCSharpWebContextConnection";
 
-    // Created in InitializeAsync before the AppHost is built, because ConfigureBuilder needs its address.
+    // Started before the AppHost is built because ConfigureBuilder needs its address.
     private FakeChatModelServer? _chatModel;
 
     public FakeChatModelServer ChatModel =>
@@ -40,9 +39,7 @@ public class JourneyFixture : StandaloneWebFixture
         ProjectResource web = builder.Resources.OfType<ProjectResource>().Single(resource => resource.Name == WebResource);
         Uri chatModelEndpoint = ChatModel.Endpoint;
 
-        // Registered after the AppHost's own callbacks, so these values win. With a local endpoint and model set,
-        // AddConfiguredChatServices selects the local (OpenAI-compatible) backend. The fake listens on 127.0.0.1,
-        // which works because Web runs as a host process; if it ever runs in a container, use host.docker.internal.
+        // Added after the AppHost's callbacks, so these override them and select the local chat backend.
         builder.CreateResourceBuilder(web).WithEnvironment(context =>
         {
             context.EnvironmentVariables["AIOptions__LocalEndpoint"] = chatModelEndpoint.ToString();
@@ -51,9 +48,8 @@ public class JourneyFixture : StandaloneWebFixture
     }
 
     /// <summary>
-    /// Creates a confirmed user straight through Identity. Registration through the UI can't produce one: the
-    /// confirmation link is never displayed, and Development uses a no-op email sender. Each test should use its
-    /// own user so per-user chat rate limits don't couple tests together.
+    /// Creates a confirmed user directly; UI registration can't, because the confirmation link is only emailed.
+    /// Use one user per test: chat rate limits are per user.
     /// </summary>
     public async Task<TestUser> CreateConfirmedUserAsync(string name)
     {

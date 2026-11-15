@@ -4,21 +4,14 @@ using static Microsoft.Playwright.Assertions;
 
 namespace EssentialCSharp.Web.AppHost.Tests.Journeys;
 
-/// <summary>
-/// Browser journeys through the standalone Web AppHost with a fake chat model: what a reader actually does to log in
-/// and use the AI assistant. These run on PRs (Linux CI with containers) and catch regressions that HTTP-level tests
-/// can't see — the Vue chat widget, cookies, antiforgery, captcha wiring, and streaming.
-/// </summary>
+/// <summary>Browser journeys for logging in and using the AI chat, against the standalone AppHost with a fake model.</summary>
 [Category("Docker")]
 [Category("Journey")]
 [RequiresLinuxContainers]
-// All requests come from 127.0.0.1, and anonymous ones (login pages, smoke tests) share one global limit of
-// ~30/min. Running journeys one at a time keeps bursts well under it; each journey takes a few seconds.
-[NotInParallel(nameof(ChatJourneyTests))]
 [ClassDataSource<JourneyFixture>(Shared = SharedType.PerTestSession)]
 public class ChatJourneyTests(JourneyFixture fixture) : PageTest
 {
-    // Pre-accepting cookie consent keeps the banner from covering the chat button.
+    // Otherwise the consent banner covers the chat button.
     private const string ConsentCookieValue = "%7B%22analytics_storage%22%3A%22granted%22%2C%22_version%22%3A%223%22%7D";
 
     [Before(Test)]
@@ -77,9 +70,7 @@ public class ChatJourneyTests(JourneyFixture fixture) : PageTest
         await LogInAsync(user);
         await SendChatMessageAsync($"Please fail {FakeChatModelServer.FailTrigger}");
 
-        // The same heading element shows rate-limit, auth, captcha and validation errors under other titles, so
-        // require the generic "Error" title *and* proof the request reached the model; otherwise a 429 or an auth
-        // regression would make this pass without exercising the model-failure path at all.
+        // Rate-limit, auth and captcha errors render in the same element, so also prove the request reached the model.
         await Expect(Page.Locator(".message-text h4")).ToHaveTextAsync("Error");
         await Expect(Page.Locator(".message-text")).ToContainTextAsync("AI assistant is temporarily unavailable");
         await Assert.That(fixture.ChatModel.ReceivedPrompts.Any(prompt => prompt.Contains(FakeChatModelServer.FailTrigger, StringComparison.Ordinal))).IsTrue()
@@ -94,9 +85,7 @@ public class ChatJourneyTests(JourneyFixture fixture) : PageTest
         await GoToAsync("/Identity/Account/Login");
         await Page.Locator("#Input_Email").FillAsync(user.Email);
         await Page.Locator("#Input_Password").FillAsync(user.Password);
-        // hCaptcha's public test keys (the Development default) pass the invisible challenge automatically, but
-        // still need network access to hcaptcha.com (browser script + server-side siteverify). If hCaptcha is
-        // unreachable, login shows "Human verification failed" and this wait times out.
+        // Development's hCaptcha test keys pass automatically but need network access to hcaptcha.com.
         await Page.Locator("#login-submit").ClickAsync();
 
         await Expect(Page.Locator("#logout")).ToBeVisibleAsync(new() { Timeout = 30_000 });
