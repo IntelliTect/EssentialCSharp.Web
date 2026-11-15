@@ -66,7 +66,8 @@ public partial class Program
         {
             options.Filter = ctx =>
                 !ctx.Request.Path.StartsWithSegments("/health")
-                && !ctx.Request.Path.StartsWithSegments("/alive");
+                && !ctx.Request.Path.StartsWithSegments("/alive")
+                && !ctx.Request.Path.StartsWithSegments("/version");
             // EnrichWithHttpResponse fires after the authentication middleware has run,
             // so HttpContext.User is populated and IsAuthenticated is reliable.
             options.EnrichWithHttpResponse = (activity, response) =>
@@ -556,6 +557,13 @@ public partial class Program
         app.MapHealthChecks("/alive", new HealthCheckOptions
         {
             Predicate = r => r.Tags.Contains("live")
+        }).DisableRateLimiting();
+
+        // Machine-readable build identity for deployment checks (not linked from or shown in the UI).
+        app.MapMethods("/version", [HttpMethods.Get, HttpMethods.Head], (HttpResponse response) =>
+        {
+            response.Headers.CacheControl = "no-store";
+            return Results.Ok(BuildInfo.Current);
         }).DisableRateLimiting();
 
         if (!app.Environment.IsDevelopment())

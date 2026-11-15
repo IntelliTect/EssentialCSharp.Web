@@ -141,6 +141,7 @@ jobs:
           context: .
           secret-files: |
             "nuget_config=${{ runner.temp }}/nuget/NuGet.Config"
+          build-args: SOURCE_REVISION=${{ github.sha }}
           outputs: type=docker,dest=${{ github.workspace }}/essentialcsharpwebimage.tar
           cache-from: type=gha,scope=essentialcsharpweb-main
           cache-to: type=gha,mode=max,scope=essentialcsharpweb-main
@@ -270,7 +271,9 @@ jobs:
             type=gha,scope=essentialcsharpweb-main
             type=gha,scope=essentialcsharpweb-pr
           cache-to: type=gha,mode=min,scope=essentialcsharpweb-pr
-          build-args: ACCESS_TO_NUGET_FEED=false
+          build-args: |
+            ACCESS_TO_NUGET_FEED=false
+            SOURCE_REVISION=${{ github.sha }}
 
   deploy-development:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
