@@ -1,6 +1,8 @@
-﻿using Mailjet.Client;
+﻿﻿using System.Text.RegularExpressions;
+using Mailjet.Client;
 using Mailjet.Client.Resources;
 using Mailjet.Client.TransactionalEmails;
+using Mailjet.Client.TransactionalEmails.Response;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Options;
 
@@ -34,20 +36,50 @@ public partial class EmailSender(IMailjetClient mailjetClient, IOptions<AuthMess
                .Build();
 
         // invoke API to send email
-        Mailjet.Client.TransactionalEmails.Response.TransactionalEmailResponse response = await mailjetClient.SendTransactionalEmailAsync(email);
-        switch (response.Messages.Length)
+        TransactionalEmailResponse response = await mailjetClient.SendTransactionalEmailAsync(email);
+        MessageResult[] messages = response.Messages ?? [];
+        switch (messages.Length)
         {
             case 0:
                 LogNoMessagesReturned(_Logger);
                 break;
-            case 1 when response.Messages.First().Status == "success":
+            case 1 when messages[0].Status == "success":
                 LogEmailQueued(_Logger);
                 break;
             default:
-                LogEmailSendFailure(_Logger);
+                LogEmailSendFailure(_Logger, messages.Select(m => m.Status).FirstOrDefault(s => s != "success") ?? "unknown", DescribeErrors(messages));
                 break;
         }
     }
+
+    /// <summary>
+    /// Summarizes Mailjet error details (code, HTTP status, message, related fields) for logging.
+    /// Email addresses are stripped from Mailjet's text and the per-message recipient lists are never read,
+    /// so recipient addresses do not reach the logs. Line breaks are collapsed to prevent log forging.
+    /// </summary>
+    internal static string DescribeErrors(IEnumerable<MessageResult> messages)
+    {
+        List<string> descriptions = [];
+        foreach (SendEmailError error in messages.Where(m => m.Errors is not null).SelectMany(m => m.Errors))
+        {
+            string related = error.ErrorRelatedTo is { Length: > 0 } ? $" [related to: {string.Join(", ", error.ErrorRelatedTo)}]" : "";
+            descriptions.Add(Sanitize($"{error.ErrorCode} (HTTP {error.StatusCode}): {error.ErrorMessage}{related}"));
+        }
+
+        return descriptions.Count == 0 ? "no error details returned" : string.Join("; ", descriptions);
+    }
+
+    private static string Sanitize(string value)
+    {
+        string singleLine = LineBreakRegex().Replace(value, " ");
+        return EmailAddressRegex().Replace(singleLine, "[redacted-email]");
+    }
+
+    [GeneratedRegex(@"[\r\n]+")]
+    private static partial Regex LineBreakRegex();
+
+    [GeneratedRegex(@"[^\s@<>""',;()\[\]]+@[^\s@<>""',;()\[\]]+")]
+    private static partial Regex EmailAddressRegex();
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Unexpectedly no messages returned in the mailer response")]
     private static partial void LogNoMessagesReturned(ILogger logger);
@@ -55,6 +87,6 @@ public partial class EmailSender(IMailjetClient mailjetClient, IOptions<AuthMess
     [LoggerMessage(Level = LogLevel.Information, Message = "Email queued successfully.")]
     private static partial void LogEmailQueued(ILogger logger);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to send email.")]
-    private static partial void LogEmailSendFailure(ILogger logger);
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to send email. Mailjet status: {Status}. Errors: {Errors}")]
+    private static partial void LogEmailSendFailure(ILogger logger, string status, string errors);
 }
