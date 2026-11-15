@@ -62,7 +62,7 @@ public partial class DeployedSmokeTests
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(body).Contains("Explore Essential C#");
         // SiteSettings:BaseUrl drives canonical links and the sitemap; a wrong value silently hurts SEO.
-        await Assert.That(body).Contains($"<link rel=\"canonical\" href=\"{new Uri(DeployedSite.BaseUrl!, "home")}\"");
+        await Assert.That(body).Contains($"<link rel=\"canonical\" href=\"{new Uri(DeployedSite.RequiredBaseUrl, "home")}\"");
     }
 
     [Test]
@@ -82,7 +82,7 @@ public partial class DeployedSmokeTests
         // Placeholder content (used when the content package is missing) has only a handful of pages;
         // the real book has hundreds. This catches an image built without the book content.
         await Assert.That(locations.Count).IsGreaterThan(100);
-        await Assert.That(locations.All(uri => uri.Host == DeployedSite.BaseUrl!.Host)).IsTrue();
+        await Assert.That(locations.All(uri => uri.Host == DeployedSite.RequiredBaseUrl.Host)).IsTrue();
 
         // One content page from the middle of the book (content pages share a tight per-IP rate limit).
         Uri chapterPage = locations[locations.Count / 2];
@@ -137,14 +137,13 @@ public partial class DeployedSmokeTests
             });
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Redirect);
-        Uri? location = response.Headers.Location;
-        await Assert.That(location).IsNotNull();
-        await Assert.That(location!.Host).IsEqualTo(expectedHost);
+        Uri location = await Assert.That(response.Headers.Location).IsNotNull();
+        await Assert.That(location.Host).IsEqualTo(expectedHost);
         await Assert.That(location.AbsolutePath).IsEqualTo(expectedPath);
 
         var query = HttpUtility.ParseQueryString(location.Query);
         await Assert.That(query["client_id"]).IsNotNullOrWhiteSpace();
-        await Assert.That(query["redirect_uri"]).IsEqualTo(new Uri(DeployedSite.BaseUrl!, expectedCallbackPath).ToString());
+        await Assert.That(query["redirect_uri"]).IsEqualTo(new Uri(DeployedSite.RequiredBaseUrl, expectedCallbackPath).ToString());
     }
 
     [GeneratedRegex("(?:data-sitekey=\"|siteKey:\\s*\")(?<key>[^\"]+)\"")]

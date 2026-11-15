@@ -18,6 +18,10 @@ public static class DeployedSite
 
     public static Uri? BaseUrl { get; } = ParseBaseUrl(s_rawBaseUrl);
 
+    /// <summary>The configured base URL; throws a descriptive error when it is missing or malformed.</summary>
+    public static Uri RequiredBaseUrl => BaseUrl ?? throw new InvalidOperationException(
+        $"{BaseUrlVariable} must be an absolute http(s) URL, e.g. https://dev.essentialcsharp.com (got '{s_rawBaseUrl}').");
+
     /// <summary>
     /// Deployed tests are skipped only when nothing asked for them. If either variable is set (as the
     /// deployment gate does), they run — so a malformed URL fails loudly instead of skipping every test
@@ -42,8 +46,7 @@ public static class DeployedSite
     /// </summary>
     public static HttpClient CreateClient()
     {
-        Uri baseUrl = BaseUrl ?? throw new InvalidOperationException(
-            $"{BaseUrlVariable} must be an absolute http(s) URL, e.g. https://dev.essentialcsharp.com (got '{s_rawBaseUrl}').");
+        Uri baseUrl = RequiredBaseUrl;
         var handler = new HttpClientHandler
         {
             AllowAutoRedirect = false,
