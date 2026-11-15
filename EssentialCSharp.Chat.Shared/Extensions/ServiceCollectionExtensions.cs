@@ -107,6 +107,7 @@ public static class ServiceCollectionExtensions
                 services.AddOptions<EmbeddingRetryOptions>()
                     .Bind(configuration.GetSection(EmbeddingRetryOptions.SectionPath));
                 services.AddSingleton<IChatCompletionService>(provider => provider.GetRequiredService<AIChatService>());
+                services.AddSingleton(new ChatBackendCapabilities(SupportsContextualSearch: true));
                 Console.WriteLine("[AI] Selected backend: Azure/Foundry.");
                 return services;
             }
@@ -118,6 +119,7 @@ public static class ServiceCollectionExtensions
                 || (localEndpointUri.Scheme != Uri.UriSchemeHttp && localEndpointUri.Scheme != Uri.UriSchemeHttps))
             {
                 services.AddSingleton<IChatCompletionService, UnavailableChatService>();
+                services.AddSingleton(new ChatBackendCapabilities(SupportsContextualSearch: false));
                 Console.Error.WriteLine("[AI] Local backend selected but LocalEndpoint is invalid. Falling back to unavailable backend.");
                 return services;
             }
@@ -135,11 +137,13 @@ public static class ServiceCollectionExtensions
             .RemoveAllResilienceHandlers();
 #pragma warning restore EXTEXP0001
             services.AddSingleton<IChatCompletionService, LocalChatService>();
+            services.AddSingleton(new ChatBackendCapabilities(SupportsContextualSearch: false));
             Console.WriteLine("[AI] Selected backend: Local (Ollama/OpenAI-compatible).");
             return services;
         }
 
         services.AddSingleton<IChatCompletionService, UnavailableChatService>();
+        services.AddSingleton(new ChatBackendCapabilities(SupportsContextualSearch: false));
         Console.WriteLine("[AI] Selected backend: Unavailable (missing or invalid AI configuration).");
         return services;
     }

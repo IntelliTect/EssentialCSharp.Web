@@ -60,6 +60,34 @@ public class ServiceCollectionExtensionsTests
         await Assert.That(descriptor.ImplementationType).IsEqualTo(expectedChatServiceType);
     }
 
+    [Test]
+    [Arguments("invalid-azure-falls-back-to-local")]
+    [Arguments("valid-local")]
+    [Arguments("connection-string-fallback")]
+    [Arguments("invalid-local")]
+    [Arguments("missing-config")]
+    [Arguments("azure")]
+    public async Task AddConfiguredChatServices_RegistersCapabilitiesMatchingSelectedBackend(string scenario)
+    {
+        Dictionary<string, string?> configValues = scenario == "azure"
+            ? new Dictionary<string, string?>
+            {
+                ["AIOptions:Endpoint"] = "https://example.openai.azure.com",
+                ["AIOptions:ChatDeploymentName"] = "chat-deployment",
+                ["AIOptions:VectorGenerationDeploymentName"] = "embedding-deployment",
+                ["ConnectionStrings:PostgresVectorStore"] = "Host=localhost;Database=test;Username=test;Password=test;"
+            }
+            : CreateBackendSelectionScenario(scenario).ConfigValues;
+        var services = CreateServices(configValues);
+
+        await Assert.That(services.Count(d => d.ServiceType == typeof(ChatBackendCapabilities))).IsEqualTo(1);
+
+        using var provider = services.BuildServiceProvider();
+        var capabilities = provider.GetRequiredService<ChatBackendCapabilities>();
+        var chatService = provider.GetRequiredService<IChatCompletionService>();
+        await Assert.That(capabilities.SupportsContextualSearch).IsEqualTo(chatService.SupportsContextualSearch);
+    }
+
     private static ServiceCollection CreateServices(Dictionary<string, string?> values)
     {
         var configuration = new ConfigurationBuilder()
