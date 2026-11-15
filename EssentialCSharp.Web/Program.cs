@@ -527,9 +527,15 @@ public partial class Program
                 $"form-action 'self' https://login.microsoftonline.com https://github.com"
             );
 
-            app.UseSecurityHeadersMiddleware(new SecurityHeadersBuilder()
+            SecurityHeadersBuilder securityHeaders = new SecurityHeadersBuilder()
                 .AddDefaultSecurePolicy()
-                .AddContentSecurityPolicy(csp));
+                .AddContentSecurityPolicy(csp);
+            if (!app.Environment.IsProduction())
+            {
+                // Keeps non-production deployments (e.g. dev.essentialcsharp.com) out of search results.
+                securityHeaders.AddCustomHeader("X-Robots-Tag", "noindex, nofollow");
+            }
+            app.UseSecurityHeadersMiddleware(securityHeaders);
 
             // Redirect configured www host to configured apex host (permanent 301).
             // Must be after UseForwardedHeaders so the Host header reflects the real hostname.
