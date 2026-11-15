@@ -335,6 +335,50 @@ jobs:
             --resource-group "$RESOURCEGROUP" \
             --image "${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb:${{ github.sha }}"
 
+      # Smoke testing runs inside this job (not a separate one) so it holds the deploy-development
+      # concurrency group: the next push cannot swap the dev image mid-test. deploy-production needs
+      # this job, so a failed smoke test blocks promotion (dev keeps the failed build until the next push).
+      - name: Wait for the new revision to serve this commit
+        id: wait-for-revision
+        env:
+          SITE_BASE_URL: ${{ vars.SITE_BASE_URL || 'https://dev.essentialcsharp.com' }}
+        run: bash scripts/wait-for-deployed-commit.sh "$SITE_BASE_URL" "${{ github.sha }}"
+
+      - name: Show revision status
+        if: failure() && steps.wait-for-revision.outcome == 'failure'
+        env:
+          CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
+          RESOURCEGROUP: ${{ vars.RESOURCEGROUP }}
+        run: |
+          az containerapp revision list \
+            --name "$CONTAINER_APP_NAME" \
+            --resource-group "$RESOURCEGROUP" \
+            --query "[].{name:name, active:properties.active, traffic:properties.trafficWeight, health:properties.healthState, running:properties.runningState, image:properties.template.containers[0].image}" \
+            --output table
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Smoke test development
+        env:
+          E2E_BASE_URL: ${{ vars.SITE_BASE_URL || 'https://dev.essentialcsharp.com' }}
+          E2E_EXPECTED_COMMIT: ${{ github.sha }}
+        run: >-
+          dotnet test --project EssentialCSharp.Web.E2ETests/EssentialCSharp.Web.E2ETests.csproj
+          --configuration Release
+          -- --treenode-filter "/*/*/*/*[Category=Deployed]"
+          --report-trx --results-directory "${{ runner.temp }}/smoke-results"
+
+      - name: Upload smoke test results
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: smoke-test-results
+          path: ${{ runner.temp }}/smoke-results
+          if-no-files-found: ignore
+
       - name: Logout of Azure CLI
         if: always()
         uses: azure/CLI@v3
