@@ -78,6 +78,29 @@ public class ChatJourneyTests(JourneyFixture fixture) : PageTest
         await Expect(Page.Locator(".message-bubble.assistant", new() { HasText = FakeChatModelServer.CannedReply })).ToHaveCountAsync(0);
     }
 
+    // The local backend can't fail part-way through a reply, so these replay the server's stream events directly.
+    [Test]
+    [Arguments("""data: {"type":"error","errorCode":"chat_unavailable"}""", "AI assistant is temporarily unavailable")]
+    [Arguments("""data: {"type":"error","errorCode":"context_limit_exceeded"}""", "conversation has grown too long")]
+    [Arguments("", "AI assistant is temporarily unavailable")]
+    public async Task LoggedInReader_WhenTheReplyFailsMidStream_KeepsThePartialReplyAndSeesAnError(string terminalEvent, string expectedError)
+    {
+        TestUser user = await fixture.CreateConfirmedUserAsync("chat-midstream");
+        await LogInAsync(user);
+        await Page.RouteAsync("**/api/chat/stream", route => route.FulfillAsync(new()
+        {
+            Status = 200,
+            ContentType = "text/event-stream",
+            Body = $"data: {{\"type\":\"text\",\"data\":\"Partial reply\"}}\n\n{terminalEvent}\n\n",
+        }));
+
+        await SendChatMessageAsync("What is a class?");
+
+        await Expect(Page.Locator(".message-bubble.assistant .message-content")).ToContainTextAsync("Partial reply");
+        await Expect(Page.Locator(".message-text")).ToContainTextAsync(expectedError);
+        await Expect(Page.Locator(".typing-indicator")).ToHaveCountAsync(0);
+    }
+
     private Task<IResponse?> GoToAsync(string path) => Page.GotoAsync(new Uri(fixture.WebUrl, path).ToString());
 
     private async Task LogInAsync(TestUser user)

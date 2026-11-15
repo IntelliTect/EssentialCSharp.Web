@@ -419,6 +419,7 @@ export function useChatWidget() {
             let hasStartedStreaming = false;
             let pendingResponseId = null;
             let pendingLine = '';
+            let receivedDone = false;
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -432,6 +433,7 @@ export function useChatWidget() {
                     if (line.startsWith('data: ')) {
                         const data = line.slice(6);
                         if (data === '[DONE]') {
+                            receivedDone = true;
                             isTyping.value = false;
                             if (pendingResponseId) {
                                 lastResponseId.value = pendingResponseId;
@@ -473,16 +475,24 @@ export function useChatWidget() {
                             });
                         } else if (parsed.type === 'responseId' && parsed.data) {
                             pendingResponseId = parsed.data;
-                        } else if (parsed.type === 'error' && parsed.errorCode === 'content_filtered') {
-                            if (assistantMessageIndex >= 0) {
-                                chatMessages.value.splice(assistantMessageIndex, 1);
+                        } else if (parsed.type === 'error') {
+                            if (parsed.errorCode === 'content_filtered') {
+                                if (assistantMessageIndex >= 0) {
+                                    chatMessages.value.splice(assistantMessageIndex, 1);
+                                }
+                                throw new Error('content-filtered');
                             }
-                            throw new Error('content-filtered');
+                            throw new Error(parsed.errorCode === 'context_limit_exceeded' ? 'context-limit-exceeded' : 'chat-unavailable');
                         }
                     }
                 }
 
                 if (done) break;
+            }
+
+            // The server always ends a successful stream with [DONE]; without it the reply was cut off.
+            if (!receivedDone) {
+                throw new Error('chat-unavailable');
             }
 
         } catch (error) {
@@ -505,6 +515,9 @@ export function useChatWidget() {
             } else if (error.message === 'content-filtered') {
                 errorMessage = 'This request could not be completed because it did not meet the content safety policy. Please try a different message.';
                 errorType = 'content-filtered';
+            } else if (error.message === 'context-limit-exceeded') {
+                errorMessage = 'This conversation has grown too long. Please start a new one.';
+                errorType = 'error';
             } else if (error.message === 'chat-unavailable') {
                 errorMessage = 'The AI assistant is temporarily unavailable. Please try again in a moment.';
                 errorType = 'error';
