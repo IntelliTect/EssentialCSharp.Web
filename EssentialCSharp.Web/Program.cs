@@ -261,6 +261,7 @@ public partial class Program
         }
         builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration.GetSection(AuthMessageSenderOptions.AuthMessageSender));
         builder.Services.Configure<SiteSettings>(builder.Configuration.GetSection(SiteSettings.SectionName));
+        builder.Services.Configure<ContentRateLimitOptions>(builder.Configuration.GetSection(ContentRateLimitOptions.SectionName));
 
         // Add services to the container.
         builder.Services.AddRazorPages();
