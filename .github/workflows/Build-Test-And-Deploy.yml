@@ -56,6 +56,16 @@ jobs:
         working-directory: EssentialCSharp.Web
         run: npm run build
 
+      # The .NET jobs build with SkipFrontendBuild; the browser journey tests need the compiled chat widget.
+      - name: Upload frontend build
+        if: matrix.runner == 'ubuntu-latest'
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-dist
+          path: EssentialCSharp.Web/wwwroot/dist
+          retention-days: 5
+          if-no-files-found: error
+
   build-and-test:
     name: Build and test (Ubuntu)
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
@@ -90,8 +100,17 @@ jobs:
       - name: Restore with dotnet
         run: dotnet restore
 
+      - name: Download frontend build
+        uses: actions/download-artifact@v8
+        with:
+          name: frontend-dist
+          path: EssentialCSharp.Web/wwwroot/dist
+
       - name: Build with dotnet
         run: dotnet build -p:ContinuousIntegrationBuild=True -p:ReleaseDateAttribute=True -p:SkipFrontendBuild=true --configuration Release --no-restore
+
+      - name: Install Playwright Chromium for journey tests
+        run: pwsh dev/EssentialCSharp.Web.AppHost.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
 
       - name: Expose GitHub Actions Runtime
         uses: actions/github-script@v9
@@ -195,8 +214,20 @@ jobs:
       - name: Restore .NET dependencies
         run: dotnet restore /p:AccessToNugetFeed=false
 
+      # Browser journey tests need Linux containers, so they only run on the Ubuntu leg (skipped elsewhere).
+      - name: Download frontend build
+        if: matrix.collect_coverage
+        uses: actions/download-artifact@v8
+        with:
+          name: frontend-dist
+          path: EssentialCSharp.Web/wwwroot/dist
+
       - name: Build .NET
         run: dotnet build --configuration Release --no-restore /p:AccessToNugetFeed=false /p:SkipFrontendBuild=true
+
+      - name: Install Playwright Chromium for journey tests
+        if: matrix.collect_coverage
+        run: pwsh dev/EssentialCSharp.Web.AppHost.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
 
       - name: Restore local .NET tools
         if: matrix.collect_coverage

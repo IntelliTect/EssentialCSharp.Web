@@ -25,8 +25,8 @@ public class StandaloneWebFixture : AspireFixture<Projects.EssentialCSharp_Web_A
 
 [Category("Docker")]
 [RequiresLinuxContainers]
-[ClassDataSource<StandaloneWebFixture>(Shared = SharedType.PerTestSession)]
-public class StandaloneWebSmokeTests(StandaloneWebFixture fixture)
+[ClassDataSource<Journeys.JourneyFixture>(Shared = SharedType.PerTestSession)]
+public class StandaloneWebSmokeTests(Journeys.JourneyFixture fixture)
 {
     [Test]
     public async Task FreshStart_Migrations_FinishBeforeWebIsHealthy()
