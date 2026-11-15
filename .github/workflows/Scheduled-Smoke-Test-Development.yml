@@ -19,6 +19,9 @@ jobs:
     name: Smoke test development
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # For the test user's credentials.
+    environment:
+      name: "Development"
     permissions:
       contents: read
       issues: write
@@ -32,14 +35,22 @@ jobs:
         with:
           global-json-file: global.json
 
+      - name: Build smoke tests
+        run: dotnet build EssentialCSharp.Web.E2ETests/EssentialCSharp.Web.E2ETests.csproj --configuration Release
+
+      - name: Install Playwright Chromium for smoke tests
+        run: pwsh EssentialCSharp.Web.E2ETests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
       # No expected commit: between deployments dev may be on any recent build; /version must still answer.
       - name: Smoke test development
         id: smoke
         env:
           E2E_BASE_URL: ${{ vars.SITE_BASE_URL || 'https://dev.essentialcsharp.com' }}
+          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
         run: >-
           dotnet test --project EssentialCSharp.Web.E2ETests/EssentialCSharp.Web.E2ETests.csproj
-          --configuration Release
+          --configuration Release --no-build
           -- --treenode-filter "/*/*/*/*[Category=Deployed]"
           --report-trx --results-directory "${{ runner.temp }}/smoke-results"
 
