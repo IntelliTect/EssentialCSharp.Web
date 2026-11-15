@@ -56,7 +56,7 @@ jobs:
         working-directory: EssentialCSharp.Web
         run: npm run build
 
-      # The .NET jobs build with SkipFrontendBuild; the browser journey tests need the compiled chat widget.
+      # The .NET jobs build with SkipFrontendBuild; the browser journey tests need the compiled frontend.
       - name: Upload frontend build
         if: matrix.runner == 'ubuntu-latest'
         uses: actions/upload-artifact@v7
