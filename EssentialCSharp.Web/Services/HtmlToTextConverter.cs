@@ -106,7 +106,7 @@ internal static partial class HtmlToTextConverter
         int blankLines = 0;
         foreach (string rawLine in value.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n'))
         {
-            string line = NormalizeInline(rawLine.Replace(' ', ' '));
+            string line = NormalizeInline(rawLine.Replace('\u00A0', ' '));
             if (line.Length == 0)
             {
                 blankLines++;

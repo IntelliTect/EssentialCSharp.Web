@@ -192,27 +192,23 @@ public class HtmlToTextConverterTests
     [Arguments("<!--", 20_000)]
     public async Task TryConvert_PathologicalInputUnderTheCap_ReturnsConsistentlyWithoutThrowing(string unit, int repetitions)
     {
-        // Safety property only: the call completes (the 30 s bound is a hang detector, not a performance claim),
-        // never throws, and reports its outcome consistently. Whether the regex time limit trips depends on the machine.
+        // Safety property only: a single call completes (the 30 s bound is a hang detector, not a performance claim),
+        // never throws, and reports its outcome consistently (empty text when it gives up). Whether the regex time
+        // limit trips depends on the machine, so nothing here depends on it, and the call is made only once so two
+        // calls can never land on opposite sides of the limit.
         string html = string.Concat(Enumerable.Repeat(unit, repetitions));
         System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
         bool converted = HtmlToTextConverter.TryConvert(html, out string text);
-        string fallback = HtmlToTextConverter.Convert(html);
         stopwatch.Stop();
 
         using (Assert.Multiple())
         {
             await Assert.That(html.Length).IsLessThanOrEqualTo(HtmlToTextConverter.MaxInputLength);
             await Assert.That(stopwatch.Elapsed).IsLessThan(TimeSpan.FromSeconds(30));
-            if (converted)
-            {
-                await Assert.That(fallback).IsEqualTo(text);
-            }
-            else
+            if (!converted)
             {
                 await Assert.That(text).IsEmpty();
-                await Assert.That(fallback).IsEmpty();
             }
         }
     }
