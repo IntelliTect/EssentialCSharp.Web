@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Playwright;
 using TUnit.Playwright;
 using static Microsoft.Playwright.Assertions;
@@ -79,6 +80,29 @@ public class ChatJourneyTests(JourneyFixture fixture) : PageTest
             .Because("the failure should come from the model, not from something before it");
         await Expect(Page.Locator(".message-bubble.assistant", new() { HasText = FakeChatModelServer.CannedReply })).ToHaveCountAsync(0);
     }
+
+    // The local backend can't fail part-way through a reply, so these replay the server's stream events directly.
+    [Test]
+    [Arguments("chat_unavailable", "AI assistant is temporarily unavailable")]
+    [Arguments("context_limit_exceeded", "conversation has grown too long")]
+    [Arguments(null, "AI assistant is temporarily unavailable")] // Stream ends without an error event or [DONE].
+    public async Task LoggedInReader_WhenTheReplyFailsMidStream_KeepsThePartialReplyAndSeesAnError(string? errorCode, string expectedError)
+    {
+        TestUser user = await fixture.CreateConfirmedUserAsync("chat-midstream");
+        await LogInAsync(user);
+        string stream = ServerSentEvent(new { type = "text", data = "Partial reply" })
+            + (errorCode is null ? "" : ServerSentEvent(new { type = "error", errorCode }));
+        await Page.RouteAsync("**/api/chat/stream", route =>
+            route.FulfillAsync(new() { Status = 200, ContentType = "text/event-stream", Body = stream }));
+
+        await SendChatMessageAsync("What is a class?");
+
+        await Expect(Page.Locator(".message-bubble.assistant .message-content")).ToContainTextAsync("Partial reply");
+        await Expect(Page.Locator(".message-text")).ToContainTextAsync(expectedError);
+        await Expect(Page.Locator(".typing-indicator")).ToHaveCountAsync(0);
+    }
+
+    private static string ServerSentEvent(object payload) => $"data: {JsonSerializer.Serialize(payload)}\n\n";
 
     private Task<IResponse?> GoToAsync(string path) => Page.GotoAsync(new Uri(fixture.WebUrl, path).ToString());
 
