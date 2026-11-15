@@ -183,9 +183,9 @@ public sealed class BookSearchTool
         bool hasSemanticCoverage = false;
         bool semanticAvailable = _SearchService is not null;
 
-        if (semanticAvailable)
+        if (_SearchService is not null)
         {
-            var results = await _SearchService!.ExecuteVectorSearch(topic, cancellationToken: cancellationToken);
+            var results = await _SearchService.ExecuteVectorSearch(topic, cancellationToken: cancellationToken);
             hasSemanticCoverage = results.Count > 0;
         }
 

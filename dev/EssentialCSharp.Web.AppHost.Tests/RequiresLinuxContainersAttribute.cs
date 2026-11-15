@@ -32,7 +32,7 @@ public sealed class RequiresLinuxContainersAttribute()
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
-            })!;
+            }) ?? throw new InvalidOperationException($"Failed to start container runtime process '{runtime}'.");
 
             Task<string> output = process.StandardOutput.ReadToEndAsync();
             _ = process.StandardError.ReadToEndAsync();

@@ -50,10 +50,10 @@ public partial class AISearchService(
                 // top-N by score. GroupBy on a materialized list preserves insertion (score desc)
                 // order, but we make the ordering explicit via OrderByDescending so the result
                 // is correct regardless of provider sort guarantees.
-                // MaxBy on a non-empty IGrouping never returns null; ! asserts this invariant.
+                // A group is never empty, so MaxBy always yields an element.
                 var results = candidatesList
                     .GroupBy(r => r.Record.Heading)
-                    .Select(g => g.MaxBy(r => r.Score)!)
+                    .Select(g => g.MaxBy(r => r.Score) ?? throw new InvalidOperationException("Group unexpectedly empty."))
                     .OrderByDescending(r => r.Score)
                     .Take(top)
                     .ToList();
