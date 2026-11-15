@@ -1,4 +1,6 @@
 using System.Net;
+using Microsoft.Extensions.Http.Resilience;
+using Polly;
 
 namespace EssentialCSharp.Web.E2ETests;
 
@@ -41,66 +43,48 @@ public static class DeployedSite
         Environment.GetEnvironmentVariable(ExpectedCommitVariable) is { Length: > 0 } commit ? commit : null;
 
     /// <summary>
-    /// Creates a client that does not follow redirects (so tests can assert them) and keeps cookies
-    /// (needed for antiforgery-protected form posts).
+    /// One retry for transient failures, so a single blip (or a shared runner IP hitting a rate limit)
+    /// does not fail a deployment gate. <see cref="HttpRetryStrategyOptions"/> treats 5xx, 408, 429,
+    /// connection errors and per-attempt timeouts as transient and honours <c>Retry-After</c>; any other
+    /// status (including the 302s and 404s tests assert on) is returned unchanged on the first attempt.
+    /// </summary>
+    private static readonly ResiliencePipeline<HttpResponseMessage> s_pipeline =
+        new ResiliencePipelineBuilder<HttpResponseMessage>()
+            .AddRetry(new HttpRetryStrategyOptions
+            {
+                MaxRetryAttempts = 1,
+                BackoffType = DelayBackoffType.Constant,
+                Delay = TimeSpan.FromSeconds(5),
+                MaxDelay = TimeSpan.FromSeconds(30),
+            })
+            .AddTimeout(TimeSpan.FromSeconds(30))
+            .Build();
+
+    /// <summary>
+    /// Creates a client that retries transient failures once, does not follow redirects (so tests can
+    /// assert them), and keeps cookies (needed for antiforgery-protected form posts).
     /// </summary>
     public static HttpClient CreateClient()
     {
         Uri baseUrl = RequiredBaseUrl;
-        var handler = new HttpClientHandler
+        var handler = new ResilienceHandler(s_pipeline)
         {
-            AllowAutoRedirect = false,
-            CookieContainer = new CookieContainer(),
-            UseCookies = true,
+            InnerHandler = new HttpClientHandler
+            {
+                AllowAutoRedirect = false,
+                CookieContainer = new CookieContainer(),
+                UseCookies = true,
+            },
         };
         var client = new HttpClient(handler, disposeHandler: true)
         {
             BaseAddress = baseUrl,
-            Timeout = TimeSpan.FromSeconds(30),
+            // Covers both attempts plus the retry delay; each attempt is limited to 30s by the pipeline.
+            Timeout = TimeSpan.FromSeconds(100),
         };
         client.DefaultRequestHeaders.UserAgent.ParseAdd("EssentialCSharp-SmokeTests/1.0");
         return client;
     }
-
-    private static readonly TimeSpan s_maxRetryDelay = TimeSpan.FromSeconds(30);
-
-    /// <summary>
-    /// Sends a request, retrying once after a 429, a 5xx, a connection failure, or a timeout so a single
-    /// transient blip (or a shared runner IP hitting a rate limit) does not fail a deployment gate.
-    /// Real failures persist and still fail.
-    /// </summary>
-    public static async Task<HttpResponseMessage> SendWithRetryAsync(
-        HttpClient client,
-        Func<HttpRequestMessage> createRequest,
-        CancellationToken cancellationToken = default)
-    {
-        TimeSpan delay = TimeSpan.FromSeconds(5);
-        try
-        {
-            HttpResponseMessage response = await client.SendAsync(createRequest(), cancellationToken);
-            if (response.StatusCode != HttpStatusCode.TooManyRequests && (int)response.StatusCode < 500)
-            {
-                return response;
-            }
-
-            if (response.Headers.RetryAfter?.Delta is { } retryAfter)
-            {
-                delay = retryAfter < s_maxRetryDelay ? retryAfter : s_maxRetryDelay;
-            }
-            response.Dispose();
-        }
-        catch (Exception ex) when (ex is HttpRequestException
-            || (ex is TaskCanceledException && !cancellationToken.IsCancellationRequested))
-        {
-            // Connection reset / DNS / TLS hiccup, or HttpClient.Timeout elapsed: retry once below.
-        }
-
-        await Task.Delay(delay, cancellationToken);
-        return await client.SendAsync(createRequest(), cancellationToken);
-    }
-
-    public static Task<HttpResponseMessage> GetWithRetryAsync(HttpClient client, string relativeUrl, CancellationToken cancellationToken = default) =>
-        SendWithRetryAsync(client, () => new HttpRequestMessage(HttpMethod.Get, relativeUrl), cancellationToken);
 }
 
 /// <summary>Skips a test unless a deployed site was requested via <c>E2E_BASE_URL</c> / <c>E2E_EXPECTED_COMMIT</c>.</summary>

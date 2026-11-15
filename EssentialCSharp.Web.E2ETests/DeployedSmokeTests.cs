@@ -22,7 +22,7 @@ public partial class DeployedSmokeTests
     {
         using HttpClient client = DeployedSite.CreateClient();
 
-        using HttpResponseMessage response = await DeployedSite.GetWithRetryAsync(client, path);
+        using HttpResponseMessage response = await client.GetAsync(path);
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
@@ -32,7 +32,7 @@ public partial class DeployedSmokeTests
     {
         using HttpClient client = DeployedSite.CreateClient();
 
-        using HttpResponseMessage response = await DeployedSite.GetWithRetryAsync(client, "version");
+        using HttpResponseMessage response = await client.GetAsync("version");
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(response).HasJsonContent();
@@ -56,7 +56,7 @@ public partial class DeployedSmokeTests
     {
         using HttpClient client = DeployedSite.CreateClient();
 
-        using HttpResponseMessage response = await DeployedSite.GetWithRetryAsync(client, "home");
+        using HttpResponseMessage response = await client.GetAsync("home");
         string body = await response.Content.ReadAsStringAsync();
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
@@ -70,7 +70,7 @@ public partial class DeployedSmokeTests
     {
         using HttpClient client = DeployedSite.CreateClient();
 
-        using HttpResponseMessage sitemapResponse = await DeployedSite.GetWithRetryAsync(client, "sitemap.xml");
+        using HttpResponseMessage sitemapResponse = await client.GetAsync("sitemap.xml");
         await Assert.That(sitemapResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
 
         XDocument sitemap = XDocument.Parse(await sitemapResponse.Content.ReadAsStringAsync());
@@ -86,7 +86,7 @@ public partial class DeployedSmokeTests
 
         // One content page from the middle of the book (content pages share a tight per-IP rate limit).
         Uri chapterPage = locations[locations.Count / 2];
-        using HttpResponseMessage pageResponse = await DeployedSite.GetWithRetryAsync(client, chapterPage.PathAndQuery.TrimStart('/'));
+        using HttpResponseMessage pageResponse = await client.GetAsync(chapterPage.PathAndQuery.TrimStart('/'));
         string pageBody = await pageResponse.Content.ReadAsStringAsync();
 
         await Assert.That(pageResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
@@ -98,7 +98,7 @@ public partial class DeployedSmokeTests
     {
         using HttpClient client = DeployedSite.CreateClient();
 
-        using HttpResponseMessage response = await DeployedSite.GetWithRetryAsync(client, "Identity/Account/Login");
+        using HttpResponseMessage response = await client.GetAsync("Identity/Account/Login");
         string body = await response.Content.ReadAsStringAsync();
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
@@ -121,20 +121,17 @@ public partial class DeployedSmokeTests
     {
         using HttpClient client = DeployedSite.CreateClient();
 
-        using HttpResponseMessage loginPage = await DeployedSite.GetWithRetryAsync(client, "Identity/Account/Login");
+        using HttpResponseMessage loginPage = await client.GetAsync("Identity/Account/Login");
         string loginBody = await loginPage.Content.ReadAsStringAsync();
         Match token = AntiforgeryTokenPattern().Match(loginBody);
         await Assert.That(token.Success).IsTrue();
 
-        using HttpResponseMessage response = await DeployedSite.SendWithRetryAsync(client, () =>
-            new HttpRequestMessage(HttpMethod.Post, "Identity/Account/ExternalLogin")
-            {
-                Content = new FormUrlEncodedContent(new Dictionary<string, string>
-                {
-                    ["provider"] = provider,
-                    ["__RequestVerificationToken"] = WebUtility.HtmlDecode(token.Groups["token"].Value),
-                }),
-            });
+        using var form = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["provider"] = provider,
+            ["__RequestVerificationToken"] = WebUtility.HtmlDecode(token.Groups["token"].Value),
+        });
+        using HttpResponseMessage response = await client.PostAsync("Identity/Account/ExternalLogin", form);
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Redirect);
         Uri location = await Assert.That(response.Headers.Location).IsNotNull();
