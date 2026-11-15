@@ -366,9 +366,8 @@ jobs:
             --resource-group "$RESOURCEGROUP" \
             --image "${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb:${{ github.sha }}"
 
-      # Smoke testing runs inside this job (not a separate one) so it holds the deploy-development
-      # concurrency group: the next push cannot swap the dev image mid-test. deploy-production needs
-      # this job, so a failed smoke test blocks promotion (dev keeps the failed build until the next push).
+      # Smoke tests stay in this job so it holds the deploy-development concurrency group (no image swap mid-test);
+      # deploy-production needs this job, so a failure blocks promotion.
       - name: Wait for the new revision to serve this commit
         id: wait-for-revision
         env:

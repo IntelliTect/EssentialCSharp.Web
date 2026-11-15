@@ -6,11 +6,8 @@ using System.Xml.Linq;
 
 namespace EssentialCSharp.Web.E2ETests;
 
-/// <summary>
-/// Anonymous, read-only checks against a deployed site. They gate promotion to production, so they cover
-/// configuration that unit and integration tests cannot see (Key Vault wiring, real content, external
-/// login registration, base URL) while staying well inside the site's per-IP rate limits.
-/// </summary>
+// Gates promotion to production: covers config tests cannot see (Key Vault, real content, login, base URL)
+// while staying inside the per-IP rate limits.
 [Category("Deployed")]
 [RequiresDeployedSite]
 public partial class DeployedSmokeTests
@@ -79,8 +76,7 @@ public partial class DeployedSmokeTests
             .Select(element => new Uri(element.Value.Trim()))
             .ToList();
 
-        // Placeholder content (used when the content package is missing) has only a handful of pages;
-        // the real book has hundreds. This catches an image built without the book content.
+        // Placeholder content has a handful of pages, the real book hundreds: catches an image built without it.
         await Assert.That(locations.Count).IsGreaterThan(100);
         await Assert.That(locations.All(uri => uri.Host == DeployedSite.RequiredBaseUrl.Host)).IsTrue();
 
@@ -108,11 +104,8 @@ public partial class DeployedSmokeTests
         await Assert.That(body).Contains("name=\"provider\" value=\"Microsoft\"");
     }
 
-    /// <summary>
-    /// Posts the external-login form without following the redirect. Verifies the provider is registered
-    /// with a client id and the callback points back at this deployment; the OAuth round trip itself
-    /// (secrets, consent, account linking) is out of scope for an automated smoke test.
-    /// </summary>
+    // Checks the provider is registered with a client id and the callback targets this deployment;
+    // the OAuth round trip is out of scope.
     [Test]
     [Arguments("GitHub", "github.com", "/login/oauth/authorize", "signin-github")]
     [Arguments("Microsoft", "login.microsoftonline.com", "/common/oauth2/v2.0/authorize", "signin-microsoft")]

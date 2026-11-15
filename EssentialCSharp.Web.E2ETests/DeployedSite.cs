@@ -4,13 +4,7 @@ using Polly;
 
 namespace EssentialCSharp.Web.E2ETests;
 
-/// <summary>
-/// The deployed site under test, configured through environment variables:
-/// <list type="bullet">
-/// <item><c>E2E_BASE_URL</c> — required, e.g. <c>https://dev.essentialcsharp.com</c>.</item>
-/// <item><c>E2E_EXPECTED_COMMIT</c> — optional; when set, <c>/version</c> must report this commit.</item>
-/// </list>
-/// </summary>
+// Configured via E2E_BASE_URL (required) and E2E_EXPECTED_COMMIT (optional; /version must report it).
 public static class DeployedSite
 {
     public const string BaseUrlVariable = "E2E_BASE_URL";
@@ -20,15 +14,10 @@ public static class DeployedSite
 
     public static Uri? BaseUrl { get; } = ParseBaseUrl(s_rawBaseUrl);
 
-    /// <summary>The configured base URL; throws a descriptive error when it is missing or malformed.</summary>
     public static Uri RequiredBaseUrl => BaseUrl ?? throw new InvalidOperationException(
         $"{BaseUrlVariable} must be an absolute http(s) URL, e.g. https://dev.essentialcsharp.com (got '{s_rawBaseUrl}').");
 
-    /// <summary>
-    /// Deployed tests are skipped only when nothing asked for them. If either variable is set (as the
-    /// deployment gate does), they run — so a malformed URL fails loudly instead of skipping every test
-    /// and letting the gate pass without testing anything.
-    /// </summary>
+    // Skip only when neither variable is set, so a malformed URL fails loudly instead of the gate passing untested.
     public static bool IsRequested =>
         !string.IsNullOrWhiteSpace(s_rawBaseUrl) || ExpectedCommit is not null;
 
@@ -42,12 +31,8 @@ public static class DeployedSite
     public static string? ExpectedCommit { get; } =
         Environment.GetEnvironmentVariable(ExpectedCommitVariable) is { Length: > 0 } commit ? commit : null;
 
-    /// <summary>
-    /// One retry for transient failures, so a single blip (or a shared runner IP hitting a rate limit)
-    /// does not fail a deployment gate. <see cref="HttpRetryStrategyOptions"/> treats 5xx, 408, 429,
-    /// connection errors and per-attempt timeouts as transient and honours <c>Retry-After</c>; any other
-    /// status (including the 302s and 404s tests assert on) is returned unchanged on the first attempt.
-    /// </summary>
+    // One retry for transient failures (5xx, 408, 429, timeouts) so a blip or shared-IP rate limit does not
+    // fail the gate; other statuses, including the 302s and 404s tests assert on, pass through untouched.
     private static readonly ResiliencePipeline<HttpResponseMessage> s_pipeline =
         new ResiliencePipelineBuilder<HttpResponseMessage>()
             .AddRetry(new HttpRetryStrategyOptions
@@ -60,10 +45,7 @@ public static class DeployedSite
             .AddTimeout(TimeSpan.FromSeconds(30))
             .Build();
 
-    /// <summary>
-    /// Creates a client that retries transient failures once, does not follow redirects (so tests can
-    /// assert them), and keeps cookies (needed for antiforgery-protected form posts).
-    /// </summary>
+    // No redirect following (tests assert them); cookies kept for antiforgery-protected form posts.
     public static HttpClient CreateClient()
     {
         Uri baseUrl = RequiredBaseUrl;
@@ -87,7 +69,6 @@ public static class DeployedSite
     }
 }
 
-/// <summary>Skips a test unless a deployed site was requested via <c>E2E_BASE_URL</c> / <c>E2E_EXPECTED_COMMIT</c>.</summary>
 public sealed class RequiresDeployedSiteAttribute()
     : SkipAttribute($"Set {DeployedSite.BaseUrlVariable} to run tests against a deployed site.")
 {

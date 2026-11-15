@@ -1,8 +1,6 @@
 name: Scheduled smoke test (Development)
 
-# Runs the deployed smoke tests against the development site between deployments, to catch drift that
-# no code change triggers: expiring secrets or Key Vault access, external login configuration, content,
-# or the site going down. Deployments run the same tests as a gate (Build-Test-And-Deploy.yml).
+# Catches drift no code change triggers (expiring secrets, login config, content, site down); deployments run the same tests as a gate.
 on:
   schedule:
     - cron: "17 */6 * * *"
@@ -58,8 +56,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          # A setup failure (smoke step skipped) also counts as a failure: dev isn't being monitored either way,
-          # and it keeps this outcome consistent with the run's conclusion, which the next run reads.
+          # A skipped smoke step (setup failure) counts as failure: dev is unmonitored, and the next run reads the conclusion.
           OUTCOME: ${{ job.status == 'cancelled' && 'cancelled' || (steps.smoke.outcome == 'success' && 'success' || 'failure') }}
           RUN_ID: ${{ github.run_id }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

@@ -2,12 +2,7 @@ using System.Reflection;
 
 namespace EssentialCSharp.Web.Services;
 
-/// <summary>
-/// Identifies the build that is running, for <c>GET /version</c>. Deployment checks poll it to confirm
-/// a new revision is serving traffic before smoke testing it. Nothing here is shown in the site UI.
-/// </summary>
-/// <param name="Version">The assembly's informational version, e.g. <c>1.0.0+&lt;sha&gt;</c>.</param>
-/// <param name="Commit">The source revision (git SHA) the build came from, or <see langword="null"/> when the build was not stamped.</param>
+// Served by GET /version; deployment checks poll it. Commit is null when the build was not stamped.
 public sealed record BuildInfo(string? Version, string? Commit)
 {
     public static BuildInfo Current { get; } = FromAssembly(typeof(BuildInfo).Assembly);
@@ -15,10 +10,7 @@ public sealed record BuildInfo(string? Version, string? Commit)
     public static BuildInfo FromAssembly(Assembly assembly) =>
         FromInformationalVersion(assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion);
 
-    /// <summary>
-    /// The SDK appends <c>+$(SourceRevisionId)</c> to the informational version when a source revision is known
-    /// (from SourceLink locally, or the <c>SOURCE_REVISION</c> Docker build argument in CI).
-    /// </summary>
+    // The SDK appends "+<SourceRevisionId>" (SourceLink locally, the SOURCE_REVISION build arg in CI).
     public static BuildInfo FromInformationalVersion(string? informationalVersion)
     {
         if (string.IsNullOrWhiteSpace(informationalVersion))
