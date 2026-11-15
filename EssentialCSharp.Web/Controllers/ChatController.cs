@@ -252,15 +252,12 @@ public partial class ChatController : ControllerBase
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
                 {
-                    // Best-effort write during an aborted request — no response body can be delivered.
                 }
                 catch (IOException) when (HttpContext.RequestAborted.IsCancellationRequested)
                 {
-                    // Expected client disconnect while attempting a best-effort error response write.
                 }
                 catch (ObjectDisposedException) when (HttpContext.RequestAborted.IsCancellationRequested)
                 {
-                    // Response stream can already be disposed after an abrupt client disconnect.
                 }
             }
             else
@@ -273,10 +270,7 @@ public partial class ChatController : ControllerBase
                 }
                 catch (Exception writeException) when (writeException is IOException or OperationCanceledException or ObjectDisposedException)
                 {
-                    // Best-effort write to an already-streaming response. Kestrel can throw
-                    // IOException (connection reset), OperationCanceledException, or
-                    // ObjectDisposedException on abrupt client disconnect — swallow expected
-                    // transport/disconnect exceptions to avoid masking the original exception.
+                    // Client disconnects mid-stream are expected; don't mask the original exception.
                 }
             }
         }
@@ -298,7 +292,6 @@ public partial class ChatController : ControllerBase
             }
             catch (Exception writeException) when (writeException is IOException or OperationCanceledException or ObjectDisposedException)
             {
-                // Best-effort write to an already-streaming response.
             }
         }
         catch (Exception ex) when (!Response.HasStarted)
@@ -315,15 +308,12 @@ public partial class ChatController : ControllerBase
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || HttpContext.RequestAborted.IsCancellationRequested)
             {
-                // Best-effort write during an aborted request — no response body can be delivered.
             }
             catch (IOException) when (HttpContext.RequestAborted.IsCancellationRequested)
             {
-                // Expected client disconnect while attempting a best-effort error response write.
             }
             catch (ObjectDisposedException) when (HttpContext.RequestAborted.IsCancellationRequested)
             {
-                // Response stream can already be disposed after an abrupt client disconnect.
             }
         }
         catch (Exception ex)
@@ -336,10 +326,6 @@ public partial class ChatController : ControllerBase
             }
             catch (Exception writeException) when (writeException is IOException or OperationCanceledException or ObjectDisposedException)
             {
-                // Best-effort write to an already-streaming response. Kestrel can throw
-                // IOException (connection reset), OperationCanceledException, or
-                // ObjectDisposedException on abrupt client disconnect — swallow expected
-                // transport/disconnect exceptions to avoid masking the original exception.
             }
         }
     }
