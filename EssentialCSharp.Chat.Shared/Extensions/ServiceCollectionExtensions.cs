@@ -101,7 +101,7 @@ public static class ServiceCollectionExtensions
             }
             else
             {
-                services.AddAzureOpenAIServices(aiOptions, postgresConnectionString!);
+                services.AddAzureOpenAIServices(aiOptions, postgresConnectionString ?? throw new InvalidOperationException("ConnectionStrings:PostgresVectorStore is required when Azure OpenAI is configured."));
                 // Bind EmbeddingRetry from config so operator appsettings/env overrides are honored.
                 // The AIOptions overload of AddAzureOpenAIServices only registers validation, not config binding.
                 services.AddOptions<EmbeddingRetryOptions>()
@@ -265,7 +265,7 @@ public static class ServiceCollectionExtensions
     {
         if (!string.IsNullOrWhiteSpace(options.LocalEndpoint))
         {
-            return options.LocalEndpoint!;
+            return options.LocalEndpoint;
         }
 
         return configuration.GetConnectionString("ollama-chat") ?? string.Empty;

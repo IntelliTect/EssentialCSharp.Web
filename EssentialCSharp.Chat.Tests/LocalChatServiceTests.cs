@@ -31,11 +31,13 @@ public class LocalChatServiceTests
         await Assert.That(requests.Count).IsEqualTo(1);
 
         var request = requests[0];
-        await Assert.That(request.RequestUri!.AbsolutePath).IsEqualTo("/v1/chat/completions");
+        Uri requestUri = await Assert.That(request.RequestUri).IsNotNull();
+        await Assert.That(requestUri.AbsolutePath).IsEqualTo("/v1/chat/completions");
         await Assert.That(request.Headers.Authorization?.Scheme).IsEqualTo("Bearer");
         await Assert.That(request.Headers.Authorization?.Parameter).IsEqualTo("local-dev-key");
 
-        string requestBody = await request.Content!.ReadAsStringAsync();
+        HttpContent requestContent = await Assert.That(request.Content).IsNotNull();
+        string requestBody = await requestContent.ReadAsStringAsync();
         using var payload = JsonDocument.Parse(requestBody);
         await Assert.That(payload.RootElement.GetProperty("model").GetString()).IsEqualTo("qwen2.5-coder:7b");
         await Assert.That(payload.RootElement.GetProperty("stream").GetBoolean()).IsFalse();
@@ -96,12 +98,14 @@ public class LocalChatServiceTests
 
         await Assert.That(requests.Count).IsEqualTo(2);
 
-        string firstBody = await requests[0].Content!.ReadAsStringAsync();
+        HttpContent firstContent = await Assert.That(requests[0].Content).IsNotNull();
+        string firstBody = await firstContent.ReadAsStringAsync();
         using var firstPayload = JsonDocument.Parse(firstBody);
         var firstMessages = firstPayload.RootElement.GetProperty("messages");
         await Assert.That(firstMessages.GetArrayLength()).IsEqualTo(2);
 
-        string secondBody = await requests[1].Content!.ReadAsStringAsync();
+        HttpContent secondContent = await Assert.That(requests[1].Content).IsNotNull();
+        string secondBody = await secondContent.ReadAsStringAsync();
         using var secondPayload = JsonDocument.Parse(secondBody);
         var secondMessages = secondPayload.RootElement.GetProperty("messages");
         await Assert.That(secondMessages.GetArrayLength()).IsEqualTo(4);
