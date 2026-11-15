@@ -136,8 +136,20 @@ public partial class RegisterModel(
                 ModelState.AddModelError(string.Empty, "Error: Email may not be null.");
                 return Page();
             }
-            await emailSender.SendEmailAsync(Input.Email, "Confirm your email",
-                $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+            try
+            {
+                await emailSender.SendEmailAsync(Input.Email, "Confirm your email",
+                    $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+            }
+            catch (EmailSendException)
+            {
+                // The account already exists, so re-showing the registration form would only produce a
+                // "user name/email already taken" error. Send the user to the resend page instead.
+                // Do not log the exception: its inner exception can contain the recipient address. EmailSender has logged the details.
+                LogConfirmationEmailNotSent(logger);
+                EmailFailureMessages.QueueAccountCreatedConfirmationNotSent(TempData);
+                return RedirectToPage("ResendEmailConfirmation", new { email = Input.Email });
+            }
 
             if (userManager.Options.SignIn.RequireConfirmedAccount)
             {
@@ -255,6 +267,9 @@ public partial class RegisterModel(
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Password null; please enter in a password")]
     private static partial void LogPasswordNull(ILogger<RegisterModel> logger);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "The confirmation email could not be sent after registration; redirecting the user to resend it.")]
+    private static partial void LogConfirmationEmailNotSent(ILogger<RegisterModel> logger);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "User created a new account with password.")]
     private static partial void LogUserCreatedWithPassword(ILogger<RegisterModel> logger);

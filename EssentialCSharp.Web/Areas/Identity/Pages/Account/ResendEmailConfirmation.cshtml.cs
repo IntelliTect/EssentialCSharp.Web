@@ -14,8 +14,11 @@ using Microsoft.Extensions.Options;
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
 [AllowAnonymous]
-public class ResendEmailConfirmationModel(UserManager<EssentialCSharpWebUser> userManager, IEmailSender emailSender, ICaptchaValidationService captchaValidationService, IOptions<CaptchaOptions> optionsAccessor) : PageModel
+public partial class ResendEmailConfirmationModel(UserManager<EssentialCSharpWebUser> userManager, IEmailSender emailSender, ICaptchaValidationService captchaValidationService, IOptions<CaptchaOptions> optionsAccessor, ILogger<ResendEmailConfirmationModel> logger) : PageModel
 {
+    [TempData]
+    public string? StatusMessage { get; set; }
+
     private InputModel? _Input;
     [BindProperty]
     public InputModel Input
@@ -31,6 +34,11 @@ public class ResendEmailConfirmationModel(UserManager<EssentialCSharpWebUser> us
         [Required]
         [EmailAddress]
         public string? Email { get; set; }
+    }
+
+    public void OnGet(string? email = null)
+    {
+        Input = new InputModel { Email = email };
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken = default)
@@ -60,8 +68,8 @@ public class ResendEmailConfirmationModel(UserManager<EssentialCSharpWebUser> us
         EssentialCSharpWebUser? user = await userManager.FindByEmailAsync(Input.Email);
         if (user is null)
         {
-            // Don't reveal that the user does not exist — return the same success message
-            ModelState.AddModelError(string.Empty, "Verification email sent. Please check your email. If you can't find the email, please check your spam folder.");
+            // Don't reveal that the user does not exist — return the same message
+            ModelState.AddModelError(string.Empty, EmailFailureMessages.ResendNeutral);
             return Page();
         }
 
@@ -79,12 +87,26 @@ public class ResendEmailConfirmationModel(UserManager<EssentialCSharpWebUser> us
             ModelState.AddModelError(string.Empty, "Error: callback url unexpectedly null.");
             return Page();
         }
-        await emailSender.SendEmailAsync(
-            Input.Email,
-            "Confirm your email",
-            $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+        try
+        {
+            await emailSender.SendEmailAsync(
+                Input.Email,
+                "Confirm your email",
+                $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+        }
+        catch (EmailSendException)
+        {
+            // This page is anonymous and an email is only attempted when the account exists. Showing an error here
+            // (but not for unknown addresses) would let anyone test whether an address is registered, so log the
+            // failure and show the same neutral message as every other outcome.
+            // Do not log the exception: its inner exception can contain the recipient address. EmailSender has logged the details.
+            LogConfirmationEmailNotSent(logger);
+        }
 
-        ModelState.AddModelError(string.Empty, "Verification email sent. Please check your email. If you can't find the email, please check your spam folder.");
+        ModelState.AddModelError(string.Empty, EmailFailureMessages.ResendNeutral);
         return Page();
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "The confirmation email could not be resent. The user was shown the standard neutral response.")]
+    private static partial void LogConfirmationEmailNotSent(ILogger<ResendEmailConfirmationModel> logger);
 }

@@ -2,6 +2,7 @@
 using System.Text;
 using System.Text.Encodings.Web;
 using EssentialCSharp.Web.Areas.Identity.Data;
+using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -10,10 +11,11 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage;
 
-public class EmailModel(
+public partial class EmailModel(
     UserManager<EssentialCSharpWebUser> userManager,
     SignInManager<EssentialCSharpWebUser> signInManager,
-    IEmailSender emailSender) : PageModel
+    IEmailSender emailSender,
+    ILogger<EmailModel> logger) : PageModel
 {
     private readonly UserManager<EssentialCSharpWebUser> _UserManager = userManager;
     private readonly SignInManager<EssentialCSharpWebUser> _SignInManager = signInManager;
@@ -102,10 +104,10 @@ public class EmailModel(
                 StatusMessage = "Error: callback url unexpectedly null.";
                 return RedirectToPage();
             }
-            await _EmailSender.SendEmailAsync(
-                Input.NewEmail,
-                "Confirm your email",
-                $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+            if (!await TrySendConfirmationAsync(Input.NewEmail, callbackUrl))
+            {
+                return RedirectToPage();
+            }
 
             StatusMessage = "Confirmation link to change email sent. Please check your email. If you can't find the email, please check your spam folder.";
             return RedirectToPage();
@@ -147,12 +149,35 @@ public class EmailModel(
         {
             return NotFound($"Unable to load user email with ID '{_UserManager.GetUserId(User)}'.");
         }
-        await _EmailSender.SendEmailAsync(
-            email,
-            "Confirm your email",
-            $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+        if (!await TrySendConfirmationAsync(email, callbackUrl))
+        {
+            return RedirectToPage();
+        }
 
         StatusMessage = "Verification email sent. Please check your email. If you can't find the email, please check your spam folder.";
         return RedirectToPage();
     }
+
+    /// <summary>Sends the confirmation link. On failure sets a friendly <see cref="StatusMessage"/> and returns false.</summary>
+    private async Task<bool> TrySendConfirmationAsync(string toEmail, string callbackUrl)
+    {
+        try
+        {
+            await _EmailSender.SendEmailAsync(
+                toEmail,
+                "Confirm your email",
+                $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+            return true;
+        }
+        catch (EmailSendException)
+        {
+            // Do not log the exception: its inner exception can contain the recipient address. EmailSender has logged the details.
+            LogEmailNotSent(logger);
+            StatusMessage = EmailFailureMessages.TryAgainLater;
+            return false;
+        }
+    }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "A confirmation email requested from the Manage Email page could not be sent.")]
+    private static partial void LogEmailNotSent(ILogger<EmailModel> logger);
 }
