@@ -17,7 +17,7 @@ namespace EssentialCSharp.Web.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.7")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -139,6 +139,26 @@ namespace EssentialCSharp.Web.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("McpApiTokens");
+                });
+
+            modelBuilder.Entity("EssentialCSharp.Web.Models.UserReadingProfile", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<long>("TotalActiveSeconds")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("TotalWordsRead")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("UserReadingProfiles");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
@@ -298,6 +318,17 @@ namespace EssentialCSharp.Web.Migrations
                 });
 
             modelBuilder.Entity("EssentialCSharp.Web.Models.McpApiToken", b =>
+                {
+                    b.HasOne("EssentialCSharp.Web.Areas.Identity.Data.EssentialCSharpWebUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("EssentialCSharp.Web.Models.UserReadingProfile", b =>
                 {
                     b.HasOne("EssentialCSharp.Web.Areas.Identity.Data.EssentialCSharpWebUser", "User")
                         .WithMany()

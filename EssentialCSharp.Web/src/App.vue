@@ -8,9 +8,17 @@ import SnackbarMessage from "./components/SnackbarMessage.vue";
 import ChatWidget from "./components/ChatWidget.vue";
 import CodeRunnerModal from "./components/CodeRunnerModal.vue";
 import { useSiteShell } from "./composables/useSiteShell.js";
+import { READING_TRACKER_KEY, useReadingTracker } from "./composables/useReadingTracker.js";
+import { getReadingContext } from "./utils/readingContext.js";
 
 const shell = reactive(useSiteShell());
 provide("shell", shell);
+
+// Only content pages emit window.READING_CONTEXT; elsewhere the tracker is not created at all.
+const readingContext = getReadingContext();
+if (readingContext) {
+    provide(READING_TRACKER_KEY, useReadingTracker(readingContext));
+}
 
 function updateLayoutClasses() {
     const siteLayout = document.getElementById("site-layout");

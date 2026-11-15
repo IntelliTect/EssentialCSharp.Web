@@ -101,13 +101,18 @@ internal static class McpTestHelper
 
     public static async Task<(string CookieName, string CookieValue)> CreateIdentityApplicationCookieAsync(
         IServiceProvider services,
-        string userId)
+        string userId,
+        Func<System.Security.Claims.ClaimsPrincipal, System.Security.Claims.ClaimsPrincipal>? transformPrincipal = null)
     {
         using var scope = services.CreateScope();
         var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<EssentialCSharpWebUser>>();
         EssentialCSharpWebUser user = await signInManager.UserManager.FindByIdAsync(userId)
             ?? throw new InvalidOperationException($"Could not find test user '{userId}' to create an identity cookie.");
         var principal = await signInManager.CreateUserPrincipalAsync(user);
+        if (transformPrincipal is not null)
+        {
+            principal = transformPrincipal(principal);
+        }
 
         CookieAuthenticationOptions cookieOptions = scope.ServiceProvider
             .GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>()
