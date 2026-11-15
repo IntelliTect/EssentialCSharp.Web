@@ -365,7 +365,17 @@ export function useChatWidget() {
                 } else if (response.status === 403) {
                     throw new Error('captcha-failed: Human verification failed. Please try again.');
                 } else if (response.status === 503) {
-                    throw new Error('captcha-unavailable: Human verification is temporarily unavailable. Please try again later.');
+                    // 503 comes from either the AI backend (chat_unavailable) or hCaptcha (captcha_unavailable).
+                    let errorData = null;
+                    try {
+                        errorData = await response.json();
+                    } catch (e) {
+                        // Fall through to the generic chat-unavailable message.
+                    }
+                    if (errorData?.errorCode === 'captcha_unavailable') {
+                        throw new Error('captcha-unavailable: Human verification is temporarily unavailable. Please try again later.');
+                    }
+                    throw new Error('chat-unavailable');
                 } else if (response.status === 429) {
                     // Handle rate limiting - simple error message without captcha
                     let errorData;
@@ -495,6 +505,9 @@ export function useChatWidget() {
             } else if (error.message === 'content-filtered') {
                 errorMessage = 'This request could not be completed because it did not meet the content safety policy. Please try a different message.';
                 errorType = 'content-filtered';
+            } else if (error.message === 'chat-unavailable') {
+                errorMessage = 'The AI assistant is temporarily unavailable. Please try again in a moment.';
+                errorType = 'error';
             } else if (error.message?.startsWith('captcha-')) {
                 errorMessage = error.message.includes('captcha-unavailable')
                     ? 'Human verification is temporarily unavailable. Please try again later.'
