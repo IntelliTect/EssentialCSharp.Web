@@ -71,9 +71,6 @@ jobs:
         uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
-          source-url: https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json
-        env:
-          NUGET_AUTH_TOKEN: ${{ secrets.AZURE_DEVOPS_PAT }}
 
       - name: Set up dependency caching for faster builds
         uses: actions/cache@v6
@@ -87,11 +84,26 @@ jobs:
             ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
             ${{ runner.os }}-nuget-
 
+      # Restore against the private content feed so the tests below run against the real content package
+      # (placeholders only mirror its file shapes). This job only runs on push/workflow_dispatch, never for
+      # fork PRs. The credentials exist only for the restore and are removed before any repo code builds or runs.
+      - name: Generate NuGet feed credentials
+        env:
+          NUGET_FEED_TOKEN: ${{ secrets.AZURE_DEVOPS_PAT }}
+        run: |
+          mkdir -p "${HOME}/.nuget/NuGet"
+          bash scripts/nuget/emit-creds-config.sh > "${HOME}/.nuget/NuGet/NuGet.Config"
+          chmod 600 "${HOME}/.nuget/NuGet/NuGet.Config"
+
       - name: Restore with dotnet
-        run: dotnet restore
+        run: dotnet restore -p:AccessToNugetFeed=true
+
+      - name: Remove NuGet feed credentials
+        if: always()
+        run: rm -f "${HOME}/.nuget/NuGet/NuGet.Config"
 
       - name: Build with dotnet
-        run: dotnet build -p:ContinuousIntegrationBuild=True -p:ReleaseDateAttribute=True -p:SkipFrontendBuild=true --configuration Release --no-restore
+        run: dotnet build -p:AccessToNugetFeed=true -p:ContinuousIntegrationBuild=True -p:ReleaseDateAttribute=True -p:SkipFrontendBuild=true --configuration Release --no-restore
 
       - name: Expose GitHub Actions Runtime
         uses: actions/github-script@v9
@@ -332,6 +344,16 @@ jobs:
             --resource-group "$RESOURCEGROUP" \
             --image "${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb:${{ github.sha }}"
 
+      # Requests real pages, not just /health: content-backed services are built lazily on first page
+      # request, so a bad content file leaves /health green while pages return 500.
+      - name: Smoke test
+        env:
+          CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
+          RESOURCEGROUP: ${{ vars.RESOURCEGROUP }}
+        run: |
+          FQDN=$(az containerapp show             --name "$CONTAINER_APP_NAME"             --resource-group "$RESOURCEGROUP"             --query "properties.configuration.ingress.fqdn" -o tsv)
+          bash scripts/smoke-test.sh "$FQDN"
+
       - name: Logout of Azure CLI
         if: always()
         uses: azure/CLI@v3
@@ -433,8 +455,7 @@ jobs:
             --name "$CONTAINER_APP_NAME" \
             --resource-group "$RESOURCEGROUP" \
             --query "properties.configuration.ingress.fqdn" -o tsv)
-          # --retry-all-errors ensures HTTP 5xx (cold-start 503s) also trigger retries
-          curl --fail --retry 10 --retry-delay 15 --retry-all-errors --max-time 30 "https://$FQDN/health"
+          bash scripts/smoke-test.sh "$FQDN"
 
       - name: Cancel pending deployment workflow runs
         uses: actions/github-script@v9
