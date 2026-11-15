@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Turns scheduled smoke-test results into a single tracking issue, so failures aren't lost
-# (GitHub only emails the last person who edited a scheduled workflow).
+# Turns scheduled smoke-test results into one tracking issue (GitHub only emails the last editor of the workflow).
 #
 # - failure, no open issue, previous completed run also failed -> open an issue
 # - failure, no open issue, previous run passed                -> warn only (one blip is not an incident)
@@ -9,8 +8,7 @@
 # - success, issue open                                        -> comment and close it
 # - cancelled                                                  -> do nothing
 #
-# The workflow reports "failure" when the smoke step failed *or* never ran because setup failed, so the
-# run's overall conclusion matches what was reported here and "previous run failed" means the same thing.
+# The workflow reports "failure" for setup failures too, so "previous run failed" matches the run conclusion.
 #
 # Environment:
 #   OUTCOME        success | failure | cancelled
@@ -46,8 +44,7 @@ This description is updated with the latest failing run, and the issue closes au
 EOF
 }
 
-# No error suppression here: if the lookup fails, an empty result would look like "no open issue"
-# and could open a duplicate (or leave a resolved one open). Failing the step is the safer outcome.
+# No error suppression: a failed lookup would look like "no open issue" and could open a duplicate.
 open_issue="$(gh issue list --repo "${GH_REPO}" --label "${label}" --state open --json number --jq '.[0].number // empty')"
 
 case "${OUTCOME}" in
@@ -66,9 +63,8 @@ case "${OUTCOME}" in
       exit 0
     fi
 
-    # The latest earlier run that actually passed or failed; cancelled/skipped runs don't break a failure streak.
-    # (The current run is still in progress, so it isn't in the completed list.) Failing quietly here is safe:
-    # it only means "warn instead of opening an issue this time".
+    # Latest earlier run that passed or failed (cancelled/skipped don't break a streak). Failing quietly only
+    # means "warn instead of opening an issue".
     previous="$(gh run list --repo "${GH_REPO}" --workflow "${WORKFLOW_FILE}" --branch "${branch}" --status completed --limit 10 \
       --json databaseId,conclusion \
       --jq "[.[] | select(.databaseId != ${RUN_ID} and (.conclusion == \"success\" or .conclusion == \"failure\"))][0].conclusion // empty" \

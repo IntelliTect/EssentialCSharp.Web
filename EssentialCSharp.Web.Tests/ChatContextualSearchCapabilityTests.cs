@@ -5,10 +5,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace EssentialCSharp.Web.Tests;
 
-/// <summary>
-/// The chat widget reads <c>window.CHAT_SUPPORTS_CONTEXTUAL_SEARCH</c> to decide whether to request
-/// contextual search; the API rejects that request for backends that cannot perform it.
-/// </summary>
+// The widget reads window.CHAT_SUPPORTS_CONTEXTUAL_SEARCH; the API rejects the request for backends without support.
 public class ChatContextualSearchCapabilityTests : IntegrationTestBase
 {
     [Test]
@@ -35,7 +32,7 @@ public class ChatContextualSearchCapabilityTests : IntegrationTestBase
     [Test]
     public async Task Layout_WithDefaultTestBackend_DoesNotRequestContextualSearch()
     {
-        // The test host has no AI configuration, so the Unavailable backend (no contextual search) is selected.
+        // The test host has no AI configuration, so the Unavailable backend is selected.
         using HttpClient client = CreateClientWithoutAutoRedirect();
 
         using HttpResponseMessage response = await GetFollowingGetRedirectsAsync(client, "/home");

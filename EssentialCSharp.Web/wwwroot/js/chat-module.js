@@ -24,8 +24,7 @@ function getTraceHeaders() {
     return headers;
 }
 
-// The server rejects contextual search for backends that do not support it (e.g. local Ollama),
-// so only request it when the layout says the selected backend can perform it.
+// The server rejects contextual search for backends without support (e.g. local Ollama).
 const chatSupportsContextualSearch = window.CHAT_SUPPORTS_CONTEXTUAL_SEARCH !== false;
 
 // hCaptcha integration — invisible widget renders once and is reused across messages.

@@ -60,8 +60,7 @@ public partial class Program
             logging.IncludeScopes = true;
         });
 
-        // Health probe paths excluded from tracing unconditionally — applies to both
-        // manual instrumentation and Azure Monitor's auto-instrumentation.
+        // Probe and /version polling stay out of traces, for both manual and Azure Monitor instrumentation.
         builder.Services.Configure<AspNetCoreTraceInstrumentationOptions>(options =>
         {
             options.Filter = ctx =>
@@ -559,7 +558,7 @@ public partial class Program
             Predicate = r => r.Tags.Contains("live")
         }).DisableRateLimiting();
 
-        // Machine-readable build identity for deployment checks (not linked from or shown in the UI).
+        // Build identity for deployment checks.
         app.MapMethods("/version", [HttpMethods.Get, HttpMethods.Head], (HttpResponse response) =>
         {
             response.Headers.CacheControl = "no-store";

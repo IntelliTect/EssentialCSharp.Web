@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # Waits until a deployed site reports the expected commit from GET /version.
 #
-# `az containerapp update` returns before traffic moves to the new revision, so smoke tests that start
-# immediately can hit the old build. This polls the public URL until it answers with the expected commit
-# on several consecutive requests (requests can land on different replicas while traffic shifts).
+# `az containerapp update` returns before traffic moves, so smoke tests could hit the old build. Requires
+# several consecutive matches because requests can land on different replicas while traffic shifts.
 #
 # Usage: wait-for-deployed-commit.sh <base-url> <expected-commit> [timeout-seconds] [required-consecutive]
 set -euo pipefail
@@ -34,8 +33,7 @@ last_reported=""
 echo "Waiting up to ${timeout_seconds}s for ${base_url}/version to report ${expected_commit} (${required_consecutive} consecutive times)..."
 
 while (( $(date +%s) < deadline )); do
-  # --show-error keeps curl's reason (DNS, TLS, HTTP status) for the log; a non-JSON body (e.g. a redirect
-  # from a build that predates /version) leaves commit empty.
+  # --show-error keeps curl's reason for the log; a non-JSON body (a build predating /version) leaves commit empty.
   curl_error=""
   if ! body="$(curl --silent --show-error --fail --max-time 10 --header 'Cache-Control: no-cache' "${base_url}/version" 2>"${curl_error_file}")"; then
     body=""
