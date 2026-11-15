@@ -187,6 +187,8 @@ dotnet user-secrets set "AuthMessageSender:SendFromName" "Essential C# Team"
 dotnet user-secrets set "AuthMessageSender:SendFromEmail" "no-reply@essentialcsharp.com"
 dotnet user-secrets set "AuthMessageSender:SecretKey" "your-mailjet-secret"
 dotnet user-secrets set "AuthMessageSender:APIKey" "your-mailjet-api-key"
+# Optional: Mailjet validates but does not deliver emails (default false; keep off when deployed)
+dotnet user-secrets set "AuthMessageSender:SandboxMode" "true"
 
 # OAuth providers
 dotnet user-secrets set "Authentication:Microsoft:ClientSecret" "microsoft-oauth-secret"
