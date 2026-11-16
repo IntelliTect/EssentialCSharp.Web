@@ -106,6 +106,12 @@ AuthMessageSender:SecretKey = <mailjet-secret-key>
 AuthMessageSender:APIKey = <mailjet-api-key>
 ```
 
+`APIKey`, `SecretKey` and `SendFromEmail` (a bare address such as `no-reply@email.com`) are validated at startup; the app refuses to start outside Development if any is missing or `SendFromEmail` is malformed. `SendFromName` is optional.
+
+Optionally, set `AuthMessageSender:SandboxMode = true` to exercise the real Mailjet path without delivering email: Mailjet validates each request but does not send it. It defaults to `false`; leave it off in deployed environments. Mailjet is only registered outside Development, so Development never sends email regardless of this setting.
+
+Each Mailjet request has a 10 second timeout, and the Mailjet client deliberately does not retry: a retried send POST can deliver the same email more than once, so a failed or timed-out send is logged and not repeated.
+
 ### Social Login
 
 ```

@@ -13,7 +13,6 @@ using EssentialCSharp.Web.Middleware;
 using EssentialCSharp.Web.Services;
 using EssentialCSharp.Web.Services.Referrals;
 using EssentialCSharp.Web.Tools;
-using Mailjet.Client;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -124,7 +123,7 @@ public partial class Program
             otel.UseOtlpExporter();
 
         // HttpClient defaults — standard retry/circuit breaker for all named clients.
-        builder.Services.ConfigureHttpClientDefaults(http => http.AddStandardResilienceHandler());
+        builder.Services.AddGlobalHttpClientDefaults();
 
         builder.Services.AddHttpClient("HaveIBeenPwned", c =>
         {
@@ -255,11 +254,7 @@ public partial class Program
             options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
         });
 
-        if (!builder.Environment.IsDevelopment())
-        {
-            builder.Services.AddTransient<IEmailSender, EmailSender>();
-        }
-        builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration.GetSection(AuthMessageSenderOptions.AuthMessageSender));
+        builder.Services.AddMailjetEmailSender(builder.Configuration.GetSection(AuthMessageSenderOptions.AuthMessageSender), builder.Environment);
         builder.Services.Configure<SiteSettings>(builder.Configuration.GetSection(SiteSettings.SectionName));
         builder.Services.Configure<ContentRateLimitOptions>(builder.Configuration.GetSection(ContentRateLimitOptions.SectionName));
 
@@ -407,17 +402,6 @@ public partial class Program
                     context.HttpContext.Connection.RemoteIpAddress);
             };
         });
-
-        if (!builder.Environment.IsDevelopment())
-        {
-            builder.Services.AddHttpClient<IMailjetClient, MailjetClient>(client =>
-            {
-                //set BaseAddress, MediaType, UserAgent
-                client.SetDefaultSettings();
-
-                client.UseBasicAuthentication(configuration["AuthMessageSender:APIKey"], configuration["AuthMessageSender:SecretKey"]);
-            });
-        }
 
         if (!builder.Environment.IsDevelopment())
         {
