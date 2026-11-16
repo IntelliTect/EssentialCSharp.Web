@@ -23,6 +23,10 @@ internal static partial class HtmlToTextConverter
 
     private const int MatchTimeoutMilliseconds = 500;
 
+    // Private-use characters that bracket an anchor's index while the rest of the markup is processed.
+    private const string PlaceholderStart = "";
+    private const string PlaceholderEnd = "";
+
     /// <summary>Converts <paramref name="html"/> to text, or returns an empty string when it cannot be converted safely.</summary>
     public static string Convert(string? html) => TryConvert(html, out string text) ? text : string.Empty;
 
@@ -45,11 +49,23 @@ internal static partial class HtmlToTextConverter
 
         try
         {
-            string converted = NonContentElementRegex().Replace(html, "");
-            converted = AnchorRegex().Replace(converted, ReplaceAnchor);
+            // Anchors are converted to their final text up front, but only a placeholder goes through the remaining
+            // passes. That way entities are decoded exactly once (a label such as "&amp;lt;b&amp;gt;" stays the literal
+            // text "&lt;b&gt;") and finished anchor text is never tag-stripped or decoded again.
+            // The placeholder characters come from the private-use area, so they are removed from the input first.
+            List<string> anchors = [];
+            string converted = NonContentElementRegex().Replace(
+                html.Replace(PlaceholderStart, string.Empty).Replace(PlaceholderEnd, string.Empty), "");
+            converted = AnchorRegex().Replace(converted, match =>
+            {
+                anchors.Add(BuildAnchorText(match));
+                return $"{PlaceholderStart}{anchors.Count - 1}{PlaceholderEnd}";
+            });
             converted = LineBreakTagRegex().Replace(converted, "\n");
             converted = TagRegex().Replace(converted, "");
             converted = WebUtility.HtmlDecode(converted);
+            converted = PlaceholderRegex().Replace(converted, match =>
+                int.TryParse(match.Groups["index"].Value, out int index) && index < anchors.Count ? anchors[index] : string.Empty);
             text = NormalizeWhitespace(converted);
             return true;
         }
@@ -59,7 +75,8 @@ internal static partial class HtmlToTextConverter
         }
     }
 
-    private static string ReplaceAnchor(Match match)
+    /// <summary>Builds the final plain text ("label (url)") for one anchor. The label and href are entity-decoded here, once.</summary>
+    private static string BuildAnchorText(Match match)
     {
         string url = ExtractSafeUrl(match.Groups["attrs"].Value);
         string label = NormalizeInline(WebUtility.HtmlDecode(TagRegex().Replace(match.Groups["inner"].Value, "")));
@@ -138,6 +155,9 @@ internal static partial class HtmlToTextConverter
     // letter or digit follows the anchor, so the emitted "(url)" can be separated from it.
     [GeneratedRegex(@"<a\b(?<attrs>(?:[^>""']|""[^""]*""|'[^']*')*)>(?<inner>(?:(?!<a\b).)*?)(?:</a\s*>|(?=<a\b)|$)(?<next>(?=[<\p{L}\p{N}]))?", RegexOptions.IgnoreCase | RegexOptions.Singleline, MatchTimeoutMilliseconds)]
     private static partial Regex AnchorRegex();
+
+    [GeneratedRegex("(?<index>[0-9]+)", RegexOptions.None, MatchTimeoutMilliseconds)]
+    private static partial Regex PlaceholderRegex();
 
     [GeneratedRegex(@"\bhref\s*=\s*(?:""(?<double>[^""]*)""|'(?<single>[^']*)'|(?<bare>[^\s""'>]+))", RegexOptions.IgnoreCase, MatchTimeoutMilliseconds)]
     private static partial Regex HrefRegex();
