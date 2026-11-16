@@ -45,8 +45,8 @@ public static class IServiceCollectionExtensions
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<AuthMessageSenderOptions>, AuthMessageSenderOptionsValidator>());
         services.AddTransient<IEmailSender, EmailSender>();
 
-        // RemoveAllResilienceHandlers is an experimental API (EXTEXP0001); MailjetEmailSenderRegistrationTests
-        // (HttpClient_DoesNotRetryAFailedSend) guards its behavior when the resilience package is bumped.
+        // RemoveAllResilienceHandlers is an experimental API (EXTEXP0001); MailjetEmailSenderPipelineTests
+        // (SendEmailAsync_WhenMailjetReturnsServerError_...) guards its behavior when the resilience package is bumped.
 #pragma warning disable EXTEXP0001
         services.AddHttpClient<IMailjetClient, MailjetClient>((serviceProvider, client) =>
         {
