@@ -18,6 +18,20 @@ public class DeployedUserJourneyTests : PageTest
     // Otherwise the consent banner covers the chat button.
     private const string ConsentCookieValue = "%7B%22analytics_storage%22%3A%22granted%22%2C%22_version%22%3A%223%22%7D";
 
+    // TUnit stamps the test's W3C trace id on requests to these origins, so it becomes the server-side operation_Id.
+    // Evaluated per test, so discovery and skipped runs never need E2E_BASE_URL.
+    public override IReadOnlyList<string>? TraceContextOrigins =>
+        [DeployedSite.RequiredBaseUrl.GetLeftPart(UriPartial.Authority)];
+
+    [After(Test)]
+    public void ReportTraceId(TestContext context)
+    {
+        if (context.Activity is { } activity)
+        {
+            context.Output.WriteLine($"Trace id {activity.TraceId}: look up operation_Id {activity.TraceId} in the dev Application Insights.");
+        }
+    }
+
     [Before(Test)]
     public async Task AcceptCookieConsent()
     {
