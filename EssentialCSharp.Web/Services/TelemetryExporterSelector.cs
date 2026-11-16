@@ -1,28 +1,21 @@
 namespace EssentialCSharp.Web.Services;
 
-public enum TelemetryExporter
-{
-    None,
-    AzureMonitor,
-    Otlp,
-}
+public readonly record struct TelemetryExporters(bool AzureMonitor, bool Otlp);
 
 public static class TelemetryExporterSelector
 {
     /// <summary>
-    /// An ambient OTLP endpoint only displaces Azure Monitor in Development (Aspire), so a deployed
-    /// environment that injects one cannot silently disable Application Insights.
+    /// Deployed environments export to both: Application Insights and the OTLP endpoint that Azure Container Apps'
+    /// Aspire Dashboard injects. Locally (Development) an OTLP endpoint means Aspire, so a developer's App Insights
+    /// connection string doesn't send their local telemetry to Azure.
     /// </summary>
-    public static TelemetryExporter Select(string? appInsightsConnectionString, string? otlpEndpoint, bool isDevelopment)
+    public static TelemetryExporters Select(string? appInsightsConnectionString, string? otlpEndpoint, bool isDevelopment)
     {
         bool hasAppInsights = !string.IsNullOrWhiteSpace(appInsightsConnectionString);
         bool hasOtlp = !string.IsNullOrWhiteSpace(otlpEndpoint);
 
-        if (hasAppInsights && !(hasOtlp && isDevelopment))
-        {
-            return TelemetryExporter.AzureMonitor;
-        }
-
-        return hasOtlp ? TelemetryExporter.Otlp : TelemetryExporter.None;
+        return new TelemetryExporters(
+            AzureMonitor: hasAppInsights && !(hasOtlp && isDevelopment),
+            Otlp: hasOtlp);
     }
 }

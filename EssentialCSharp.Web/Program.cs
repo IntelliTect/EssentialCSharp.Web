@@ -30,6 +30,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using OpenTelemetry;
 using OpenTelemetry.Instrumentation.AspNetCore;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
@@ -45,13 +46,11 @@ public partial class Program
         builder.Services.AddHealthChecks()
             .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
 
-        // Locally, Aspire's OTLP endpoint wins so traces reach the dashboard even with an App Insights connection string set.
-        TelemetryExporter exporter = TelemetryExporterSelector.Select(
+        TelemetryExporters exporters = TelemetryExporterSelector.Select(
             builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"],
             builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"],
             builder.Environment.IsDevelopment());
-        bool useOtlp = exporter == TelemetryExporter.Otlp;
-        bool useAzureMonitor = exporter == TelemetryExporter.AzureMonitor;
+        bool useAzureMonitor = exporters.AzureMonitor;
         bool profilerSupportedPlatform = OperatingSystem.IsWindows() || OperatingSystem.IsLinux();
         bool profilerSkippedUnsupportedPlatform = false;
 
@@ -59,6 +58,10 @@ public partial class Program
         {
             logging.IncludeFormattedMessage = true;
             logging.IncludeScopes = true;
+            if (exporters.Otlp)
+            {
+                logging.AddOtlpExporter();
+            }
         });
 
         // Probe and /version polling stay out of traces, for both manual and Azure Monitor instrumentation.
@@ -98,6 +101,10 @@ public partial class Program
                 }
                 // Runtime metrics are not included in the Azure Monitor distro.
                 metrics.AddRuntimeInstrumentation();
+                if (exporters.Otlp)
+                {
+                    metrics.AddOtlpExporter();
+                }
             })
             .WithTracing(tracing =>
             {
@@ -108,6 +115,10 @@ public partial class Program
                     tracing.AddAspNetCoreInstrumentation()
                            .AddHttpClientInstrumentation()
                            .AddSqlClientInstrumentation();
+                }
+                if (exporters.Otlp)
+                {
+                    tracing.AddOtlpExporter();
                 }
             });
 
@@ -121,8 +132,6 @@ public partial class Program
             else
                 profilerSkippedUnsupportedPlatform = true;
         }
-        else if (useOtlp)
-            otel.UseOtlpExporter();
 
         // HttpClient defaults — standard retry/circuit breaker for all named clients.
         builder.Services.AddGlobalHttpClientDefaults();
