@@ -21,7 +21,7 @@
     <PackageVersion Include="Aspire.Hosting.Browsers" Version="13.6.5-preview.1.26559.7" />
     <PackageVersion Include="Aspire.Hosting.EntityFrameworkCore" Version="13.6.5-preview.1.26559.7" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Ollama" Version="13.6.1" />
-    <PackageVersion Include="TUnit.Aspire" Version="1.74.0" />
+    <PackageVersion Include="TUnit.Aspire" Version="1.77.0" />
     <PackageVersion Include="Azure.Extensions.AspNetCore.DataProtection.Keys" Version="1.6.5" />
     <PackageVersion Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.15" />
     <PackageVersion Include="AspNet.Security.OAuth.GitHub" Version="10.0.0" />
@@ -30,9 +30,9 @@
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.6.0" />
     <!-- TODO: update to stable release when Azure.Monitor.OpenTelemetry.Profiler reaches GA -->
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.Profiler" Version="1.0.1-beta.7" />
-    <PackageVersion Include="TUnit" Version="1.74.0" />
-    <PackageVersion Include="TUnit.AspNetCore" Version="1.74.0" />
-    <PackageVersion Include="TUnit.Playwright" Version="1.74.0" />
+    <PackageVersion Include="TUnit" Version="1.77.0" />
+    <PackageVersion Include="TUnit.AspNetCore" Version="1.77.0" />
+    <PackageVersion Include="TUnit.Playwright" Version="1.77.0" />
     <PackageVersion Include="EssentialCSharp.Shared.Models" Version="$(ToolingPackagesVersion)" />
     <PackageVersion Include="HtmlAgilityPack" Version="1.13.1" />
     <PackageVersion Include="IntelliTect.Multitool" Version="2.1.0" />

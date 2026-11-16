@@ -122,6 +122,15 @@ jobs:
       - name: Run .NET Tests
         run: dotnet test --no-build --configuration Release
 
+      - name: Upload Playwright failure captures
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-captures-${{ github.run_attempt }}
+          path: dev/EssentialCSharp.Web.AppHost.Tests/bin/Release/net10.0/playwright-artifacts
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
         id: buildx
@@ -254,6 +263,15 @@ jobs:
       - name: Run .NET tests
         if: ${{ !matrix.collect_coverage }}
         run: dotnet test --no-build --configuration Release
+
+      - name: Upload Playwright failure captures
+        if: ${{ failure() && matrix.collect_coverage }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-captures-${{ github.run_attempt }}
+          path: dev/EssentialCSharp.Web.AppHost.Tests/bin/Release/net10.0/playwright-artifacts
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Convert TRX to VS Playlist
         if: ${{ failure() && matrix.collect_coverage }}
@@ -391,13 +409,21 @@ jobs:
         with:
           global-json-file: global.json
 
+      - name: Build smoke tests
+        run: dotnet build EssentialCSharp.Web.E2ETests/EssentialCSharp.Web.E2ETests.csproj --configuration Release
+
+      - name: Install Playwright Chromium for smoke tests
+        run: pwsh EssentialCSharp.Web.E2ETests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
       - name: Smoke test development
         env:
           E2E_BASE_URL: ${{ vars.SITE_BASE_URL || 'https://dev.essentialcsharp.com' }}
           E2E_EXPECTED_COMMIT: ${{ github.sha }}
+          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
         run: >-
           dotnet test --project EssentialCSharp.Web.E2ETests/EssentialCSharp.Web.E2ETests.csproj
-          --configuration Release
+          --configuration Release --no-build
           -- --treenode-filter "/*/*/*/*[Category=Deployed]"
           --report-trx --results-directory "${{ runner.temp }}/smoke-results"
 
@@ -406,7 +432,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: smoke-test-results
-          path: ${{ runner.temp }}/smoke-results
+          path: |
+            ${{ runner.temp }}/smoke-results
+            EssentialCSharp.Web.E2ETests/bin/Release/net10.0/playwright-artifacts
           if-no-files-found: ignore
 
       - name: Logout of Azure CLI

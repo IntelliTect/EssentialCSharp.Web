@@ -9,6 +9,7 @@ namespace EssentialCSharp.Web.AppHost.Tests.Journeys;
 [Category("Docker")]
 [Category("Journey")]
 [RequiresLinuxContainers]
+[CaptureOnFailure]
 [ClassDataSource<JourneyFixture>(Shared = SharedType.PerTestSession)]
 public class ChatJourneyTests(JourneyFixture fixture) : PageTest
 {
