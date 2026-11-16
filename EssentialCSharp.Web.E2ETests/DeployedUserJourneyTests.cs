@@ -8,6 +8,8 @@ namespace EssentialCSharp.Web.E2ETests;
 // PR journeys fake: the deployed login, the hCaptcha script and CSP, and the configured chat backend.
 [Category("Deployed")]
 [RequiresDeployedSite]
+// No trace: it records typed values, including the test user's password, and the artifacts are public.
+[CaptureOnFailure(Trace = false)]
 public class DeployedUserJourneyTests : PageTest
 {
     public const string EmailVariable = "E2E_USER_EMAIL";
