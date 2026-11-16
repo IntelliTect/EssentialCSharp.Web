@@ -45,11 +45,13 @@ public partial class Program
         builder.Services.AddHealthChecks()
             .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
 
-        // Prefer Aspire's OTLP endpoint when present; otherwise export to Azure Monitor.
-        // This keeps local traces in the dashboard even when a developer has an App Insights connection string configured.
-        string? appInsightsConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
-        bool useOtlp = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
-        bool useAzureMonitor = !useOtlp && !string.IsNullOrWhiteSpace(appInsightsConnectionString);
+        // Locally, Aspire's OTLP endpoint wins so traces reach the dashboard even with an App Insights connection string set.
+        TelemetryExporter exporter = TelemetryExporterSelector.Select(
+            builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"],
+            builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"],
+            builder.Environment.IsDevelopment());
+        bool useOtlp = exporter == TelemetryExporter.Otlp;
+        bool useAzureMonitor = exporter == TelemetryExporter.AzureMonitor;
         bool profilerSupportedPlatform = OperatingSystem.IsWindows() || OperatingSystem.IsLinux();
         bool profilerSkippedUnsupportedPlatform = false;
 
