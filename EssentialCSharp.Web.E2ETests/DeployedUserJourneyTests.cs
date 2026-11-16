@@ -61,10 +61,16 @@ public class DeployedUserJourneyTests : PageTest
         await Page.Locator("#Input_Password").FillAsync(password);
         await Page.Locator("#login-submit").ClickAsync();
 
-        // Wait for either outcome so a rejected login fails fast with the page's reason (bad password, captcha, lockout).
+        // Wait for any outcome so a rejected login fails fast with the reason. Each wrong password counts toward
+        // lockout, so a stale E2E_USER_PASSWORD locks the account after a few runs unless lockout is off for it.
         ILocator loggedIn = Page.Locator("#logout");
         ILocator loginErrors = Page.Locator(".validation-summary-errors");
-        await Expect(loggedIn.Or(loginErrors)).ToBeVisibleAsync(new() { Timeout = 30_000 });
+        ILocator lockedOut = Page.GetByRole(AriaRole.Heading, new() { Name = "Locked out" });
+        await Expect(loggedIn.Or(loginErrors).Or(lockedOut)).ToBeVisibleAsync(new() { Timeout = 30_000 });
+        if (await lockedOut.IsVisibleAsync())
+        {
+            throw new InvalidOperationException($"The test user is locked out. Check {PasswordVariable}, and disable lockout for this user.");
+        }
         if (await loginErrors.IsVisibleAsync())
         {
             throw new InvalidOperationException($"Login was rejected: {await loginErrors.InnerTextAsync()}");
