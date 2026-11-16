@@ -27,9 +27,6 @@ internal static partial class HtmlToTextConverter
     private const string PlaceholderStart = "";
     private const string PlaceholderEnd = "";
 
-    /// <summary>Converts <paramref name="html"/> to text, or returns an empty string when it cannot be converted safely.</summary>
-    public static string Convert(string? html) => TryConvert(html, out string text) ? text : string.Empty;
-
     /// <summary>
     /// Converts <paramref name="html"/> to plain text. Returns false (and an empty string) when the input is too long
     /// or conversion exceeded its time limit.

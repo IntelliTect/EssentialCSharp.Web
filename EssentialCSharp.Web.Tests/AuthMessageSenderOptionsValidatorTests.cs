@@ -120,7 +120,13 @@ public class AuthMessageSenderOptionsValidatorTests
     {
         IReadOnlyList<string> failures = await FailuresAsync(Validate(new AuthMessageSenderOptions()));
 
-        await Assert.That(failures.Count).IsEqualTo(3);
+        string all = string.Join('\n', failures);
+        using (Assert.Multiple())
+        {
+            await Assert.That(all).Contains("AuthMessageSender:APIKey");
+            await Assert.That(all).Contains("AuthMessageSender:SecretKey");
+            await Assert.That(all).Contains("AuthMessageSender:SendFromEmail");
+        }
     }
 
     [Test]

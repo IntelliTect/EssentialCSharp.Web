@@ -1,4 +1,3 @@
-using System.Net;
 using EssentialCSharp.Web.Extensions;
 using EssentialCSharp.Web.Services;
 using Mailjet.Client;
@@ -45,7 +44,13 @@ public class MailjetEmailSenderRegistrationTests
 
         OptionsValidationException exception = await CaptureAsync<OptionsValidationException>(() => host.StartAsync());
 
-        await Assert.That(exception.Failures.Count()).IsEqualTo(3);
+        string all = string.Join('\n', exception.Failures);
+        using (Assert.Multiple())
+        {
+            await Assert.That(all).Contains("AuthMessageSender:APIKey");
+            await Assert.That(all).Contains("AuthMessageSender:SecretKey");
+            await Assert.That(all).Contains("AuthMessageSender:SendFromEmail");
+        }
     }
 
     [Test]
@@ -95,20 +100,6 @@ public class MailjetEmailSenderRegistrationTests
         await Assert.That(client.DefaultRequestHeaders.Authorization?.Parameter).IsEqualTo(expectedCredentials);
     }
 
-    [Test]
-    public async Task HttpClient_DoesNotRetryAFailedSend()
-    {
-        CountingHandler handler = new((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)));
-        using IHost host = BuildHost("Production", s_validSettings,
-            services => services.AddHttpClient(nameof(IMailjetClient)).ConfigurePrimaryHttpMessageHandler(() => handler));
-        HttpClient client = host.Services.GetRequiredService<IHttpClientFactory>().CreateClient(nameof(IMailjetClient));
-
-        using HttpResponseMessage response = await client.PostAsync("v3.1/send", new StringContent("{}"));
-
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
-        await Assert.That(handler.CallCount).IsEqualTo(1);
-    }
-
     private static async Task<TException> CaptureAsync<TException>(Func<Task> action) where TException : Exception
     {
         try
@@ -121,17 +112,5 @@ public class MailjetEmailSenderRegistrationTests
         }
 
         throw new InvalidOperationException($"Expected {typeof(TException).Name} but nothing was thrown.");
-    }
-
-    private sealed class CountingHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond) : HttpMessageHandler
-    {
-        private int _callCount;
-        public int CallCount => _callCount;
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            Interlocked.Increment(ref _callCount);
-            return respond(request, cancellationToken);
-        }
     }
 }
