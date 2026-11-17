@@ -386,6 +386,18 @@ jobs:
 
       # Smoke tests stay in this job so it holds the deploy-development concurrency group (no image swap mid-test);
       # deploy-production needs this job, so a failure blocks promotion.
+      # Prep runs before the revision wait so it overlaps with the new revision starting up.
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Build smoke tests
+        run: dotnet build EssentialCSharp.Web.E2ETests/EssentialCSharp.Web.E2ETests.csproj --configuration Release
+
+      - name: Install Playwright Chromium for smoke tests
+        run: pwsh EssentialCSharp.Web.E2ETests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
       - name: Wait for the new revision to serve this commit
         id: wait-for-revision
         env:
@@ -403,17 +415,6 @@ jobs:
             --resource-group "$RESOURCEGROUP" \
             --query "[].{name:name, active:properties.active, traffic:properties.trafficWeight, health:properties.healthState, running:properties.runningState, image:properties.template.containers[0].image}" \
             --output table
-
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v6
-        with:
-          global-json-file: global.json
-
-      - name: Build smoke tests
-        run: dotnet build EssentialCSharp.Web.E2ETests/EssentialCSharp.Web.E2ETests.csproj --configuration Release
-
-      - name: Install Playwright Chromium for smoke tests
-        run: pwsh EssentialCSharp.Web.E2ETests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
 
       - name: Smoke test development
         env:
