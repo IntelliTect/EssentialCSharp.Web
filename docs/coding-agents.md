@@ -14,6 +14,13 @@ The same skill content is stored under `.agents/skills/` and `.claude/skills/`. 
 
 The standalone `run-tests` skill is intentionally not vendored: it refers to `filter-syntax`, `platform-detection`, and other testing skills. Use the complete optional testing plugin rather than copying individual interdependent skills or assuming they are available to every contributor.
 
+### GitHub-hosted Copilot setup
+
+`.github/workflows/copilot-setup-steps.yml` prepares the cloud agent environment and is also
+used by Copilot code review while no separate `copilot-code-review.yml` workflow exists.
+After building, setup installs Playwright Chromium and its Linux dependencies using the
+AppHost test project's generated script before running the .NET suite, including browser journeys.
+
 ### Aspire agent setup
 
 The Aspire bundle was generated with Aspire CLI 13.6.4 using `aspire agent init`, not hand-written.

@@ -75,5 +75,8 @@ jobs:
       - name: Build with dotnet
         run: dotnet build -p:ContinuousIntegrationBuild=True -p:ReleaseDateAttribute=True -p:SkipFrontendBuild=true --configuration Release --no-restore
 
+      - name: Install Playwright Chromium for journey tests
+        run: pwsh dev/EssentialCSharp.Web.AppHost.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
       - name: Run .NET Tests
         run: dotnet test --no-build --configuration Release
