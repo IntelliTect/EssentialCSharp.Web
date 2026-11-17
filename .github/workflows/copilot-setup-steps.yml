@@ -70,9 +70,12 @@ jobs:
         run: |
           [xml] $appHost = Get-Content dev/EssentialCSharp.Web.AppHost/EssentialCSharp.Web.AppHost.csproj
           $aspireVersion = $appHost.Project.Sdk.Version
-          dnx --yes "Aspire.Cli@$aspireVersion" -- setup --install-path "$HOME/.aspire"
+          $installer = "$env:RUNNER_TEMP/aspire-install.sh"
+          Invoke-WebRequest https://aspire.dev/install.sh -OutFile $installer
+          bash $installer --version $aspireVersion --install-path "$HOME/.aspire/bin" --skip-path
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           "$HOME/.aspire/bin" >> $env:GITHUB_PATH
+          & "$HOME/.aspire/bin/aspire" --version
 
       - name: Install npm dependencies
         working-directory: EssentialCSharp.Web
