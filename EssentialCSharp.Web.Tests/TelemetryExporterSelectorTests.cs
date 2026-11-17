@@ -1,4 +1,5 @@
 using EssentialCSharp.Web.Services;
+using Microsoft.OpenTelemetry;
 
 namespace EssentialCSharp.Web.Tests;
 
@@ -8,17 +9,19 @@ public class TelemetryExporterSelectorTests
     private const string OtlpEndpoint = "http://localhost:4317";
 
     [Test]
-    [Arguments(ConnectionString, null, false, true, false)]
-    [Arguments(ConnectionString, null, true, true, false)]
-    [Arguments(ConnectionString, OtlpEndpoint, false, true, true)] // Deployed with the Aspire Dashboard component.
-    [Arguments(ConnectionString, OtlpEndpoint, true, false, true)] // Local Aspire run.
-    [Arguments(null, OtlpEndpoint, false, false, true)]
-    [Arguments("", OtlpEndpoint, true, false, true)]
-    [Arguments(null, null, false, false, false)]
-    [Arguments(" ", " ", true, false, false)]
-    public async Task Select_ChoosesExporters(string? connectionString, string? otlpEndpoint, bool isDevelopment, bool azureMonitor, bool otlp)
+    [Arguments(ConnectionString, null, false, ExportTarget.AzureMonitor)]
+    [Arguments(ConnectionString, null, true, ExportTarget.AzureMonitor)]
+    [Arguments(ConnectionString, OtlpEndpoint, false, ExportTarget.AzureMonitor | ExportTarget.Otlp)]
+    [Arguments(ConnectionString, OtlpEndpoint, true, ExportTarget.Otlp)]
+    [Arguments(null, OtlpEndpoint, false, ExportTarget.Otlp)]
+    [Arguments("", OtlpEndpoint, true, ExportTarget.Otlp)]
+    [Arguments(" ", OtlpEndpoint, true, ExportTarget.Otlp)]
+    [Arguments(ConnectionString, " ", true, ExportTarget.AzureMonitor)]
+    [Arguments(null, null, false, ExportTarget.None)]
+    [Arguments(" ", " ", true, ExportTarget.None)]
+    public async Task Select_ChoosesExporters(string? connectionString, string? otlpEndpoint, bool isDevelopment, ExportTarget expected)
     {
         await Assert.That(TelemetryExporterSelector.Select(connectionString, otlpEndpoint, isDevelopment))
-            .IsEqualTo(new TelemetryExporters(azureMonitor, otlp));
+            .IsEqualTo(expected);
     }
 }

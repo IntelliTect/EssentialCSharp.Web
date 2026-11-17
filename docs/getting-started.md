@@ -83,15 +83,51 @@ TryDotNet:Origin = https://<trydotnet-origin>
 
 ### Telemetry
 
-Use one of these — not both simultaneously (they conflict).
+The app exports traces, metrics, and logs according to the configured destinations:
 
 ```
 # Azure Monitor (Application Insights):
 APPLICATIONINSIGHTS_CONNECTION_STRING = InstrumentationKey=...
 
-# Local Aspire dashboard (OTLP):
+# Aspire dashboard or another OTLP collector:
 OTEL_EXPORTER_OTLP_ENDPOINT = http://localhost:4317
 ```
+
+| Configuration | Destinations |
+| --- | --- |
+| Development with an OTLP endpoint, even with an App Insights connection string | OTLP/dashboard only |
+| Non-Development with both settings | Azure Monitor and OTLP |
+| App Insights connection string without OTLP, including Development | Azure Monitor only |
+| OTLP endpoint without an App Insights connection string | OTLP only |
+| Neither setting | No export |
+
+Azure Monitor export uses `Microsoft.OpenTelemetry`. OTLP-only runs use the standard
+OpenTelemetry SDK with a single cross-signal exporter. This is intentional: the Microsoft
+distro initializes Azure SDK statistics even in OTLP-only mode. Avoiding its initialization
+keeps local Aspire telemetry dashboard-only, without changing process-wide environment
+variables. Aspire supplies the OTLP endpoint, resource identity, and export intervals;
+these continue to use the standard OpenTelemetry configuration.
+
+Both paths retain ASP.NET Core, HttpClient, SQL-client tracing, application spans, formatted
+logs/scopes, and explicit runtime metrics. Traces exclude `/health`, `/alive`, and `/version`
+path segments, and authenticated responses retain the `enduser.id` tag. Newly automatic
+AI/agent instrumentation from the Microsoft distro is disabled to keep the migration's
+collection scope unchanged.
+
+On the Azure path, Live Metrics remains enabled and rate-limited sampling retains the
+existing default of five traces per second. The beta Azure Monitor profiler is registered
+separately on Windows and Linux only when Azure export is enabled; it uses the distro's
+shared Azure Monitor exporter options. Other platforms log a warning and continue without
+the profiler. Local Aspire initializes neither Live Metrics nor the profiler.
+
+Microsoft documents dual export, but **does not officially support the OTLP exporter or
+downstream components/experiences**. See [Microsoft's configuration guidance](https://learn.microsoft.com/azure/azure-monitor/app/opentelemetry-configuration?tabs=aspnetcore#enable-the-otlp-exporter)
+and [Aspire's telemetry guidance](https://aspire.dev/fundamentals/telemetry/).
+
+After deploying to Dev, verify requests, dependencies, exceptions, Live Metrics, and actual
+profiler recordings/correlation in Application Insights, plus all three signals in the
+environment's Aspire Dashboard. Local registration and export tests do not establish cloud
+ingestion or deployed profiler compatibility; these remain deployment acceptance checks.
 
 ## Production / Staging Secrets
 

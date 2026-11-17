@@ -1,6 +1,6 @@
-namespace EssentialCSharp.Web.Services;
+using Microsoft.OpenTelemetry;
 
-public readonly record struct TelemetryExporters(bool AzureMonitor, bool Otlp);
+namespace EssentialCSharp.Web.Services;
 
 public static class TelemetryExporterSelector
 {
@@ -9,13 +9,12 @@ public static class TelemetryExporterSelector
     /// Aspire Dashboard injects. Locally (Development) an OTLP endpoint means Aspire, so a developer's App Insights
     /// connection string doesn't send their local telemetry to Azure.
     /// </summary>
-    public static TelemetryExporters Select(string? appInsightsConnectionString, string? otlpEndpoint, bool isDevelopment)
+    public static ExportTarget Select(string? appInsightsConnectionString, string? otlpEndpoint, bool isDevelopment)
     {
         bool hasAppInsights = !string.IsNullOrWhiteSpace(appInsightsConnectionString);
         bool hasOtlp = !string.IsNullOrWhiteSpace(otlpEndpoint);
 
-        return new TelemetryExporters(
-            AzureMonitor: hasAppInsights && !(hasOtlp && isDevelopment),
-            Otlp: hasOtlp);
+        return (hasAppInsights && !(hasOtlp && isDevelopment) ? ExportTarget.AzureMonitor : ExportTarget.None)
+            | (hasOtlp ? ExportTarget.Otlp : ExportTarget.None);
     }
 }
