@@ -58,15 +58,14 @@ public class TelemetryRegistrationTests
         await Assert.That(profilerSkipped).IsEqualTo(azureMonitor && !profilerSupported);
         if (!azureMonitor)
         {
-            // Catch distro initialization itself, not just disabled Azure application exporters:
-            // OTLP-only distro initialization also starts process-wide Azure SDK statistics.
+            // Distro initialization starts Azure SDK statistics even without Azure application export.
             await Assert.That(builder.Services.Any(d =>
                 d.ServiceType.Assembly == typeof(MicrosoftOpenTelemetryOptions).Assembly
                 || d.ImplementationInstance?.GetType().Assembly == typeof(MicrosoftOpenTelemetryOptions).Assembly
                 || d.ImplementationType?.Assembly == typeof(MicrosoftOpenTelemetryOptions).Assembly)).IsFalse();
         }
 
-        // Resolve options only, without starting Azure providers or the profiler.
+        // Inspect options without starting Azure providers.
         using ServiceProvider services = builder.Services.BuildServiceProvider();
         OpenTelemetryLoggerOptions logging = services.GetRequiredService<IOptions<OpenTelemetryLoggerOptions>>().Value;
         await Assert.That(logging.IncludeFormattedMessage).IsTrue();

@@ -12,7 +12,7 @@ namespace EssentialCSharp.Web.Extensions;
 
 internal static class TelemetryExtensions
 {
-    /// <returns>Whether Azure export was enabled but profiler registration was skipped on an unsupported OS.</returns>
+    /// <returns>True when the selected Azure profiler is unsupported on this OS.</returns>
     internal static bool ConfigureApplicationTelemetry(this IHostApplicationBuilder builder)
     {
         string? connectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
@@ -57,7 +57,7 @@ internal static class TelemetryExtensions
             {
                 options.Exporters = exporters;
                 options.AzureMonitor.ConnectionString = connectionString;
-                // Preserve the existing instrumentation scope, rather than opting into new AI/agent telemetry.
+                // Avoid enabling additional AI/agent telemetry during migration.
                 options.Instrumentation.EnableOpenAIInstrumentation = false;
                 options.Instrumentation.EnableSemanticKernelInstrumentation = false;
                 options.Instrumentation.EnableAgentFrameworkInstrumentation = false;
@@ -66,7 +66,6 @@ internal static class TelemetryExtensions
 
             if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux())
             {
-                // The profiler reads the shared AzureMonitorExporterOptions configured by the distro.
                 otel.AddAzureMonitorProfiler();
                 return false;
             }
@@ -74,8 +73,7 @@ internal static class TelemetryExtensions
             return true;
         }
 
-        // The Microsoft distro initializes Azure SDK statistics even in OTLP-only mode.
-        // Keep local Aspire entirely on the standard SDK so it cannot initialize Azure export or profiling.
+        // The distro starts Azure SDK statistics even in OTLP-only mode; keep local Aspire on the standard SDK.
         otel.WithMetrics(metrics => metrics.AddAspNetCoreInstrumentation().AddHttpClientInstrumentation())
             .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
