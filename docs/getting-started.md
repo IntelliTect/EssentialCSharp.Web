@@ -83,15 +83,30 @@ TryDotNet:Origin = https://<trydotnet-origin>
 
 ### Telemetry
 
-Use one of these — not both simultaneously (they conflict).
+Configure either or both destinations:
 
 ```
 # Azure Monitor (Application Insights):
 APPLICATIONINSIGHTS_CONNECTION_STRING = InstrumentationKey=...
 
-# Local Aspire dashboard (OTLP):
+# Aspire dashboard or another OTLP collector:
 OTEL_EXPORTER_OTLP_ENDPOINT = http://localhost:4317
 ```
+
+| Configuration | Destinations |
+| --- | --- |
+| Development with an OTLP endpoint, even with an App Insights connection string | OTLP/dashboard only |
+| Non-Development with both settings | Azure Monitor and OTLP |
+| App Insights connection string without OTLP, including Development | Azure Monitor only |
+| OTLP endpoint without an App Insights connection string | OTLP only |
+| Neither setting | No export |
+
+Azure export uses `Microsoft.OpenTelemetry`, with Live Metrics and the beta profiler
+(Windows/Linux only). OTLP-only runs use the standard SDK to avoid the Microsoft distro's
+Azure SDK statistics and keep local Aspire dashboard-only.
+
+Microsoft **does not officially support the OTLP exporter or downstream experiences**;
+see [the configuration guidance](https://learn.microsoft.com/azure/azure-monitor/app/opentelemetry-configuration?tabs=aspnetcore#enable-the-otlp-exporter).
 
 ## Production / Staging Secrets
 

@@ -19,8 +19,6 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.RateLimiting;
-using Azure.Monitor.OpenTelemetry.AspNetCore;
-using Azure.Monitor.OpenTelemetry.Profiler;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -28,11 +26,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using OpenTelemetry;
-using OpenTelemetry.Instrumentation.AspNetCore;
-using OpenTelemetry.Logs;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Trace;
 
 namespace EssentialCSharp.Web;
 
@@ -46,92 +39,7 @@ public partial class Program
         builder.Services.AddHealthChecks()
             .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
 
-        TelemetryExporters exporters = TelemetryExporterSelector.Select(
-            builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"],
-            builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"],
-            builder.Environment.IsDevelopment());
-        bool useAzureMonitor = exporters.AzureMonitor;
-        bool profilerSupportedPlatform = OperatingSystem.IsWindows() || OperatingSystem.IsLinux();
-        bool profilerSkippedUnsupportedPlatform = false;
-
-        builder.Logging.AddOpenTelemetry(logging =>
-        {
-            logging.IncludeFormattedMessage = true;
-            logging.IncludeScopes = true;
-            if (exporters.Otlp)
-            {
-                logging.AddOtlpExporter();
-            }
-        });
-
-        // Probe and /version polling stay out of traces, for both manual and Azure Monitor instrumentation.
-        builder.Services.Configure<AspNetCoreTraceInstrumentationOptions>(options =>
-        {
-            options.Filter = ctx =>
-                !ctx.Request.Path.StartsWithSegments("/health")
-                && !ctx.Request.Path.StartsWithSegments("/alive")
-                && !ctx.Request.Path.StartsWithSegments("/version");
-            // EnrichWithHttpResponse fires after the authentication middleware has run,
-            // so HttpContext.User is populated and IsAuthenticated is reliable.
-            options.EnrichWithHttpResponse = (activity, response) =>
-            {
-                var user = response.HttpContext.User;
-                if (user?.Identity?.IsAuthenticated != true)
-                {
-                    return;
-                }
-
-                string? userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (!string.IsNullOrWhiteSpace(userId))
-                {
-                    activity.SetTag("enduser.id", userId);
-                }
-            };
-        });
-
-        var otel = builder.Services.AddOpenTelemetry()
-            .WithMetrics(metrics =>
-            {
-                // Azure Monitor auto-instruments ASP.NET Core + HttpClient metrics; only add
-                // them manually when using OTLP so we don't register duplicate meter listeners.
-                if (!useAzureMonitor)
-                {
-                    metrics.AddAspNetCoreInstrumentation()
-                           .AddHttpClientInstrumentation();
-                }
-                // Runtime metrics are not included in the Azure Monitor distro.
-                metrics.AddRuntimeInstrumentation();
-                if (exporters.Otlp)
-                {
-                    metrics.AddOtlpExporter();
-                }
-            })
-            .WithTracing(tracing =>
-            {
-                tracing.AddSource(builder.Environment.ApplicationName);
-                // Azure Monitor distro auto-instruments tracing; add manually only for OTLP path.
-                if (!useAzureMonitor)
-                {
-                    tracing.AddAspNetCoreInstrumentation()
-                           .AddHttpClientInstrumentation()
-                           .AddSqlClientInstrumentation();
-                }
-                if (exporters.Otlp)
-                {
-                    tracing.AddOtlpExporter();
-                }
-            });
-
-        if (useAzureMonitor)
-        {
-            // Azure Monitor export is supported cross-platform, but the profiler currently only
-            // supports Windows and Linux.
-            var azureMonitor = otel.UseAzureMonitor();
-            if (profilerSupportedPlatform)
-                azureMonitor.AddAzureMonitorProfiler();
-            else
-                profilerSkippedUnsupportedPlatform = true;
-        }
+        bool profilerSkippedUnsupportedPlatform = builder.ConfigureApplicationTelemetry();
 
         // HttpClient defaults — standard retry/circuit breaker for all named clients.
         builder.Services.AddGlobalHttpClientDefaults();
