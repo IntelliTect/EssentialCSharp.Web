@@ -64,6 +64,16 @@ jobs:
       - name: Restore with dotnet
         run: dotnet restore
 
+      - name: Install Aspire CLI bundle
+        timeout-minutes: 10
+        shell: pwsh
+        run: |
+          [xml] $appHost = Get-Content dev/EssentialCSharp.Web.AppHost/EssentialCSharp.Web.AppHost.csproj
+          $aspireVersion = $appHost.Project.Sdk.Version
+          dnx --yes "Aspire.Cli@$aspireVersion" -- setup --install-path "$HOME/.aspire"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "$HOME/.aspire/bin" >> $env:GITHUB_PATH
+
       - name: Install npm dependencies
         working-directory: EssentialCSharp.Web
         run: npm ci

@@ -18,6 +18,8 @@ The standalone `run-tests` skill is intentionally not vendored: it refers to `fi
 
 `.github/workflows/copilot-setup-steps.yml` prepares the cloud agent environment and is also
 used by Copilot code review while no separate `copilot-code-review.yml` workflow exists.
+Setup explicitly installs the Aspire CLI bundle matching the AppHost SDK before building,
+with a dedicated timeout and logs rather than relying on MSBuild's automatic bundle bootstrap.
 After building, setup installs Playwright Chromium and its Linux dependencies using the
 AppHost test project's generated script before running the .NET suite, including browser journeys.
 
