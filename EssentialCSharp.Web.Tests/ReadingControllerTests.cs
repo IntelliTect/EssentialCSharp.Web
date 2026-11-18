@@ -24,6 +24,11 @@ public class ReadingControllerTests : IntegrationTestBase
 {
     private const long BaselineWords = ReadingTestSupport.BaselineWords;
     private const long BaselineSeconds = ReadingTestSupport.BaselineSeconds;
+    private const double BaselineWpm = BaselineWords * 60.0 / BaselineSeconds;
+
+    // The clamp credits whole seconds, so the exact rounding is the policy's business (ReadingSpeedPolicyTests);
+    // here the requirement is only that a very slow interval is credited at the slow-threshold speed, give or take a second.
+    private const double ClampToleranceSeconds = 1;
 
     private const string LargePage = ReadingTestSupport.LargePage;
 
@@ -86,11 +91,11 @@ public class ReadingControllerTests : IntegrationTestBase
         string userId = await CreateUserWithBaselineProfileAsync();
         using HttpClient client = await CreateAuthenticatedClientAsync(userId);
 
-        // 50 words in 1800 s is far below the reader's 50 WPM threshold; at that speed 50 words take 60 s.
+        // 50 words in 1800 s is far below the reader's slow threshold (a quarter of their 200 WPM).
         using HttpResponseMessage response = await PostSessionAsync(client, Interval(LargePage, 50, 1800));
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        await AssertProfileAsync(userId, 1250, 420);
+        await AssertProfileWithinAsync(userId, 1250, BaselineSeconds + SlowThresholdSeconds(50, BaselineWpm));
     }
 
     [Test]
@@ -99,12 +104,12 @@ public class ReadingControllerTests : IntegrationTestBase
         string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-cold");
         using HttpClient client = await CreateAuthenticatedClientAsync(userId);
 
-        // With no reading history the default speed (210 WPM) is the reference, so the slow threshold is 52.5 WPM:
-        // 50 words are credited ceil(50 / 52.5 * 60) = 58 s rather than 1800 s.
+        // With no reading history the default speed is the reference, so 50 words are credited at a quarter of it
+        // rather than for the 1800 s they were reported over.
         using HttpResponseMessage response = await PostSessionAsync(client, Interval(LargePage, 50, 1800));
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        await AssertProfileAsync(userId, 50, 58);
+        await AssertProfileWithinAsync(userId, 50, SlowThresholdSeconds(50, Options.DefaultWpm));
     }
 
     [Test]
@@ -146,11 +151,12 @@ public class ReadingControllerTests : IntegrationTestBase
         string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-cap");
         using HttpClient client = await CreateAuthenticatedClientAsync(userId);
 
-        // The small page has 150 words; claiming 151 is credited as 150 (172 s at the 52.5 WPM slow threshold).
+        // The small page has 150 words; claiming 151 is credited as 150 (over 600 s this is a slow interval, so its
+        // time is clamped for the words actually credited).
         using HttpResponseMessage response = await PostSessionAsync(client, Interval(ReadingTestSupport.SmallPage, 151, 600));
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        await AssertProfileAsync(userId, 150, 172);
+        await AssertProfileWithinAsync(userId, 150, SlowThresholdSeconds(150, Options.DefaultWpm));
     }
 
     // ---- POST session: boundaries ----
@@ -192,7 +198,7 @@ public class ReadingControllerTests : IntegrationTestBase
             client, Interval(LargePage, 100, Options.MaxActiveSecondsPerInterval));
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        await AssertProfileAsync(userId, 100, 115); // clamped to the 52.5 WPM slow threshold
+        await AssertProfileWithinAsync(userId, 100, SlowThresholdSeconds(100, Options.DefaultWpm));
     }
 
     [Test]
@@ -464,7 +470,7 @@ public class ReadingControllerTests : IntegrationTestBase
         using HttpClient client = await CreateAuthenticatedClientAsync(userId);
 
         using HttpResponseMessage reset = await client.PostAsync("/api/reading/reset", null);
-        // After a reset the reader is held to the default speed again, so 50 words in 1800 s are credited 58 s.
+        // After a reset the reader is held to the default speed again, not their old 200 WPM.
         using HttpResponseMessage record = await PostSessionAsync(client, Interval(LargePage, 50, 1800));
 
         using (Assert.Multiple())
@@ -472,7 +478,7 @@ public class ReadingControllerTests : IntegrationTestBase
             await Assert.That(reset.StatusCode).IsEqualTo(HttpStatusCode.NoContent);
             await Assert.That(record.StatusCode).IsEqualTo(HttpStatusCode.OK);
         }
-        await AssertProfileAsync(userId, 50, 58);
+        await AssertProfileWithinAsync(userId, 50, SlowThresholdSeconds(50, Options.DefaultWpm));
     }
 
     // ---- rate limiting ----
@@ -716,6 +722,20 @@ public class ReadingControllerTests : IntegrationTestBase
         await InServiceScopeAsync(services =>
             services.GetRequiredService<EssentialCSharpWebContext>()
                 .UserReadingProfiles.AsNoTracking().SingleAsync(p => p.UserId == userId));
+
+    /// <summary>Seconds that <paramref name="words"/> take at the slow-outlier threshold for a reader at <paramref name="referenceWpm"/>.</summary>
+    private double SlowThresholdSeconds(int words, double referenceWpm) =>
+        words / (Options.SlowOutlierFactor * referenceWpm) * 60.0;
+
+    private async Task AssertProfileWithinAsync(string userId, long expectedWords, double expectedSeconds)
+    {
+        UserReadingProfile profile = await GetProfileAsync(userId);
+        using (Assert.Multiple())
+        {
+            await Assert.That(profile.TotalWordsRead).IsEqualTo(expectedWords);
+            await Assert.That((double)profile.TotalActiveSeconds).IsEqualTo(expectedSeconds).Within(ClampToleranceSeconds);
+        }
+    }
 
     private async Task AssertProfileAsync(string userId, long expectedWords, long expectedSeconds)
     {
