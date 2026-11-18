@@ -1,5 +1,6 @@
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
+using Aspire.Hosting.Dotnet;
 using Microsoft.Extensions.Configuration;
 
 namespace EssentialCSharp.Web.Hosting;
@@ -17,7 +18,7 @@ public static class WebHostingExtensions
     /// <param name="webDatabase">The existing SQL database connection resource.</param>
     /// <param name="vectorDatabase">The existing PostgreSQL database connection resource.</param>
     /// <returns>The Web resource, available for caller-specific configuration.</returns>
-    public static IResourceBuilder<ProjectResource> AddEssentialCSharpWeb(
+    public static IResourceBuilder<DotnetProjectResource> AddEssentialCSharpWeb(
         this IDistributedApplicationBuilder builder,
         string webProjectPath,
         IResourceBuilder<IResourceWithConnectionString> webDatabase,
@@ -43,7 +44,8 @@ public static class WebHostingExtensions
                 "and set the AccessToNugetFeed environment variable to true before building and starting Aspire.");
         }
 
-        var web = builder.AddProject("essentialcsharp-web", webProjectPath, launchProfileName: null)
+        var web = builder.AddDotnetProject(
+                "essentialcsharp-web", webProjectPath, options => options.ExcludeLaunchProfile = true)
             .WithReference(webDatabase, connectionName: "EssentialCSharpWebContextConnection")
             .WithReference(vectorDatabase, connectionName: "PostgresVectorStore")
             .WaitFor(webDatabase)
@@ -77,8 +79,8 @@ public static class WebHostingExtensions
     }
 
     /// <summary>Applies local AI policy; AppHost Azure/Foundry configuration takes precedence over Ollama.</summary>
-    public static IResourceBuilder<ProjectResource> WithEssentialCSharpLocalAI(
-        this IResourceBuilder<ProjectResource> web)
+    public static IResourceBuilder<DotnetProjectResource> WithEssentialCSharpLocalAI(
+        this IResourceBuilder<DotnetProjectResource> web)
     {
         ArgumentNullException.ThrowIfNull(web);
         var builder = web.ApplicationBuilder;
@@ -134,7 +136,7 @@ public static class WebHostingExtensions
     // environment (including connection strings) once Web starts after migration completion. Give only the
     // resources created by AddEFMigrations equivalent but independent annotations.
     private static void IsolateSharedEnvironmentCallbacks(
-        ProjectResource web, IEnumerable<IResource> migrationResources)
+        DotnetProjectResource web, IEnumerable<IResource> migrationResources)
     {
         var webCallbacks = web.Annotations.OfType<EnvironmentCallbackAnnotation>()
             .ToHashSet(ReferenceEqualityComparer.Instance);

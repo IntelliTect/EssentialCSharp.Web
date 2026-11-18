@@ -68,8 +68,8 @@ jobs:
         timeout-minutes: 10
         shell: pwsh
         run: |
-          [xml] $appHost = Get-Content dev/EssentialCSharp.Web.AppHost/EssentialCSharp.Web.AppHost.csproj
-          $aspireVersion = $appHost.Project.Sdk.Version
+          $aspireVersion = (Get-Content aspire.config.json -Raw | ConvertFrom-Json).sdk.version
+          if (-not $aspireVersion) { throw "aspire.config.json does not define sdk.version." }
           $installer = "$env:RUNNER_TEMP/aspire-install.sh"
           Invoke-WebRequest https://aspire.dev/install.sh -OutFile $installer
           bash $installer --version $aspireVersion --install-path "$HOME/.aspire/bin" --skip-path
