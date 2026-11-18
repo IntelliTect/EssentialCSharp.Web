@@ -16,12 +16,6 @@ export const RETRY_BASE_DELAY_MS = 5000;
 export const RETRY_MAX_DELAY_MS = 120000;
 
 /**
- * Unsent intervals kept while the server is unreachable; the oldest are dropped beyond this.
- * Must stay within the server's MaxIntervalsPerRequest (enforced by its options validator).
- */
-export const MAX_QUEUED_INTERVALS = 20;
-
-/**
  * How long a persisted batch being sent is reserved for its tab before another tab may take
  * it over. A periodic request is aborted after half of it, so a hung request never outlives
  * its lease.

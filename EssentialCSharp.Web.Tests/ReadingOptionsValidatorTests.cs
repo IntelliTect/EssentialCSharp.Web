@@ -111,10 +111,10 @@ public class ReadingOptionsValidatorTests
             nameof(ReadingOptions.IdleThresholdSeconds));
 
         yield return (
-            () => new ReadingOptions { MaxIntervalsPerRequest = ReadingOptionsValidator.MinIntervalsPerRequest - 1 },
+            () => new ReadingOptions { MaxIntervalsPerRequest = ReadingOptionsValidator.ClientOutboxSize - 1 },
             nameof(ReadingOptions.MaxIntervalsPerRequest));
         yield return (
-            () => new ReadingOptions { MaxIntervalsPerRequest = ReadingOptionsValidator.MinIntervalsPerRequest },
+            () => new ReadingOptions { MaxIntervalsPerRequest = ReadingOptionsValidator.ClientOutboxSize },
             null);
     }
 

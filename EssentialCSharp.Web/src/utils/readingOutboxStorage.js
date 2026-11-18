@@ -15,7 +15,7 @@
  *    Lifecycle (keepalive) sends are not leased by their caller: they remove the record
  *    before sending, because they can never be acknowledged (at-most-once).
  */
-import { LEASE_MS, MAX_QUEUED_INTERVALS } from "./readingConstants.js";
+import { LEASE_MS } from "./readingConstants.js";
 
 const KEY_PREFIX = "essentialcsharp-reading-outbox:";
 
@@ -109,11 +109,13 @@ export function removeOutbox(key) {
 
 /**
  * Takes every stored record of `userId` (removing them) and returns their valid
- * intervals, oldest first and limited to the newest MAX_QUEUED_INTERVALS.
+ * intervals, oldest first and limited to the newest `maxIntervals`.
  * Records of other users and unreadable records are removed and ignored.
+ * @param {string} userId
+ * @param {number} maxIntervals the outbox size the server allows (READING_CONTEXT.maxQueuedIntervals)
  * @returns {import("../services/readingApi.js").ReadingInterval[]}
  */
-export function takeStoredIntervals(userId) {
+export function takeStoredIntervals(userId, maxIntervals) {
     const intervals = [];
     try {
         for (const key of storedKeys()) {
@@ -135,7 +137,7 @@ export function takeStoredIntervals(userId) {
     } catch {
         // Storage unavailable: nothing to recover.
     }
-    return intervals.slice(-MAX_QUEUED_INTERVALS);
+    return intervals.slice(-maxIntervals);
 }
 
 /**

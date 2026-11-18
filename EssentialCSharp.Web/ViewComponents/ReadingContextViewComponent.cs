@@ -46,7 +46,8 @@ public sealed partial class ReadingContextViewComponent(
             DefaultWpm: reading.DefaultWpm,
             MaxCreditWpm: reading.MaxCreditWpm,
             IdleThresholdSeconds: reading.IdleThresholdSeconds,
-            PeriodicFlushActiveSeconds: reading.PeriodicFlushActiveSeconds));
+            PeriodicFlushActiveSeconds: reading.PeriodicFlushActiveSeconds,
+            MaxQueuedIntervals: ReadingOptionsValidator.ClientOutboxSize));
     }
 
     /// <summary>The signed-in reader's derived WPM rounded to whole words per minute, or null when unknown.</summary>
@@ -82,4 +83,5 @@ public record ReadingContextViewModel(
     int DefaultWpm,
     int MaxCreditWpm,
     int IdleThresholdSeconds,
-    int PeriodicFlushActiveSeconds);
+    int PeriodicFlushActiveSeconds,
+    int MaxQueuedIntervals);

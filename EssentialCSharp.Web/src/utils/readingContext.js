@@ -13,6 +13,7 @@
  * @property {number} maxCreditWpm
  * @property {number} idleThresholdSeconds
  * @property {number} periodicFlushActiveSeconds
+ * @property {number} maxQueuedIntervals unsent intervals kept while the server is unreachable (never more than the server accepts per request)
  */
 
 function toCount(value) {
@@ -38,7 +39,9 @@ export function getUserId(win) {
 export function getReadingContext(win = window) {
     const raw = win.READING_CONTEXT;
     if (!raw || typeof raw !== "object" || !raw.pageKey) return null;
-    const required = [raw.defaultWpm, raw.maxCreditWpm, raw.idleThresholdSeconds, raw.periodicFlushActiveSeconds];
+    const required = [
+        raw.defaultWpm, raw.maxCreditWpm, raw.idleThresholdSeconds, raw.periodicFlushActiveSeconds, raw.maxQueuedIntervals
+    ];
     if (!required.every(isPositiveNumber)) return null;
     return {
         isAuthenticated: raw.isAuthenticated === true,
@@ -53,6 +56,7 @@ export function getReadingContext(win = window) {
         defaultWpm: raw.defaultWpm,
         maxCreditWpm: raw.maxCreditWpm,
         idleThresholdSeconds: raw.idleThresholdSeconds,
-        periodicFlushActiveSeconds: raw.periodicFlushActiveSeconds
+        periodicFlushActiveSeconds: raw.periodicFlushActiveSeconds,
+        maxQueuedIntervals: raw.maxQueuedIntervals
     };
 }

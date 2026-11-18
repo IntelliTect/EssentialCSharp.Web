@@ -16,7 +16,8 @@ const complete = () => ({
     defaultWpm: 200,
     maxCreditWpm: 800,
     idleThresholdSeconds: 300,
-    periodicFlushActiveSeconds: 60
+    periodicFlushActiveSeconds: 60,
+    maxQueuedIntervals: 20
 });
 
 const raw = (overrides = {}) => ({ READING_CONTEXT: { ...complete(), ...overrides } });
@@ -72,7 +73,7 @@ describe("getReadingContext", () => {
     });
 
     it("has no client fallbacks: each server tuning value is required", () => {
-        for (const field of ["defaultWpm", "maxCreditWpm", "idleThresholdSeconds", "periodicFlushActiveSeconds"]) {
+        for (const field of ["defaultWpm", "maxCreditWpm", "idleThresholdSeconds", "periodicFlushActiveSeconds", "maxQueuedIntervals"]) {
             const context = complete();
             delete context[field];
             expect(getReadingContext({ READING_CONTEXT: context }), field).toBeNull();

@@ -11,8 +11,9 @@ namespace EssentialCSharp.Web.Services;
 /// <remarks>
 /// The client splits unsent time into intervals of at most <see cref="IdleThresholdSeconds"/> and flushes after
 /// <see cref="PeriodicFlushActiveSeconds"/> active seconds, so both must stay within
-/// <see cref="MaxActiveSecondsPerInterval"/>. The client outbox holds at most 20 intervals, so
-/// <see cref="MaxIntervalsPerRequest"/> must be at least 20 (a batch over the server maximum is rejected wholesale).
+/// <see cref="MaxActiveSecondsPerInterval"/>. The client outbox holds at most <see cref="ReadingOptionsValidator.ClientOutboxSize"/> intervals (the server
+/// tells the client this size in <c>READING_CONTEXT.maxQueuedIntervals</c>), so <see cref="MaxIntervalsPerRequest"/>
+/// must be at least that (a batch over the server maximum is rejected wholesale).
 /// <see cref="ReadingOptionsValidator"/> enforces these at startup.
 /// </remarks>
 public sealed class ReadingOptions
@@ -62,7 +63,7 @@ public sealed class ReadingOptions
 public sealed class ReadingOptionsValidator : IValidateOptions<ReadingOptions>
 {
     /// <summary>Size of the client's interval outbox.</summary>
-    public const int MinIntervalsPerRequest = 20;
+    public const int ClientOutboxSize = 20;
 
     public ValidateOptionsResult Validate(string? name, ReadingOptions options)
     {
@@ -85,10 +86,10 @@ public sealed class ReadingOptionsValidator : IValidateOptions<ReadingOptions>
                 $"{nameof(ReadingOptions.IdleThresholdSeconds)} must not exceed {nameof(ReadingOptions.MaxActiveSecondsPerInterval)}.");
         }
 
-        if (options.MaxIntervalsPerRequest < MinIntervalsPerRequest)
+        if (options.MaxIntervalsPerRequest < ClientOutboxSize)
         {
             (failures ??= []).Add(
-                $"{nameof(ReadingOptions.MaxIntervalsPerRequest)} must be at least {MinIntervalsPerRequest} (the client outbox size).");
+                $"{nameof(ReadingOptions.MaxIntervalsPerRequest)} must be at least {ClientOutboxSize} (the client outbox size).");
         }
 
         return failures is null ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(failures);

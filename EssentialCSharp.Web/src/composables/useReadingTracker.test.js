@@ -3,7 +3,6 @@ import { effectScope } from "vue";
 import { useReadingTracker } from "./useReadingTracker.js";
 import {
     LEASE_MS,
-    MAX_QUEUED_INTERVALS,
     MAX_TICK_DELTA_S,
     READING_RESET_CHANNEL,
     RETRY_BASE_DELAY_MS,
@@ -36,12 +35,14 @@ const context = (overrides = {}) => ({
     maxCreditWpm: 800,
     idleThresholdSeconds: 300,
     periodicFlushActiveSeconds: 60,
+    maxQueuedIntervals: 12,
     ...overrides
 });
 // Slower credit cap for tests that read for several minutes, so the page's words are not exhausted
 // (once all progress is credited, further stationary time is deliberately not credited).
 const SLOW = { maxCreditWpm: 100 };
 const FLUSH_S = context().periodicFlushActiveSeconds;
+const MAX_QUEUED = context().maxQueuedIntervals; // deliberately not the server default: the client must use what it is told
 const BASE_DELAY_S = RETRY_BASE_DELAY_MS / 1000;
 const PAST_LEASE_S = LEASE_MS / 1000 + 60; // long enough for any lease to have expired
 
@@ -563,7 +564,7 @@ describe("useReadingTracker", () => {
             handler = () => jsonResponse(503);
             start(ctx);
             press();
-            const seconds = MAX_QUEUED_INTERVALS + 10;
+            const seconds = MAX_QUEUED + 10;
             for (let i = 1; i <= seconds; i++) {
                 scrollTo(-(i * (i + 1)) / 2);
                 await advance(1);
@@ -572,7 +573,7 @@ describe("useReadingTracker", () => {
             await leavePage();
 
             expect(delivered.length).toBeGreaterThan(0);
-            expect(delivered.length).toBeLessThanOrEqual(MAX_QUEUED_INTERVALS);
+            expect(delivered.length).toBeLessThanOrEqual(MAX_QUEUED);
             const words = delivered.map((i) => i.wordsRead);
             expect(words.at(-1)).toBe(seconds); // newest kept
             // Oldest dropped: the first interval (which carried the whole first screen) is gone.
@@ -757,7 +758,7 @@ describe("useReadingTracker", () => {
             seed([interval(7)], "someone-else"); // another account signed in in another tab
             release(jsonResponse(401));
             await advance(0);
-            expect(takeStoredIntervals("someone-else")).toEqual([interval(7)]);
+            expect(takeStoredIntervals("someone-else", MAX_QUEUED)).toEqual([interval(7)]);
             expect(localStorage.length).toBe(0); // and nothing of this account is left either
         });
 
@@ -865,11 +866,11 @@ describe("useReadingTracker", () => {
         });
 
         it("keeps only the newest intervals when more were persisted than may be queued", async () => {
-            seed(Array.from({ length: MAX_QUEUED_INTERVALS + 5 }, (_, i) => interval(i + 1)));
+            seed(Array.from({ length: MAX_QUEUED + 5 }, (_, i) => interval(i + 1)));
             start();
             await advance(10);
-            expect(delivered).toHaveLength(MAX_QUEUED_INTERVALS);
-            expect(delivered.at(-1).wordsRead).toBe(MAX_QUEUED_INTERVALS + 5);
+            expect(delivered).toHaveLength(MAX_QUEUED);
+            expect(delivered.at(-1).wordsRead).toBe(MAX_QUEUED + 5);
             expect(delivered[0].wordsRead).toBe(6);
         });
 

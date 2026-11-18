@@ -63,6 +63,11 @@ public class ReadingContextRenderingTests : IntegrationTestBase
             await Assert.That(ReadingTestSupport.Field(root, "maxCreditWpm").GetInt32()).IsEqualTo(_options.MaxCreditWpm);
             await Assert.That(ReadingTestSupport.Field(root, "idleThresholdSeconds").GetInt32()).IsEqualTo(_options.IdleThresholdSeconds);
             await Assert.That(ReadingTestSupport.Field(root, "periodicFlushActiveSeconds").GetInt32()).IsEqualTo(_options.PeriodicFlushActiveSeconds);
+
+            // The client's outbox size comes from the server, and a full outbox must fit in one request.
+            int queued = ReadingTestSupport.Field(root, "maxQueuedIntervals").GetInt32();
+            await Assert.That(queued).IsEqualTo(ReadingOptionsValidator.ClientOutboxSize);
+            await Assert.That(queued).IsLessThanOrEqualTo(_options.MaxIntervalsPerRequest);
         }
     }
 

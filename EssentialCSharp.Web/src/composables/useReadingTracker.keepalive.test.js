@@ -3,7 +3,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { effectScope } from "vue";
 import { useReadingTracker } from "./useReadingTracker.js";
-import { MAX_QUEUED_INTERVALS } from "../utils/readingConstants.js";
 import { installFakeBroadcastChannel } from "../test-utils/fakeBroadcastChannel.js";
 
 const VIEWPORT = 500;
@@ -11,7 +10,7 @@ const CONTENT_HEIGHT = 200000; // long page so progress never limits credit
 const context = () => ({
     isAuthenticated: true, userId: "user-1", pageKey: "c/p", pageWords: 400000, chapterWords: 400000,
     wordsBeforePage: 0, chapterStartWords: 0, bookWords: 900000, wpm: 240, defaultWpm: 200,
-    maxCreditWpm: 800, idleThresholdSeconds: 300, periodicFlushActiveSeconds: 60
+    maxCreditWpm: 800, idleThresholdSeconds: 300, periodicFlushActiveSeconds: 60, maxQueuedIntervals: 20
 });
 
 describe("hung keepalive send", () => {
@@ -80,7 +79,7 @@ describe("hung keepalive send", () => {
         window.dispatchEvent(new Event("pagehide")); await advance(0);
         const last = calls[calls.length - 1];
         const total = calls.slice(1).flatMap(c => c.intervals).reduce((t, i) => t + i.activeSeconds, 0);
-        expect(last.intervals.length).toBeLessThanOrEqual(MAX_QUEUED_INTERVALS);
+        expect(last.intervals.length).toBeLessThanOrEqual(context().maxQueuedIntervals);
         expect(total).toBeGreaterThan(2300); // all ~2400s should eventually arrive
     });
 });

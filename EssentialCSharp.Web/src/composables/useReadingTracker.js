@@ -40,7 +40,6 @@ import {
     postSession
 } from "../services/readingApi.js";
 import {
-    MAX_QUEUED_INTERVALS,
     MAX_TICK_DELTA_S,
     READING_RESET_CHANNEL,
     RETRY_BASE_DELAY_MS,
@@ -140,7 +139,7 @@ export function useReadingTracker(context) {
 
     // Intervals left by an earlier page load (never another user's) are sent like new ones.
     if (tracking && context.userId) {
-        outbox = takeStoredIntervals(context.userId);
+        outbox = takeStoredIntervals(context.userId, context.maxQueuedIntervals);
         persistOutbox();
     }
 
@@ -213,7 +212,8 @@ export function useReadingTracker(context) {
     }
 
     function trimOutbox() {
-        if (outbox.length > MAX_QUEUED_INTERVALS) outbox.splice(0, outbox.length - MAX_QUEUED_INTERVALS);
+        const max = context.maxQueuedIntervals;
+        if (outbox.length > max) outbox.splice(0, outbox.length - max);
     }
 
     /**
