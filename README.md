@@ -35,8 +35,8 @@ secret is supplied. Stop only this AppHost using `aspire stop --apphost` with th
 Add `--format mermaid` to `aspire describe` to print the resource dependency graph as a Mermaid diagram.
 
 The Web resource uses Aspire's Project v2 model (`AddDotnetProject`), which the AppHost builds
-before launch. `aspire run --watch` does not support Project v2 resources; after changing Web code,
-rebuild just that resource with `aspire resource essentialcsharp-web rebuild --apphost <path>`.
+before launch. Aspire watch [is not yet implemented for Project v2 resources](https://aspire.dev/integrations/dotnet/migrate-dotnet-project-resource/#check-workflows-before-migrating);
+after changing Web code, rebuild just that resource with `aspire resource essentialcsharp-web rebuild --apphost <path>`.
 
 Local AI defaults to Ollama (`qwen2.5-coder:7b`, approximately 5 GB download); local vector search
 is not enabled. Disable model downloads before starting when chat is unnecessary:
