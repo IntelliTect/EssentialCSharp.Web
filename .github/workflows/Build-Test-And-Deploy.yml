@@ -56,6 +56,16 @@ jobs:
         working-directory: EssentialCSharp.Web
         run: npm run build
 
+      # The .NET jobs build with SkipFrontendBuild; the browser journey tests need the compiled frontend.
+      - name: Upload frontend build
+        if: matrix.runner == 'ubuntu-latest'
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-dist
+          path: EssentialCSharp.Web/wwwroot/dist
+          retention-days: 5
+          if-no-files-found: error
+
   build-and-test:
     name: Build and test (Ubuntu)
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
@@ -90,8 +100,17 @@ jobs:
       - name: Restore with dotnet
         run: dotnet restore
 
+      - name: Download frontend build
+        uses: actions/download-artifact@v8
+        with:
+          name: frontend-dist
+          path: EssentialCSharp.Web/wwwroot/dist
+
       - name: Build with dotnet
         run: dotnet build -p:ContinuousIntegrationBuild=True -p:ReleaseDateAttribute=True -p:SkipFrontendBuild=true --configuration Release --no-restore
+
+      - name: Install Playwright Chromium for journey tests
+        run: pwsh dev/EssentialCSharp.Web.AppHost.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
 
       - name: Expose GitHub Actions Runtime
         uses: actions/github-script@v9
@@ -102,6 +121,15 @@ jobs:
 
       - name: Run .NET Tests
         run: dotnet test --no-build --configuration Release
+
+      - name: Upload Playwright failure captures
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-captures-${{ github.run_attempt }}
+          path: dev/EssentialCSharp.Web.AppHost.Tests/bin/Release/net10.0/playwright-artifacts
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -141,6 +169,7 @@ jobs:
           context: .
           secret-files: |
             "nuget_config=${{ runner.temp }}/nuget/NuGet.Config"
+          build-args: SOURCE_REVISION=${{ github.sha }}
           outputs: type=docker,dest=${{ github.workspace }}/essentialcsharpwebimage.tar
           cache-from: type=gha,scope=essentialcsharpweb-main
           cache-to: type=gha,mode=max,scope=essentialcsharpweb-main
@@ -194,8 +223,20 @@ jobs:
       - name: Restore .NET dependencies
         run: dotnet restore /p:AccessToNugetFeed=false
 
+      # Browser journey tests need Linux containers, so they only run on the Ubuntu leg (skipped elsewhere).
+      - name: Download frontend build
+        if: matrix.collect_coverage
+        uses: actions/download-artifact@v8
+        with:
+          name: frontend-dist
+          path: EssentialCSharp.Web/wwwroot/dist
+
       - name: Build .NET
         run: dotnet build --configuration Release --no-restore /p:AccessToNugetFeed=false /p:SkipFrontendBuild=true
+
+      - name: Install Playwright Chromium for journey tests
+        if: matrix.collect_coverage
+        run: pwsh dev/EssentialCSharp.Web.AppHost.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
 
       - name: Restore local .NET tools
         if: matrix.collect_coverage
@@ -222,6 +263,15 @@ jobs:
       - name: Run .NET tests
         if: ${{ !matrix.collect_coverage }}
         run: dotnet test --no-build --configuration Release
+
+      - name: Upload Playwright failure captures
+        if: ${{ failure() && matrix.collect_coverage }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-captures-${{ github.run_attempt }}
+          path: dev/EssentialCSharp.Web.AppHost.Tests/bin/Release/net10.0/playwright-artifacts
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Convert TRX to VS Playlist
         if: ${{ failure() && matrix.collect_coverage }}
@@ -270,7 +320,9 @@ jobs:
             type=gha,scope=essentialcsharpweb-main
             type=gha,scope=essentialcsharpweb-pr
           cache-to: type=gha,mode=min,scope=essentialcsharpweb-pr
-          build-args: ACCESS_TO_NUGET_FEED=false
+          build-args: |
+            ACCESS_TO_NUGET_FEED=false
+            SOURCE_REVISION=${{ github.sha }}
 
   deploy-development:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
@@ -331,6 +383,60 @@ jobs:
             --name "$CONTAINER_APP_NAME" \
             --resource-group "$RESOURCEGROUP" \
             --image "${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb:${{ github.sha }}"
+
+      # Smoke tests stay in this job so it holds the deploy-development concurrency group (no image swap mid-test);
+      # deploy-production needs this job, so a failure blocks promotion.
+      # Prep runs before the revision wait so it overlaps with the new revision starting up.
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Build smoke tests
+        run: dotnet build EssentialCSharp.Web.E2ETests/EssentialCSharp.Web.E2ETests.csproj --configuration Release
+
+      - name: Install Playwright Chromium for smoke tests
+        run: pwsh EssentialCSharp.Web.E2ETests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
+      - name: Wait for the new revision to serve this commit
+        id: wait-for-revision
+        env:
+          SITE_BASE_URL: ${{ vars.SITE_BASE_URL || 'https://dev.essentialcsharp.com' }}
+        run: bash scripts/wait-for-deployed-commit.sh "$SITE_BASE_URL" "${{ github.sha }}"
+
+      - name: Show revision status
+        if: failure() && steps.wait-for-revision.outcome == 'failure'
+        env:
+          CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
+          RESOURCEGROUP: ${{ vars.RESOURCEGROUP }}
+        run: |
+          az containerapp revision list \
+            --name "$CONTAINER_APP_NAME" \
+            --resource-group "$RESOURCEGROUP" \
+            --query "[].{name:name, active:properties.active, traffic:properties.trafficWeight, health:properties.healthState, running:properties.runningState, image:properties.template.containers[0].image}" \
+            --output table
+
+      - name: Smoke test development
+        env:
+          E2E_BASE_URL: ${{ vars.SITE_BASE_URL || 'https://dev.essentialcsharp.com' }}
+          E2E_EXPECTED_COMMIT: ${{ github.sha }}
+          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+        run: >-
+          dotnet test --project EssentialCSharp.Web.E2ETests/EssentialCSharp.Web.E2ETests.csproj
+          --configuration Release --no-build
+          -- --treenode-filter "/*/*/*/*[Category=Deployed]"
+          --report-trx --results-directory "${{ runner.temp }}/smoke-results"
+
+      - name: Upload smoke test results
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: smoke-test-results
+          path: |
+            ${{ runner.temp }}/smoke-results
+            EssentialCSharp.Web.E2ETests/bin/Release/net10.0/playwright-artifacts
+          if-no-files-found: ignore
 
       - name: Logout of Azure CLI
         if: always()

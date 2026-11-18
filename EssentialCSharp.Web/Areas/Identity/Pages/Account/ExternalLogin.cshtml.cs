@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
 using EssentialCSharp.Web.Areas.Identity.Data;
+using EssentialCSharp.Web.Services;
 using EssentialCSharp.Web.Services.Referrals;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -141,7 +142,18 @@ public partial class ExternalLoginModel(
                     if (result.Succeeded)
                     {
                         LogUserCreatedWithProvider(logger, info.LoginProvider);
-                        return await SendConfirmationEmail(returnUrl, info, user);
+                        try
+                        {
+                            return await SendConfirmationEmail(returnUrl, info, user);
+                        }
+                        catch (EmailSendException)
+                        {
+                            // The account and external login already exist; send the user to resend the email.
+                            // Do not log the exception: its inner exception can contain the recipient address. EmailSender has logged the details.
+                            LogConfirmationEmailNotSent(logger);
+                            EmailFailureMessages.QueueAccountCreatedConfirmationNotSent(TempData);
+                            return RedirectToPage("./ResendEmailConfirmation", new { email = Input.Email });
+                        }
                     }
                 }
                 foreach (IdentityError error in result.Errors)
@@ -153,7 +165,16 @@ public partial class ExternalLoginModel(
             {
                 if (!existingUser.EmailConfirmed)
                 {
-                    await SendConfirmationEmail(returnUrl, info, existingUser);
+                    try
+                    {
+                        await SendConfirmationEmail(returnUrl, info, existingUser);
+                    }
+                    catch (EmailSendException)
+                    {
+                        // The email is only attempted when the address belongs to an existing account, so a visible
+                        // error would reveal that. Log it and fall through to the same message shown on success.
+                        LogConfirmationEmailNotSent(logger);
+                    }
                 }
             }
         }
@@ -217,6 +238,9 @@ public partial class ExternalLoginModel(
 
     [LoggerMessage(Level = LogLevel.Information, Message = "{Name} logged in with {LoginProvider} provider.")]
     private static partial void LogUserLoggedInWithProvider(ILogger<ExternalLoginModel> logger, string? name, string loginProvider);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "The confirmation email could not be sent after external login; the user will be asked to resend it.")]
+    private static partial void LogConfirmationEmailNotSent(ILogger<ExternalLoginModel> logger);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "User created an account using {Name} provider.")]
     private static partial void LogUserCreatedWithProvider(ILogger<ExternalLoginModel> logger, string name);

@@ -64,6 +64,19 @@ jobs:
       - name: Restore with dotnet
         run: dotnet restore
 
+      - name: Install Aspire CLI bundle
+        timeout-minutes: 10
+        shell: pwsh
+        run: |
+          $aspireVersion = (Get-Content aspire.config.json -Raw | ConvertFrom-Json).sdk.version
+          if (-not $aspireVersion) { throw "aspire.config.json does not define sdk.version." }
+          $installer = "$env:RUNNER_TEMP/aspire-install.sh"
+          Invoke-WebRequest https://aspire.dev/install.sh -OutFile $installer
+          bash $installer --version $aspireVersion --install-path "$HOME/.aspire/bin" --skip-path
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "$HOME/.aspire/bin" >> $env:GITHUB_PATH
+          & "$HOME/.aspire/bin/aspire" --version
+
       - name: Install npm dependencies
         working-directory: EssentialCSharp.Web
         run: npm ci
@@ -74,6 +87,9 @@ jobs:
 
       - name: Build with dotnet
         run: dotnet build -p:ContinuousIntegrationBuild=True -p:ReleaseDateAttribute=True -p:SkipFrontendBuild=true --configuration Release --no-restore
+
+      - name: Install Playwright Chromium for journey tests
+        run: pwsh dev/EssentialCSharp.Web.AppHost.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
 
       - name: Run .NET Tests
         run: dotnet test --no-build --configuration Release

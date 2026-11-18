@@ -63,7 +63,7 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
             ViewBag.PageTitle = siteMapping.IndentLevel is 0 ? siteMapping.ChapterTitle + " " + siteMapping.RawHeading : siteMapping.RawHeading;
             ViewData["Description"] = chapterDescriptionService.GetDescription(siteMapping);
             ViewData["CanonicalUrl"] = $"{siteSettings.Value.BaseUrl.TrimEnd('/')}{Request.PathBase}{canonicalPath}";
-            ViewBag.NextPage = FlipPage(siteMapping!.ChapterNumber, siteMapping.PageNumber, true);
+            ViewBag.NextPage = FlipPage(siteMapping.ChapterNumber, siteMapping.PageNumber, true);
             ViewBag.CurrentPageKey = siteMapping.PrimaryKey;
             ViewBag.PreviousPage = FlipPage(siteMapping.ChapterNumber, siteMapping.PageNumber, false);
             ViewBag.HeadContents = headHtml;

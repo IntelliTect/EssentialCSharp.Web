@@ -13,15 +13,12 @@ using EssentialCSharp.Web.Middleware;
 using EssentialCSharp.Web.Services;
 using EssentialCSharp.Web.Services.Referrals;
 using EssentialCSharp.Web.Tools;
-using Mailjet.Client;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.RateLimiting;
-using Azure.Monitor.OpenTelemetry.AspNetCore;
-using Azure.Monitor.OpenTelemetry.Profiler;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -29,10 +26,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using OpenTelemetry;
-using OpenTelemetry.Instrumentation.AspNetCore;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Trace;
 
 namespace EssentialCSharp.Web;
 
@@ -46,85 +39,10 @@ public partial class Program
         builder.Services.AddHealthChecks()
             .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
 
-        // Prefer Aspire's OTLP endpoint when present; otherwise export to Azure Monitor.
-        // This keeps local traces in the dashboard even when a developer has an App Insights connection string configured.
-        string? appInsightsConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
-        bool useOtlp = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
-        bool useAzureMonitor = !useOtlp && !string.IsNullOrWhiteSpace(appInsightsConnectionString);
-        bool profilerSupportedPlatform = OperatingSystem.IsWindows() || OperatingSystem.IsLinux();
-        bool profilerSkippedUnsupportedPlatform = false;
-
-        builder.Logging.AddOpenTelemetry(logging =>
-        {
-            logging.IncludeFormattedMessage = true;
-            logging.IncludeScopes = true;
-        });
-
-        // Health probe paths excluded from tracing unconditionally — applies to both
-        // manual instrumentation and Azure Monitor's auto-instrumentation.
-        builder.Services.Configure<AspNetCoreTraceInstrumentationOptions>(options =>
-        {
-            options.Filter = ctx =>
-                !ctx.Request.Path.StartsWithSegments("/health")
-                && !ctx.Request.Path.StartsWithSegments("/alive");
-            // EnrichWithHttpResponse fires after the authentication middleware has run,
-            // so HttpContext.User is populated and IsAuthenticated is reliable.
-            options.EnrichWithHttpResponse = (activity, response) =>
-            {
-                var user = response.HttpContext.User;
-                if (user?.Identity?.IsAuthenticated != true)
-                {
-                    return;
-                }
-
-                string? userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (!string.IsNullOrWhiteSpace(userId))
-                {
-                    activity.SetTag("enduser.id", userId);
-                }
-            };
-        });
-
-        var otel = builder.Services.AddOpenTelemetry()
-            .WithMetrics(metrics =>
-            {
-                // Azure Monitor auto-instruments ASP.NET Core + HttpClient metrics; only add
-                // them manually when using OTLP so we don't register duplicate meter listeners.
-                if (!useAzureMonitor)
-                {
-                    metrics.AddAspNetCoreInstrumentation()
-                           .AddHttpClientInstrumentation();
-                }
-                // Runtime metrics are not included in the Azure Monitor distro.
-                metrics.AddRuntimeInstrumentation();
-            })
-            .WithTracing(tracing =>
-            {
-                tracing.AddSource(builder.Environment.ApplicationName);
-                // Azure Monitor distro auto-instruments tracing; add manually only for OTLP path.
-                if (!useAzureMonitor)
-                {
-                    tracing.AddAspNetCoreInstrumentation()
-                           .AddHttpClientInstrumentation()
-                           .AddSqlClientInstrumentation();
-                }
-            });
-
-        if (useAzureMonitor)
-        {
-            // Azure Monitor export is supported cross-platform, but the profiler currently only
-            // supports Windows and Linux.
-            var azureMonitor = otel.UseAzureMonitor();
-            if (profilerSupportedPlatform)
-                azureMonitor.AddAzureMonitorProfiler();
-            else
-                profilerSkippedUnsupportedPlatform = true;
-        }
-        else if (useOtlp)
-            otel.UseOtlpExporter();
+        bool profilerSkippedUnsupportedPlatform = builder.ConfigureApplicationTelemetry();
 
         // HttpClient defaults — standard retry/circuit breaker for all named clients.
-        builder.Services.ConfigureHttpClientDefaults(http => http.AddStandardResilienceHandler());
+        builder.Services.AddGlobalHttpClientDefaults();
 
         builder.Services.AddHttpClient("HaveIBeenPwned", c =>
         {
@@ -255,12 +173,9 @@ public partial class Program
             options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
         });
 
-        if (!builder.Environment.IsDevelopment())
-        {
-            builder.Services.AddTransient<IEmailSender, EmailSender>();
-        }
-        builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration.GetSection(AuthMessageSenderOptions.AuthMessageSender));
+        builder.Services.AddMailjetEmailSender(builder.Configuration.GetSection(AuthMessageSenderOptions.AuthMessageSender), builder.Environment);
         builder.Services.Configure<SiteSettings>(builder.Configuration.GetSection(SiteSettings.SectionName));
+        builder.Services.Configure<ContentRateLimitOptions>(builder.Configuration.GetSection(ContentRateLimitOptions.SectionName));
 
         // Add services to the container.
         builder.Services.AddRazorPages();
@@ -409,17 +324,6 @@ public partial class Program
 
         if (!builder.Environment.IsDevelopment())
         {
-            builder.Services.AddHttpClient<IMailjetClient, MailjetClient>(client =>
-            {
-                //set BaseAddress, MediaType, UserAgent
-                client.SetDefaultSettings();
-
-                client.UseBasicAuthentication(configuration["AuthMessageSender:APIKey"], configuration["AuthMessageSender:SecretKey"]);
-            });
-        }
-
-        if (!builder.Environment.IsDevelopment())
-        {
             builder.Services.AddAuthentication()
              .AddMicrosoftAccount(microsoftoptions =>
              {
@@ -526,9 +430,15 @@ public partial class Program
                 $"form-action 'self' https://login.microsoftonline.com https://github.com"
             );
 
-            app.UseSecurityHeadersMiddleware(new SecurityHeadersBuilder()
+            SecurityHeadersBuilder securityHeaders = new SecurityHeadersBuilder()
                 .AddDefaultSecurePolicy()
-                .AddContentSecurityPolicy(csp));
+                .AddContentSecurityPolicy(csp);
+            if (!app.Environment.IsProduction())
+            {
+                // Keeps non-production deployments (e.g. dev.essentialcsharp.com) out of search results.
+                securityHeaders.AddCustomHeader("X-Robots-Tag", "noindex, nofollow");
+            }
+            app.UseSecurityHeadersMiddleware(securityHeaders);
 
             // Redirect configured www host to configured apex host (permanent 301).
             // Must be after UseForwardedHeaders so the Host header reflects the real hostname.
@@ -556,6 +466,13 @@ public partial class Program
         app.MapHealthChecks("/alive", new HealthCheckOptions
         {
             Predicate = r => r.Tags.Contains("live")
+        }).DisableRateLimiting();
+
+        // Build identity for deployment checks.
+        app.MapMethods("/version", [HttpMethods.Get, HttpMethods.Head], (HttpResponse response) =>
+        {
+            response.Headers.CacheControl = "no-store";
+            return Results.Ok(BuildInfo.Current);
         }).DisableRateLimiting();
 
         if (!app.Environment.IsDevelopment())

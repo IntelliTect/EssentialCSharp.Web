@@ -12,7 +12,7 @@ using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
-public class ForgotPasswordModel(UserManager<EssentialCSharpWebUser> userManager, IEmailSender emailSender, ICaptchaValidationService captchaValidationService, IOptions<CaptchaOptions> optionsAccessor) : PageModel
+public partial class ForgotPasswordModel(UserManager<EssentialCSharpWebUser> userManager, IEmailSender emailSender, ICaptchaValidationService captchaValidationService, IOptions<CaptchaOptions> optionsAccessor, ILogger<ForgotPasswordModel> logger) : PageModel
 {
     private InputModel? _Input;
     [BindProperty]
@@ -73,14 +73,27 @@ public class ForgotPasswordModel(UserManager<EssentialCSharpWebUser> userManager
                 return RedirectToPage("./ForgotPasswordConfirmation");
             }
 
-            await emailSender.SendEmailAsync(
-                Input.Email,
-                "Reset Password",
-                $"Please reset your password by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+            try
+            {
+                await emailSender.SendEmailAsync(
+                    Input.Email,
+                    "Reset Password",
+                    $"Please reset your password by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+            }
+            catch (EmailSendException)
+            {
+                // The email is only attempted when the account exists and is confirmed. Surfacing a failure here
+                // would reveal that, enabling account enumeration, so log it and show the usual confirmation page.
+                // Do not log the exception: its inner exception can contain the recipient address. EmailSender has logged the details.
+                LogPasswordResetEmailNotSent(logger);
+            }
 
             return RedirectToPage("./ForgotPasswordConfirmation");
         }
 
         return Page();
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "The password reset email could not be sent. The user was shown the standard confirmation page.")]
+    private static partial void LogPasswordResetEmailNotSent(ILogger<ForgotPasswordModel> logger);
 }

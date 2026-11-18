@@ -1,6 +1,9 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Services;
 
@@ -8,6 +11,7 @@ namespace EssentialCSharp.Web.Services;
 /// Rate limiting policy for book content pages (HomeController.Index).
 /// Authenticated users get higher limits (20/min, 60/hr) partitioned by user ID.
 /// Anonymous users get stricter limits (10/min, 150/hr) partitioned by IP.
+/// Requests carrying the configured link checker key are not limited.
 /// </summary>
 internal sealed class ContentRateLimiterPolicy : IRateLimiterPolicy<string>
 {
@@ -16,11 +20,18 @@ internal sealed class ContentRateLimiterPolicy : IRateLimiterPolicy<string>
     private const int AuthenticatedPerMinute = 20;
     private const int AuthenticatedPerHour = 60;
 
+    internal const string LinkCheckerKeyHeader = "X-LinkChecker-Key";
+
     // Null defers to the global OnRejected handler registered in Program.cs
     public Func<OnRejectedContext, CancellationToken, ValueTask>? OnRejected => null;
 
     public RateLimitPartition<string> GetPartition(HttpContext httpContext)
     {
+        if (HasValidLinkCheckerKey(httpContext))
+        {
+            return RateLimitPartition.GetNoLimiter("link-checker");
+        }
+
         bool isAuthenticated = httpContext.User.Identity?.IsAuthenticated == true;
 
         // Use stable user ID (GUID) for authenticated users so the bucket survives
@@ -50,12 +61,30 @@ internal sealed class ContentRateLimiterPolicy : IRateLimiterPolicy<string>
             })
         ));
     }
+
+    private static bool HasValidLinkCheckerKey(HttpContext httpContext)
+    {
+        string? expectedKey = httpContext.RequestServices
+            .GetService<IOptions<ContentRateLimitOptions>>()?.Value.LinkCheckerKey;
+        if (string.IsNullOrEmpty(expectedKey))
+        {
+            return false;
+        }
+
+        string? providedKey = httpContext.Request.Headers[LinkCheckerKeyHeader];
+        if (string.IsNullOrEmpty(providedKey))
+        {
+            return false;
+        }
+
+        return CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(providedKey),
+            Encoding.UTF8.GetBytes(expectedKey));
+    }
 }
 
 /// <summary>
-/// A <see cref="RateLimiter"/> that acquires permits from two inner limiters in sequence.
-/// Both must grant a permit for the request to proceed. If the second limiter rejects,
-/// the first limiter's permit is returned so no permit is consumed.
+/// Acquires from both inner limiters in sequence; a rejection by the second returns the first's permit.
 /// </summary>
 internal sealed class CombinedRateLimiter(RateLimiter perMinute, RateLimiter perHour) : RateLimiter
 {
@@ -117,8 +146,7 @@ internal sealed class CombinedRateLimiter(RateLimiter perMinute, RateLimiter per
 }
 
 /// <summary>
-/// A lease that holds two inner leases and disposes both on release,
-/// ensuring permits are returned to both underlying limiters.
+/// Holds two inner leases and disposes both on release.
 /// </summary>
 internal sealed class CombinedRateLimitLease(RateLimitLease a, RateLimitLease b) : RateLimitLease
 {

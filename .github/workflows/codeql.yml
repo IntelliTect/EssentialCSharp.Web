@@ -38,6 +38,7 @@ jobs:
       with:
         languages: ${{ matrix.language }}
         build-mode: none
+        queries: security-and-quality
 
     - name: Set up .NET Core
       uses: actions/setup-dotnet@v6
@@ -89,6 +90,7 @@ jobs:
       uses: github/codeql-action/init@v4
       with:
         languages: ${{ matrix.language }}
+        queries: security-and-quality
 
     - name: Autobuild
       uses: github/codeql-action/autobuild@v4

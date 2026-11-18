@@ -1,19 +1,82 @@
 ﻿using System.Net;
 using EssentialCSharp.Web.Services;
+using Mailjet.Client;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Extensions;
 
 public static class IServiceCollectionExtensions
 {
+    /// <summary>
+    /// Upper bound for a single Mailjet request. The send runs synchronously inside the registration and
+    /// password-reset requests, so a slow Mailjet must not hold them open for HttpClient's 100s default.
+    /// Matches the 10s per-attempt default of the standard resilience handler.
+    /// </summary>
+    internal static readonly TimeSpan MailjetRequestTimeout = TimeSpan.FromSeconds(10);
+
+    /// <summary>
+    /// Standard retry/circuit-breaker resilience for every HttpClient. Clients where retrying is unsafe
+    /// (for example the Mailjet send) opt out with <c>RemoveAllResilienceHandlers</c>.
+    /// </summary>
+    public static IServiceCollection AddGlobalHttpClientDefaults(this IServiceCollection services)
+    {
+        services.ConfigureHttpClientDefaults(http => http.AddStandardResilienceHandler());
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the Mailjet-backed <see cref="IEmailSender"/> with validated <see cref="AuthMessageSenderOptions"/>.
+    /// Does nothing in Development, where emails are not sent and no Mailjet keys are needed. Elsewhere,
+    /// missing or malformed settings fail host startup (<c>ValidateOnStart</c>).
+    /// </summary>
+    public static IServiceCollection AddMailjetEmailSender(this IServiceCollection services, IConfigurationSection authMessageSenderSection, IHostEnvironment environment)
+    {
+        if (environment.IsDevelopment())
+        {
+            return services;
+        }
+
+        services.AddOptions<AuthMessageSenderOptions>()
+            .Bind(authMessageSenderSection)
+            .ValidateOnStart();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<AuthMessageSenderOptions>, AuthMessageSenderOptionsValidator>());
+        services.AddTransient<IEmailSender, EmailSender>();
+
+        // RemoveAllResilienceHandlers is an experimental API (EXTEXP0001); MailjetEmailSenderPipelineTests
+        // (SendEmailAsync_WhenMailjetReturnsServerError_...) guards its behavior when the resilience package is bumped.
+#pragma warning disable EXTEXP0001
+        services.AddHttpClient<IMailjetClient, MailjetClient>((serviceProvider, client) =>
+        {
+            AuthMessageSenderOptions options = serviceProvider.GetRequiredService<IOptions<AuthMessageSenderOptions>>().Value;
+
+            //set BaseAddress, MediaType, UserAgent
+            client.SetDefaultSettings();
+            client.UseBasicAuthentication(options.APIKey, options.SecretKey);
+            client.Timeout = MailjetRequestTimeout;
+        })
+        // Remove the global standard resilience handler (ConfigureHttpClientDefaults in Program.cs): its retries
+        // would re-POST a send that may already have been accepted and could deliver duplicate emails.
+        // HttpClient.Timeout above bounds the single attempt instead.
+        .RemoveAllResilienceHandlers();
+#pragma warning restore EXTEXP0001
+
+        return services;
+    }
+
     public static void AddCaptchaService(this IServiceCollection services, IConfigurationSection CaptchaOptions)
     {
-        services.Configure<CaptchaOptions>(CaptchaOptions);
+        services.AddOptions<CaptchaOptions>()
+            .Bind(CaptchaOptions)
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<CaptchaOptions>, CaptchaOptionsValidator>();
         services.AddSingleton<ICaptchaService, CaptchaService>();
         services.AddSingleton<ICaptchaValidationService, CaptchaValidationService>();
-        services.AddHttpClient("hCaptcha", c =>
+        services.AddHttpClient("hCaptcha", (serviceProvider, client) =>
         {
-            c.BaseAddress = new Uri("https://api.hcaptcha.com");
+            client.BaseAddress = new Uri(serviceProvider.GetRequiredService<IOptions<CaptchaOptions>>().Value.ApiBaseUrl);
         });
     }
 

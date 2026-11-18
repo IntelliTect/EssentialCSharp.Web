@@ -1,0 +1,79 @@
+name: Scheduled smoke test (Development)
+
+# Catches drift no code change triggers (expiring secrets, login config, content, site down); deployments run the same tests as a gate.
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Deliberately not the deploy-development group: a queued run there would cancel a pending deployment.
+  group: scheduled-dev-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    name: Smoke test development
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # For the test user's credentials.
+    environment:
+      name: "Development"
+    permissions:
+      contents: read
+      issues: write
+      actions: read
+
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Build smoke tests
+        run: dotnet build EssentialCSharp.Web.E2ETests/EssentialCSharp.Web.E2ETests.csproj --configuration Release
+
+      - name: Install Playwright Chromium for smoke tests
+        run: pwsh EssentialCSharp.Web.E2ETests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
+      # No expected commit: between deployments dev may be on any recent build; /version must still answer.
+      - name: Smoke test development
+        id: smoke
+        env:
+          E2E_BASE_URL: ${{ vars.SITE_BASE_URL || 'https://dev.essentialcsharp.com' }}
+          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+        run: >-
+          dotnet test --project EssentialCSharp.Web.E2ETests/EssentialCSharp.Web.E2ETests.csproj
+          --configuration Release --no-build
+          -- --treenode-filter "/*/*/*/*[Category=Deployed]"
+          --report-trx --results-directory "${{ runner.temp }}/smoke-results"
+
+      - name: Upload smoke test results
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: smoke-test-results
+          path: |
+            ${{ runner.temp }}/smoke-results
+            EssentialCSharp.Web.E2ETests/bin/Release/net10.0/playwright-artifacts
+          if-no-files-found: ignore
+
+      - name: Report result
+        if: always() && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          # A skipped smoke step (setup failure) counts as failure: dev is unmonitored, and the next run reads the conclusion.
+          OUTCOME: ${{ job.status == 'cancelled' && 'cancelled' || (steps.smoke.outcome == 'success' && 'success' || 'failure') }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          WORKFLOW_FILE: Scheduled-Smoke-Test-Development.yml
+          BRANCH: main
+          SITE_BASE_URL: ${{ vars.SITE_BASE_URL || 'https://dev.essentialcsharp.com' }}
+        run: bash scripts/report-scheduled-smoke-result.sh

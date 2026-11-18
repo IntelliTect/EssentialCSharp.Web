@@ -96,7 +96,7 @@ public sealed partial class BookContentTool
         }
 
         SectionContentExtractionResult extraction = SectionContentExtractionResult.FromHtml(mapping, htmlContent, maxChars);
-        return extraction.ErrorMessage ?? extraction.Content!.ToMcpString();
+        return extraction.ErrorMessage ?? extraction.Content?.ToMcpString() ?? throw new InvalidOperationException("Section content extraction returned neither content nor an error message.");
     }
 
     [McpServerTool(Title = "Get Listing With Context", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),

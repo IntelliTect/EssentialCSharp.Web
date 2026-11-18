@@ -17,7 +17,7 @@ public sealed class ReferralMiddleware
     public async Task InvokeAsync(HttpContext context, IReferralService referralService, UserManager<EssentialCSharpWebUser> userManager)
     {
         // Retrieve current referral Id for processing
-        System.Collections.Specialized.NameValueCollection query = HttpUtility.ParseQueryString(context.Request.QueryString.Value!);
+        System.Collections.Specialized.NameValueCollection query = HttpUtility.ParseQueryString(context.Request.QueryString.Value ?? string.Empty);
         string? referralId = query["rid"];
         if (string.IsNullOrWhiteSpace(referralId))
         {
