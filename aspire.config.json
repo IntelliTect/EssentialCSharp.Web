@@ -1,5 +1,8 @@
 {
   "appHost": {
     "path": "dev/EssentialCSharp.Web.AppHost/EssentialCSharp.Web.AppHost.csproj"
+  },
+  "sdk": {
+    "version": "17.0.0"
   }
 }

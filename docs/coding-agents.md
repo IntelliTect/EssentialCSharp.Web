@@ -19,34 +19,32 @@ The standalone `run-tests` skill is intentionally not vendored: it refers to `fi
 `.github/workflows/copilot-setup-steps.yml` prepares the cloud agent environment and is also
 used by Copilot code review while no separate `copilot-code-review.yml` workflow exists.
 Setup uses the [official Aspire install script](https://aspire.dev/get-started/install-cli/)
-to install the CLI bundle matching the AppHost SDK before building,
+to install the CLI bundle matching `sdk.version` in `aspire.config.json` before building,
 with a dedicated timeout and logs rather than relying on MSBuild's automatic bundle bootstrap.
 After building, setup installs Playwright Chromium and its Linux dependencies using the
 AppHost test project's generated script before running the .NET suite, including browser journeys.
 
 ### Aspire agent setup
 
-The Aspire bundle was generated with Aspire CLI 13.6.4 using `aspire agent init`, not hand-written.
-The `aspire` router routes to companion skills, so keep the installed skills and their reference
-files together. Refresh both repository-local copies from the repository root:
-
-```powershell
-aspire agent init --non-interactive --workspace-root . `
-    --skill-locations standard,claudecode `
-    --skills aspire,aspireify,aspire-orchestration,aspire-monitoring,aspire-deployment `
-    --mcp=false
-```
+The checked-in Aspire bundle was generated with Aspire CLI 13.6.4 using `aspire agent init`, not
+hand-written. The `aspire` router routes to companion skills, so keep the installed skills and their
+reference files together.
 
 `aspire-init` (first-run scaffolding) and `aspire-project-v2-migration` (one-time `ProjectResource`
 to `DotnetProjectResource` migration) are intentionally omitted: this repository already has an
-AppHost, and Project v2 is not adopted. The router still names them; reinstall with
-`aspire agent init --skills <name>` only if that work is actually planned.
+AppHost, and the Web resource already uses Project v2 (`AddDotnetProject`). The router still names them.
 
-The explicit skill list excludes optional companion tools such as `playwright-cli` and
-`dotnet-inspect`. `--mcp=false` leaves existing MCP configuration unchanged; these skills use
-the Aspire CLI without requiring an MCP server. The installer also refreshes user-level
-`~/.agents/skills` and installs agent usage telemetry hooks by default. Set
-`ASPIRE_CLI_TELEMETRY_OPTOUT=true` to opt out of telemetry.
+Starting with Aspire 17, `aspire agent init` configures the Aspire skills plugin for the selected
+agent clients instead of copying skill folders, and can offer to delete existing copies. Running
+it would replace this checked-in baseline, so treat that as a separate decision about the hybrid
+setup described above rather than a routine refresh. To evaluate it without changing MCP configuration:
+
+```powershell
+aspire agent init --non-interactive --workspace-root . --agents copilot,claude --skills aspire --mcp=false
+```
+
+Copied skill folders are kept unless `--remove-skill-copies` is passed. The CLI collects usage
+telemetry by default; set `ASPIRE_CLI_TELEMETRY_OPTOUT=true` to opt out.
 
 Installing guidance does not execute or approve its workflows. This repository's AppHost is
 for **local development only**. Production continues through the existing Docker/CI pipeline,

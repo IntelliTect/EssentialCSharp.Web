@@ -1,5 +1,6 @@
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
+using Aspire.Hosting.Dotnet;
 using Aspire.Hosting.Testing;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Data;
@@ -41,7 +42,7 @@ public class JourneyFixture : StandaloneWebFixture
     {
         base.ConfigureBuilder(builder);
 
-        ProjectResource web = builder.Resources.OfType<ProjectResource>().Single(resource => resource.Name == WebResource);
+        DotnetProjectResource web = builder.Resources.OfType<DotnetProjectResource>().Single(resource => resource.Name == WebResource);
         Uri chatModelEndpoint = ChatModel.Endpoint;
         Uri hCaptchaApi = HCaptcha.ApiBaseUrl;
 
