@@ -19,7 +19,12 @@ public sealed partial class ReadingProfileService(
     [LoggerMessage(Level = LogLevel.Warning, Message = "Dropped reading credit: the authenticated user no longer exists")]
     private static partial void LogUserMissing(ILogger logger);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Ignored interval for page {PageKey}: unknown page or no countable words")]
+    // One entry per request, however many intervals it carries: the page keys come from the client, so logging each
+    // one at Warning would let a single caller write about 1000 warnings a minute. The keys are listed at Debug.
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Ignored {Skipped} of {Total} reading intervals: unknown page or no countable words (first: {FirstPageKey})")]
+    private static partial void LogUnknownPages(ILogger logger, int skipped, int total, string firstPageKey);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Ignored interval for page {PageKey}: unknown page or no countable words")]
     private static partial void LogUnknownPage(ILogger logger, string pageKey);
 
     /// <remarks>
@@ -45,6 +50,8 @@ public sealed partial class ReadingProfileService(
 
         long deltaWords = 0;
         long deltaSeconds = 0;
+        int unknownPages = 0;
+        string? firstUnknownPage = null;
         for (int i = 0; i < intervals.Count; i++)
         {
             ReadingInterval interval = intervals[i];
@@ -53,6 +60,8 @@ public sealed partial class ReadingProfileService(
             int pageWords = wordCountService.GetPageWordCount(interval.PageKey);
             if (pageWords <= 0)
             {
+                unknownPages++;
+                firstUnknownPage ??= interval.PageKey;
                 LogUnknownPage(logger, interval.PageKey);
                 continue;
             }
@@ -67,6 +76,11 @@ public sealed partial class ReadingProfileService(
 
             deltaWords += credit.Value.Words;
             deltaSeconds += credit.Value.Seconds;
+        }
+
+        if (firstUnknownPage is not null)
+        {
+            LogUnknownPages(logger, unknownPages, intervals.Count, firstUnknownPage);
         }
 
         if (deltaWords > 0 || deltaSeconds > 0)
