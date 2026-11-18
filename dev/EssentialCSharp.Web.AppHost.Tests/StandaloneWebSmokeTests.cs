@@ -53,6 +53,30 @@ public class StandaloneWebSmokeTests(Journeys.JourneyFixture fixture)
     }
 
     [Test]
+    public async Task PlaceholderChapter_FreshStart_RendersRepositoryContent()
+    {
+        using var client = fixture.CreateHttpClient("essentialcsharp-web", "http");
+
+        using var response = await client.GetAsync("/hello-world");
+        string body = await response.Content.ReadAsStringAsync();
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(body).Contains("Hello, World");
+    }
+}
+
+/// <summary>
+/// Starting a second AppHost creates container networks, and on Linux that makes Chromium abort in-flight
+/// requests with net::ERR_NETWORK_CHANGED. A parallel group runs after all ungrouped tests, so this
+/// can't break the browser journeys.
+/// </summary>
+[Category("Docker")]
+[RequiresLinuxContainers]
+[ParallelGroup(nameof(SecondAppHostTests))]
+[ClassDataSource<Journeys.JourneyFixture>(Shared = SharedType.PerTestSession)]
+public class SecondAppHostTests(Journeys.JourneyFixture fixture)
+{
+    [Test]
     public async Task SecondAppHost_DynamicPorts_RunsAlongsideFirst()
     {
         await using var second = new StandaloneWebFixture();
@@ -65,17 +89,5 @@ public class StandaloneWebSmokeTests(Journeys.JourneyFixture fixture)
         using var secondResponse = await secondClient.GetAsync("/health");
         await Assert.That(firstResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(secondResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
-    }
-
-    [Test]
-    public async Task PlaceholderChapter_FreshStart_RendersRepositoryContent()
-    {
-        using var client = fixture.CreateHttpClient("essentialcsharp-web", "http");
-
-        using var response = await client.GetAsync("/hello-world");
-        string body = await response.Content.ReadAsStringAsync();
-
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        await Assert.That(body).Contains("Hello, World");
     }
 }
