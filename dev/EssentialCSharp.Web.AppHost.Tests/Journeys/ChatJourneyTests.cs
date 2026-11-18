@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using Microsoft.Playwright;
 using TUnit.Playwright;
@@ -105,7 +106,59 @@ public class ChatJourneyTests(JourneyFixture fixture) : PageTest
 
     private static string ServerSentEvent(object payload) => $"data: {JsonSerializer.Serialize(payload)}\n\n";
 
-    private Task<IResponse?> GoToAsync(string path) => Page.GotoAsync(new Uri(fixture.WebUrl, path).ToString());
+
+    /// <summary>
+    /// Reloads when the app's own resources fail at the network level, e.g. net::ERR_NETWORK_CHANGED when
+    /// container networks change on a Linux host. HTTP error responses still fail the test.
+    /// </summary>
+    private async Task<IResponse?> GoToAsync(string path)
+    {
+        const int maxAttempts = 3;
+        string url = new Uri(fixture.WebUrl, path).ToString();
+        string origin = fixture.WebUrl.GetLeftPart(UriPartial.Authority);
+        var failures = new List<string>();
+
+        for (int attempt = 1; ; attempt++)
+        {
+            var attemptFailures = new ConcurrentQueue<string>();
+            void OnRequestFailed(object? sender, IRequest request)
+            {
+                if (request.Failure != "net::ERR_ABORTED" && request.Url.StartsWith(origin, StringComparison.OrdinalIgnoreCase))
+                {
+                    attemptFailures.Enqueue($"{request.Failure} {request.Url}");
+                }
+            }
+
+            Page.RequestFailed += OnRequestFailed;
+            IResponse? response = null;
+            try
+            {
+                response = await Page.GotoAsync(url);
+            }
+            catch (PlaywrightException ex) when (attempt < maxAttempts && ex.Message.Contains("net::ERR_", StringComparison.Ordinal))
+            {
+                attemptFailures.Enqueue(ex.Message);
+            }
+            finally
+            {
+                Page.RequestFailed -= OnRequestFailed;
+            }
+
+            if (attemptFailures.IsEmpty)
+            {
+                return response;
+            }
+
+            failures.AddRange(attemptFailures.Select(failure => $"attempt {attempt}: {failure}"));
+            if (attempt == maxAttempts)
+            {
+                throw new InvalidOperationException(
+                    $"'{path}' kept failing to load after {maxAttempts} attempts:{Environment.NewLine}{string.Join(Environment.NewLine, failures)}");
+            }
+
+            Console.WriteLine($"Reloading '{path}' after network failures: {string.Join("; ", attemptFailures)}");
+        }
+    }
 
     private async Task LogInAsync(TestUser user)
     {
