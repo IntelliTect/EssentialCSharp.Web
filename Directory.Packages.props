@@ -21,7 +21,7 @@
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="17.0.0" />
     <PackageVersion Include="Aspire.Hosting.Browsers" Version="17.0.0-preview.1.26567.5" />
     <PackageVersion Include="Aspire.Hosting.EntityFrameworkCore" Version="17.0.0-preview.1.26567.5" />
-    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Ollama" Version="17.0.0-beta.1052" />
+    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Ollama" Version="17.0.0-beta.1078" />
     <PackageVersion Include="TUnit.Aspire" Version="1.77.0" />
     <PackageVersion Include="Azure.Extensions.AspNetCore.DataProtection.Keys" Version="1.6.5" />
     <PackageVersion Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.15" />
