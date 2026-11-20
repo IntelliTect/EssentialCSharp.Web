@@ -10,6 +10,11 @@ multi-ecosystem-groups:
     schedule:
       interval: "weekly"
 updates:
+  - package-ecosystem: "apm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
   - package-ecosystem: "nuget" # See documentation for possible values
     directories:
       - "/"

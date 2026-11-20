@@ -224,6 +224,13 @@ safe-outputs:
     target: "*"
 
 steps:
+  - name: Install agent context from the repository APM lockfile
+    uses: microsoft/apm-action@d723bb64ed70c135bbaf87d126b721dd2dae0439 # v1.10.0
+    with:
+      apm-version: "0.28.0"
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+
   - name: Fetch repo data for task weighting
     env:
       GH_TOKEN: ${{ github.token }}
@@ -434,6 +441,10 @@ Improve the engineering foundations of the repository. Consider:
 - **CI improvements**: Speed up CI pipelines, fix flaky tests, improve caching, upgrade actions.
 - **Tooling and SDK versions**: Update runtime versions, linters, formatters.
 - **Build system**: Simplify or modernise the build configuration.
+
+For CI efficiency work, read the installed `github-actions-efficiency` skill and
+only its relevant references. Its guidance does not expand the selected task or
+override this workflow's permissions, safe outputs, or validation requirements.
 
 For any change: create a fresh branch `repo-assist/eng-<desc>-<date>`, implement the change, build and test, then create a draft PR with AI disclosure and Test Status section. Update memory with what was checked and when.
 
