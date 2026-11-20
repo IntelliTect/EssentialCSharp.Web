@@ -1,0 +1,32 @@
+name: Update Agentic Workflows
+
+on:
+  schedule:
+    - cron: "17 17 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-agentic-workflows
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # GITHUB_TOKEN cannot push .github/workflows changes, and PRs it opens do not trigger CI.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          token: ${{ secrets.BOT_PAT }}
+
+      - uses: github/gh-aw/actions/setup-cli@399a445fe2d8926c616b54b1b82a16b5b2be4445 # v1.2.2
+        with:
+          version: latest
+
+      - name: Update workflow sources and compile
+        env:
+          GH_TOKEN: ${{ secrets.BOT_PAT }}
+        run: gh aw update --create-pull-request
