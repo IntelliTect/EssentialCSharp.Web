@@ -1,0 +1,82 @@
+lockfile_version: '1'
+generated_at: '2026-11-20T22:31:40.232410+00:00'
+apm_version: 0.28.0
+dependencies:
+- repo_url: github/awesome-copilot
+  name: github-actions-efficiency
+  host: github.com
+  resolved_commit: f10fdb8b2660ce85c98f220b2f1ca24653768a5c
+  resolved_ref: main
+  version: unknown
+  virtual_path: skills/github-actions-efficiency
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/github-actions-efficiency
+  - .agents/skills/github-actions-efficiency/SKILL.md
+  - .agents/skills/github-actions-efficiency/references/actions.md
+  - .agents/skills/github-actions-efficiency/references/patterns.md
+  - .agents/skills/github-actions-efficiency/references/reporting.md
+  - .agents/skills/github-actions-efficiency/references/review-rubric.md
+  deployed_file_hashes:
+    .agents/skills/github-actions-efficiency/SKILL.md: sha256:9c41e860468e5c88d83ab6eec70c585b0f122facec2632ea65497b3389139e43
+    .agents/skills/github-actions-efficiency/references/actions.md: sha256:9f24153e0b743a978ec84e08bc64047616d18504965708cc7507437203689fdb
+    .agents/skills/github-actions-efficiency/references/patterns.md: sha256:a9fb61ee95b5f2f4cb372064f5de9d04ca749da1b78d050e42e909e9e97228dd
+    .agents/skills/github-actions-efficiency/references/reporting.md: sha256:18eec5acd0d9e52b450f86b8232e9994c5c5b7760240bcb2e97417f8a847508c
+    .agents/skills/github-actions-efficiency/references/review-rubric.md: sha256:f2fd2bbd34f15f68664e30ea62468f8a5b19bc9b49929dcd082a4c87316b3ce2
+  content_hash: sha256:cb1a6b7a2d06465b26f1245a0f617317032d40f0e63f3237ac67f996ad5eeea3
+deployments:
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/github-actions-efficiency
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/github-actions-efficiency
+  active_owner: github/awesome-copilot/skills/github-actions-efficiency
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/github-actions-efficiency/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/github-actions-efficiency
+  active_owner: github/awesome-copilot/skills/github-actions-efficiency
+  content_hash: sha256:9c41e860468e5c88d83ab6eec70c585b0f122facec2632ea65497b3389139e43
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/github-actions-efficiency/references/actions.md
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/github-actions-efficiency
+  active_owner: github/awesome-copilot/skills/github-actions-efficiency
+  content_hash: sha256:9f24153e0b743a978ec84e08bc64047616d18504965708cc7507437203689fdb
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/github-actions-efficiency/references/patterns.md
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/github-actions-efficiency
+  active_owner: github/awesome-copilot/skills/github-actions-efficiency
+  content_hash: sha256:a9fb61ee95b5f2f4cb372064f5de9d04ca749da1b78d050e42e909e9e97228dd
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/github-actions-efficiency/references/reporting.md
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/github-actions-efficiency
+  active_owner: github/awesome-copilot/skills/github-actions-efficiency
+  content_hash: sha256:18eec5acd0d9e52b450f86b8232e9994c5c5b7760240bcb2e97417f8a847508c
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/github-actions-efficiency/references/review-rubric.md
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/github-actions-efficiency
+  active_owner: github/awesome-copilot/skills/github-actions-efficiency
+  content_hash: sha256:f2fd2bbd34f15f68664e30ea62468f8a5b19bc9b49929dcd082a4c87316b3ce2

@@ -1,0 +1,7 @@
+name: essentialcsharp-workflow-context
+version: 0.1.0
+description: Illustrative agent context for Repo Assist CI efficiency work.
+target: copilot
+dependencies:
+  apm:
+    - github/awesome-copilot/skills/github-actions-efficiency#main
