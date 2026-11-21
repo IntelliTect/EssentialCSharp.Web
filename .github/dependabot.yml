@@ -37,8 +37,7 @@ updates:
     schedule:
       interval: "weekly"
     ignore:
-      # gh-aw actions must match the compiler version that generated the .lock.yml files.
-      # Upgrade them with `gh aw upgrade` (which recompiles) instead.
+      # gh-aw action pins are compiler-managed and updated with workflow source updates/recompilation.
       - dependency-name: "github/gh-aw-actions/*"
 
   - package-ecosystem: "npm"
