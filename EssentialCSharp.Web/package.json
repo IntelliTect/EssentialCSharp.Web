@@ -13,7 +13,7 @@
     "@mdi/font": "7.4.47",
     "@zxcvbn-ts/core": "^4.3.0",
     "@zxcvbn-ts/language-common": "^4.2.0",
-    "@zxcvbn-ts/language-en": "^4.1.1",
+    "@zxcvbn-ts/language-en": "^4.1.2",
     "dompurify": "3.4.17",
     "jquery": "4.0.0",
     "marked": "18.2.0",
