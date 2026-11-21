@@ -92,6 +92,24 @@ mode contains no migration tools, browser helpers, local AI, or Development envi
 To run only graph checks, use
 `dotnet test --project dev\EssentialCSharp.Web.AppHost.Tests --treenode-filter "/*/*/(AppHostGraphTests|WebHostingExtensionsTests)/*"`.
 
+Browser journeys share the fresh-database fixture. The reading journey opens and filters the TOC,
+selects a chapter, follows next/previous links, and verifies a rendered section heading both from
+its TOC link and a fresh anchored URL load. It uses the repository's `introducing-c` / `hello-world`
+placeholder mappings locally; the deployed version discovers links from the real TOC, without
+production-only chapter keys or login credentials. Generated aliases can serve the same document:
+TOC links retain anchors, while arrow buttons deliberately omit them. The shared journey makes
+five content requests (plus two home loads), keeping a deployed suite run below the anonymous
+10/minute and 20/hour content limits when run once. Concurrent or repeated runs share the IP budget.
+
+Run only the local reading journey after installing Playwright Chromium:
+
+```powershell
+dotnet test --project dev\EssentialCSharp.Web.AppHost.Tests --treenode-filter "/*/*/ReadingJourneyTests/*"
+```
+
+`DeployedReadingJourneyTests` runs with the existing `Category=Deployed` promotion gate and
+six-hour scheduled checks when `E2E_BASE_URL` is set. No extra workflow or secrets are required.
+
 The AppHost references the Web project so building the AppHost builds Web before the EF migration
 resource runs its `--no-build` database update; Web starts only after that update completes successfully.
 
