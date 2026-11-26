@@ -1,33 +1,62 @@
 name: Dependabot auto-merge
 on: pull_request
 
+# Every privileged call below uses BOT_PAT; the workflow token needs nothing beyond read.
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   dependabot:
     runs-on: ubuntu-latest
-    if: ${{ github.actor == 'dependabot[bot]' }}
+    # Act only when Dependabot opened the PR, Dependabot's own push started this run, and a re-run
+    # by anyone else (github.triggering_actor) cannot reuse Dependabot's actor identity.
+    if: >-
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.actor == 'dependabot[bot]' &&
+      github.triggering_actor == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - name: Dependabot metadata
         id: metadata
-        uses: dependabot/fetch-metadata@v3
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
         with:
           github-token: ${{ secrets.BOT_PAT }}
+
+      # Approve and merge only the commit this run was triggered for. If anything was pushed to the
+      # branch after Dependabot's commit, stop instead of approving someone else's code.
+      - name: Verify the PR head is still the triggering commit
+        env:
+          GH_TOKEN: ${{ secrets.BOT_PAT }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          live_head="$(gh pr view "$PR_URL" --json headRefOid --jq .headRefOid)"
+          if [ "$live_head" != "$HEAD_SHA" ]; then
+            echo "::error::PR head is $live_head, but this run was triggered for $HEAD_SHA. Not approving."
+            exit 1
+          fi
+
       - name: Add a label for content updates
-        if: ${{contains(steps.metadata.outputs.dependency-names, 'ContentFeedNuget')}}
+        if: ${{ contains(steps.metadata.outputs.dependency-names, 'ContentFeedNuget') }}
         run: gh pr edit "$PR_URL" --add-label "content update"
         env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GITHUB_TOKEN: ${{ secrets.BOT_PAT }}
-      - name: Approve a PR
-        run: gh pr review --approve "$PR_URL"
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.BOT_PAT }}
+
+      - name: Approve the triggering commit
         env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GITHUB_TOKEN: ${{secrets.BOT_PAT}}
-      - name: Enable auto-merge for Dependabot PRs
-        run: gh pr merge --auto --squash --delete-branch "$PR_URL"
+          GH_TOKEN: ${{ secrets.BOT_PAT }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/reviews" \
+            -f commit_id="$HEAD_SHA" \
+            -f event=APPROVE \
+            -f body="Auto-approved Dependabot update at ${HEAD_SHA}."
+
+      - name: Enable auto-merge for the triggering commit
         env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GITHUB_TOKEN: ${{secrets.BOT_PAT}}
+          GH_TOKEN: ${{ secrets.BOT_PAT }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: gh pr merge --auto --squash --delete-branch --match-head-commit "$HEAD_SHA" "$PR_URL"

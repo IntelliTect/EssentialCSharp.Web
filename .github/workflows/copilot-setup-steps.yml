@@ -19,10 +19,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up .NET Core
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           global-json-file: global.json
           source-url: https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json
@@ -30,26 +30,26 @@ jobs:
           NUGET_AUTH_TOKEN: ${{ secrets.AZURE_DEVOPS_PAT }}
 
       - name: Set up Node.js for frontend development
-        uses: actions/setup-node@v7.1.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: EssentialCSharp.Web/.nvmrc
           cache: npm
           cache-dependency-path: EssentialCSharp.Web/package-lock.json
 
       - name: Set up dependency caching for faster builds
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: nuget-cache
         with:
           path: |
             ~/.nuget/packages
             ${{ github.workspace }}/**/obj/project.assets.json
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          # Restored with private-feed credentials: keep it apart from the *-nuget-public- caches PR jobs use.
+          key: ${{ runner.os }}-nuget-feed-${{ hashFiles('**/packages.lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-            ${{ runner.os }}-nuget-
+            ${{ runner.os }}-nuget-feed-
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: Install additional development tools
         shell: bash

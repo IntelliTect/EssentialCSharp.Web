@@ -20,6 +20,16 @@ updates:
       interval: "daily"
       time: "04:00"
       timezone: "America/Los_Angeles"
+    # Hold public-registry version updates for a few days so a malicious or yanked release is
+    # likely to be caught upstream before it is auto-merged. Security updates ignore cooldown.
+    # Our own packages are exempt so book content still ships the next day: ContentFeedNuget (private
+    # feed) and EssentialCSharp.Shared.Models (nuget.org) share $(ToolingPackagesVersion) and move together.
+    cooldown:
+      default-days: 3
+      semver-major-days: 7
+      exclude:
+        - "ContentFeedNuget"
+        - "EssentialCSharp.Shared.Models"
     groups:
        tooling-dependencies:
           applies-to: version-updates
@@ -36,6 +46,9 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 3
+      semver-major-days: 7
     ignore:
       # gh-aw action pins are compiler-managed and updated with workflow source updates/recompilation.
       - dependency-name: "github/gh-aw-actions/*"
@@ -44,6 +57,9 @@ updates:
     directory: "/EssentialCSharp.Web/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 3
+      semver-major-days: 7
 
   - package-ecosystem: "docker"
     # Look for a `Dockerfile` in the `root` directory
