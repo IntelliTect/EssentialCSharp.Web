@@ -153,6 +153,37 @@ public class SiteMappingTests
         await Assert.That(percent).IsEqualTo("50.00");
     }
 
+    private static SiteMapping MappingWithKeys(string[] keys, string? primaryKey) =>
+        new(keys: [.. keys], primaryKey: primaryKey!, pagePath: ["a.html"], chapterNumber: 1, pageNumber: 1, orderOnPage: 1,
+            chapterTitle: "C", rawHeading: "Heading", anchorId: "heading", indentLevel: 0);
+
+    [Test]
+    [Arguments(new[] { "first", "alias" }, "primary", "first")]
+    [Arguments(new[] { "first" }, null, "first")] // the placeholder sitemap.json has no PrimaryKey
+    [Arguments(new string[0], "primary", "primary")]
+    [Arguments(new[] { " ", "second" }, "primary", "second")]
+    public async Task GetPageKey_MappingWithAUsableKey_ReturnsIt(string[] keys, string? primaryKey, string expected)
+    {
+        await Assert.That(MappingWithKeys(keys, primaryKey).GetPageKey()).IsEqualTo(expected);
+    }
+
+    [Test]
+    [Arguments(new string[0], null)]
+    [Arguments(new string[0], "")]
+    [Arguments(new[] { "", "  " }, " ")]
+    public async Task GetPageKey_MappingWithoutAUsableKey_IsNullSoTheLayoutStillRendersWithoutProgress(string[] keys, string? primaryKey)
+    {
+        // The layout passes the page key straight to FindPercentComplete, which rejects a blank key; a null key must
+        // instead mean "no progress for this page" rather than breaking the page.
+        string? pageKey = MappingWithKeys(keys, primaryKey).GetPageKey();
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(pageKey).IsNull();
+            await Assert.That(GetSiteMap().FindPercentComplete(pageKey)).IsNull();
+        }
+    }
+
     [Test]
     public async Task FindPercentComplete_EmptySiteMappings_ReturnsZeroPercent()
     {

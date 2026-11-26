@@ -60,8 +60,8 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
             string headHtml = doc.DocumentNode.Element("html")?.Element("head")?.InnerHtml ?? string.Empty;
             string html = doc.DocumentNode.Element("html")?.Element("body")?.InnerHtml ?? string.Empty;
 
-            // Placeholder sitemaps (CI, local dev) may omit PrimaryKey, so fall back to the first key.
-            string pageKey = siteMapping.Keys.FirstOrDefault() ?? siteMapping.PrimaryKey ?? string.Empty;
+            // Null when the mapping has no usable key: the layout and reading context then skip the page.
+            string? pageKey = siteMapping.GetPageKey();
             ViewBag.PageTitle = siteMapping.IndentLevel is 0 ? siteMapping.ChapterTitle + " " + siteMapping.RawHeading : siteMapping.RawHeading;
             ViewData["Description"] = chapterDescriptionService.GetDescription(siteMapping);
             ViewData["CanonicalUrl"] = $"{siteSettings.Value.BaseUrl.TrimEnd('/')}{Request.PathBase}{canonicalPath}";
