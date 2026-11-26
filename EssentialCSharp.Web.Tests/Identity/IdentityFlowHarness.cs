@@ -170,8 +170,16 @@ internal sealed class IdentityFlowHarness
 
     private sealed class NotPwnedHandler : HttpMessageHandler
     {
+        // The response is handed to the HttpClient pipeline; whoever made the request disposes it.
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(string.Empty) });
+            Task.FromResult(CreateNoMatchesResponse());
+
+        private static HttpResponseMessage CreateNoMatchesResponse()
+        {
+            HttpResponseMessage response = new(HttpStatusCode.OK);
+            response.Content = new StringContent(string.Empty);
+            return response;
+        }
     }
 }
 
