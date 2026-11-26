@@ -1,17 +1,21 @@
+using System.Globalization;
 using System.Net;
 using System.Security.Claims;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Controllers;
 using EssentialCSharp.Web.Data;
 using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Metadata;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace EssentialCSharp.Web.Tests;
@@ -36,8 +40,14 @@ public class ReadingControllerTests : IntegrationTestBase
     // (see ReadingTestSupport).
     private readonly ReadingOptions Options = ReadingTestSupport.CreateOptions();
 
-    protected override void ConfigureTestServices(IServiceCollection services) =>
+    // Idle unless a test arms it, so it changes nothing for the other tests.
+    private readonly ProfileInsertInterceptor ProfileInserts = new();
+
+    protected override void ConfigureTestServices(IServiceCollection services)
+    {
         ReadingTestSupport.UseFakes(services, new ReadingTestSupport.FakeWordCountService(), Options);
+        services.ConfigureDbContext<EssentialCSharpWebContext>(o => o.AddInterceptors(ProfileInserts));
+    }
 
     // ---- authentication ----
 
@@ -697,13 +707,74 @@ public class ReadingControllerTests : IntegrationTestBase
         }
     }
 
+    [Test]
+    public async Task PostSession_RowInsertedByAConcurrentRequestBetweenUpdateAndInsert_RetriesTheUpdateAndLosesNoIncrement()
+    {
+        // Deterministic version of the race the parallel test cannot force on SQLite: our UPDATE matches no row, then
+        // another request inserts the row (on its own connection) just before our INSERT, which fails on the key.
+        string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-insert-race");
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+        ProfileInserts.InsertConcurrentRowBeforeNextInsert(Factory.Services, userId, words: 500, seconds: 100);
+
+        using HttpResponseMessage response = await PostSessionAsync(client, Interval(LargePage, 100, 60));
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+            await Assert.That(ProfileInserts.Fired).IsTrue().Because("the concurrent insert must actually have happened");
+        }
+        await AssertProfileAsync(userId, 500 + 100, 100 + 60);
+    }
+
+    [Test]
+    public async Task PostSession_InsertFailsForAnExistingUserWithoutAConcurrentRow_ReportsFailureSoTheClientKeepsTheCredit()
+    {
+        // Neither a duplicate key nor a deleted user: the failure must not be reported as success, or the client would
+        // discard intervals that were never recorded instead of retrying them.
+        string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-insert-fails");
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+        ProfileInserts.FailNextInsert();
+
+        using HttpResponseMessage response = await PostSessionAsync(client, Interval(LargePage, 100, 60));
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(response.IsSuccessStatusCode).IsFalse().Because($"the response was {(int)response.StatusCode}");
+            await Assert.That(await HasProfileRowAsync(userId)).IsFalse();
+        }
+    }
+
+    // ---- account deletion ----
+
+    [Test]
+    public async Task DeletingAUser_RemovesTheirReadingProfileAndLeavesOtherUsersAlone()
+    {
+        string deletedId = await CreateUserWithBaselineProfileAsync();
+        string otherId = await CreateUserWithBaselineProfileAsync();
+
+        IdentityResult result = await InServiceScopeAsync(async services =>
+        {
+            UserManager<EssentialCSharpWebUser> userManager = services.GetRequiredService<UserManager<EssentialCSharpWebUser>>();
+            EssentialCSharpWebUser user = await userManager.FindByIdAsync(deletedId)
+                ?? throw new InvalidOperationException($"User {deletedId} does not exist.");
+            return await userManager.DeleteAsync(user);
+        });
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.Succeeded).IsTrue();
+            await Assert.That(await HasProfileRowAsync(deletedId)).IsFalse();
+        }
+        await AssertProfileAsync(otherId, BaselineWords, BaselineSeconds);
+    }
+
     // ---- personal data ----
 
     [Test]
     public async Task DownloadPersonalData_IncludesReadingTotalsForUserWithAProfile()
     {
-        string userId = await CreateUserWithBaselineProfileAsync(
-            updatedAtUtc: new DateTime(2024, 5, 6, 7, 8, 9, 123, DateTimeKind.Utc));
+        DateTime lastUpdatedUtc = new(2024, 5, 6, 7, 8, 9, 123, DateTimeKind.Utc);
+        string userId = await CreateUserWithBaselineProfileAsync(updatedAtUtc: lastUpdatedUtc);
         string otherUserId = await McpTestHelper.CreateUserAsync(Factory, "reading-export-none");
         Dictionary<string, string> withProfile = await DownloadPersonalDataAsync(userId);
         Dictionary<string, string> withoutProfile = await DownloadPersonalDataAsync(otherUserId);
@@ -712,8 +783,14 @@ public class ReadingControllerTests : IntegrationTestBase
         {
             await Assert.That(withProfile["Reading total words read"]).IsEqualTo("1200");
             await Assert.That(withProfile["Reading total active seconds"]).IsEqualTo("360");
-            // The key says UTC, so the round-trip value must carry the 'Z' even though EF reads it back unspecified.
-            await Assert.That(withProfile["Reading profile last updated (UTC)"]).IsEqualTo("2024-05-06T07:08:09.1230000Z");
+            // The export must be an unambiguous UTC ISO-8601 instant: it parses as UTC (not local or unspecified) and
+            // round-trips to the seeded instant.
+            await Assert.That(DateTime.TryParseExact(
+                    withProfile["Reading profile last updated (UTC)"], "O", CultureInfo.InvariantCulture,
+                    DateTimeStyles.RoundtripKind, out DateTime exported))
+                .IsTrue().Because($"'{withProfile["Reading profile last updated (UTC)"]}' is not an ISO-8601 round-trip value");
+            await Assert.That(exported.Kind).IsEqualTo(DateTimeKind.Utc);
+            await Assert.That(exported).IsEqualTo(lastUpdatedUtc);
             await Assert.That(withoutProfile.Keys.Where(k => k.StartsWith("Reading", StringComparison.Ordinal))).IsEmpty();
         }
     }
@@ -780,4 +857,47 @@ public class ReadingControllerTests : IntegrationTestBase
 
     private Task<HttpClient> CreateAuthenticatedClientAsync(string userId, bool includeAntiforgery = true) =>
         ReadingTestSupport.CreateSignedInClientAsync(Factory, userId, includeAntiforgery);
+
+    /// <summary>
+    /// Acts once on the next SaveChanges that inserts a <see cref="UserReadingProfile"/>: either inserts the same
+    /// user's row first from a separate scope (a concurrent request winning the race) or fails the save outright.
+    /// </summary>
+    private sealed class ProfileInsertInterceptor : SaveChangesInterceptor
+    {
+        private Func<CancellationToken, Task>? _beforeNextInsert;
+
+        public bool Fired { get; private set; }
+
+        public void InsertConcurrentRowBeforeNextInsert(IServiceProvider rootServices, string userId, long words, long seconds) =>
+            _beforeNextInsert = async cancellationToken =>
+            {
+                using IServiceScope scope = rootServices.CreateScope();
+                EssentialCSharpWebContext other = scope.ServiceProvider.GetRequiredService<EssentialCSharpWebContext>();
+                other.UserReadingProfiles.Add(new UserReadingProfile
+                {
+                    UserId = userId,
+                    TotalWordsRead = words,
+                    TotalActiveSeconds = seconds,
+                    UpdatedAtUtc = DateTime.UtcNow
+                });
+                await other.SaveChangesAsync(cancellationToken);
+            };
+
+        public void FailNextInsert() =>
+            _beforeNextInsert = _ => throw new DbUpdateException("Simulated insert failure.");
+
+        public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            if (eventData.Context is { } context
+                && context.ChangeTracker.Entries<UserReadingProfile>().Any(e => e.State == EntityState.Added)
+                && Interlocked.Exchange(ref _beforeNextInsert, null) is { } beforeInsert)
+            {
+                Fired = true;
+                await beforeInsert(cancellationToken);
+            }
+
+            return result;
+        }
+    }
 }
