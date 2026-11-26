@@ -77,9 +77,8 @@ jobs:
       contents: read
       id-token: write # OIDC sign-in for the private NuGet feed; unused until AZURE_DEVOPS_FEED_CLIENT_ID is set
     env:
-      # Private-feed auth: an Entra workload identity (OIDC) once the BuildAndUploadImage environment
-      # variable AZURE_DEVOPS_FEED_CLIENT_ID is set, otherwise the legacy AZURE_DEVOPS_PAT.
-      # See docs/nuget-feed-oidc.md. Remove the PAT fallback once OIDC has worked on main.
+      # Private-feed auth: OIDC when vars.AZURE_DEVOPS_FEED_CLIENT_ID is set, else AZURE_DEVOPS_PAT.
+      # Remove the PAT fallback once OIDC has worked on main.
       FEED_AUTH_MODE: ${{ vars.AZURE_DEVOPS_FEED_CLIENT_ID != '' && 'oidc' || 'pat' }}
 
     steps:
