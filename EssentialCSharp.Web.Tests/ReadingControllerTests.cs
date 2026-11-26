@@ -702,7 +702,8 @@ public class ReadingControllerTests : IntegrationTestBase
     [Test]
     public async Task DownloadPersonalData_IncludesReadingTotalsForUserWithAProfile()
     {
-        string userId = await CreateUserWithBaselineProfileAsync();
+        string userId = await CreateUserWithBaselineProfileAsync(
+            updatedAtUtc: new DateTime(2024, 5, 6, 7, 8, 9, 123, DateTimeKind.Utc));
         string otherUserId = await McpTestHelper.CreateUserAsync(Factory, "reading-export-none");
         Dictionary<string, string> withProfile = await DownloadPersonalDataAsync(userId);
         Dictionary<string, string> withoutProfile = await DownloadPersonalDataAsync(otherUserId);
@@ -711,6 +712,8 @@ public class ReadingControllerTests : IntegrationTestBase
         {
             await Assert.That(withProfile["Reading total words read"]).IsEqualTo("1200");
             await Assert.That(withProfile["Reading total active seconds"]).IsEqualTo("360");
+            // The key says UTC, so the round-trip value must carry the 'Z' even though EF reads it back unspecified.
+            await Assert.That(withProfile["Reading profile last updated (UTC)"]).IsEqualTo("2024-05-06T07:08:09.1230000Z");
             await Assert.That(withoutProfile.Keys.Where(k => k.StartsWith("Reading", StringComparison.Ordinal))).IsEmpty();
         }
     }

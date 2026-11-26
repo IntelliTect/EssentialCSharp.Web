@@ -56,7 +56,8 @@ public partial class DownloadPersonalDataModel(
         {
             personalData.Add("Reading total words read", readingProfile.TotalWordsRead.ToString(System.Globalization.CultureInfo.InvariantCulture));
             personalData.Add("Reading total active seconds", readingProfile.TotalActiveSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture));
-            personalData.Add("Reading profile last updated (UTC)", readingProfile.UpdatedAtUtc.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
+            // EF reads the column back as DateTimeKind.Unspecified; mark it UTC so the "O" format ends in 'Z'.
+            personalData.Add("Reading profile last updated (UTC)", DateTime.SpecifyKind(readingProfile.UpdatedAtUtc, DateTimeKind.Utc).ToString("O", System.Globalization.CultureInfo.InvariantCulture));
         }
 
         Response.Headers.Append("Content-Disposition", "attachment; filename=PersonalData.json");
