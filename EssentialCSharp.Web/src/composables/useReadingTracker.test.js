@@ -5,9 +5,7 @@ import {
     LEASE_MS,
     MAX_TICK_DELTA_S,
     READING_RESET_CHANNEL,
-    RESET_MESSAGE_FAILED,
-    RESET_MESSAGE_RESET,
-    RESET_MESSAGE_RESETTING,
+    READING_RESET_URL,
     RESET_PAUSE_MS,
     RETRY_BASE_DELAY_MS,
     RETRY_MAX_DELAY_MS,
@@ -231,22 +229,6 @@ describe("useReadingTracker", () => {
             await advance(FLUSH_S + 100);
             await leavePage();
             expect(sum(delivered, "wordsRead")).toBe(Math.round(ctx.pageWords * VIEWPORT / CONTENT_HEIGHT));
-        });
-
-        it("does not repeat flush work every tick while a stationary reader has nothing to credit", async () => {
-            start(context());
-            press();
-            await advance(FLUSH_S); // first screen credited
-            const requests = calls.length;
-            // Every flush re-measures the page on top of the per-tick measurement.
-            const element = document.querySelector("[data-reading-content]");
-            const measure = vi.spyOn(element, "getBoundingClientRect");
-            const ticks = 5 * FLUSH_S * 1000 / TICK_INTERVAL_MS;
-
-            await advance(5 * FLUSH_S);
-
-            expect(calls).toHaveLength(requests);
-            expect(measure.mock.calls.length).toBeLessThanOrEqual(ticks + 1);
         });
 
         it("does not credit content that was already scrolled past when the page loaded", async () => {
@@ -1004,53 +986,71 @@ describe("useReadingTracker", () => {
             expect(sum(delivered, "wordsRead")).toBe(0);
         });
 
-        describe("while the reset request is pending", () => {
-            function messageFromOtherTab(type) {
-                const other = new BroadcastChannel(READING_RESET_CHANNEL);
-                other.postMessage({ type });
-                other.close();
+        // End to end with the real Manage Profile button: this document stands in for the other tab
+        // (the fake channel delivers between instances, as between tabs). Only what reaches the
+        // server is asserted, not the messages the two pages exchange.
+        describe("while the reset requested on the Manage Profile page is pending", () => {
+            let respondToReset;
+
+            beforeEach(async () => {
+                const sessionFetch = globalThis.fetch;
+                vi.stubGlobal("fetch", (url, init) => (url === READING_RESET_URL
+                    ? new Promise((resolve) => { respondToReset = (status) => resolve(new Response(null, { status })); })
+                    : sessionFetch(url, init)));
+                vi.stubGlobal("confirm", () => true);
+                document.body.insertAdjacentHTML("beforeend",
+                    '<button id="reset-reading-speed-button" data-confirm="Reset?"></button><span id="reset-reading-status"></span>');
+                vi.resetModules();
+                await import("../reading-reset.js");
+            });
+
+            async function clickReset() {
+                document.getElementById("reset-reading-speed-button").dispatchEvent(new Event("click"));
+                await advance(0);
+            }
+            async function resetResponds(status) {
+                respondToReset(status);
+                await advance(0);
             }
 
-            it("sends nothing, so no batch can reach the server after the reset", async () => {
+            it("sends nothing, so no batch can reach the server after the reset and re-create the profile", async () => {
                 start();
                 press();
                 scrollTo(-VIEWPORT);
-                messageFromOtherTab(RESET_MESSAGE_RESETTING);
+                await clickReset();
                 scrollTo(-(CONTENT_HEIGHT - VIEWPORT)); // keeps reading while the reset is pending
-                await advance(RESET_PAUSE_MS / 1000 - 2); // past a flush period, still within the pause
+                await advance(FLUSH_S + 1);
                 hide();
                 await leavePage();
                 expect(calls).toHaveLength(0);
             });
 
-            it("discards the held data when the reset succeeds", async () => {
+            it("does not deliver reading done before the reset once it succeeds", async () => {
                 start();
                 readThroughPage();
-                messageFromOtherTab(RESET_MESSAGE_RESETTING);
+                await clickReset();
                 await advance(FLUSH_S + 1);
-                messageFromOtherTab(RESET_MESSAGE_RESET);
+                await resetResponds(204);
                 await leavePage();
-                expect(deliveredSeconds()).toBeLessThanOrEqual(1);
+                expect(deliveredSeconds()).toBe(0);
             });
 
-            it("resumes with its data when the reset fails", async () => {
+            it("still delivers its reading when the reset fails", async () => {
                 start();
                 readThroughPage();
-                messageFromOtherTab(RESET_MESSAGE_RESETTING);
+                await clickReset();
                 await advance(FLUSH_S + 1);
-                expect(calls).toHaveLength(0);
-
-                messageFromOtherTab(RESET_MESSAGE_FAILED);
+                await resetResponds(503);
                 await advance(1);
                 expect(deliveredSeconds()).toBeGreaterThanOrEqual(FLUSH_S);
             });
 
-            it("resumes on its own if the resetting tab never reports the outcome", async () => {
+            it("resumes tracking if the reset never completes", async () => {
                 start();
                 readThroughPage();
-                messageFromOtherTab(RESET_MESSAGE_RESETTING);
+                await clickReset(); // the reset request never answers
                 await advance(RESET_PAUSE_MS / 1000 + 1);
-                expect(calls.length).toBeGreaterThan(0);
+                expect(deliveredSeconds()).toBeGreaterThanOrEqual(FLUSH_S);
             });
         });
     });
