@@ -30,32 +30,32 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v7.0.1
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v4
+      uses: github/codeql-action/init@915412ff23e8b7659517e607487dbeae018f2934 # v4.39.5
       with:
         languages: ${{ matrix.language }}
         build-mode: none
         queries: security-and-quality
 
     - name: Set up .NET Core
-      uses: actions/setup-dotnet@v6
+      uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
       with:
         global-json-file: global.json
 
     - name: Set up dependency caching for faster builds
-      uses: actions/cache@v6
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       id: nuget-cache
       with:
         path: |
           ~/.nuget/packages
           ${{ github.workspace }}/**/obj/project.assets.json
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+        # No private-feed packages here; *-nuget-public- never matches the credentialed *-nuget-feed- caches.
+        key: ${{ runner.os }}-nuget-public-${{ hashFiles('**/packages.lock.json') }}
         restore-keys: |
-          ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-          ${{ runner.os }}-nuget-
+          ${{ runner.os }}-nuget-public-
         
     - name: Restore with dotnet
       run: |
@@ -63,7 +63,7 @@ jobs:
            dotnet build --configuration Release --no-restore --no-incremental /p:AccessToNugetFeed=false /p:SkipFrontendBuild=true
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v4
+      uses: github/codeql-action/analyze@915412ff23e8b7659517e607487dbeae018f2934 # v4.39.5
       with:
         category: "/language:${{matrix.language}}"
 
@@ -83,19 +83,19 @@ jobs:
         
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v7.0.1
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v4
+      uses: github/codeql-action/init@915412ff23e8b7659517e607487dbeae018f2934 # v4.39.5
       with:
         languages: ${{ matrix.language }}
         queries: security-and-quality
 
     - name: Autobuild
-      uses: github/codeql-action/autobuild@v4
+      uses: github/codeql-action/autobuild@915412ff23e8b7659517e607487dbeae018f2934 # v4.39.5
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v4
+      uses: github/codeql-action/analyze@915412ff23e8b7659517e607487dbeae018f2934 # v4.39.5
       with:
         category: "/language:${{matrix.language}}"
