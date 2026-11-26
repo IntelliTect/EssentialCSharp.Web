@@ -75,12 +75,7 @@ jobs:
     environment: "BuildAndUploadImage"
     permissions:
       contents: read
-      id-token: write # OIDC sign-in for the private NuGet feed; unused until AZURE_DEVOPS_FEED_CLIENT_ID is set
-    env:
-      # Private-feed auth: OIDC when vars.AZURE_DEVOPS_FEED_CLIENT_ID is set, else AZURE_DEVOPS_PAT.
-      # Remove the PAT fallback once OIDC has worked on main.
-      FEED_AUTH_MODE: ${{ vars.AZURE_DEVOPS_FEED_CLIENT_ID != '' && 'oidc' || 'pat' }}
-
+      id-token: write # OIDC sign-in for the private NuGet feed
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -103,7 +98,6 @@ jobs:
             ${{ runner.os }}-nuget-feed-
 
       - name: Azure login for the private NuGet feed (restore)
-        if: env.FEED_AUTH_MODE == 'oidc'
         uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ vars.AZURE_DEVOPS_FEED_CLIENT_ID }}
@@ -113,15 +107,12 @@ jobs:
       # Credentials-only user-level NuGet.Config; the repo nuget.config supplies the sources.
       # It sits outside the Docker build context and is deleted right after restore.
       - name: Write NuGet feed credentials
-        env:
-          AZURE_DEVOPS_PAT: ${{ env.FEED_AUTH_MODE == 'pat' && secrets.AZURE_DEVOPS_PAT || '' }}
         run: |
           NUGET_FEED_TOKEN="$(bash scripts/nuget/get-feed-token.sh)"
           export NUGET_FEED_TOKEN
           mkdir -p ~/.nuget/NuGet
           bash scripts/nuget/emit-creds-config.sh > ~/.nuget/NuGet/NuGet.Config
           chmod 600 ~/.nuget/NuGet/NuGet.Config
-          echo "Private feed auth mode: ${FEED_AUTH_MODE}"
 
       - name: Restore with dotnet
         run: dotnet restore
@@ -185,7 +176,6 @@ jobs:
 
       # Sign in again: the GitHub OIDC assertion from the first login may have expired by now.
       - name: Azure login for the private NuGet feed (container build)
-        if: env.FEED_AUTH_MODE == 'oidc'
         uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ vars.AZURE_DEVOPS_FEED_CLIENT_ID }}
@@ -193,8 +183,6 @@ jobs:
           allow-no-subscriptions: true
 
       - name: Generate Docker NuGet credentials config
-        env:
-          AZURE_DEVOPS_PAT: ${{ env.FEED_AUTH_MODE == 'pat' && secrets.AZURE_DEVOPS_PAT || '' }}
         run: |
           NUGET_FEED_TOKEN="$(bash scripts/nuget/get-feed-token.sh)"
           export NUGET_FEED_TOKEN
@@ -222,7 +210,7 @@ jobs:
         run: rm -f "${RUNNER_TEMP}/nuget/NuGet.Config"
 
       - name: Sign out of Azure
-        if: always() && env.FEED_AUTH_MODE == 'oidc'
+        if: always()
         run: |
           az logout || true
           az account clear || true
@@ -421,29 +409,13 @@ jobs:
       - name: Push Image to Dev Container Registry
         id: push
         env:
-          DEV_ACR: ${{ vars.DEVCONTAINER_REGISTRY }}
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE: ${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb
         run: |
-          REPO="${DEV_ACR}/essentialcsharpweb"
-          docker push --all-tags "$REPO"
-
-          # Digest of what this job just pushed, from the local image (not re-read through a mutable tag).
-          DIGEST="$(docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' "${REPO}:${IMAGE_TAG}" \
-            | sed -n "s|^${REPO}@||p" | sort -u)"
-          if ! [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
-            echo "::error::Could not determine a single pushed digest for ${REPO}:${IMAGE_TAG} (got '${DIGEST}')"
-            exit 1
-          fi
-
-          # The registry's tag must point at the same manifest; anything else means it moved underneath us.
-          REGISTRY_DIGEST="$(az acr repository show --name "${DEV_ACR%.azurecr.io}" \
-            --image "essentialcsharpweb:${IMAGE_TAG}" --query digest --output tsv)"
-          if [ "$REGISTRY_DIGEST" != "$DIGEST" ]; then
-            echo "::error::Dev ACR tag ${IMAGE_TAG} points to ${REGISTRY_DIGEST}, but this job pushed ${DIGEST}"
-            exit 1
-          fi
-          echo "Pushed ${REPO}@${DIGEST}"
-          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+          docker push --all-tags "$IMAGE"
+          # Digest of what was just pushed; later steps deploy by digest, never by tag.
+          DIGEST="$(docker image inspect --format '{{index .RepoDigests 0}}' "$IMAGE:$GITHUB_SHA" | cut -d@ -f2)"
+          [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "::error::No pushed digest for $IMAGE:$GITHUB_SHA"; exit 1; }
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
 
       - name: Run database migrations
         env:
