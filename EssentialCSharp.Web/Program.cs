@@ -382,6 +382,17 @@ public partial class Program
                         QueueLimit = 0
                     }));
 
+            // Reset has its own per-user bucket so session flushes from open reading tabs cannot make it return 429.
+            options.AddPolicy(ReadingController.ResetRateLimitPolicy, httpContext =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: $"reading-reset:{httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown"}",
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 5,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0
+                    }));
+
             // Combined per-minute burst (10/min) + per-hour cap (150/hr) for book content pages.
             // A scraper cycling through the full ~400-page book needs 2+ hours at minimum.
             // See Services/ContentRateLimiterPolicy.cs for implementation.

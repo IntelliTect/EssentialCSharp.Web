@@ -532,6 +532,34 @@ public class ReadingControllerTests : IntegrationTestBase
         }
     }
 
+    [Test]
+    [Arguments("/api/reading/session", "/api/reading/reset")]
+    [Arguments("/api/reading/reset", "/api/reading/session")]
+    public async Task ThrottledEndpoint_DoesNotThrottleTheSameUsersCallsToTheOtherEndpoint(string throttledUrl, string otherUrl)
+    {
+        // Background session flushes from open reading tabs must never use up the user's explicit reset, and the
+        // other way round, so each endpoint has its own bucket. As above, the permit counts are not asserted.
+        const int Ceiling = 1000;
+        string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-separate-buckets");
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+
+        HttpStatusCode lastStatus = default;
+        for (int i = 0; i < Ceiling && lastStatus != HttpStatusCode.TooManyRequests; i++)
+        {
+            using HttpResponseMessage response = await SendAsync(client, throttledUrl);
+            lastStatus = response.StatusCode;
+        }
+
+        using HttpResponseMessage otherResponse = await SendAsync(client, otherUrl);
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(lastStatus).IsEqualTo(HttpStatusCode.TooManyRequests).Because($"no 429 within {Ceiling} requests");
+            await Assert.That(otherResponse.StatusCode).IsNotEqualTo(HttpStatusCode.TooManyRequests);
+            await Assert.That(otherResponse.IsSuccessStatusCode).IsTrue().Because($"{otherUrl} returned {(int)otherResponse.StatusCode}");
+        }
+    }
+
     private static Task<HttpResponseMessage> SendAsync(HttpClient client, string url) =>
         url.EndsWith("/session", StringComparison.Ordinal)
             ? PostSessionAsync(client, Interval(LargePage, 10, 10))

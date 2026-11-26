@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace EssentialCSharp.Web.Controllers;
 
 // The rate limit is class-level so every action is limited: /api/reading is exempt from the global limiter in Program.cs.
+// Reset overrides it with its own policy so background session flushes cannot use up the user's explicit reset.
 [ApiController]
 [Authorize]
 [Route("api/reading")]
@@ -15,6 +16,7 @@ namespace EssentialCSharp.Web.Controllers;
 public sealed class ReadingController(IReadingProfileService readingProfileService) : ControllerBase
 {
     public const string WriteRateLimitPolicy = "ReadingWrite";
+    public const string ResetRateLimitPolicy = "ReadingReset";
 
     private const int MaxSessionRequestBytes = 32 * 1024;
 
@@ -41,6 +43,7 @@ public sealed class ReadingController(IReadingProfileService readingProfileServi
     }
 
     [HttpPost("reset")]
+    [EnableRateLimiting(ResetRateLimitPolicy)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Reset(CancellationToken cancellationToken)
