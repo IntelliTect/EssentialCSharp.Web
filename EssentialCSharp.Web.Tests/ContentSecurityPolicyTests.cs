@@ -45,6 +45,15 @@ public class ContentSecurityPolicyTests
     }
 
     [Test]
+    public async Task ContentSecurityPolicy_LimitsJsDelivrToDocSearch()
+    {
+        string[] scriptSrc = GetSources(Program.BuildContentSecurityPolicy(new ConfigurationBuilder().Build()), "script-src");
+
+        await Assert.That(scriptSrc).Contains("https://cdn.jsdelivr.net/npm/@docsearch/");
+        await Assert.That(scriptSrc).DoesNotContain("cdn.jsdelivr.net");
+    }
+
+    [Test]
     public async Task ContentSecurityPolicy_IgnoresInvalidOrigins()
     {
         string withInvalid = Program.BuildContentSecurityPolicy(ConfigurationWith(

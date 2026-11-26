@@ -432,6 +432,11 @@ public partial class Program
             {
                 app.UseForwardedHeaders();
             }
+
+            // Report-only in Development: a host the policy would block shows up as a console
+            // violation locally, without breaking dev tooling.
+            app.UseSecurityHeadersMiddleware(new SecurityHeadersBuilder()
+                .AddContentSecurityPolicyReportOnly(BuildContentSecurityPolicy(app.Configuration, app.Logger)));
         }
 
         app.MapHealthChecks("/health").DisableRateLimiting();
@@ -559,7 +564,8 @@ public partial class Program
         (string Directive, string[] Sources)[] policy =
         [
             ("default-src", ["'self'"]),
-            ("script-src", ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", .. clarity, "www.googletagmanager.com", "js.monitor.azure.com", .. hCaptcha, .. tryDotNet]),
+            // jsDelivr is only used for DocSearch (wwwroot/js/algoliaDocSearch.js), so allow just that package path.
+            ("script-src", ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net/npm/@docsearch/", .. clarity, "www.googletagmanager.com", "js.monitor.azure.com", .. hCaptcha, .. tryDotNet]),
             ("style-src", ["'self'", $"'nonce-{CspNonce.Placeholder}'", "cdnjs.cloudflare.com", "fonts.googleapis.com", .. hCaptcha]),
             ("style-src-attr", ["'unsafe-inline'"]),
             ("font-src", ["'self'", "fonts.gstatic.com", "cdnjs.cloudflare.com"]),
