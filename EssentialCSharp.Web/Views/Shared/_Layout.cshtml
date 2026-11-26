@@ -89,6 +89,11 @@
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('consent', 'default', {
+            // Unset consent types are treated as granted, so deny the ad types explicitly —
+            // the site has no advertising. Clarity also reads ad_storage from Consent Mode.
+            ad_storage: 'denied',
+            ad_user_data: 'denied',
+            ad_personalization: 'denied',
             analytics_storage: 'denied',
             functionality_storage: 'granted',
             security_storage: 'granted',

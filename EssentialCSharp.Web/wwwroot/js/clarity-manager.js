@@ -74,8 +74,12 @@
     function updateConsent() {
         if (typeof window.clarity === "function") {
             try {
+                // Clarity's Consent API v2 requires both keys, spelled with a capital "S"
+                // (ad_Storage / analytics_Storage). Lowercase keys are silently ignored.
+                // https://learn.microsoft.com/clarity/setup-and-installation/clarity-consent-api-v2
                 window.clarity("consentv2", {
-                    analytics_storage: hasAnalyticsConsent() ? "granted" : "denied"
+                    ad_Storage: "denied", // The site uses no advertising cookies.
+                    analytics_Storage: hasAnalyticsConsent() ? "granted" : "denied"
                 });
             } catch (error) {
                 console.warn("Failed to update Clarity consent:", error);

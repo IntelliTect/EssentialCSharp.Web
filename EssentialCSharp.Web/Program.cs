@@ -400,35 +400,7 @@ public partial class Program
                 app.UseForwardedHeaders();
             }
 
-            // Build dynamic CSP — TryDotNet origin comes from runtime config
-            string? tryDotNetOrigin = app.Configuration["TryDotNet:Origin"];
-            string tryDotNetSources = string.Empty;
-            if (!string.IsNullOrWhiteSpace(tryDotNetOrigin))
-            {
-                if (Uri.TryCreate(tryDotNetOrigin, UriKind.Absolute, out Uri? tryDotNetUri))
-                {
-                    tryDotNetSources = $" {tryDotNetUri.GetLeftPart(UriPartial.Authority)}";
-                }
-                else
-                {
-                    LogIgnoringInvalidTryDotNetOrigin(app.Logger, tryDotNetOrigin);
-                }
-            }
-
-            string csp = string.Join("; ",
-                $"default-src 'self'",
-                $"script-src 'self' 'unsafe-inline' cdn.jsdelivr.net www.clarity.ms www.googletagmanager.com js.monitor.azure.com https://hcaptcha.com https://*.hcaptcha.com{tryDotNetSources}",
-                $"style-src 'self' 'nonce-{CspNonce.Placeholder}' cdnjs.cloudflare.com fonts.googleapis.com https://hcaptcha.com https://*.hcaptcha.com",
-                $"style-src-attr 'unsafe-inline'",
-                $"font-src 'self' fonts.gstatic.com cdnjs.cloudflare.com",
-                $"img-src 'self' data: https:",
-                $"connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://api.pwnedpasswords.com https://*.algolia.net https://*.algolianet.com https://*.google-analytics.com https://*.clarity.ms https://*.in.applicationinsights.azure.com{GetApplicationInsightsCspSources(app.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"], app.Logger)}{tryDotNetSources}",
-                $"frame-src https://hcaptcha.com https://*.hcaptcha.com https://newassets.hcaptcha.com{tryDotNetSources}",
-                $"worker-src blob:",
-                $"frame-ancestors 'none'",
-                $"base-uri 'self'",
-                $"form-action 'self' https://login.microsoftonline.com https://github.com"
-            );
+            string csp = BuildContentSecurityPolicy(app.Configuration, app.Logger);
 
             SecurityHeadersBuilder securityHeaders = new SecurityHeadersBuilder()
                 .AddDefaultSecurePolicy()
@@ -573,6 +545,43 @@ public partial class Program
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Application Insights connection string has a non-HTTPS or unparseable IngestionEndpoint value ({Endpoint}); omitting from CSP connect-src.")]
     private static partial void LogInvalidApplicationInsightsIngestionEndpoint(ILogger logger, string? endpoint);
+
+    internal static string BuildContentSecurityPolicy(IConfiguration configuration, ILogger? logger = null)
+    {
+        // TryDotNet origin comes from runtime config
+        string? tryDotNetOrigin = configuration["TryDotNet:Origin"];
+        string tryDotNetSources = string.Empty;
+        if (!string.IsNullOrWhiteSpace(tryDotNetOrigin))
+        {
+            if (Uri.TryCreate(tryDotNetOrigin, UriKind.Absolute, out Uri? tryDotNetUri))
+            {
+                tryDotNetSources = $" {tryDotNetUri.GetLeftPart(UriPartial.Authority)}";
+            }
+            else if (logger is not null)
+            {
+                LogIgnoringInvalidTryDotNetOrigin(logger, tryDotNetOrigin);
+            }
+        }
+
+        // Clarity's tag (www.clarity.ms) loads its tracker from scripts.clarity.ms and load-balances
+        // across [a-z].clarity.ms, so allow the wildcard plus c.bing.com as Clarity's CSP docs require:
+        // https://learn.microsoft.com/clarity/setup-and-installation/clarity-csp
+        // Application Insights fetches its CDN config from js.monitor.azure.com.
+        return string.Join("; ",
+            $"default-src 'self'",
+            $"script-src 'self' 'unsafe-inline' cdn.jsdelivr.net https://*.clarity.ms https://c.bing.com www.googletagmanager.com js.monitor.azure.com https://hcaptcha.com https://*.hcaptcha.com{tryDotNetSources}",
+            $"style-src 'self' 'nonce-{CspNonce.Placeholder}' cdnjs.cloudflare.com fonts.googleapis.com https://hcaptcha.com https://*.hcaptcha.com",
+            $"style-src-attr 'unsafe-inline'",
+            $"font-src 'self' fonts.gstatic.com cdnjs.cloudflare.com",
+            $"img-src 'self' data: https:",
+            $"connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://api.pwnedpasswords.com https://*.algolia.net https://*.algolianet.com https://*.google-analytics.com https://*.clarity.ms https://c.bing.com https://js.monitor.azure.com https://*.in.applicationinsights.azure.com{GetApplicationInsightsCspSources(configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"], logger)}{tryDotNetSources}",
+            $"frame-src https://hcaptcha.com https://*.hcaptcha.com https://newassets.hcaptcha.com{tryDotNetSources}",
+            $"worker-src blob:",
+            $"frame-ancestors 'none'",
+            $"base-uri 'self'",
+            $"form-action 'self' https://login.microsoftonline.com https://github.com"
+        );
+    }
 
     private static string GetApplicationInsightsCspSources(string? connectionString, ILogger? logger = null)
     {
