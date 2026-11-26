@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 using EssentialCSharp.Web.Areas.Identity.Data;
+using EssentialCSharp.Web.Areas.Identity.Services;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,7 @@ using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
-public class ResetPasswordModel(UserManager<EssentialCSharpWebUser> userManager, ICaptchaValidationService captchaValidationService, IOptions<CaptchaOptions> optionsAccessor) : PageModel
+public class ResetPasswordModel(UserManager<EssentialCSharpWebUser> userManager, ICaptchaValidationService captchaValidationService, IOptions<CaptchaOptions> optionsAccessor, AccountOwnershipService accountOwnershipService) : PageModel
 {
     private InputModel? _Input;
     [BindProperty]
@@ -103,6 +104,15 @@ public class ResetPasswordModel(UserManager<EssentialCSharpWebUser> userManager,
         IdentityResult result = await userManager.ResetPasswordAsync(user, Input.Code, Input.Password);
         if (result.Succeeded)
         {
+            // The reset token proves control of the mailbox. External logins and MCP tokens on the account
+            // may have been added by someone else before that, so they don't survive the reset.
+            await accountOwnershipService.RemoveCredentialsAddedBeforeOwnershipProofAsync(user, cancellationToken);
+
+            // Failed password attempts by someone else shouldn't keep the owner locked out after they prove
+            // they own the account.
+            await userManager.SetLockoutEndDateAsync(user, null);
+            await userManager.ResetAccessFailedCountAsync(user);
+
             return RedirectToPage("./ResetPasswordConfirmation");
         }
 

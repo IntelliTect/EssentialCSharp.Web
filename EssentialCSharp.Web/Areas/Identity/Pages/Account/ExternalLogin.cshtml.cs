@@ -3,6 +3,8 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
 using EssentialCSharp.Web.Areas.Identity.Data;
+using EssentialCSharp.Web.Areas.Identity.Services;
+using EssentialCSharp.Web.Extensions;
 using EssentialCSharp.Web.Services;
 using EssentialCSharp.Web.Services.Referrals;
 using Microsoft.AspNetCore.Authorization;
@@ -11,6 +13,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
@@ -22,7 +25,11 @@ public partial class ExternalLoginModel(
     ILogger<ExternalLoginModel> logger,
     IEmailSender emailSender,
     IUserEmailStore<EssentialCSharpWebUser> emailStore,
-    IReferralService referralService) : PageModel
+    IReferralService referralService,
+    ICaptchaValidationService captchaValidationService,
+    IOptions<CaptchaOptions> captchaOptions,
+    IOptions<SiteSettings> siteSettings,
+    AccountOwnershipService accountOwnershipService) : PageModel
 {
     private InputModel? _Input;
     [BindProperty]
@@ -31,6 +38,8 @@ public partial class ExternalLoginModel(
         get => _Input!;
         set => _Input = value ?? throw new ArgumentNullException(nameof(value));
     }
+
+    public string CaptchaSiteKey { get; } = captchaOptions.Value.SiteKey ?? string.Empty;
 
     public string? ProviderDisplayName { get; set; }
 
@@ -110,7 +119,7 @@ public partial class ExternalLoginModel(
         }
     }
 
-    public async Task<IActionResult> OnPostConfirmationAsync(string? returnUrl = null)
+    public async Task<IActionResult> OnPostConfirmationAsync(string? returnUrl = null, CancellationToken cancellationToken = default)
     {
         returnUrl ??= Url.Content("~/");
         // Get the information about the user from the external login provider
@@ -121,6 +130,21 @@ public partial class ExternalLoginModel(
             return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
         }
 
+        ProviderDisplayName = info.ProviderDisplayName;
+        ReturnUrl = returnUrl;
+
+        // This handler creates accounts and sends email, so it needs the same human check as Register.
+        string? captchaToken = Request.Form[CaptchaOptions.HttpPostResponseKeyName];
+        CaptchaValidationResult captchaResult = await captchaValidationService.ValidateAsync(
+            captchaToken,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            cancellationToken);
+        if (!captchaResult.ShouldProceed)
+        {
+            ModelState.AddModelError(string.Empty, "Human verification failed. Please try again.");
+            return Page();
+        }
+
         if (ModelState.IsValid)
         {
             if (Input.Email is null)
@@ -128,32 +152,41 @@ public partial class ExternalLoginModel(
                 ErrorMessage = "Error: Email may not be null.";
                 return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
             }
-            EssentialCSharpWebUser user = CreateUser();
 
+            // The typed email is unverified, so the external login is never linked here. It is recorded as
+            // pending, and ConfirmEmail links it only when the emailed link is opened in a browser that still
+            // holds this same external login: that proves one person controls both the mailbox and the login.
             EssentialCSharpWebUser? existingUser = await userManager.FindByEmailAsync(Input.Email).ConfigureAwait(false);
             if (existingUser is null)
             {
-                await userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
-                await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+                EssentialCSharpWebUser user = CreateUser();
+                await userStore.SetUserNameAsync(user, Input.Email, cancellationToken);
+                await emailStore.SetEmailAsync(user, Input.Email, cancellationToken);
                 IdentityResult result = await userManager.CreateAsync(user);
                 if (result.Succeeded)
                 {
-                    result = await userManager.AddLoginAsync(user, info);
-                    if (result.Succeeded)
+                    result = await accountOwnershipService.SetPendingExternalLoginAsync(user, info);
+                    if (!result.Succeeded)
                     {
-                        LogUserCreatedWithProvider(logger, info.LoginProvider);
-                        try
-                        {
-                            return await SendConfirmationEmail(returnUrl, info, user);
-                        }
-                        catch (EmailSendException)
-                        {
-                            // The account and external login already exist; send the user to resend the email.
-                            // Do not log the exception: its inner exception can contain the recipient address. EmailSender has logged the details.
-                            LogConfirmationEmailNotSent(logger);
-                            EmailFailureMessages.QueueAccountCreatedConfirmationNotSent(TempData);
-                            return RedirectToPage("./ResendEmailConfirmation", new { email = Input.Email });
-                        }
+                        // Creating the account and recording its login succeed or fail together, so a
+                        // failure never leaves an account behind that nobody can finish setting up.
+                        await userManager.DeleteAsync(user);
+                    }
+                }
+                if (result.Succeeded)
+                {
+                    LogUserCreatedWithProvider(logger, info.LoginProvider);
+                    try
+                    {
+                        return await SendConfirmationEmail(returnUrl, info, user);
+                    }
+                    catch (EmailSendException)
+                    {
+                        // The account already exists; send the user to resend the email.
+                        // Do not log the exception: its inner exception can contain the recipient address. EmailSender has logged the details.
+                        LogConfirmationEmailNotSent(logger);
+                        EmailFailureMessages.QueueAccountCreatedConfirmationNotSent(TempData);
+                        return RedirectToPage("./ResendEmailConfirmation", new { email = Input.Email });
                     }
                 }
                 foreach (IdentityError error in result.Errors)
@@ -161,29 +194,35 @@ public partial class ExternalLoginModel(
                     ModelState.AddModelError(string.Empty, error.Description);
                 }
             }
-            else
+            else if (!existingUser.EmailConfirmed || await IsAwaitingExternalLoginAsync(existingUser))
             {
-                if (!existingUser.EmailConfirmed)
+                // The account is unconfirmed, or it was created on this page and its login was never linked
+                // (for example, the link was opened in another browser). Proving the mailbox again from this
+                // browser links this login. Accounts that can already sign in link logins from Manage instead.
+                try
                 {
-                    try
+                    IdentityResult pending = await accountOwnershipService.SetPendingExternalLoginAsync(existingUser, info);
+                    if (pending.Succeeded)
                     {
                         await SendConfirmationEmail(returnUrl, info, existingUser);
                     }
-                    catch (EmailSendException)
-                    {
-                        // The email is only attempted when the address belongs to an existing account, so a visible
-                        // error would reveal that. Log it and fall through to the same message shown on success.
-                        LogConfirmationEmailNotSent(logger);
-                    }
+                }
+                catch (EmailSendException)
+                {
+                    // The email is only attempted when the address belongs to an existing account, so a visible
+                    // error would reveal that. Log it and fall through to the same message shown on success.
+                    LogConfirmationEmailNotSent(logger);
                 }
             }
         }
 
-        ProviderDisplayName = info.ProviderDisplayName;
-        ReturnUrl = returnUrl;
         ModelState.AddModelError(string.Empty, "Please check confirmation email to complete registration.");
         return Page();
     }
+
+    private async Task<bool> IsAwaitingExternalLoginAsync(EssentialCSharpWebUser user) =>
+        !await userManager.HasPasswordAsync(user)
+        && (await userManager.GetLoginsAsync(user)).Count == 0;
 
     private async Task<IActionResult> SendConfirmationEmail(string returnUrl, ExternalLoginInfo info, EssentialCSharpWebUser user)
     {
@@ -195,11 +234,10 @@ public partial class ExternalLoginModel(
         string userId = await userManager.GetUserIdAsync(user);
         string code = await userManager.GenerateEmailConfirmationTokenAsync(user);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-        string? callbackUrl = Url.Page(
+        string? callbackUrl = Url.EmailPageLink(
+            siteSettings.Value,
             "/Account/ConfirmEmail",
-            pageHandler: null,
-            values: new { area = "Identity", userId = userId, code = code },
-            protocol: Request.Scheme);
+            values: new { area = "Identity", userId = userId, code = code });
 
         if (callbackUrl is null)
         {
@@ -207,19 +245,13 @@ public partial class ExternalLoginModel(
             return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
         }
 
+        string providerName = HtmlEncoder.Default.Encode(info.ProviderDisplayName ?? info.LoginProvider);
         await emailSender.SendEmailAsync(Input.Email, "Confirm your email",
-            $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+            $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>. " +
+            $"Open the link in the browser you used to sign in with {providerName} so that sign-in is linked to your account.");
 
-        // If account confirmation is required, we need to show the link if we don't have a real email sender
-        if (userManager.Options.SignIn.RequireConfirmedAccount)
-        {
-            return RedirectToPage("./RegisterConfirmation", new { Email = Input.Email });
-        }
-
-        // Ensure referral ID is set for the new user before signing in
-        await referralService.EnsureReferralIdAsync(user);
-        await signInManager.SignInAsync(user, isPersistent: false, info.LoginProvider);
-        return LocalRedirect(returnUrl);
+        // The account can't be used until its email is confirmed, and the external login is linked only then.
+        return RedirectToPage("./RegisterConfirmation", new { Email = Input.Email });
     }
 
     private EssentialCSharpWebUser CreateUser()

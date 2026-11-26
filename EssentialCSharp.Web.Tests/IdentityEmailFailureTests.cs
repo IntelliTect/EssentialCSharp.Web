@@ -2,12 +2,14 @@ using System.Security.Claims;
 using EssentialCSharp.Web.Areas.Identity.Data;
 using EssentialCSharp.Web.Areas.Identity.Pages.Account;
 using EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage;
+using EssentialCSharp.Web.Areas.Identity.Services;
 using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using EssentialCSharp.Web.Services.Referrals;
 using Mailjet.Client;
 using Mailjet.Client.Exceptions;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -53,6 +55,7 @@ public class IdentityEmailFailureTests
         mock.Setup(m => m.GenerateEmailConfirmationTokenAsync(It.IsAny<EssentialCSharpWebUser>())).ReturnsAsync("token");
         mock.Setup(m => m.GeneratePasswordResetTokenAsync(It.IsAny<EssentialCSharpWebUser>())).ReturnsAsync("token");
         mock.Setup(m => m.GenerateChangeEmailTokenAsync(It.IsAny<EssentialCSharpWebUser>(), It.IsAny<string>())).ReturnsAsync("token");
+        mock.Setup(m => m.SetAuthenticationTokenAsync(It.IsAny<EssentialCSharpWebUser>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>())).ReturnsAsync(IdentityResult.Success);
         return mock;
     }
 
@@ -80,6 +83,9 @@ public class IdentityEmailFailureTests
 
     private static IOptions<CaptchaOptions> CaptchaOptionsAccessor() =>
         Options.Create(new CaptchaOptions { SiteKey = "site", SecretKey = "secret" });
+
+    private static IOptions<SiteSettings> SiteSettingsAccessor() =>
+        Options.Create(new SiteSettings { BaseUrl = "https://example.test" });
 
     private static Mock<IEmailSender> CreateFailingSender()
     {
@@ -268,7 +274,9 @@ public class IdentityEmailFailureTests
             sender,
             CreatePassingCaptcha().Object,
             CaptchaOptionsAccessor(),
-            Mock.Of<IUserEmailStore<EssentialCSharpWebUser>>());
+            Mock.Of<IUserEmailStore<EssentialCSharpWebUser>>(),
+            SiteSettingsAccessor(),
+            new RegistrationBrowserBinding(new EphemeralDataProtectionProvider(), Options.Create(new DataProtectionTokenProviderOptions())));
         model.Input = new RegisterModel.InputModel
         {
             UserName = "reader",
@@ -335,7 +343,8 @@ public class IdentityEmailFailureTests
             sender,
             CreatePassingCaptcha().Object,
             CaptchaOptionsAccessor(),
-            logger ?? NullLogger<ForgotPasswordModel>.Instance);
+            logger ?? NullLogger<ForgotPasswordModel>.Instance,
+            SiteSettingsAccessor());
         model.Input = new ForgotPasswordModel.InputModel { Email = UserEmail };
         return model;
     }
@@ -399,7 +408,8 @@ public class IdentityEmailFailureTests
             sender,
             CreatePassingCaptcha().Object,
             CaptchaOptionsAccessor(),
-            logger ?? NullLogger<ResendEmailConfirmationModel>.Instance);
+            logger ?? NullLogger<ResendEmailConfirmationModel>.Instance,
+            SiteSettingsAccessor());
         model.Input = new ResendEmailConfirmationModel.InputModel { Email = UserEmail };
         return model;
     }
@@ -453,7 +463,7 @@ public class IdentityEmailFailureTests
         Mock<UserManager<EssentialCSharpWebUser>> userManager = CreateUserManager();
         userManager.Setup(m => m.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync(new EssentialCSharpWebUser());
         userManager.Setup(m => m.GetEmailAsync(It.IsAny<EssentialCSharpWebUser>())).ReturnsAsync("old@example.com");
-        return new EmailModel(userManager.Object, CreateSignInManager(userManager.Object).Object, sender, logger ?? NullLogger<EmailModel>.Instance);
+        return new EmailModel(userManager.Object, CreateSignInManager(userManager.Object).Object, sender, logger ?? NullLogger<EmailModel>.Instance, SiteSettingsAccessor());
     }
 
     // ExternalLogin confirmation
@@ -476,6 +486,8 @@ public class IdentityEmailFailureTests
             await Assert.That(redirect.RouteValues?["email"]).IsEqualTo(UserEmail);
             await Assert.That(TempDataStatusMessage(model)).IsEqualTo(EmailFailureMessages.AccountCreatedConfirmationNotSent);
         }
+        // The typed email is unverified, so the external login must not be linked yet.
+        userManager.Verify(m => m.AddLoginAsync(It.IsAny<EssentialCSharpWebUser>(), It.IsAny<UserLoginInfo>()), Times.Never);
     }
 
     [Test]
@@ -514,7 +526,12 @@ public class IdentityEmailFailureTests
             logger ?? NullLogger<ExternalLoginModel>.Instance,
             sender,
             Mock.Of<IUserEmailStore<EssentialCSharpWebUser>>(),
-            Mock.Of<IReferralService>());
+            Mock.Of<IReferralService>(),
+            CreatePassingCaptcha().Object,
+            CaptchaOptionsAccessor(),
+            SiteSettingsAccessor(),
+            // The token service is not reached by the confirmation handler.
+            new AccountOwnershipService(userManager.Object, new McpApiTokenService(null!)));
         model.Input = new ExternalLoginModel.InputModel { Email = UserEmail };
         return model;
     }
