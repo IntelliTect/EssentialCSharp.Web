@@ -23,8 +23,19 @@ export const RETRY_MAX_DELAY_MS = 120000;
 export const LEASE_MS = 2 * 60 * 1000;
 export const SEND_TIMEOUT_MS = LEASE_MS / 2;
 
-/** Cross-tab notification that the reading profile was reset. */
+/** Cross-tab notification that the reading profile is being or was reset. */
 export const READING_RESET_CHANNEL = "essentialcsharp-reading-reset";
+
+/** Messages on READING_RESET_CHANNEL: before the reset request, after it succeeds, and after it fails. */
+export const RESET_MESSAGE_RESETTING = "resetting";
+export const RESET_MESSAGE_RESET = "reset";
+export const RESET_MESSAGE_FAILED = "reset-failed";
+
+/**
+ * Longest a "resetting" message pauses sends in other tabs, in case the resetting tab closes before
+ * it reports the outcome. The reset request is aborted after SEND_TIMEOUT_MS, so the pause outlasts it.
+ */
+export const RESET_PAUSE_MS = SEND_TIMEOUT_MS + 5000;
 
 export const READING_SESSION_URL = "/api/reading/session";
 export const READING_RESET_URL = "/api/reading/reset";

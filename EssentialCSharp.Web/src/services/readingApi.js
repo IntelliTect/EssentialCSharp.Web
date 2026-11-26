@@ -104,5 +104,6 @@ export function postSession(intervals, { keepalive = false } = {}) {
 
 /** @returns {Promise<ApiResult<undefined>>} */
 export function resetProfile() {
-    return postWithCsrf(READING_RESET_URL);
+    // Bounded so the pause it puts on other tabs' sends (RESET_PAUSE_MS) always outlasts it.
+    return postWithCsrf(READING_RESET_URL, { timeoutMs: SEND_TIMEOUT_MS });
 }

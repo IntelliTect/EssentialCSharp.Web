@@ -63,7 +63,22 @@ describe("reading-reset (Manage Profile button)", () => {
         expect(status.textContent).toMatch(/success/i);
         expect(status.classList.contains("text-success")).toBe(true);
         expect(status.classList.contains("text-muted")).toBe(false);
-        expect(received).toEqual([{ type: "reset" }]);
+        expect(received).toEqual([{ type: "resetting" }, { type: "reset" }]);
+    });
+
+    it("tells other tabs to pause before the reset request is sent", async () => {
+        const seenAtRequest = [];
+        let requestInit;
+        fetchMock.mockImplementation(async (url, init) => {
+            seenAtRequest.push(...received);
+            requestInit = init;
+            return new Response(null, { status: 200 });
+        });
+        await load();
+        click();
+        await settled();
+        expect(seenAtRequest).toEqual([{ type: "resetting" }]);
+        expect(requestInit.signal).toBeInstanceOf(AbortSignal); // bounded, so the pause in other tabs outlasts it
     });
 
     it("clears only the signed-in account's unsent intervals", async () => {
@@ -87,14 +102,17 @@ describe("reading-reset (Manage Profile button)", () => {
         expect(isOutboxStored(theirs)).toBe(true);
     });
 
-    it("shows an error and does not broadcast when the server fails", async () => {
+    // Nothing was cleared on a failure, so other tabs are told to resume with their data.
+    const PAUSED_THEN_RESUMED = [{ type: "resetting" }, { type: "reset-failed" }];
+
+    it("shows an error and lets other tabs resume when the server fails", async () => {
         fetchMock.mockResolvedValue(new Response(null, { status: 503 }));
         await load();
         click();
         await settled();
         expect(status.textContent).toMatch(/failed/i);
         expect(status.classList.contains("text-danger")).toBe(true);
-        expect(received).toHaveLength(0);
+        expect(received).toEqual(PAUSED_THEN_RESUMED);
     });
 
     it("tells the user to sign in again when the session has expired", async () => {
@@ -103,7 +121,7 @@ describe("reading-reset (Manage Profile button)", () => {
         click();
         await settled();
         expect(status.textContent).toMatch(/sign in/i);
-        expect(received).toHaveLength(0);
+        expect(received).toEqual(PAUSED_THEN_RESUMED);
     });
 
     it("shows an error when the request throws", async () => {
@@ -112,7 +130,7 @@ describe("reading-reset (Manage Profile button)", () => {
         click();
         await settled();
         expect(status.classList.contains("text-danger")).toBe(true);
-        expect(received).toHaveLength(0);
+        expect(received).toEqual(PAUSED_THEN_RESUMED);
     });
 
     it("disables the button while the request is pending", async () => {

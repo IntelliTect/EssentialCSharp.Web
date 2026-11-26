@@ -42,6 +42,9 @@ import {
 import {
     MAX_TICK_DELTA_S,
     READING_RESET_CHANNEL,
+    RESET_MESSAGE_FAILED,
+    RESET_MESSAGE_RESETTING,
+    RESET_PAUSE_MS,
     RETRY_BASE_DELAY_MS,
     RETRY_MAX_DELAY_MS,
     TICK_INTERVAL_MS
@@ -110,6 +113,9 @@ export function useReadingTracker(context) {
     // Bumped when another tab resets the profile; responses to batches sent before
     // the reset are ignored (no restore, no wpm update).
     let generation = 0;
+    // While another tab's reset request is pending nothing is sent (until this time), so no
+    // batch can reach the server after the reset and re-create the profile.
+    let pausedUntil = 0;
 
     const contentElement = findContentElement();
 
@@ -170,11 +176,22 @@ export function useReadingTracker(context) {
         lastTickAt = now;
         if (activity.getState() === STATE_READING) pendingSeconds += deltaS;
         updateProgress();
-        if (pendingSeconds >= context.periodicFlushActiveSeconds) {
+        if (pendingSeconds >= context.periodicFlushActiveSeconds && hasCreditableProgress()) {
             safeFlush();
         } else if (outbox.length > 0) {
             safeFlush({ collect: false }); // retry of previously failed intervals
         }
+    }
+
+    // Whether the not-yet-credited span holds at least one word. Without it collect() would
+    // only keep the pending time, so a periodic flush would do nothing but repeat that work.
+    function hasCreditableProgress() {
+        return creditInterval({
+            pageWords: context.pageWords,
+            progress: maxBottom - baseline,
+            activeSeconds: 1,
+            maxWpm: context.maxCreditWpm
+        }).wordsRead > 0;
     }
 
     /**
@@ -221,7 +238,7 @@ export function useReadingTracker(context) {
      * yield to an in-flight request and to the retry backoff.
      */
     async function flush({ keepalive = false, collect: doCollect = true } = {}) {
-        if (!tracking || stopped) return;
+        if (!tracking || stopped || performance.now() < pausedUntil) return;
 
         // If another tab already took our persisted record (it sends those entries), drop them
         // before collect() could write them back and have them sent twice.
@@ -338,6 +355,7 @@ export function useReadingTracker(context) {
     // drop unsent data so it does not repopulate the profile that was just cleared.
     function onReset() {
         generation++;
+        pausedUntil = 0;
         wpm.value = context.defaultWpm;
         if (!tracking) return;
         pendingSeconds = 0;
@@ -352,7 +370,20 @@ export function useReadingTracker(context) {
     const resetChannel = typeof BroadcastChannel === "function"
         ? new BroadcastChannel(READING_RESET_CHANNEL)
         : null;
-    if (resetChannel) resetChannel.onmessage = onReset;
+    // Another tab is resetting: hold every send (data is kept) until it reports the outcome or the
+    // pause expires. Any other message is a completed reset (older pages send only that).
+    function onResetMessage(event) {
+        const type = event?.data?.type;
+        if (type === RESET_MESSAGE_RESETTING) {
+            pausedUntil = performance.now() + RESET_PAUSE_MS;
+        } else if (type === RESET_MESSAGE_FAILED) {
+            pausedUntil = 0;
+        } else {
+            onReset();
+        }
+    }
+
+    if (resetChannel) resetChannel.onmessage = onResetMessage;
 
     // Progress display works for everyone.
     const onScrollOrResize = () => scheduleProgressUpdate();
