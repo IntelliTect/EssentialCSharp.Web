@@ -64,7 +64,9 @@ public class ReferralService(EssentialCSharpWebContext dbContext, UserManager<Es
         // Check if the referrer ID exists in the claims principal
         string? claimsReferrerId = user?.GetReferrerId();
 
-        if (claimsReferrerId == referralId)
+        // The database lookup below is case-insensitive in production (SQL Server collation), so compare the same
+        // way here: otherwise a referrer could count their own visits by changing the case of their ID.
+        if (claimsReferrerId is not null && string.Equals(claimsReferrerId, referralId, StringComparison.OrdinalIgnoreCase))
         {
             // If the referrer ID in the claims principal matches the referral ID, do not track the referral
             return;

@@ -9,6 +9,8 @@ namespace EssentialCSharp.Web.Tools;
 [McpServerToolType]
 public sealed class BookGuidelinesTool
 {
+    internal const int MaxTopicLength = 500;
+
     private readonly IGuidelinesService _guidelinesService;
 
     public BookGuidelinesTool(IGuidelinesService guidelinesService)
@@ -31,6 +33,12 @@ public sealed class BookGuidelinesTool
         if (!string.IsNullOrWhiteSpace(type) && typeFilter is null)
         {
             return "Invalid guideline type. Valid values: 'do', 'consider', 'avoid', 'donot' (also accepts 'do not', 'dont').";
+        }
+
+        // Every word of the topic is matched against every guideline, so bound it like the other tools' inputs.
+        if (topic?.Length > MaxTopicLength)
+        {
+            return $"Topic is too long (maximum {MaxTopicLength} characters).";
         }
 
         IEnumerable<GuidelineListing> filtered = _guidelinesService.Guidelines;

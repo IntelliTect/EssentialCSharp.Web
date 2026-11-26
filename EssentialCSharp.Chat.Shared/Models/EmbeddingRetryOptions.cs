@@ -42,8 +42,9 @@ public sealed class EmbeddingRetryOptions
     public int MaxEmbeddingBatchSize { get; set; } = 1024;
 
     /// <summary>
-    /// Minimum delay between embedding API requests in milliseconds.
-    /// This adds request pacing to reduce sustained rate-limit pressure.
+    /// Minimum delay between embedding API requests made by a batch rebuild, in milliseconds.
+    /// This adds request pacing to reduce sustained rate-limit pressure. Interactive query
+    /// embeddings are not paced.
     /// </summary>
     [Range(0, 600000)]
     public int MinInterRequestDelayMs { get; set; } = 250;
