@@ -3,6 +3,7 @@
     "Keys": [
       "introducing-c"
     ],
+    "PrimaryKey": "introducing-c",
     "PagePath": [
       "Chapters",
       "01",
@@ -17,12 +18,14 @@
     "ContentHash": "74B5",
     "AnchorId": "overview",
     "IndentLevel": 0,
-    "IncludeInSitemapXml": true
+    "IncludeInSitemapXml": true,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "hello-world"
     ],
+    "PrimaryKey": "hello-world",
     "PagePath": [
       "Chapters",
       "01",
@@ -37,12 +40,14 @@
     "ContentHash": "C68C",
     "AnchorId": "hello-world",
     "IndentLevel": 1,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "creating-editing-compiling-and-running-c-source-code"
     ],
+    "PrimaryKey": "creating-editing-compiling-and-running-c-source-code",
     "PagePath": [
       "Chapters",
       "01",
@@ -57,12 +62,14 @@
     "ContentHash": "8185",
     "AnchorId": "creating-editing-compiling-and-running-c-source-code",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "with-dotnet-cli"
     ],
+    "PrimaryKey": "with-dotnet-cli",
     "PagePath": [
       "Chapters",
       "01",
@@ -77,12 +84,14 @@
     "ContentHash": "E879",
     "AnchorId": "with-dotnet-cli",
     "IndentLevel": 3,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "with-visual-studio-2022-windows-or-mac"
     ],
+    "PrimaryKey": "with-visual-studio-2022-windows-or-mac",
     "PagePath": [
       "Chapters",
       "01",
@@ -97,12 +106,14 @@
     "ContentHash": "ECF8",
     "AnchorId": "with-visual-studio-2022-windows-or-mac",
     "IndentLevel": 3,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "understanding-a-project"
     ],
+    "PrimaryKey": "understanding-a-project",
     "PagePath": [
       "Chapters",
       "01",
@@ -117,12 +128,14 @@
     "ContentHash": "E9E5",
     "AnchorId": "understanding-a-project",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "compilation-and-execution"
     ],
+    "PrimaryKey": "compilation-and-execution",
     "PagePath": [
       "Chapters",
       "01",
@@ -137,12 +150,14 @@
     "ContentHash": "A4C6",
     "AnchorId": "compilation-and-execution",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "essential-c-source-code"
     ],
+    "PrimaryKey": "essential-c-source-code",
     "PagePath": [
       "Chapters",
       "01",
@@ -157,12 +172,14 @@
     "ContentHash": "527F",
     "AnchorId": "essential-c-source-code",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "c-syntax-fundamentals"
     ],
+    "PrimaryKey": "c-syntax-fundamentals",
     "PagePath": [
       "Chapters",
       "01",
@@ -177,12 +194,14 @@
     "ContentHash": "983A",
     "AnchorId": "c-syntax-fundamentals",
     "IndentLevel": 1,
-    "IncludeInSitemapXml": true
+    "IncludeInSitemapXml": true,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "statements-and-statement-delimiters"
     ],
+    "PrimaryKey": "statements-and-statement-delimiters",
     "PagePath": [
       "Chapters",
       "01",
@@ -197,12 +216,14 @@
     "ContentHash": "A624",
     "AnchorId": "statements-and-statement-delimiters",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "introducing-a-class-and-a-method"
     ],
+    "PrimaryKey": "introducing-a-class-and-a-method",
     "PagePath": [
       "Chapters",
       "01",
@@ -217,12 +238,14 @@
     "ContentHash": "F9FF",
     "AnchorId": "introducing-a-class-and-a-method",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "c-keywords"
     ],
+    "PrimaryKey": "c-keywords",
     "PagePath": [
       "Chapters",
       "01",
@@ -237,12 +260,14 @@
     "ContentHash": "1E24",
     "AnchorId": "c-keywords",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "identifiers"
     ],
+    "PrimaryKey": "identifiers",
     "PagePath": [
       "Chapters",
       "01",
@@ -257,12 +282,14 @@
     "ContentHash": "8156",
     "AnchorId": "identifiers",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "type-definition"
     ],
+    "PrimaryKey": "type-definition",
     "PagePath": [
       "Chapters",
       "01",
@@ -277,12 +304,14 @@
     "ContentHash": "FA33",
     "AnchorId": "type-definition",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "main-method"
     ],
+    "PrimaryKey": "main-method",
     "PagePath": [
       "Chapters",
       "01",
@@ -297,12 +326,14 @@
     "ContentHash": "52B1",
     "AnchorId": "main-method",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "whitespace"
     ],
+    "PrimaryKey": "whitespace",
     "PagePath": [
       "Chapters",
       "01",
@@ -317,12 +348,14 @@
     "ContentHash": "0151",
     "AnchorId": "whitespace",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "working-with-variables"
     ],
+    "PrimaryKey": "working-with-variables",
     "PagePath": [
       "Chapters",
       "01",
@@ -337,12 +370,14 @@
     "ContentHash": "134A",
     "AnchorId": "working-with-variables",
     "IndentLevel": 1,
-    "IncludeInSitemapXml": true
+    "IncludeInSitemapXml": true,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "introducing-data-types"
     ],
+    "PrimaryKey": "introducing-data-types",
     "PagePath": [
       "Chapters",
       "01",
@@ -357,12 +392,14 @@
     "ContentHash": "EC83",
     "AnchorId": "introducing-data-types",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "declaring-a-variable"
     ],
+    "PrimaryKey": "declaring-a-variable",
     "PagePath": [
       "Chapters",
       "01",
@@ -377,12 +414,14 @@
     "ContentHash": "98A8",
     "AnchorId": "declaring-a-variable",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "assigning-a-variable"
     ],
+    "PrimaryKey": "assigning-a-variable",
     "PagePath": [
       "Chapters",
       "01",
@@ -397,12 +436,14 @@
     "ContentHash": "0143",
     "AnchorId": "assigning-a-variable",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "using-a-variable"
     ],
+    "PrimaryKey": "using-a-variable",
     "PagePath": [
       "Chapters",
       "01",
@@ -417,12 +458,14 @@
     "ContentHash": "8C38",
     "AnchorId": "using-a-variable",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "console-input-and-output"
     ],
+    "PrimaryKey": "console-input-and-output",
     "PagePath": [
       "Chapters",
       "01",
@@ -437,12 +480,14 @@
     "ContentHash": "C93C",
     "AnchorId": "console-input-and-output",
     "IndentLevel": 1,
-    "IncludeInSitemapXml": true
+    "IncludeInSitemapXml": true,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "getting-input-from-the-console"
     ],
+    "PrimaryKey": "getting-input-from-the-console",
     "PagePath": [
       "Chapters",
       "01",
@@ -457,12 +502,14 @@
     "ContentHash": "A17C",
     "AnchorId": "getting-input-from-the-console",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "writing-output-to-the-console"
     ],
+    "PrimaryKey": "writing-output-to-the-console",
     "PagePath": [
       "Chapters",
       "01",
@@ -477,12 +524,14 @@
     "ContentHash": "A935",
     "AnchorId": "writing-output-to-the-console",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "comments"
     ],
+    "PrimaryKey": "comments",
     "PagePath": [
       "Chapters",
       "01",
@@ -497,12 +546,14 @@
     "ContentHash": "F51C",
     "AnchorId": "comments",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "debugging"
     ],
+    "PrimaryKey": "debugging",
     "PagePath": [
       "Chapters",
       "01",
@@ -517,12 +568,14 @@
     "ContentHash": "B9AA",
     "AnchorId": "debugging",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "managed-execution-and-the-common-language-infrastructure"
     ],
+    "PrimaryKey": "managed-execution-and-the-common-language-infrastructure",
     "PagePath": [
       "Chapters",
       "01",
@@ -537,12 +590,14 @@
     "ContentHash": "0B6A",
     "AnchorId": "managed-execution-and-the-common-language-infrastructure",
     "IndentLevel": 1,
-    "IncludeInSitemapXml": true
+    "IncludeInSitemapXml": true,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "common-intermediate-language-and-ildasm"
     ],
+    "PrimaryKey": "common-intermediate-language-and-ildasm",
     "PagePath": [
       "Chapters",
       "01",
@@ -557,12 +612,14 @@
     "ContentHash": "2200",
     "AnchorId": "common-intermediate-language-and-ildasm",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "multiple-net-frameworks"
     ],
+    "PrimaryKey": "multiple-net-frameworks",
     "PagePath": [
       "Chapters",
       "01",
@@ -577,12 +634,14 @@
     "ContentHash": "9CE9",
     "AnchorId": "multiple-net-frameworks",
     "IndentLevel": 1,
-    "IncludeInSitemapXml": true
+    "IncludeInSitemapXml": true,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "application-programming-interface"
     ],
+    "PrimaryKey": "application-programming-interface",
     "PagePath": [
       "Chapters",
       "01",
@@ -597,12 +656,14 @@
     "ContentHash": "941F",
     "AnchorId": "application-programming-interface",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "c-and-net-versioning"
     ],
+    "PrimaryKey": "c-and-net-versioning",
     "PagePath": [
       "Chapters",
       "01",
@@ -617,12 +678,14 @@
     "ContentHash": "3503",
     "AnchorId": "c-and-net-versioning",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "chapter-1-summary"
     ],
+    "PrimaryKey": "chapter-1-summary",
     "PagePath": [
       "Chapters",
       "01",
@@ -637,12 +700,14 @@
     "ContentHash": "DE96",
     "AnchorId": "chapter-1-summary",
     "IndentLevel": 1,
-    "IncludeInSitemapXml": true
+    "IncludeInSitemapXml": true,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "data-types"
     ],
+    "PrimaryKey": "data-types",
     "PagePath": [
       "Chapters",
       "02",
@@ -657,12 +722,14 @@
     "ContentHash": "61DD",
     "AnchorId": "overview",
     "IndentLevel": 0,
-    "IncludeInSitemapXml": true
+    "IncludeInSitemapXml": true,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "type-name-forms"
     ],
+    "PrimaryKey": "type-name-forms",
     "PagePath": [
       "Chapters",
       "02",
@@ -677,12 +744,14 @@
     "ContentHash": "BAB3",
     "AnchorId": "type-name-forms",
     "IndentLevel": 1,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "fundamental-numeric-types"
     ],
+    "PrimaryKey": "fundamental-numeric-types",
     "PagePath": [
       "Chapters",
       "02",
@@ -697,12 +766,14 @@
     "ContentHash": "7EC2",
     "AnchorId": "fundamental-numeric-types",
     "IndentLevel": 1,
-    "IncludeInSitemapXml": true
+    "IncludeInSitemapXml": true,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "integer-types"
     ],
+    "PrimaryKey": "integer-types",
     "PagePath": [
       "Chapters",
       "02",
@@ -717,12 +788,14 @@
     "ContentHash": "FB7E",
     "AnchorId": "integer-types",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "floating-point-types-float-double"
     ],
+    "PrimaryKey": "floating-point-types-float-double",
     "PagePath": [
       "Chapters",
       "02",
@@ -737,12 +810,14 @@
     "ContentHash": "95AB",
     "AnchorId": "floating-point-types-float-double",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "decimal-type"
     ],
+    "PrimaryKey": "decimal-type",
     "PagePath": [
       "Chapters",
       "02",
@@ -757,12 +832,14 @@
     "ContentHash": "7C20",
     "AnchorId": "decimal-type",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   },
   {
     "Keys": [
       "literal-values"
     ],
+    "PrimaryKey": "literal-values",
     "PagePath": [
       "Chapters",
       "02",
@@ -777,6 +854,7 @@
     "ContentHash": "BFB8",
     "AnchorId": "literal-values",
     "IndentLevel": 2,
-    "IncludeInSitemapXml": false
+    "IncludeInSitemapXml": false,
+    "LastModified": "2025-07-11T20:01:19.0699112Z"
   }
 ]
