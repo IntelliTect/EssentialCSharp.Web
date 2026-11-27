@@ -2,6 +2,8 @@ using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Encodings.Web;
 using EssentialCSharp.Web.Areas.Identity.Data;
+using EssentialCSharp.Web.Areas.Identity.Services;
+using EssentialCSharp.Web.Extensions;
 using EssentialCSharp.Web.Models;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Authentication;
@@ -22,7 +24,9 @@ public partial class RegisterModel(
     IEmailSender emailSender,
     ICaptchaValidationService captchaValidationService,
     IOptions<CaptchaOptions> optionsAccessor,
-    IUserEmailStore<EssentialCSharpWebUser> emailStore) : PageModel
+    IUserEmailStore<EssentialCSharpWebUser> emailStore,
+    IOptions<SiteSettings> siteSettings,
+    RegistrationBrowserBinding registrationBrowserBinding) : PageModel
 {
     public string CaptchaSiteKey { get; } = optionsAccessor.Value.SiteKey ?? string.Empty;
 
@@ -118,13 +122,14 @@ public partial class RegisterModel(
             LogUserCreatedWithPassword(logger);
 
             string userId = await userManager.GetUserIdAsync(user);
+            // The password chosen here stays usable only if the confirmation link is opened in this browser.
+            registrationBrowserBinding.Issue(HttpContext, userId);
             string code = await userManager.GenerateEmailConfirmationTokenAsync(user);
             code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-            string? callbackUrl = Url.Page(
+            string? callbackUrl = Url.EmailPageLink(
+                siteSettings.Value,
                 "/Account/ConfirmEmail",
-                pageHandler: null,
-                values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
-                protocol: Request.Scheme);
+                values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl });
 
             if (callbackUrl is null)
             {

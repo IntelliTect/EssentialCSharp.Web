@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Encodings.Web;
 using EssentialCSharp.Web.Areas.Identity.Data;
+using EssentialCSharp.Web.Extensions;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -12,7 +13,7 @@ using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
-public partial class ForgotPasswordModel(UserManager<EssentialCSharpWebUser> userManager, IEmailSender emailSender, ICaptchaValidationService captchaValidationService, IOptions<CaptchaOptions> optionsAccessor, ILogger<ForgotPasswordModel> logger) : PageModel
+public partial class ForgotPasswordModel(UserManager<EssentialCSharpWebUser> userManager, IEmailSender emailSender, ICaptchaValidationService captchaValidationService, IOptions<CaptchaOptions> optionsAccessor, ILogger<ForgotPasswordModel> logger, IOptions<SiteSettings> siteSettings) : PageModel
 {
     private InputModel? _Input;
     [BindProperty]
@@ -62,11 +63,12 @@ public partial class ForgotPasswordModel(UserManager<EssentialCSharpWebUser> use
             // visit https://go.microsoft.com/fwlink/?LinkID=532713
             string code = await userManager.GeneratePasswordResetTokenAsync(user);
             code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-            string? callbackUrl = Url.Page(
+            // Build the link from the configured site URL, not the request Host, so a forged Host header
+            // cannot send the reset token to another site.
+            string? callbackUrl = Url.EmailPageLink(
+                siteSettings.Value,
                 "/Account/ResetPassword",
-                pageHandler: null,
-                values: new { area = "Identity", code },
-                protocol: Request.Scheme);
+                values: new { area = "Identity", code });
 
             if (callbackUrl is null)
             {

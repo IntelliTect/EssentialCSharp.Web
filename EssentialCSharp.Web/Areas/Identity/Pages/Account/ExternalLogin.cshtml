@@ -10,7 +10,8 @@
 
 <p id="external-login-description" class="text-info">
     You've successfully authenticated with <strong>@Model.ProviderDisplayName</strong>.
-    Please enter an email address for this site below and click the Register button to finish
+    Please enter an email address for this site below and click the Register button. We'll email you a
+    confirmation link; open it in this browser to link your @Model.ProviderDisplayName account and finish
     logging in.
 </p>
 
@@ -22,6 +23,9 @@
                 <input asp-for="Input.Email" class="form-control" autocomplete="email" placeholder="Please enter your email." />
                 <label asp-for="Input.Email" class="form-label"></label>
                 <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <partial name="_HCaptchaWidget" model='new EssentialCSharp.Web.Models.HCaptchaWidgetModel(Model.CaptchaSiteKey)' />
             </div>
             <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
         </form>

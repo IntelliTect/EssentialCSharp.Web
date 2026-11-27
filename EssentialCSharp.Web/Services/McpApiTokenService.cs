@@ -98,6 +98,14 @@ public class McpApiTokenService(EssentialCSharpWebContext db)
         return rows > 0;
     }
 
+    /// <summary>Revokes every token the user still has. Returns the number of tokens revoked.</summary>
+    public Task<int> RevokeAllTokensAsync(
+        string userId,
+        CancellationToken cancellationToken = default)
+        => db.McpApiTokens
+            .Where(t => t.UserId == userId && t.RevokedAt == null)
+            .ExecuteUpdateAsync(s => s.SetProperty(t => t.RevokedAt, DateTime.UtcNow), cancellationToken);
+
     /// <summary>Returns the count of active (non-revoked, non-expired) tokens for the specified user.</summary>
     public Task<int> GetActiveTokenCountAsync(
         string userId,

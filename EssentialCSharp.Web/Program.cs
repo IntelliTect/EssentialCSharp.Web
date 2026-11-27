@@ -4,6 +4,7 @@ using System.Threading.RateLimiting;
 using ModelContextProtocol.Protocol;
 using EssentialCSharp.Chat.Common.Extensions;
 using EssentialCSharp.Web.Areas.Identity.Data;
+using EssentialCSharp.Web.Areas.Identity.Services;
 using EssentialCSharp.Web.Areas.Identity.Services.PasswordValidators;
 using EssentialCSharp.Web.Auth;
 using EssentialCSharp.Web.Data;
@@ -194,6 +195,8 @@ public partial class Program
 
         // MCP server — always enabled, authenticated via opaque DB-backed tokens.
         builder.Services.AddScoped<McpApiTokenService>();
+        builder.Services.AddScoped<AccountOwnershipService>();
+        builder.Services.AddScoped<RegistrationBrowserBinding>();
 
         builder.Services.AddMemoryCache();
         builder.Services.AddSingleton(_ => new ResponseIdValidationService());

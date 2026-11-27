@@ -6,3 +6,9 @@
 
 <h1>@ViewData["Title"]</h1>
 <partial name="_StatusMessage" model="Model.StatusMessage" />
+@if (Model.SetPasswordUrl is not null)
+{
+    <p>
+        <a id="set-password-link" class="btn btn-primary" href="@Model.SetPasswordUrl">Choose a password</a>
+    </p>
+}

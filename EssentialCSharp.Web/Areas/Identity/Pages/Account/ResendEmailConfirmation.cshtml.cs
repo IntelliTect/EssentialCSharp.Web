@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Encodings.Web;
 using EssentialCSharp.Web.Areas.Identity.Data;
+using EssentialCSharp.Web.Extensions;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -14,7 +15,7 @@ using Microsoft.Extensions.Options;
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
 [AllowAnonymous]
-public partial class ResendEmailConfirmationModel(UserManager<EssentialCSharpWebUser> userManager, IEmailSender emailSender, ICaptchaValidationService captchaValidationService, IOptions<CaptchaOptions> optionsAccessor, ILogger<ResendEmailConfirmationModel> logger) : PageModel
+public partial class ResendEmailConfirmationModel(UserManager<EssentialCSharpWebUser> userManager, IEmailSender emailSender, ICaptchaValidationService captchaValidationService, IOptions<CaptchaOptions> optionsAccessor, ILogger<ResendEmailConfirmationModel> logger, IOptions<SiteSettings> siteSettings) : PageModel
 {
     [TempData]
     public string? StatusMessage { get; set; }
@@ -76,11 +77,10 @@ public partial class ResendEmailConfirmationModel(UserManager<EssentialCSharpWeb
         string userId = await userManager.GetUserIdAsync(user);
         string code = await userManager.GenerateEmailConfirmationTokenAsync(user);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-        string? callbackUrl = Url.Page(
+        string? callbackUrl = Url.EmailPageLink(
+            siteSettings.Value,
             "/Account/ConfirmEmail",
-            pageHandler: null,
-            values: new { userId = userId, code = code },
-            protocol: Request.Scheme);
+            values: new { userId = userId, code = code });
 
         if (callbackUrl is null)
         {

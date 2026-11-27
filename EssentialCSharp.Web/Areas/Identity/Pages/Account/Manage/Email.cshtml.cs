@@ -2,12 +2,14 @@
 using System.Text;
 using System.Text.Encodings.Web;
 using EssentialCSharp.Web.Areas.Identity.Data;
+using EssentialCSharp.Web.Extensions;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account.Manage;
 
@@ -15,7 +17,8 @@ public partial class EmailModel(
     UserManager<EssentialCSharpWebUser> userManager,
     SignInManager<EssentialCSharpWebUser> signInManager,
     IEmailSender emailSender,
-    ILogger<EmailModel> logger) : PageModel
+    ILogger<EmailModel> logger,
+    IOptions<SiteSettings> siteSettings) : PageModel
 {
     private readonly UserManager<EssentialCSharpWebUser> _UserManager = userManager;
     private readonly SignInManager<EssentialCSharpWebUser> _SignInManager = signInManager;
@@ -94,17 +97,21 @@ public partial class EmailModel(
             }
             string code = await _UserManager.GenerateChangeEmailTokenAsync(user, Input.NewEmail);
             code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-            string? callbackUrl = Url.Page(
+            string? callbackUrl = Url.EmailPageLink(
+                siteSettings.Value,
                 "/Account/ConfirmEmailChange",
-                pageHandler: null,
-                values: new { area = "Identity", userId = userId, email = Input.NewEmail, code = code },
-                protocol: Request.Scheme);
+                values: new { area = "Identity", userId = userId, email = Input.NewEmail, code = code });
             if (callbackUrl is null)
             {
                 StatusMessage = "Error: callback url unexpectedly null.";
                 return RedirectToPage();
             }
-            if (!await TrySendConfirmationAsync(Input.NewEmail, callbackUrl))
+            if (!await TrySendConfirmationAsync(
+                Input.NewEmail,
+                "Confirm your email change",
+                $"Someone asked to change the email address of an Essential C# account to this address. If that was you, "
+                + $"<a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>click here</a> while logged in to that account to confirm the change. "
+                + "If it wasn't you, ignore this email: the address is not changed unless the link is opened by the account's owner."))
             {
                 return RedirectToPage();
             }
@@ -135,11 +142,10 @@ public partial class EmailModel(
         string? email = await _UserManager.GetEmailAsync(user);
         string code = await _UserManager.GenerateEmailConfirmationTokenAsync(user);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-        string? callbackUrl = Url.Page(
+        string? callbackUrl = Url.EmailPageLink(
+            siteSettings.Value,
             "/Account/ConfirmEmail",
-            pageHandler: null,
-            values: new { area = "Identity", userId = userId, code = code },
-            protocol: Request.Scheme);
+            values: new { area = "Identity", userId = userId, code = code });
         if (callbackUrl is null)
         {
             StatusMessage = "Error: callback url unexpectedly null.";
@@ -149,7 +155,10 @@ public partial class EmailModel(
         {
             return NotFound($"Unable to load user email with ID '{_UserManager.GetUserId(User)}'.");
         }
-        if (!await TrySendConfirmationAsync(email, callbackUrl))
+        if (!await TrySendConfirmationAsync(
+            email,
+            "Confirm your email",
+            $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>."))
         {
             return RedirectToPage();
         }
@@ -159,14 +168,11 @@ public partial class EmailModel(
     }
 
     /// <summary>Sends the confirmation link. On failure sets a friendly <see cref="StatusMessage"/> and returns false.</summary>
-    private async Task<bool> TrySendConfirmationAsync(string toEmail, string callbackUrl)
+    private async Task<bool> TrySendConfirmationAsync(string toEmail, string subject, string htmlMessage)
     {
         try
         {
-            await _EmailSender.SendEmailAsync(
-                toEmail,
-                "Confirm your email",
-                $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+            await _EmailSender.SendEmailAsync(toEmail, subject, htmlMessage);
             return true;
         }
         catch (EmailSendException)

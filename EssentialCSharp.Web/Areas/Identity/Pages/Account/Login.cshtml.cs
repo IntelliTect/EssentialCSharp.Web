@@ -94,13 +94,16 @@ public partial class LoginModel(SignInManager<EssentialCSharpWebUser> signInMana
             }
             if (foundUser is not null)
             {
-                result = await signInManager.PasswordSignInAsync(foundUser, Input.Password, Input.RememberMe, lockoutOnFailure: true);
+                result = await signInManager.PasswordSignInAsync(foundUser, Input.Password, Input.RememberMe, lockoutOnFailure: await CanBeLockedOutByPasswordAsync(foundUser));
                 // Call the referral service to get the referral ID and set it onto the user claim
                 _ = await referralService.EnsureReferralIdAsync(foundUser);
             }
             else
             {
-                result = await signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: true);
+                EssentialCSharpWebUser? userByName = await userManager.FindByNameAsync(Input.Email);
+                result = userByName is null
+                    ? Microsoft.AspNetCore.Identity.SignInResult.Failed
+                    : await signInManager.PasswordSignInAsync(userByName, Input.Password, Input.RememberMe, lockoutOnFailure: await CanBeLockedOutByPasswordAsync(userByName));
             }
             if (result.Succeeded)
             {
@@ -126,6 +129,10 @@ public partial class LoginModel(SignInManager<EssentialCSharpWebUser> signInMana
         // If we got this far, something failed, redisplay form
         return Page();
     }
+
+    // An account without a password can't be guessed into, so wrong passwords must not lock it: otherwise anyone
+    // could lock an external-login-only account out of every sign-in method.
+    private Task<bool> CanBeLockedOutByPasswordAsync(EssentialCSharpWebUser user) => userManager.HasPasswordAsync(user);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "User logged in.")]
     private static partial void LogUserLoggedIn(ILogger<LoginModel> logger);

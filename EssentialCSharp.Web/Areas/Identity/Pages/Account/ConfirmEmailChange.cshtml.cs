@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using EssentialCSharp.Web.Areas.Identity.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -7,6 +8,10 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace EssentialCSharp.Web.Areas.Identity.Pages.Account;
 
+// The link proves control of the new mailbox; being signed in as the account proves the change was requested by
+// its owner. Requiring both stops someone attaching an address they don't own to their account (and keeping
+// their own logins and tokens on it) just because the address owner clicked the link.
+[Authorize]
 public class ConfirmEmailChangeModel(UserManager<EssentialCSharpWebUser> userManager, SignInManager<EssentialCSharpWebUser> signInManager) : PageModel
 {
     [TempData]
@@ -17,6 +22,12 @@ public class ConfirmEmailChangeModel(UserManager<EssentialCSharpWebUser> userMan
         if (userId is null || email is null || code is null)
         {
             return RedirectToPage("/Index");
+        }
+
+        if (!string.Equals(userManager.GetUserId(User), userId, StringComparison.Ordinal))
+        {
+            StatusMessage = "Error changing email. Log in to the account that requested the change, then open the link again.";
+            return Page();
         }
 
         EssentialCSharpWebUser? user = await userManager.FindByIdAsync(userId);
