@@ -96,7 +96,7 @@ export function postSession(intervals, { keepalive = false } = {}) {
         body: JSON.stringify({ intervals }),
         keepalive,
         readJson: true,
-        // A hung periodic request must not outlive the lease on its persisted record.
+        // A hung periodic request would hold back every later periodic flush, so it is aborted.
         // A lifecycle request is fire-and-forget and keeps running after the page is gone.
         timeoutMs: keepalive ? undefined : SEND_TIMEOUT_MS
     });
@@ -104,6 +104,6 @@ export function postSession(intervals, { keepalive = false } = {}) {
 
 /** @returns {Promise<ApiResult<undefined>>} */
 export function resetProfile() {
-    // Bounded so the pause it puts on other tabs' sends (RESET_PAUSE_MS) always outlasts it.
+    // Bounded so the button cannot stay disabled forever on a stalled network.
     return postWithCsrf(READING_RESET_URL, { timeoutMs: SEND_TIMEOUT_MS });
 }

@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { READING_RESET_CHANNEL, READING_RESET_URL, RESET_MESSAGE_FAILED, RESET_MESSAGE_RESET } from "./utils/readingConstants.js";
-import { isOutboxStored, newOutboxKey, saveOutbox } from "./utils/readingOutboxStorage.js";
+import { READING_RESET_CHANNEL, READING_RESET_URL, RESET_MESSAGE } from "./utils/readingConstants.js";
 import { installFakeBroadcastChannel } from "./test-utils/fakeBroadcastChannel.js";
 
 describe("reading-reset (Manage Profile button)", () => {
@@ -63,45 +62,23 @@ describe("reading-reset (Manage Profile button)", () => {
         expect(status.textContent).toMatch(/success/i);
         expect(status.classList.contains("text-success")).toBe(true);
         expect(status.classList.contains("text-muted")).toBe(false);
-        expect(received.at(-1)).toEqual({ type: RESET_MESSAGE_RESET });
+        expect(received).toEqual([{ type: RESET_MESSAGE }]);
     });
 
-    it("clears only the signed-in account's unsent intervals", async () => {
-        const meta = document.createElement("meta");
-        meta.name = "ecs-auth-user-id";
-        meta.content = "user-1";
-        document.head.appendChild(meta);
-        const key = (userId) => {
-            const k = newOutboxKey();
-            saveOutbox(k, userId, [{ pageKey: "p", activeSeconds: 5, wordsRead: 5 }]);
-            return k;
-        };
-        const mine = key("user-1");
-        const theirs = key("user-2");
-
-        await load();
-        click();
-        await settled();
-
-        expect(isOutboxStored(mine)).toBe(false);
-        expect(isOutboxStored(theirs)).toBe(true);
-    });
-
-    // Nothing was cleared on a failure: other tabs must not discard their data, only resume.
+    // Nothing was reset: other tabs must keep their data and estimate.
     // (What those tabs then send is asserted end to end in useReadingTracker.test.js.)
-    const toldOtherTabsToResume = () => {
-        expect(received.at(-1)).toEqual({ type: RESET_MESSAGE_FAILED });
-        expect(received).not.toContainEqual({ type: RESET_MESSAGE_RESET });
+    const toldOtherTabsNothing = () => {
+        expect(received).toHaveLength(0);
     };
 
-    it("shows an error and lets other tabs resume when the server fails", async () => {
+    it("shows an error and leaves other tabs alone when the server fails", async () => {
         fetchMock.mockResolvedValue(new Response(null, { status: 503 }));
         await load();
         click();
         await settled();
         expect(status.textContent).toMatch(/failed/i);
         expect(status.classList.contains("text-danger")).toBe(true);
-        toldOtherTabsToResume();
+        toldOtherTabsNothing();
     });
 
     it("tells the user to sign in again when the session has expired", async () => {
@@ -110,7 +87,7 @@ describe("reading-reset (Manage Profile button)", () => {
         click();
         await settled();
         expect(status.textContent).toMatch(/sign in/i);
-        toldOtherTabsToResume();
+        toldOtherTabsNothing();
     });
 
     it("shows an error when the request throws", async () => {
@@ -119,7 +96,7 @@ describe("reading-reset (Manage Profile button)", () => {
         click();
         await settled();
         expect(status.classList.contains("text-danger")).toBe(true);
-        toldOtherTabsToResume();
+        toldOtherTabsNothing();
     });
 
     it("disables the button while the request is pending", async () => {

@@ -15,27 +15,12 @@ export const MOUSEMOVE_THROTTLE_MS = 1000;
 export const RETRY_BASE_DELAY_MS = 5000;
 export const RETRY_MAX_DELAY_MS = 120000;
 
-/**
- * How long a persisted batch being sent is reserved for its tab before another tab may take
- * it over. A periodic request is aborted after half of it, so a hung request never outlives
- * its lease.
- */
-export const LEASE_MS = 2 * 60 * 1000;
-export const SEND_TIMEOUT_MS = LEASE_MS / 2;
+/** A non-keepalive request still pending after this long is aborted and treated as transient (ms). */
+export const SEND_TIMEOUT_MS = 60 * 1000;
 
-/** Cross-tab notification that the reading profile is being or was reset. */
+/** Cross-tab notification that the reading profile was reset, and the message sent on it. */
 export const READING_RESET_CHANNEL = "essentialcsharp-reading-reset";
-
-/** Messages on READING_RESET_CHANNEL: before the reset request, after it succeeds, and after it fails. */
-export const RESET_MESSAGE_RESETTING = "resetting";
-export const RESET_MESSAGE_RESET = "reset";
-export const RESET_MESSAGE_FAILED = "reset-failed";
-
-/**
- * Longest a "resetting" message pauses sends in other tabs, in case the resetting tab closes before
- * it reports the outcome. The reset request is aborted after SEND_TIMEOUT_MS, so the pause outlasts it.
- */
-export const RESET_PAUSE_MS = SEND_TIMEOUT_MS + 5000;
+export const RESET_MESSAGE = "reset";
 
 export const READING_SESSION_URL = "/api/reading/session";
 export const READING_RESET_URL = "/api/reading/reset";

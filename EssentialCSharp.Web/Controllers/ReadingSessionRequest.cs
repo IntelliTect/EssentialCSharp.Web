@@ -5,8 +5,8 @@ namespace EssentialCSharp.Web.Controllers;
 public sealed class ReadingSessionRequest : IValidatableObject
 {
     /// <summary>
-    /// Most intervals accepted in one request. It is also the size of the client's unsent-interval outbox (sent to the
-    /// client as <c>READING_CONTEXT.maxQueuedIntervals</c>), so a full outbox always fits in one request.
+    /// Most intervals accepted in one request. It is also how many unsent intervals the client keeps in memory (sent to the
+    /// client as <c>READING_CONTEXT.maxQueuedIntervals</c>), so everything it holds always fits in one request.
     /// </summary>
     public const int MaxIntervals = 20;
 

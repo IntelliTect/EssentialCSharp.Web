@@ -1,7 +1,6 @@
 /**
  * @typedef {Object} ReadingContext
  * @property {boolean} isAuthenticated
- * @property {string | null} userId signed-in user id (from the layout's meta tag), scopes persisted unsent intervals to one account
  * @property {string} pageKey
  * @property {number} pageWords
  * @property {number} chapterWords
@@ -13,7 +12,7 @@
  * @property {number} maxCreditWpm
  * @property {number} idleThresholdSeconds
  * @property {number} periodicFlushActiveSeconds
- * @property {number} maxQueuedIntervals unsent intervals kept while the server is unreachable (never more than the server accepts per request)
+ * @property {number} maxQueuedIntervals unsent intervals kept in memory while the server is unreachable (never more than the server accepts per request)
  */
 
 function toCount(value) {
@@ -22,12 +21,6 @@ function toCount(value) {
 }
 
 const isPositiveNumber = (value) => typeof value === "number" && Number.isFinite(value) && value > 0;
-
-/** The layout exposes the signed-in user id in a meta tag (not a window global); anonymous has none. */
-export function getUserId(win) {
-    const id = win.document?.querySelector('meta[name="ecs-auth-user-id"]')?.content;
-    return id ? id : null;
-}
 
 /**
  * Reads window.READING_CONTEXT (emitted by the layout on content pages only).
@@ -45,7 +38,6 @@ export function getReadingContext(win = window) {
     if (!required.every(isPositiveNumber)) return null;
     return {
         isAuthenticated: raw.isAuthenticated === true,
-        userId: getUserId(win),
         pageKey: String(raw.pageKey),
         pageWords: toCount(raw.pageWords),
         chapterWords: toCount(raw.chapterWords),

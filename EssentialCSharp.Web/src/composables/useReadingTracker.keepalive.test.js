@@ -8,7 +8,7 @@ import { installFakeBroadcastChannel } from "../test-utils/fakeBroadcastChannel.
 const VIEWPORT = 500;
 const CONTENT_HEIGHT = 200000; // long page so progress never limits credit
 const context = () => ({
-    isAuthenticated: true, userId: "user-1", pageKey: "c/p", pageWords: 400000, chapterWords: 400000,
+    isAuthenticated: true, pageKey: "c/p", pageWords: 400000, chapterWords: 400000,
     wordsBeforePage: 0, chapterStartWords: 0, bookWords: 900000, wpm: 240, defaultWpm: 200,
     maxCreditWpm: 800, idleThresholdSeconds: 300, periodicFlushActiveSeconds: 60, maxQueuedIntervals: 20
 });
@@ -44,7 +44,7 @@ describe("hung keepalive send", () => {
     });
     afterEach(() => {
         scope?.stop(); document.body.innerHTML = ""; vi.useRealTimers(); vi.unstubAllGlobals();
-        localStorage.clear(); vi.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     it("does not stop later periodic flushes", async () => {

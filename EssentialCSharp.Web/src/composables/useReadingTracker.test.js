@@ -2,16 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { effectScope } from "vue";
 import { useReadingTracker } from "./useReadingTracker.js";
 import {
-    LEASE_MS,
     MAX_TICK_DELTA_S,
     READING_RESET_CHANNEL,
     READING_RESET_URL,
-    RESET_PAUSE_MS,
     RETRY_BASE_DELAY_MS,
     RETRY_MAX_DELAY_MS,
     TICK_INTERVAL_MS
 } from "../utils/readingConstants.js";
-import { newOutboxKey, saveOutbox, takeStoredIntervals } from "../utils/readingOutboxStorage.js";
 import { installFakeBroadcastChannel } from "../test-utils/fakeBroadcastChannel.js";
 
 // These tests assert requirements (what is credited, delivered, dropped or stopped),
@@ -25,7 +22,6 @@ const DEFAULT_WPM = 200;
 
 const context = (overrides = {}) => ({
     isAuthenticated: true,
-    userId: "user-1",
     pageKey: "chapter-1/page-1",
     pageWords: 2000,
     chapterWords: 8000,
@@ -46,7 +42,6 @@ const SLOW = { maxCreditWpm: 100 };
 const FLUSH_S = context().periodicFlushActiveSeconds;
 const MAX_QUEUED = context().maxQueuedIntervals; // deliberately not the server default: the client must use what it is told
 const BASE_DELAY_S = RETRY_BASE_DELAY_MS / 1000;
-const PAST_LEASE_S = LEASE_MS / 1000 + 60; // long enough for any lease to have expired
 
 const PROBLEM_JSON = "application/problem+json";
 const jsonResponse = (status, body, contentType = "application/json") => new Response(
@@ -130,7 +125,6 @@ describe("useReadingTracker", () => {
         document.head.innerHTML = "";
         vi.useRealTimers();
         vi.unstubAllGlobals();
-        localStorage.clear();
         vi.restoreAllMocks();
     });
 
@@ -462,7 +456,6 @@ describe("useReadingTracker", () => {
             await advance(200);
             await leavePage();
             expect(calls).toHaveLength(1);
-            expect(localStorage.length).toBe(0); // nothing kept for a later page load
         });
 
         it("treats an unflagged 400 (e.g. from a proxy) as bad data and keeps tracking", async () => {
@@ -492,25 +485,18 @@ describe("useReadingTracker", () => {
             expect(tracker.wpm.value).toBe(240);
         });
 
-        describe("a failed lifecycle flush", () => {
-            it.each([
-                ["the page becomes hidden", hide],
-                ["pagehide", () => window.dispatchEvent(new Event("pagehide"))]
-            ])("is not lost when %s: the next page load delivers it", async (_name, trigger) => {
-                handler = (n) => { if (n === 1) throw new TypeError("aborted"); return ok(); };
-                start();
-                readThroughPage();
-                await advance(10);
-                trigger();
-                await advance(0);
-                expect(calls).toHaveLength(1);
-                expect(delivered).toHaveLength(0);
-                scope.stop();
+        it("retries a send that failed when the page was hidden, as long as the page stays open", async () => {
+            handler = (n) => { if (n === 1) throw new TypeError("offline"); return ok(); };
+            start();
+            readThroughPage();
+            await advance(10);
+            hide();
+            await advance(0);
+            expect(calls).toHaveLength(1);
+            expect(delivered).toHaveLength(0);
 
-                start();
-                await advance(TICK_INTERVAL_MS / 1000 + 1);
-                expect(delivered).toEqual(calls[0].intervals);
-            });
+            await advance(2 * BASE_DELAY_S);
+            expect(delivered).toEqual(calls[0].intervals);
         });
 
         it("drops a batch rejected as invalid, never resends it, but keeps tracking", async () => {
@@ -584,348 +570,6 @@ describe("useReadingTracker", () => {
         });
     });
 
-    describe("unsent data across page loads", () => {
-        const interval = (n) => ({ pageKey: "chapter-1/page-1", activeSeconds: 10, wordsRead: n });
-        const seed = (intervals, userId = "user-1") => saveOutbox(newOutboxKey(), userId, intervals);
-        const nextPageLoad = async (ctx = context()) => {
-            scope.stop();
-            const tracker = start(ctx);
-            await advance(TICK_INTERVAL_MS / 1000 + 1);
-            return tracker;
-        };
-
-        it("delivers on the next page load what a failed send could not deliver", async () => {
-            handler = (n) => (n === 1 ? jsonResponse(503) : ok());
-            start();
-            readThroughPage();
-            await advance(FLUSH_S + 1);
-            expect(calls).toHaveLength(1);
-            expect(delivered).toHaveLength(0);
-
-            await nextPageLoad();
-            expect(delivered).toEqual(calls[0].intervals);
-        });
-
-        it("sends persisted data once even when two tabs load", async () => {
-            seed([interval(5), interval(6)]);
-            start();
-            const otherTab = effectScope();
-            otherTab.run(() => useReadingTracker(context()));
-            await advance(TICK_INTERVAL_MS / 1000 + 1);
-            otherTab.stop();
-
-            expect(delivered).toEqual([interval(5), interval(6)]);
-        });
-
-        it("does not lose a persisted batch whose request never completed (page destroyed mid-send)", async () => {
-            seed([interval(5)]);
-            handler = (n) => (n === 1 ? new Promise(() => {}) : ok());
-            start();
-            await advance(TICK_INTERVAL_MS / 1000 + 1);
-            expect(calls).toHaveLength(1);
-            scope.stop(); // page destroyed, response never seen
-
-            // A page loaded while the request may still be running does not send it a second time.
-            await nextPageLoad();
-            expect(delivered).toHaveLength(0);
-
-            // Much later it is recovered.
-            scope.stop();
-            await advance(PAST_LEASE_S);
-            await nextPageLoad();
-            expect(delivered).toEqual([interval(5)]);
-        });
-
-        it("does not resend a persisted batch once its request was acknowledged", async () => {
-            seed([interval(5)]);
-            start();
-            await advance(TICK_INTERVAL_MS / 1000 + 1);
-            expect(delivered).toEqual([interval(5)]);
-
-            scope.stop();
-            await advance(PAST_LEASE_S);
-            await nextPageLoad();
-            expect(calls).toHaveLength(1);
-        });
-
-        it("never resends a batch whose lifecycle (keepalive) request was in flight when the page was destroyed", async () => {
-            // A keepalive request cannot be acknowledged by a page that is going away, and it
-            // may well have succeeded: it must not be sent again later (that would double count).
-            seed([interval(5)]);
-            handler = (n) => (n === 1 ? new Promise(() => {}) : ok());
-            start();
-            window.dispatchEvent(new Event("pagehide"));
-            await advance(0);
-            expect(calls).toHaveLength(1);
-            expect(calls[0].keepalive).toBe(true);
-            scope.stop();
-
-            await advance(PAST_LEASE_S);
-            await nextPageLoad();
-            expect(calls).toHaveLength(1);
-        });
-
-        // Simulates a full storage: writes of matching values throw, everything else works.
-        function failWritesWhen(matches) {
-            const real = localStorage;
-            vi.stubGlobal("localStorage", {
-                get length() { return real.length; },
-                key: (i) => real.key(i),
-                getItem: (k) => real.getItem(k),
-                removeItem: (k) => real.removeItem(k),
-                setItem: (k, v) => {
-                    if (matches(String(v))) throw new DOMException("full", "QuotaExceededError");
-                    real.setItem(k, v);
-                }
-            });
-        }
-
-        // Starts a tab whose periodic send of a persisted batch (interval 5) hangs; while it
-        // hangs, a lifecycle send of newer data fails and is persisted in a second record.
-        async function startWithHungSendAndNewerRecord() {
-            seed([interval(5)]);
-            let release;
-            handler = (n) => {
-                if (n === 1) return new Promise((resolve) => { release = resolve; });
-                if (n === 2) throw new TypeError("aborted");
-                return ok();
-            };
-            start();
-            await advance(TICK_INTERVAL_MS / 1000 + 1);
-            expect(calls).toHaveLength(1);
-            readThroughPage();
-            await advance(10);
-            hide();
-            await advance(0);
-            expect(calls).toHaveLength(2);
-            expect(localStorage.length).toBeGreaterThan(0);
-            return release;
-        }
-
-        it("does not leave a stale copy of a batch behind when its send fails while newer data is persisted", async () => {
-            const release = await startWithHungSendAndNewerRecord();
-            release(jsonResponse(503));
-            await advance(0);
-            scope.stop();
-
-            await advance(PAST_LEASE_S);
-            start();
-            await advance(TICK_INTERVAL_MS / 1000 + 1);
-            expect(delivered.filter((i) => i.wordsRead === 5)).toHaveLength(1);
-            expect(sum(delivered, "activeSeconds")).toBe(10 + 10); // the batch (10s) and the newer data (10s)
-        });
-
-        it("sends newer data taken by another tab once, while still keeping a batch that failed after that", async () => {
-            const release = await startWithHungSendAndNewerRecord();
-            // Another tab loads and takes the newer record (the lifecycle send that failed), then sends it.
-            const otherTab = effectScope();
-            otherTab.run(() => useReadingTracker(context({ pageKey: "chapter-9/page-9" })));
-
-            // The hung send fails right away, before this tab's next tick can notice the record is gone.
-            release(jsonResponse(503));
-            await advance(0);
-            await advance(2 * BASE_DELAY_S);
-            otherTab.stop();
-            scope.stop();
-            await advance(PAST_LEASE_S);
-            start();
-            await advance(TICK_INTERVAL_MS / 1000 + 1);
-
-            // The failed batch (10s) was kept and delivered, the newer data (10s) was delivered once.
-            expect(sum(delivered.filter((i) => i.pageKey === context().pageKey), "activeSeconds")).toBe(10 + 10);
-        });
-
-        it("keeps no stale record when re-saving a grown batch fails (storage full)", async () => {
-            const ctx = context({ periodicFlushActiveSeconds: 1 });
-            seed([interval(5)]);
-            handler = (n) => (n === 1 ? jsonResponse(503) : ok());
-            start(ctx);
-            await advance(TICK_INTERVAL_MS / 1000 + 1);
-            expect(calls).toHaveLength(1); // failed: [5] stays persisted
-
-            failWritesWhen((value) => !value.includes("leaseUntil") && JSON.parse(value).intervals.length > 1);
-            readThroughPage();
-            await advance(3); // new data is queued during the backoff, its record no longer fits
-            await advance(2 * BASE_DELAY_S);
-            expect(delivered.filter((i) => i.wordsRead === 5)).toHaveLength(1); // sent from memory
-
-            scope.stop();
-            await advance(PAST_LEASE_S);
-            await nextPageLoad();
-            expect(delivered.filter((i) => i.wordsRead === 5)).toHaveLength(1); // the old record was not left behind
-        });
-
-        it("auth failure discards only this account's records, not another account's", async () => {
-            const release = await startWithHungSendAndNewerRecord();
-            seed([interval(7)], "someone-else"); // another account signed in in another tab
-            release(jsonResponse(401));
-            await advance(0);
-            expect(takeStoredIntervals("someone-else", MAX_QUEUED)).toEqual([interval(7)]);
-            expect(localStorage.length).toBe(0); // and nothing of this account is left either
-        });
-
-        it("discards every persisted record when the server rejects the session (auth failure)", async () => {
-            const release = await startWithHungSendAndNewerRecord();
-            release(jsonResponse(401));
-            await advance(0);
-            expect(localStorage.length).toBe(0);
-        });
-
-        it("sends a batch taken by another tab only once, even if this tab keeps collecting", async () => {
-            handler = (n) => (n === 1 ? jsonResponse(503) : ok());
-            start(context(SLOW));
-            readThroughPage();
-            await advance(FLUSH_S + 1);
-            expect(calls).toHaveLength(1);
-
-            // Another tab loads, takes the stored batch and sends it.
-            const otherTab = effectScope();
-            // (It reads another page, so its own reading is distinguishable by page key.)
-            otherTab.run(() => useReadingTracker(context({ pageKey: "chapter-9/page-9" })));
-            await advance(TICK_INTERVAL_MS / 1000 + 1);
-            expect(delivered).toHaveLength(calls[0].intervals.length); // the other tab sent it
-
-            // This tab flushes (hidden, then visible again) while still holding its failed batch
-            // in the retry backoff, then goes on reading.
-            hide();
-            await advance(0);
-            show();
-            press();
-            await advance(FLUSH_S + 2 * BASE_DELAY_S);
-            await leavePage();
-            otherTab.stop();
-
-            // Every second read here is counted exactly once: a resent batch would exceed the time elapsed.
-            expect(sum(delivered.filter((i) => i.pageKey === context().pageKey), "activeSeconds")).toBe(elapsed);
-        });
-
-        it("sends the batch once and leaves no record behind when marking it as being sent fails (storage full)", async () => {
-            seed([interval(5)]);
-            failWritesWhen((value) => value.includes("leaseUntil"));
-            start();
-            await advance(TICK_INTERVAL_MS / 1000 + 1);
-            expect(delivered).toEqual([interval(5)]);
-
-            scope.stop();
-            await advance(PAST_LEASE_S);
-            await nextPageLoad();
-            expect(calls).toHaveLength(1);
-        });
-
-        it("does not drop its own data when storing a failed batch fails (storage full)", async () => {
-            seed([interval(5)]);
-            handler = (n) => (n === 1 ? jsonResponse(503) : ok());
-            start();
-            failWritesWhen((value) => !value.includes("leaseUntil"));
-            await advance(TICK_INTERVAL_MS / 1000 + 1);
-            expect(calls).toHaveLength(1);
-
-            await advance(2 * BASE_DELAY_S);
-            expect(delivered).toEqual([interval(5)]); // retried from memory, not dropped
-        });
-
-        it("never sends data persisted for a different account", async () => {
-            seed([interval(5)], "someone-else");
-            start();
-            await advance(10);
-            expect(calls).toHaveLength(0);
-        });
-
-        it("ignores malformed storage and malformed entries", async () => {
-            localStorage.setItem(newOutboxKey(), "{not json");
-            localStorage.setItem(newOutboxKey(), JSON.stringify({ userId: "user-1", intervals: "nope" }));
-            seed([
-                interval(5),
-                { pageKey: "", activeSeconds: 10, wordsRead: 5 },
-                { pageKey: "p", activeSeconds: -1, wordsRead: 5 },
-                { pageKey: "p", activeSeconds: 10, wordsRead: "many" },
-                { pageKey: "p", activeSeconds: Infinity, wordsRead: 5 },
-                { pageKey: "p", activeSeconds: 10.5, wordsRead: 5 },
-                { pageKey: "p", activeSeconds: 10, wordsRead: 5.5 },
-                null
-            ]);
-            start();
-            await advance(10);
-            expect(delivered).toEqual([interval(5)]);
-        });
-
-        it("keeps tracking without throwing when storage is unavailable", async () => {
-            const broken = () => { throw new Error("storage unavailable"); };
-            vi.stubGlobal("localStorage", {
-                get length() { return broken(); },
-                key: broken,
-                getItem: broken,
-                setItem: broken,
-                removeItem: broken
-            });
-            handler = (n) => (n === 1 ? jsonResponse(503) : ok());
-            start();
-            readThroughPage();
-            await advance(2 * FLUSH_S + 5);
-            await leavePage();
-            // The failed batch is still retried from memory.
-            expect(delivered).toEqual(expect.arrayContaining(calls[0].intervals));
-        });
-
-        it("keeps only the newest intervals when more were persisted than may be queued", async () => {
-            seed(Array.from({ length: MAX_QUEUED + 5 }, (_, i) => interval(i + 1)));
-            start();
-            await advance(10);
-            expect(delivered).toHaveLength(MAX_QUEUED);
-            expect(delivered.at(-1).wordsRead).toBe(MAX_QUEUED + 5);
-            expect(delivered[0].wordsRead).toBe(6);
-        });
-
-        it("discards persisted data when the profile is reset in another tab", async () => {
-            handler = (n) => (n === 1 ? jsonResponse(503) : ok());
-            start();
-            readThroughPage();
-            await advance(FLUSH_S + 1);
-            expect(calls).toHaveLength(1);
-
-            new BroadcastChannel(READING_RESET_CHANNEL).postMessage({ type: "reset" });
-            await nextPageLoad();
-            expect(calls).toHaveLength(1);
-        });
-
-        it("clears persisted data the page was loaded with when it is reset", async () => {
-            seed([interval(5)]);
-            handler = () => jsonResponse(503);
-            start(); // takes the data over; send fails, so it is persisted again
-            await advance(2);
-            expect(calls).toHaveLength(1);
-
-            new BroadcastChannel(READING_RESET_CHANNEL).postMessage({ type: "reset" });
-            handler = () => ok();
-            await nextPageLoad();
-            expect(delivered).toHaveLength(0);
-        });
-
-        it("drops persisted data the server rejects as invalid and does not send it again", async () => {
-            seed([interval(5)]);
-            handler = () => jsonResponse(400, VALIDATION_BODY, PROBLEM_JSON);
-            start();
-            await advance(2);
-            expect(calls).toHaveLength(1);
-
-            handler = () => ok();
-            await nextPageLoad();
-            expect(delivered).toHaveLength(0);
-        });
-
-        it("drops persisted data after an auth failure", async () => {
-            seed([interval(5)]);
-            handler = () => jsonResponse(403);
-            start();
-            await advance(2);
-            expect(calls).toHaveLength(1);
-
-            handler = () => ok();
-            await nextPageLoad();
-            expect(delivered).toHaveLength(0);
-        });
-    });
-
     describe("reset in another tab", () => {
         // Deterministic: the fake channel delivers synchronously.
         function resetFromOtherTab() {
@@ -989,68 +633,37 @@ describe("useReadingTracker", () => {
         // End to end with the real Manage Profile button: this document stands in for the other tab
         // (the fake channel delivers between instances, as between tabs). Only what reaches the
         // server is asserted, not the messages the two pages exchange.
-        describe("while the reset requested on the Manage Profile page is pending", () => {
-            let respondToReset;
-
-            beforeEach(async () => {
+        describe("from the Manage Profile page", () => {
+            async function resetOnManageProfile(status) {
                 const sessionFetch = globalThis.fetch;
                 vi.stubGlobal("fetch", (url, init) => (url === READING_RESET_URL
-                    ? new Promise((resolve) => { respondToReset = (status) => resolve(new Response(null, { status })); })
+                    ? Promise.resolve(new Response(null, { status }))
                     : sessionFetch(url, init)));
                 vi.stubGlobal("confirm", () => true);
                 document.body.insertAdjacentHTML("beforeend",
                     '<button id="reset-reading-speed-button" data-confirm="Reset?"></button><span id="reset-reading-status"></span>');
                 vi.resetModules();
                 await import("../reading-reset.js");
-            });
-
-            async function clickReset() {
                 document.getElementById("reset-reading-speed-button").dispatchEvent(new Event("click"));
                 await advance(0);
             }
-            async function resetResponds(status) {
-                respondToReset(status);
-                await advance(0);
-            }
 
-            it("sends nothing, so no batch can reach the server after the reset and re-create the profile", async () => {
-                start();
-                press();
-                scrollTo(-VIEWPORT);
-                await clickReset();
-                scrollTo(-(CONTENT_HEIGHT - VIEWPORT)); // keeps reading while the reset is pending
-                await advance(FLUSH_S + 1);
-                hide();
-                await leavePage();
-                expect(calls).toHaveLength(0);
-            });
-
-            it("does not deliver reading done before the reset once it succeeds", async () => {
+            it("does not deliver unsent reading done before a successful reset", async () => {
                 start();
                 readThroughPage();
-                await clickReset();
-                await advance(FLUSH_S + 1);
-                await resetResponds(204);
+                await advance(FLUSH_S / 2);
+                await resetOnManageProfile(204);
                 await leavePage();
                 expect(deliveredSeconds()).toBe(0);
             });
 
-            it("still delivers its reading when the reset fails", async () => {
+            it("still delivers this tab's reading when the reset fails", async () => {
                 start();
                 readThroughPage();
-                await clickReset();
-                await advance(FLUSH_S + 1);
-                await resetResponds(503);
-                await advance(1);
-                expect(deliveredSeconds()).toBeGreaterThanOrEqual(FLUSH_S);
-            });
-
-            it("resumes tracking if the reset never completes", async () => {
-                start();
-                readThroughPage();
-                await clickReset(); // the reset request never answers
-                await advance(RESET_PAUSE_MS / 1000 + 1);
-                expect(deliveredSeconds()).toBeGreaterThanOrEqual(FLUSH_S);
+                await advance(FLUSH_S / 2);
+                await resetOnManageProfile(503);
+                await leavePage();
+                expect(deliveredSeconds()).toBe(elapsed);
             });
         });
     });

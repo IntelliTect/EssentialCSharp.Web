@@ -18,14 +18,12 @@
  *  - bad-data: that batch is dropped, tracking continues.
  *  - transient: the batch goes back to the queue and is retried with exponential
  *    backoff on a later tick; lifecycle flushes (hidden/pagehide) ignore the
- *    backoff. The queue is also saved to localStorage (see readingOutboxStorage)
- *    so the next page load of the same user sends it. While a persisted batch is
- *    sent by a periodic flush its record stays stored (leased) until the response
- *    arrives. A lifecycle (keepalive) send removes its record first: the page is
- *    about to be destroyed, so the response can never acknowledge it, and keeping
- *    the record would resend (double count) every successful send. A keepalive
- *    request that is aborted with its page is therefore lost (accepted: a rare
- *    undercount is better than routine double counting).
+ *    backoff.
+ *
+ * The queue lives in memory only. Whatever is still unsent when the page goes away
+ * (its final keepalive send failed or was aborted) is lost. That is accepted: the
+ * intervals only feed the reader's average speed (words / seconds), which losing an
+ * occasional interval barely moves.
  *
  * Pieces: useActivityState (idle/visibility/focus/input), services/readingApi
  * (fetch + CSRF + typed results), utils/readingProgress (pure scroll math).
@@ -36,30 +34,15 @@ import {
     STATUS_AUTH_FAILURE,
     STATUS_BAD_DATA,
     STATUS_OK,
-    STATUS_TRANSIENT,
     postSession
 } from "../services/readingApi.js";
 import {
     MAX_TICK_DELTA_S,
     READING_RESET_CHANNEL,
-    RESET_MESSAGE_FAILED,
-    RESET_MESSAGE_RESETTING,
-    RESET_PAUSE_MS,
     RETRY_BASE_DELAY_MS,
     RETRY_MAX_DELAY_MS,
     TICK_INTERVAL_MS
 } from "../utils/readingConstants.js";
-import {
-    CLAIM_CLAIMED,
-    CLAIM_GONE,
-    claimOutbox,
-    clearStoredIntervals,
-    isOutboxStored,
-    newOutboxKey,
-    removeOutbox,
-    saveOutbox,
-    takeStoredIntervals
-} from "../utils/readingOutboxStorage.js";
 import {
     creditInterval,
     findContentElement,
@@ -105,49 +88,13 @@ export function useReadingTracker(context) {
     // Credited intervals awaiting delivery, and retry state.
     /** @type {import("../services/readingApi.js").ReadingInterval[]} */
     let outbox = [];
-    // Key of the localStorage record mirroring the outbox, null while nothing is persisted.
-    // Persisting starts after a failed send; while it is set every outbox change is mirrored.
-    let storedKey = null;
     let failures = 0;
     let retryAt = 0;
     // Bumped when another tab resets the profile; responses to batches sent before
     // the reset are ignored (no restore, no wpm update).
     let generation = 0;
-    // While another tab's reset request is pending nothing is sent (until this time), so no
-    // batch can reach the server after the reset and re-create the profile.
-    let pausedUntil = 0;
 
     const contentElement = findContentElement();
-
-    function persistOutbox() {
-        if (!context.userId) return;
-        if (outbox.length === 0) {
-            if (storedKey) saveOutbox(storedKey, context.userId, outbox);
-            storedKey = null;
-            return;
-        }
-        const key = storedKey ?? newOutboxKey();
-        if (saveOutbox(key, context.userId, outbox)) {
-            storedKey = key;
-        } else {
-            // Storage full: nothing reliable is stored, so keep the data in memory only
-            // (a stale record would later be mistaken for this tab's data).
-            removeOutbox(key);
-            storedKey = null;
-        }
-    }
-
-    function discardPersistedOutbox() {
-        storedKey = null;
-        // Only this account's records: another signed-in account may share the browser.
-        if (context.userId) clearStoredIntervals(context.userId);
-    }
-
-    // Intervals left by an earlier page load (never another user's) are sent like new ones.
-    if (tracking && context.userId) {
-        outbox = takeStoredIntervals(context.userId, context.maxQueuedIntervals);
-        persistOutbox();
-    }
 
     function updateProgress() {
         const measure = measureContent(contentElement);
@@ -224,10 +171,10 @@ export function useReadingTracker(context) {
             }
         } finally {
             trimOutbox();
-            if (storedKey) persistOutbox();
         }
     }
 
+    // Keeps the newest intervals that fit in one request.
     function trimOutbox() {
         const max = context.maxQueuedIntervals;
         if (outbox.length > max) outbox.splice(0, outbox.length - max);
@@ -238,14 +185,7 @@ export function useReadingTracker(context) {
      * yield to an in-flight request and to the retry backoff.
      */
     async function flush({ keepalive = false, collect: doCollect = true } = {}) {
-        if (!tracking || stopped || performance.now() < pausedUntil) return;
-
-        // If another tab already took our persisted record (it sends those entries), drop them
-        // before collect() could write them back and have them sent twice.
-        if (storedKey && !isOutboxStored(storedKey)) {
-            storedKey = null;
-            outbox = [];
-        }
+        if (!tracking || stopped) return;
 
         if (doCollect) {
             updateProgress();
@@ -254,31 +194,12 @@ export function useReadingTracker(context) {
         if (outbox.length === 0) return;
         if (!keepalive && (inFlight > 0 || performance.now() < retryAt)) return;
 
-        // A persisted batch is sent only by the tab that holds its record: if another tab
-        // took it, that tab sends it and this copy is dropped. If storage itself fails nothing
-        // is known about the record, so the batch is still sent (never dropped on a guess).
-        // For a periodic send the record stays stored (leased) until the response is
-        // acknowledged; a keepalive send cannot be acknowledged, so its record is removed now.
-        let sentKey = null;
-        if (storedKey) {
-            const claim = claimOutbox(storedKey);
-            if (claim === CLAIM_GONE) {
-                storedKey = null;
-                outbox = [];
-                return;
-            }
-            if (claim === CLAIM_CLAIMED) {
-                if (keepalive) removeOutbox(storedKey);
-                else sentKey = storedKey;
-            }
-            storedKey = null;
-        }
         const batch = outbox;
         outbox = [];
         const batchGeneration = generation;
 
         // A keepalive send has no timeout and can stay pending on a stalled network. Its batch has left the
-        // outbox already, so it must not hold back the periodic flushes (inFlight only gates those).
+        // queue already, so it must not hold back the periodic flushes (inFlight only gates those).
         if (!keepalive) inFlight++;
         let result;
         try {
@@ -286,9 +207,6 @@ export function useReadingTracker(context) {
         } finally {
             if (!keepalive) inFlight--;
         }
-        // Acknowledged (delivered or rejected for good): the record is no longer needed.
-        // Transient failures keep it, re-saved below.
-        if (sentKey && result.status !== STATUS_TRANSIENT) removeOutbox(sentKey);
         if (disposed || batchGeneration !== generation) return;
 
         if (result.status === STATUS_OK) {
@@ -302,24 +220,12 @@ export function useReadingTracker(context) {
             stopped = true;
             outbox = [];
             pendingSeconds = 0;
-            discardPersistedOutbox();
         } else if (result.status === STATUS_BAD_DATA) {
             failures = 0; // batch dropped; the data was the problem, not the server
         } else {
-            // Transient: put the batch back in front of anything queued meanwhile. If another
-            // tab took our record meanwhile, it sends what that record held (everything queued
-            // since this send started); only this batch, which that record never held, is kept.
-            if (storedKey && !isOutboxStored(storedKey)) {
-                storedKey = null;
-                outbox = [];
-            }
+            // Transient: put the batch back in front of anything queued meanwhile.
             outbox = batch.concat(outbox);
-            // Drop the leased record: persistOutbox re-saves everything (under a newer record
-            // if one exists, else a fresh one), and our own lease must not make the next retry
-            // treat the record as another tab's.
-            if (sentKey) removeOutbox(sentKey);
             trimOutbox();
-            persistOutbox();
             failures++;
             retryAt = performance.now()
                 + Math.min(RETRY_BASE_DELAY_MS * 2 ** (failures - 1), RETRY_MAX_DELAY_MS);
@@ -355,12 +261,10 @@ export function useReadingTracker(context) {
     // drop unsent data so it does not repopulate the profile that was just cleared.
     function onReset() {
         generation++;
-        pausedUntil = 0;
         wpm.value = context.defaultWpm;
         if (!tracking) return;
         pendingSeconds = 0;
         outbox = [];
-        discardPersistedOutbox();
         failures = 0;
         retryAt = 0;
         updateProgress();
@@ -370,20 +274,7 @@ export function useReadingTracker(context) {
     const resetChannel = typeof BroadcastChannel === "function"
         ? new BroadcastChannel(READING_RESET_CHANNEL)
         : null;
-    // Another tab is resetting: hold every send (data is kept) until it reports the outcome or the
-    // pause expires. Any other message is a completed reset (older pages send only that).
-    function onResetMessage(event) {
-        const type = event?.data?.type;
-        if (type === RESET_MESSAGE_RESETTING) {
-            pausedUntil = performance.now() + RESET_PAUSE_MS;
-        } else if (type === RESET_MESSAGE_FAILED) {
-            pausedUntil = 0;
-        } else {
-            onReset();
-        }
-    }
-
-    if (resetChannel) resetChannel.onmessage = onResetMessage;
+    if (resetChannel) resetChannel.onmessage = onReset;
 
     // Progress display works for everyone.
     const onScrollOrResize = () => scheduleProgressUpdate();
