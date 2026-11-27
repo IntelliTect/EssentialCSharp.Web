@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
+using EssentialCSharp.Web.Extensions;
 using HtmlAgilityPack;
 using Microsoft.Extensions.Hosting;
 
@@ -118,15 +119,8 @@ public sealed partial class WordCountService(
     // ---- Implementation ----
 
     /// <summary>Returns a normalized, '/'-separated absolute path, or null if it leaves the content root.</summary>
-    private string? ResolvePath(SiteMapping mapping)
-    {
-        string root = Path.GetFullPath(hostingEnvironment.ContentRootPath);
-        string full = Path.GetFullPath(Path.Join(root, Path.Join(mapping.PagePath)));
-        string relative = Path.GetRelativePath(root, full);
-        return relative.StartsWith("..", StringComparison.Ordinal) || Path.IsPathRooted(relative)
-            ? null
-            : full.Replace('\\', '/');
-    }
+    private string? ResolvePath(SiteMapping mapping) =>
+        mapping.GetContentFilePath(hostingEnvironment.ContentRootPath)?.Replace('\\', '/');
 
     private int CountProseWords(string filePath)
     {

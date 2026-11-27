@@ -27,9 +27,9 @@ public class HomeController(ILogger<HomeController> logger, IWebHostEnvironment 
         {
             return RedirectToAction(nameof(Home));
         }
-        else if (siteMapping is not null)
+        // A mapping whose page path leaves the content root is treated as not found.
+        else if (siteMapping?.GetContentFilePath(hostingEnvironment.ContentRootPath) is { } filePath)
         {
-            string filePath = Path.Join(hostingEnvironment.ContentRootPath, Path.Join(siteMapping.PagePath));
             HtmlDocument doc = new();
             doc.Load(filePath);
             // Generated chapter pages embed <style> blocks; allow them under the CSP via the request nonce.

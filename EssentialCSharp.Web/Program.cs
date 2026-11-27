@@ -372,26 +372,9 @@ public partial class Program
             });
 
             // Reading tracker: per-user limit for the authenticated reading endpoints.
-            options.AddPolicy(ReadingController.WriteRateLimitPolicy, httpContext =>
-                RateLimitPartition.GetFixedWindowLimiter(
-                    partitionKey: $"reading-user:{httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown"}",
-                    factory: _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = 20,
-                        Window = TimeSpan.FromMinutes(1),
-                        QueueLimit = 0
-                    }));
-
+            AddPerUserPerMinutePolicy(options, ReadingController.WriteRateLimitPolicy, "reading-user", permitLimit: 20);
             // Reset has its own per-user bucket so session flushes from open reading tabs cannot make it return 429.
-            options.AddPolicy(ReadingController.ResetRateLimitPolicy, httpContext =>
-                RateLimitPartition.GetFixedWindowLimiter(
-                    partitionKey: $"reading-reset:{httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown"}",
-                    factory: _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = 5,
-                        Window = TimeSpan.FromMinutes(1),
-                        QueueLimit = 0
-                    }));
+            AddPerUserPerMinutePolicy(options, ReadingController.ResetRateLimitPolicy, "reading-reset", permitLimit: 5);
 
             // Combined per-minute burst (10/min) + per-hour cap (150/hr) for book content pages.
             // A scraper cycling through the full ~400-page book needs 2+ hours at minimum.
@@ -693,6 +676,20 @@ public partial class Program
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Application Insights connection string has a non-HTTPS or unparseable IngestionEndpoint value ({Endpoint}); omitting from CSP connect-src.")]
     private static partial void LogInvalidApplicationInsightsIngestionEndpoint(ILogger logger, string? endpoint);
+
+    /// <summary>
+    /// Adds a fixed-window policy with its own bucket per signed-in user (per IP if there is no user id), without queuing.
+    /// </summary>
+    private static void AddPerUserPerMinutePolicy(RateLimiterOptions options, string policyName, string partitionPrefix, int permitLimit) =>
+        options.AddPolicy(policyName, httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: $"{partitionPrefix}:{httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown"}",
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = permitLimit,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
+                }));
 
     private static string GetApplicationInsightsCspSources(string? connectionString, ILogger? logger = null)
     {

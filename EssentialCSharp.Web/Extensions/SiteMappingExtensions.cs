@@ -14,4 +14,20 @@ public static class SiteMappingExtensions
         string? pageKey = siteMapping.Keys?.FirstOrDefault(k => !string.IsNullOrWhiteSpace(k)) ?? siteMapping.PrimaryKey;
         return string.IsNullOrWhiteSpace(pageKey) ? null : pageKey;
     }
+
+    /// <summary>The absolute path of the mapping's content file under <paramref name="contentRootPath"/>.</summary>
+    /// <returns>The full path, or null when the mapping's page path resolves outside the content root.</returns>
+    public static string? GetContentFilePath(this SiteMapping siteMapping, string contentRootPath)
+    {
+        ArgumentNullException.ThrowIfNull(siteMapping);
+
+        string root = Path.GetFullPath(contentRootPath);
+        string full = Path.GetFullPath(Path.Join(root, Path.Join(siteMapping.PagePath)));
+        string relative = Path.GetRelativePath(root, full);
+        bool outsideRoot = Path.IsPathRooted(relative)
+            || relative == ".."
+            || relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+            || relative.StartsWith(".." + Path.AltDirectorySeparatorChar, StringComparison.Ordinal);
+        return outsideRoot ? null : full;
+    }
 }
