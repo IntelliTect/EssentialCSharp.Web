@@ -296,3 +296,7 @@ EssentialCSharp.Web/wwwroot/dist/
 # Personal overrides of repository agent settings
 .github/copilot/settings.local.json
 .claude/settings.local.json
+
+# APM dependencies
+apm_modules/
+/.agents/skills/github-actions-efficiency/
