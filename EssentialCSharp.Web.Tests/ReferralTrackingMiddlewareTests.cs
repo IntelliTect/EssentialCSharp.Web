@@ -8,8 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace EssentialCSharp.Web.Tests;
 
 /// <summary>
-/// Regression tests: anonymous ?rid= requests must not inflate a referrer's count through endpoints that skip rate
-/// limiting, and repeat page views by the same visitor count once.
+/// Regression tests: every page view with ?rid= counts toward the referrer, but requests to endpoints that skip rate
+/// limiting (which aren't page views) don't.
 /// </summary>
 public class ReferralTrackingMiddlewareTests : IntegrationTestBase
 {
@@ -32,17 +32,17 @@ public class ReferralTrackingMiddlewareTests : IntegrationTestBase
     }
 
     [Test]
-    public async Task RepeatPageViewsByTheSameVisitor_CountOnce()
+    public async Task RepeatPageViewsByTheSameVisitor_EachCount()
     {
         (string userId, string referralId) = await CreateReferrerAsync();
         using HttpClient client = CreateClientWithoutAutoRedirect();
 
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 2; i++)
         {
             using HttpResponseMessage response = await client.GetAsync($"/hello-world?rid={referralId}");
         }
 
-        await Assert.That(await GetReferralCountAsync(userId)).IsEqualTo(1);
+        await Assert.That(await GetReferralCountAsync(userId)).IsEqualTo(2);
     }
 
     [Test]
