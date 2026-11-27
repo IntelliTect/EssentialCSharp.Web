@@ -49,7 +49,6 @@ internal static class ReadingTestSupport
     {
         HardCutoffWpm = 900,
         SlowOutlierFactor = 0.25,
-        MaxIntervalsPerRequest = 50,
         DefaultWpm = 210,
         MaxCreditWpm = 810,
         IdleThresholdSeconds = 310,

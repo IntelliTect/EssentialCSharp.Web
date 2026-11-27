@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using EssentialCSharp.Web.Areas.Identity.Data;
+using EssentialCSharp.Web.Controllers;
 using EssentialCSharp.Web.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -33,6 +34,8 @@ public sealed partial class ReadingContextViewComponent(
         int? wpm = userId is null ? null : await GetWpmAsync(userId);
         ReadingOptions reading = options.Value;
 
+        // Without stats the page's position in the book is unknown, so every figure is 0 and the client shows no
+        // time remaining, rather than the whole book's total, which would be wrong on every page but the first.
         PageWordStats? stats = wordCountService.GetPageStats(pageKey);
         return View(new ReadingContextViewModel(
             IsAuthenticated: isAuthenticated,
@@ -41,13 +44,13 @@ public sealed partial class ReadingContextViewComponent(
             ChapterWords: stats?.ChapterWords ?? 0,
             WordsBeforePage: stats?.WordsBeforePage ?? 0,
             ChapterStartWords: stats?.ChapterStartWords ?? 0,
-            BookWords: stats?.BookWords ?? wordCountService.GetBookWordCount(),
+            BookWords: stats?.BookWords ?? 0,
             Wpm: wpm,
             DefaultWpm: reading.DefaultWpm,
             MaxCreditWpm: reading.MaxCreditWpm,
             IdleThresholdSeconds: reading.IdleThresholdSeconds,
             PeriodicFlushActiveSeconds: reading.PeriodicFlushActiveSeconds,
-            MaxQueuedIntervals: ReadingOptionsValidator.ClientOutboxSize));
+            MaxQueuedIntervals: ReadingSessionRequest.MaxIntervals));
     }
 
     /// <summary>The signed-in reader's derived WPM rounded to whole words per minute, or null when unknown.</summary>

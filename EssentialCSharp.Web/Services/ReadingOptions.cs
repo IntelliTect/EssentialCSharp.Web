@@ -11,9 +11,7 @@ namespace EssentialCSharp.Web.Services;
 /// <remarks>
 /// The client splits unsent time into intervals of at most <see cref="IdleThresholdSeconds"/> and flushes after
 /// <see cref="PeriodicFlushActiveSeconds"/> active seconds, so both must stay within
-/// <see cref="MaxActiveSecondsPerInterval"/>. The client outbox holds at most <see cref="ReadingOptionsValidator.ClientOutboxSize"/> intervals (the server
-/// tells the client this size in <c>READING_CONTEXT.maxQueuedIntervals</c>), so <see cref="MaxIntervalsPerRequest"/>
-/// must be at least that (a batch over the server maximum is rejected wholesale).
+/// <see cref="MaxActiveSecondsPerInterval"/>.
 /// <see cref="ReadingOptionsValidator"/> enforces these at startup.
 /// </remarks>
 public sealed class ReadingOptions
@@ -30,10 +28,6 @@ public sealed class ReadingOptions
     /// </summary>
     [Range(0.0, 1.0)]
     public double SlowOutlierFactor { get; init; } = 0.25;
-
-    /// <summary>Maximum number of intervals accepted in a single request.</summary>
-    [Range(1, 1_000)]
-    public int MaxIntervalsPerRequest { get; init; } = 50;
 
     /// <summary>Reading speed (words per minute) the client assumes until the reader has a derived speed.</summary>
     [Range(1, 10_000)]
@@ -62,9 +56,6 @@ public sealed class ReadingOptions
 /// <summary>Cross-field validation that data annotations cannot express.</summary>
 public sealed class ReadingOptionsValidator : IValidateOptions<ReadingOptions>
 {
-    /// <summary>Size of the client's interval outbox.</summary>
-    public const int ClientOutboxSize = 20;
-
     public ValidateOptionsResult Validate(string? name, ReadingOptions options)
     {
         List<string>? failures = null;
@@ -84,12 +75,6 @@ public sealed class ReadingOptionsValidator : IValidateOptions<ReadingOptions>
         {
             (failures ??= []).Add(
                 $"{nameof(ReadingOptions.IdleThresholdSeconds)} must not exceed {nameof(ReadingOptions.MaxActiveSecondsPerInterval)}.");
-        }
-
-        if (options.MaxIntervalsPerRequest < ClientOutboxSize)
-        {
-            (failures ??= []).Add(
-                $"{nameof(ReadingOptions.MaxIntervalsPerRequest)} must be at least {ClientOutboxSize} (the client outbox size).");
         }
 
         return failures is null ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(failures);

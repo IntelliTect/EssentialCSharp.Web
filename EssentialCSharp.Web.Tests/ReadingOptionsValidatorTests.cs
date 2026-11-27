@@ -24,7 +24,6 @@ public class ReadingOptionsValidatorTests
     private static readonly (string Property, int Min, int Max, Func<int, ReadingOptions> With)[] IntegerRanges =
     [
         (nameof(ReadingOptions.HardCutoffWpm), 1, 10_000, v => new ReadingOptions { HardCutoffWpm = v }),
-        (nameof(ReadingOptions.MaxIntervalsPerRequest), 1, 1_000, v => new ReadingOptions { MaxIntervalsPerRequest = v }),
         (nameof(ReadingOptions.DefaultWpm), 1, 10_000, v => new ReadingOptions { DefaultWpm = v }),
         (nameof(ReadingOptions.MaxCreditWpm), 1, 10_000, v => new ReadingOptions { MaxCreditWpm = v }),
         (nameof(ReadingOptions.IdleThresholdSeconds), 1, 86_400, v => new ReadingOptions { IdleThresholdSeconds = v }),
@@ -109,13 +108,6 @@ public class ReadingOptionsValidatorTests
         yield return (
             () => new ReadingOptions { MaxActiveSecondsPerInterval = 100, PeriodicFlushActiveSeconds = 60, IdleThresholdSeconds = 101 },
             nameof(ReadingOptions.IdleThresholdSeconds));
-
-        yield return (
-            () => new ReadingOptions { MaxIntervalsPerRequest = ReadingOptionsValidator.ClientOutboxSize - 1 },
-            nameof(ReadingOptions.MaxIntervalsPerRequest));
-        yield return (
-            () => new ReadingOptions { MaxIntervalsPerRequest = ReadingOptionsValidator.ClientOutboxSize },
-            null);
     }
 
     [Test]

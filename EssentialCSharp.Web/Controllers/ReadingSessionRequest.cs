@@ -1,30 +1,23 @@
 using System.ComponentModel.DataAnnotations;
-using EssentialCSharp.Web.Services;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 namespace EssentialCSharp.Web.Controllers;
 
 public sealed class ReadingSessionRequest : IValidatableObject
 {
     /// <summary>
-    /// Reading intervals to record. The upper bound is configured by
-    /// <c>ReadingOptions.MaxIntervalsPerRequest</c>.
+    /// Most intervals accepted in one request. It is also the size of the client's unsent-interval outbox (sent to the
+    /// client as <c>READING_CONTEXT.maxQueuedIntervals</c>), so a full outbox always fits in one request.
     /// </summary>
+    public const int MaxIntervals = 20;
+
+    /// <summary>Reading intervals to record.</summary>
     [Required]
     [MinLength(1)]
+    [MaxLength(MaxIntervals)]
     public List<ReadingIntervalRequest> Intervals { get; set; } = [];
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        int maxIntervals = validationContext.GetRequiredService<IOptions<ReadingOptions>>().Value.MaxIntervalsPerRequest;
-        if (Intervals.Count > maxIntervals)
-        {
-            yield return new ValidationResult(
-                $"A session may contain at most {maxIntervals} intervals.",
-                [nameof(Intervals)]);
-        }
-
         for (int i = 0; i < Intervals.Count; i++)
         {
             if (Intervals[i] is null)

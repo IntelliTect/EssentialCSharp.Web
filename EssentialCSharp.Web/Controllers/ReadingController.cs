@@ -18,7 +18,10 @@ public sealed class ReadingController(IReadingProfileService readingProfileServi
     public const string WriteRateLimitPolicy = "ReadingWrite";
     public const string ResetRateLimitPolicy = "ReadingReset";
 
-    private const int MaxSessionRequestBytes = 32 * 1024;
+    // Sized from the request limits so a maximal legitimate request always fits: a page key whose every character is
+    // JSON-escaped (\uXXXX, 6 bytes) plus room for the field names and numbers, times the most intervals per request.
+    private const int MaxIntervalJsonBytes = (ReadingIntervalRequest.PageKeyMaxLength * 6) + 100;
+    private const int MaxSessionRequestBytes = ReadingSessionRequest.MaxIntervals * MaxIntervalJsonBytes;
 
     [HttpPost("session")]
     [RequestSizeLimit(MaxSessionRequestBytes)]

@@ -66,8 +66,8 @@ public class ReadingContextRenderingTests : IntegrationTestBase
 
             // The client's outbox size comes from the server, and a full outbox must fit in one request.
             int queued = ReadingTestSupport.Field(root, "maxQueuedIntervals").GetInt32();
-            await Assert.That(queued).IsEqualTo(ReadingOptionsValidator.ClientOutboxSize);
-            await Assert.That(queued).IsLessThanOrEqualTo(_options.MaxIntervalsPerRequest);
+            await Assert.That(queued).IsGreaterThan(0);
+            await Assert.That(queued).IsLessThanOrEqualTo(Controllers.ReadingSessionRequest.MaxIntervals);
         }
     }
 
@@ -204,7 +204,7 @@ public class ReadingContextUnknownPageTests : IntegrationTestBase
         ReadingTestSupport.UseFakes(services, new ReadingTestSupport.FakeWordCountService(includeContentPage: false));
 
     [Test]
-    public async Task PageWithoutStats_FallsBackToZeroPageValuesAndTheBookTotal()
+    public async Task PageWithoutStats_ReportsNoWordCounts_SoNoTimeRemainingIsShown()
     {
         using HttpClient client = CreateClientWithoutAutoRedirect();
 
@@ -219,7 +219,8 @@ public class ReadingContextUnknownPageTests : IntegrationTestBase
             await Assert.That(ReadingTestSupport.Field(root, "chapterWords").GetInt32()).IsEqualTo(0);
             await Assert.That(ReadingTestSupport.Field(root, "wordsBeforePage").GetInt32()).IsEqualTo(0);
             await Assert.That(ReadingTestSupport.Field(root, "chapterStartWords").GetInt32()).IsEqualTo(0);
-            await Assert.That(ReadingTestSupport.Field(root, "bookWords").GetInt32()).IsEqualTo(ReadingTestSupport.BookWords);
+            // The page's position in the book is unknown: the whole book's total would show a wrong time remaining.
+            await Assert.That(ReadingTestSupport.Field(root, "bookWords").GetInt32()).IsEqualTo(0);
         }
     }
 }

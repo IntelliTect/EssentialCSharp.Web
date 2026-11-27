@@ -24,29 +24,38 @@ public sealed class ReadingLoggingTests : IntegrationTestBase, IDisposable
     }
 
     [Test]
-    public async Task SessionWithManyUnknownPages_WritesOneWarningForTheWholeRequest()
+    public async Task UnknownPages_AreReported_ButTheWarningVolumeDoesNotGrowWithTheirNumber()
     {
         string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-log-many");
         using HttpClient client = await ReadingTestSupport.CreateSignedInClientAsync(Factory, userId);
-        const int unknownCount = 30;
+
+        int forOne = await UnknownPageWarningsForAsync(client, unknownCount: 1);
+        int forMany = await UnknownPageWarningsForAsync(client, unknownCount: Controllers.ReadingSessionRequest.MaxIntervals - 1);
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(forOne).IsGreaterThan(0).Because("unknown page keys must not be dropped silently");
+            await Assert.That(forMany).IsEqualTo(forOne).Because("a caller must not be able to multiply log volume by sending more intervals");
+        }
+    }
+
+    /// <summary>Posts a session with the given number of unknown pages (plus one known page) and counts the new warnings about them.</summary>
+    private async Task<int> UnknownPageWarningsForAsync(HttpClient client, int unknownCount)
+    {
+        int before = CountUnknownPageWarnings();
         object[] intervals = Enumerable.Range(0, unknownCount)
-            .Select(i => (object)new { pageKey = $"no-such-page-{i}", wordsRead = 10, activeSeconds = 10 })
+            .Select(i => (object)new { pageKey = $"no-such-page-{unknownCount}-{i}", wordsRead = 10, activeSeconds = 10 })
             .Append(new { pageKey = ReadingTestSupport.LargePage, wordsRead = 10, activeSeconds = 10 })
             .ToArray();
 
         using HttpResponseMessage response = await client.PostAsJsonAsync("/api/reading/session", new { intervals });
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        string[] about = _warnings.Messages
-            .Where(m => m.Contains("unknown page", StringComparison.OrdinalIgnoreCase))
-            .ToArray();
-        using (Assert.Multiple())
-        {
-            await Assert.That(about).Count().IsEqualTo(1)
-                .Because("one warning per request, not one per interval: " + string.Join(" | ", about));
-            await Assert.That(about.Single()).Contains(unknownCount.ToString(System.Globalization.CultureInfo.InvariantCulture));
-        }
+        return CountUnknownPageWarnings() - before;
     }
+
+    private int CountUnknownPageWarnings() =>
+        _warnings.Messages.Count(m => m.Contains("unknown page", StringComparison.OrdinalIgnoreCase));
 
     [Test]
     public async Task SessionWithOnlyKnownPages_WritesNoUnknownPageWarning()

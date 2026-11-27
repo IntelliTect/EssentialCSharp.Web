@@ -229,7 +229,7 @@ public class ReadingControllerTests : IntegrationTestBase
     {
         string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-batch-max");
         using HttpClient client = await CreateAuthenticatedClientAsync(userId);
-        int count = Options.MaxIntervalsPerRequest;
+        int count = ReadingSessionRequest.MaxIntervals;
 
         using HttpResponseMessage response = await PostSessionAsync(
             client, Enumerable.Repeat(Interval(LargePage, 10, 10), count).ToArray());
@@ -245,7 +245,7 @@ public class ReadingControllerTests : IntegrationTestBase
         using HttpClient client = await CreateAuthenticatedClientAsync(userId);
 
         using HttpResponseMessage response = await PostSessionAsync(
-            client, Enumerable.Repeat(Interval(LargePage, 10, 10), Options.MaxIntervalsPerRequest + 1).ToArray());
+            client, Enumerable.Repeat(Interval(LargePage, 10, 10), ReadingSessionRequest.MaxIntervals + 1).ToArray());
 
         await ReadingTestSupport.AssertValidationProblemAsync(response, nameof(ReadingSessionRequest.Intervals));
         await AssertProfileAsync(userId, BaselineWords, BaselineSeconds);
@@ -280,9 +280,21 @@ public class ReadingControllerTests : IntegrationTestBase
     }
 
     [Test]
-    public async Task PostSession_DeclaresARequestSizeLimitInItsMetadataThatFitsAMaximalLegitimateRequestButIsFarBelowTheServerDefault()
+    public async Task PostSession_MaximalLegitimateRequest_IsAccepted()
     {
-        // The in-memory TestServer does not enforce Kestrel's body-size feature, so an oversized request cannot be
+        string body = MaximalLegitimateSessionBody();
+        string userId = await McpTestHelper.CreateUserAsync(Factory, "reading-max-body");
+        using HttpClient client = await CreateAuthenticatedClientAsync(userId);
+
+        using HttpResponseMessage response = await client.PostAsync("/api/reading/session", JsonBody(body));
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+    }
+
+    [Test]
+    public async Task PostSession_DeclaresARequestSizeLimitFarBelowTheServerDefault()
+    {
+        // The in-memory TestServer does not support IHttpMaxRequestBodySizeFeature, so an oversized request is not
         // rejected here; read the limit the endpoint declares (which Kestrel enforces) from the endpoint metadata.
         EndpointDataSource endpoints = Factory.Services.GetRequiredService<EndpointDataSource>();
         long?[] declaredLimits = endpoints.Endpoints
@@ -292,12 +304,7 @@ public class ReadingControllerTests : IntegrationTestBase
             .ToArray();
         long? limit = declaredLimits.Length == 1 ? declaredLimits[0] : null;
 
-        // The largest request a well-behaved client may send: the maximum number of intervals, each with a
-        // maximum-length page key and the largest numeric values.
-        object maximalInterval = Interval(
-            ReadingTestSupport.MaxLengthPageKey, ReadingIntervalRequest.MaxWordsRead, Options.MaxActiveSecondsPerInterval);
-        int maximalRequestBytes = JsonSerializer.SerializeToUtf8Bytes(
-            new { intervals = Enumerable.Repeat(maximalInterval, Options.MaxIntervalsPerRequest).ToArray() }).Length;
+        int maximalRequestBytes = Encoding.UTF8.GetByteCount(MaximalLegitimateSessionBody());
         const long KestrelDefaultMaxRequestBodySize = 30_000_000;
 
         using (Assert.Multiple())
@@ -807,6 +814,17 @@ public class ReadingControllerTests : IntegrationTestBase
     // ---- helpers ----
 
     private static StringContent JsonBody(string json) => new(json, Encoding.UTF8, "application/json");
+
+    /// <summary>
+    /// The largest body a well-behaved client can produce: the most intervals, each with a maximum-length page key
+    /// whose every character is JSON-escaped, and the largest numeric values.
+    /// </summary>
+    private string MaximalLegitimateSessionBody()
+    {
+        string escapedKey = string.Concat(Enumerable.Repeat("\\u003C", ReadingIntervalRequest.PageKeyMaxLength));
+        string interval = $$"""{"pageKey":"{{escapedKey}}","wordsRead":{{ReadingIntervalRequest.MaxWordsRead}},"activeSeconds":{{Options.MaxActiveSecondsPerInterval}}}""";
+        return $$"""{"intervals":[{{string.Join(",", Enumerable.Repeat(interval, ReadingSessionRequest.MaxIntervals))}}]}""";
+    }
 
     private static object Interval(string pageKey, int wordsRead, int activeSeconds) =>
         new { pageKey, wordsRead, activeSeconds };

@@ -54,7 +54,7 @@ describe("postSession / resetProfile", () => {
         expect(getCsrfToken()).toBe("tok123");
     });
 
-    it("posts { intervals } as JSON with the antiforgery header and no completed field", async () => {
+    it("posts { intervals } as JSON with the antiforgery header", async () => {
         fetchMock.mockResolvedValue(new Response('{"wpm":250}', { status: 200 }));
         const intervals = [{ pageKey: "p", activeSeconds: 30, wordsRead: 100 }];
 
@@ -66,7 +66,6 @@ describe("postSession / resetProfile", () => {
         expect(init.keepalive).toBe(true);
         expect(init.headers.RequestVerificationToken).toBe("tok123");
         expect(JSON.parse(init.body)).toEqual({ intervals });
-        expect(init.body).not.toContain("completed");
         expect(result).toEqual({ status: STATUS_OK, data: { wpm: 250 } });
     });
 
