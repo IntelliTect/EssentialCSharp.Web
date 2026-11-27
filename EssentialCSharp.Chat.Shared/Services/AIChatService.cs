@@ -519,6 +519,16 @@ public partial class AIChatService : IChatCompletionService
             }
         }
 
+        // Bound what one request can cost: cap the output, and let the provider drop the oldest turns of a long
+        // conversation (continued through previous_response_id) instead of sending the whole chain every time.
+        if (_Options.MaxOutputTokens > 0)
+        {
+            options.MaxOutputTokenCount = _Options.MaxOutputTokens;
+        }
+#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        options.TruncationMode = ResponseTruncationMode.Auto;
+#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
         // Add reasoning options if specified
         if (reasoningEffortLevel.HasValue)
         {

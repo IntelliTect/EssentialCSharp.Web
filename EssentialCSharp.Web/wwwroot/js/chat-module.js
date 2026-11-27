@@ -24,6 +24,52 @@ function getTraceHeaders() {
     return headers;
 }
 
+const chatHistoryKey = 'aiChatHistory';
+const lastResponseIdKey = 'aiChatLastResponseId';
+
+/**
+ * Stored chat state belongs to one account. Returns the stored history and response ID only when they were saved
+ * for `owner` (the signed-in user's marker); otherwise removes them, so the next account on a shared browser
+ * neither sees the previous user's conversation nor continues it. Exported for tests.
+ */
+export function readOwnedChatState(owner, local = localStorage, session = sessionStorage, now = Date.now()) {
+    const clear = () => {
+        local.removeItem(chatHistoryKey);
+        session.removeItem(lastResponseIdKey);
+        return { messages: [], lastResponseId: null };
+    };
+    if (!owner) {
+        return clear();
+    }
+
+    let history = null;
+    let responseState = null;
+    try {
+        const savedHistory = local.getItem(chatHistoryKey);
+        history = savedHistory ? JSON.parse(savedHistory) : null;
+        const savedResponse = session.getItem(lastResponseIdKey);
+        responseState = savedResponse ? JSON.parse(savedResponse) : null;
+    } catch {
+        return clear();
+    }
+
+    // Older saves have no owner, so they can't be attributed to this user either.
+    if ((history && history.owner !== owner) || (responseState && responseState.owner !== owner)) {
+        return clear();
+    }
+
+    // Reject history older than 2 hours to align with server-side response ID cache window
+    const twoHoursMs = 2 * 60 * 60 * 1000;
+    if (history && !(history.timestamp && (now - history.timestamp) < twoHoursMs)) {
+        return clear();
+    }
+
+    return {
+        messages: history?.messages || [],
+        lastResponseId: typeof responseState?.id === 'string' ? responseState.id : null
+    };
+}
+
 // The server rejects contextual search for backends without support (e.g. local Ollama).
 const chatSupportsContextualSearch = window.CHAT_SUPPORTS_CONTEXTUAL_SEARCH !== false;
 
@@ -140,6 +186,8 @@ function resetCaptchaWidget() {
 export function useChatWidget() {
     // Authentication state
     const isAuthenticated = ref(window.IS_AUTHENTICATED || false);
+    // Non-secret marker of the signed-in user; stored chat state is only reused for the same marker.
+    const storageOwner = window.IS_AUTHENTICATED ? (window.CHAT_STORAGE_OWNER || null) : null;
     
     // Chat state with persistence
     const showChatDialog = ref(false);
@@ -153,21 +201,11 @@ export function useChatWidget() {
     // Load chat history from localStorage on initialization
     function loadChatHistory() {
         try {
-            const saved = localStorage.getItem('aiChatHistory');
-            if (saved) {
-                const data = JSON.parse(saved);
-                // Reject history older than 2 hours to align with server-side response ID cache window
-                const twoHoursMs = 2 * 60 * 60 * 1000;
-                if (data.timestamp && (Date.now() - data.timestamp) < twoHoursMs) {
-                    chatMessages.value = data.messages || [];
-                } else {
-                    localStorage.removeItem('aiChatHistory');
-                    // Clear the stale response ID too — it belongs to the expired session
-                    sessionStorage.removeItem('aiChatLastResponseId');
-                }
-            }
+            // Clears storage when nobody is signed in or it was saved by another account.
+            const state = readOwnedChatState(storageOwner);
+            chatMessages.value = state.messages;
             // lastResponseId is kept in sessionStorage (clears on tab close) to limit persistent exposure
-            lastResponseId.value = sessionStorage.getItem('aiChatLastResponseId') || null;
+            lastResponseId.value = state.lastResponseId;
         } catch (error) {
             console.warn('Failed to load chat history:', error);
         }
@@ -180,16 +218,20 @@ export function useChatWidget() {
             const maxMessages = 100;
             const messagesToSave = chatMessages.value.slice(-maxMessages);
             
+            if (!storageOwner) {
+                return;
+            }
             const data = {
+                owner: storageOwner,
                 messages: messagesToSave,
                 timestamp: Date.now()
             };
-            localStorage.setItem('aiChatHistory', JSON.stringify(data));
+            localStorage.setItem(chatHistoryKey, JSON.stringify(data));
             // Store lastResponseId in sessionStorage — it clears on tab close, reducing persistent exposure
             if (lastResponseId.value) {
-                sessionStorage.setItem('aiChatLastResponseId', lastResponseId.value);
+                sessionStorage.setItem(lastResponseIdKey, JSON.stringify({ owner: storageOwner, id: lastResponseId.value }));
             } else {
-                sessionStorage.removeItem('aiChatLastResponseId');
+                sessionStorage.removeItem(lastResponseIdKey);
             }
         } catch (error) {
             console.warn('Failed to save chat history:', error);
@@ -197,10 +239,11 @@ export function useChatWidget() {
             try {
                 const recentMessages = chatMessages.value.slice(-20);
                 const fallbackData = {
+                    owner: storageOwner,
                     messages: recentMessages,
                     timestamp: Date.now()
                 };
-                localStorage.setItem('aiChatHistory', JSON.stringify(fallbackData));
+                localStorage.setItem(chatHistoryKey, JSON.stringify(fallbackData));
             } catch (fallbackError) {
                 console.error('Failed to save even minimal chat history:', fallbackError);
             }
@@ -246,8 +289,8 @@ export function useChatWidget() {
     function clearChatHistory() {
         chatMessages.value = [];
         lastResponseId.value = null;
-        localStorage.removeItem('aiChatHistory');
-        sessionStorage.removeItem('aiChatLastResponseId');
+        localStorage.removeItem(chatHistoryKey);
+        sessionStorage.removeItem(lastResponseIdKey);
         
         // Force a scroll to top to make it obvious the messages are gone
         nextTick(() => {

@@ -53,4 +53,13 @@ public class AIOptions
     /// MCP tools. Should only be set in non-production environments.
     /// </summary>
     public bool AllowAllMcpTools { get; set; }
+
+    /// <summary>
+    /// Maximum tokens the model may generate for one chat response, including reasoning tokens.
+    /// Bounds the cost of a single request. Set to 0 to leave the provider's default (no app-side cap).
+    /// </summary>
+    public int MaxOutputTokens { get; set; } = DefaultMaxOutputTokens;
+
+    /// <summary>Default for <see cref="MaxOutputTokens"/>.</summary>
+    public const int DefaultMaxOutputTokens = 8192;
 }

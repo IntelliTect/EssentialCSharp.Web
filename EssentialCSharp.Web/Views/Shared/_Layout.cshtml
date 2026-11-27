@@ -222,6 +222,7 @@
         window.TOC_DATA = @Json.Serialize(tocData);
         window.REFERRAL_ID = @Json.Serialize(ViewBag.ReferralId);
         window.IS_AUTHENTICATED = @Json.Serialize(SignInManager.IsSignedIn(User));
+        window.CHAT_STORAGE_OWNER = @Json.Serialize(SignInManager.IsSignedIn(User) ? User.GetChatStorageOwner() : null);
         window.TRYDOTNET_ORIGIN = @Json.Serialize(Configuration["TryDotNet:Origin"]);
         window.APPLICATIONINSIGHTS_CONNECTION_STRING = @Json.Serialize(Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]);
         window.APPLICATIONINSIGHTS_APP_ID = @Json.Serialize(Configuration["APPLICATIONINSIGHTS_APP_ID"]);
