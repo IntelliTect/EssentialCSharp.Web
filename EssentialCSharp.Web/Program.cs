@@ -177,6 +177,10 @@ public partial class Program
         builder.Services.AddMailjetEmailSender(builder.Configuration.GetSection(AuthMessageSenderOptions.AuthMessageSender), builder.Environment);
         builder.Services.Configure<SiteSettings>(builder.Configuration.GetSection(SiteSettings.SectionName));
         builder.Services.Configure<ContentRateLimitOptions>(builder.Configuration.GetSection(ContentRateLimitOptions.SectionName));
+        builder.Services.AddOptions<ChatThrottlingOptions>()
+            .Bind(builder.Configuration.GetSection(ChatThrottlingOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         // Add services to the container.
         builder.Services.AddRazorPages();
@@ -254,23 +258,9 @@ public partial class Program
                     });
             });
 
-            options.AddPolicy("ChatEndpoint", httpContext =>
-            {
-                // Partitioned per-user (when authenticated) or per-IP (anonymous)
-                var partitionKey = httpContext.User.Identity?.IsAuthenticated == true
-                    ? $"chat-user:{httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown-user"}"
-                    : $"chat-ip:{httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip"}";
-
-                return RateLimitPartition.GetFixedWindowLimiter(
-                    partitionKey: partitionKey,
-                    factory: _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = 15,
-                        Window = TimeSpan.FromMinutes(1),
-                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                        QueueLimit = 0
-                    });
-            });
+            // 15 per minute plus the configured ChatThrottling per-window cap, per user (or IP when anonymous).
+            // See Services/ChatRateLimiterPolicy.cs.
+            options.AddPolicy<string, ChatRateLimiterPolicy>(ChatRateLimiterPolicy.PolicyName);
 
             // Combined per-minute burst (10/min) + per-hour cap (150/hr) for book content pages.
             // A scraper cycling through the full ~400-page book needs 2+ hours at minimum.
