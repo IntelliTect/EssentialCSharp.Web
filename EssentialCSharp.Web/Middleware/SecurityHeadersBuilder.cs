@@ -183,6 +183,15 @@ public class SecurityHeadersBuilder
     }
 
     /// <summary>
+    /// Adds a Content-Security-Policy-Report-Only header: the browser reports violations but blocks nothing.
+    /// </summary>
+    /// <param name="value">The CSP directive string.</param>
+    public SecurityHeadersBuilder AddContentSecurityPolicyReportOnly(string value)
+    {
+        return AddCustomHeader("Content-Security-Policy-Report-Only", value);
+    }
+
+    /// <summary>
     /// Add a custom header to all requests
     /// </summary>
     /// <param name="header">The header name</param>

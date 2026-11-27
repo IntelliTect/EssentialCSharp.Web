@@ -24,8 +24,6 @@ class ConsentManager {
         // Load saved consent preferences (signals GA if already consented)
         this.loadConsentPreferences();
 
-        this.updateClarityConsent();
-        
         // Show banner if no valid consent stored
         if (this.shouldShowConsentBanner()) {
             this.showConsentBanner();
@@ -220,12 +218,10 @@ class ConsentManager {
         };
         this.setCookie(this.COOKIE_NAME, JSON.stringify(payload), this.COOKIE_DURATION);
         
-        // Update consent mode
+        // Update consent mode; the consent-changed event it raises lets
+        // clarity-manager.js and appinsights-manager.js apply the new state.
         this.updateConsentMode();
-        
-        // Update Clarity consent
-        this.updateClarityConsent();
-        
+
         // Remove banner
         this.removeConsentBanner();
     }
@@ -240,19 +236,6 @@ class ConsentManager {
         }
         if (!skipNotify) {
             this.notifyConsentChanged();
-        }
-    }
-
-    updateClarityConsent() {
-        // Send consent signal to Microsoft Clarity using Consent API v2
-        if (window.clarity) {
-            try {
-                window.clarity('consentv2', {
-                    analytics_storage: this.consentState.analytics_storage
-                });
-            } catch (error) {
-                console.warn('Failed to update Clarity consent:', error);
-            }
         }
     }
 
@@ -317,7 +300,7 @@ class ConsentManager {
         this.rejectAllConsent();
         // Also clear any existing tracking cookies
         this.clearTrackingCookies();
-        // Note: Clarity consent signal is sent via updateClarityConsent() inside rejectAllConsent() → saveConsentAndClose()
+        // Note: Clarity receives the denied signal from clarity-manager.js via the consent-changed event
     }
 
     clearTrackingCookies() {
