@@ -318,12 +318,15 @@ public partial class EmbeddingService(
     /// Generate an embedding for the given text.
     /// Automatically retries on transient Azure OpenAI failures.
     /// </summary>
+    /// <remarks>
+    /// Used for interactive queries (chat and MCP search), so it does not take the process-wide pacing lock that
+    /// spaces out batch rebuild requests: one caller's burst of queries must not queue every other user's search
+    /// behind it.
+    /// </remarks>
     public async Task<ReadOnlyMemory<float>> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default)
     {
         var embedding = await ExecuteWithRetryAsync(
-            async ct => await ExecuteEmbeddingRequestWithPacingAsync(
-                async pacingCt => await embeddingGenerator.GenerateAsync(text, cancellationToken: pacingCt),
-                ct),
+            async ct => await embeddingGenerator.GenerateAsync(text, cancellationToken: ct),
             "GenerateEmbedding",
             cancellationToken);
         return embedding.Vector;

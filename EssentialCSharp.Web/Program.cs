@@ -467,12 +467,14 @@ public partial class Program
 
         app.UseAuthentication();
 
-        // /mcp uses a named non-default scheme. Normalize the principal before
-        // rate limiting so valid MCP requests partition by MCP user while
-        // missing/invalid bearer requests fall back to the anonymous/IP bucket
-        // instead of inheriting the site's cookie principal.
+        // The MCP transport (POST /mcp) uses a named non-default scheme. Normalize the
+        // principal before rate limiting so valid MCP requests partition by MCP user while
+        // missing/invalid bearer requests fall back to the anonymous/IP bucket instead of
+        // inheriting the site's cookie principal. Only the transport endpoint is normalized:
+        // elsewhere (including other /mcp paths) a bearer token must not act as the user, or
+        // its holder could spend the owner's site-wide and content rate-limit budgets.
         app.UseWhen(
-            context => context.Request.Path.StartsWithSegments("/mcp"),
+            context => IsMcpTransportRequest(context.Request),
             branch => branch.UseMiddleware<McpTokenNormalizationMiddleware>());
 
         app.UseRateLimiter();
