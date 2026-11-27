@@ -25,9 +25,6 @@ jobs:
         uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           global-json-file: global.json
-          source-url: https://pkgs.dev.azure.com/intelliTect/_packaging/EssentialCSharp/nuget/v3/index.json
-        env:
-          NUGET_AUTH_TOKEN: ${{ secrets.AZURE_DEVOPS_PAT }}
 
       - name: Set up Node.js for frontend development
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -43,10 +40,10 @@ jobs:
           path: |
             ~/.nuget/packages
             ${{ github.workspace }}/**/obj/project.assets.json
-          # Restored with private-feed credentials: keep it apart from the *-nuget-public- caches PR jobs use.
-          key: ${{ runner.os }}-nuget-feed-${{ hashFiles('**/packages.lock.json') }}
+          # Public packages only (AccessToNugetFeed defaults to false), same cache as PR builds.
+          key: ${{ runner.os }}-nuget-public-${{ hashFiles('**/packages.lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-nuget-feed-
+            ${{ runner.os }}-nuget-public-
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1

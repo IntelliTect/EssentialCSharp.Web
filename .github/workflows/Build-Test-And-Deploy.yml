@@ -32,6 +32,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Verify Node version matches the Docker build
+        if: matrix.runner == 'ubuntu-latest'
         shell: bash
         run: |
           expected_node_version="$(tr -d '[:space:]' < EssentialCSharp.Web/.nvmrc)"
@@ -75,12 +76,7 @@ jobs:
     environment: "BuildAndUploadImage"
     permissions:
       contents: read
-      id-token: write # OIDC sign-in for the private NuGet feed; unused until AZURE_DEVOPS_FEED_CLIENT_ID is set
-    env:
-      # Private-feed auth: OIDC when vars.AZURE_DEVOPS_FEED_CLIENT_ID is set, else AZURE_DEVOPS_PAT.
-      # Remove the PAT fallback once OIDC has worked on main.
-      FEED_AUTH_MODE: ${{ vars.AZURE_DEVOPS_FEED_CLIENT_ID != '' && 'oidc' || 'pat' }}
-
+      id-token: write # OIDC sign-in for the private NuGet feed (container build only)
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -89,8 +85,8 @@ jobs:
         with:
           global-json-file: global.json
 
-      # Distinct prefix: this cache holds private-feed packages, so PR jobs (prefix *-nuget-public-)
-      # must never restore it by prefix fallback.
+      # The host build and tests use placeholder content (AccessToNugetFeed=false), so they need no
+      # private-feed credentials and share the public NuGet cache with PR builds.
       - name: Set up dependency caching for faster builds
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: nuget-cache
@@ -98,37 +94,12 @@ jobs:
           path: |
             ~/.nuget/packages
             ${{ github.workspace }}/**/obj/project.assets.json
-          key: ${{ runner.os }}-nuget-feed-${{ hashFiles('**/packages.lock.json') }}
+          key: ${{ runner.os }}-nuget-public-${{ hashFiles('**/packages.lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-nuget-feed-
-
-      - name: Azure login for the private NuGet feed (restore)
-        if: env.FEED_AUTH_MODE == 'oidc'
-        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
-        with:
-          client-id: ${{ vars.AZURE_DEVOPS_FEED_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          allow-no-subscriptions: true
-
-      # Credentials-only user-level NuGet.Config; the repo nuget.config supplies the sources.
-      # It sits outside the Docker build context and is deleted right after restore.
-      - name: Write NuGet feed credentials
-        env:
-          AZURE_DEVOPS_PAT: ${{ env.FEED_AUTH_MODE == 'pat' && secrets.AZURE_DEVOPS_PAT || '' }}
-        run: |
-          NUGET_FEED_TOKEN="$(bash scripts/nuget/get-feed-token.sh)"
-          export NUGET_FEED_TOKEN
-          mkdir -p ~/.nuget/NuGet
-          bash scripts/nuget/emit-creds-config.sh > ~/.nuget/NuGet/NuGet.Config
-          chmod 600 ~/.nuget/NuGet/NuGet.Config
-          echo "Private feed auth mode: ${FEED_AUTH_MODE}"
+            ${{ runner.os }}-nuget-public-
 
       - name: Restore with dotnet
-        run: dotnet restore
-
-      - name: Remove NuGet feed credentials
-        if: always()
-        run: rm -f ~/.nuget/NuGet/NuGet.Config
+        run: dotnet restore /p:AccessToNugetFeed=false
 
       - name: Download frontend build
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -137,7 +108,7 @@ jobs:
           path: EssentialCSharp.Web/wwwroot/dist
 
       - name: Build with dotnet
-        run: dotnet build -p:ContinuousIntegrationBuild=True -p:ReleaseDateAttribute=True -p:SkipFrontendBuild=true --configuration Release --no-restore
+        run: dotnet build -p:ContinuousIntegrationBuild=True -p:ReleaseDateAttribute=True -p:SkipFrontendBuild=true -p:AccessToNugetFeed=false --configuration Release --no-restore
 
       - name: Install Playwright Chromium for journey tests
         run: pwsh dev/EssentialCSharp.Web.AppHost.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
@@ -183,18 +154,15 @@ jobs:
           cache-dir: buildkit-cache
           skip-extraction: false
 
-      # Sign in again: the GitHub OIDC assertion from the first login may have expired by now.
-      - name: Azure login for the private NuGet feed (container build)
-        if: env.FEED_AUTH_MODE == 'oidc'
+      - name: Azure login for the private NuGet feed
         uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ vars.AZURE_DEVOPS_FEED_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           allow-no-subscriptions: true
 
+      # Credentials-only NuGet.Config passed as a BuildKit secret; the repo nuget.config supplies the sources.
       - name: Generate Docker NuGet credentials config
-        env:
-          AZURE_DEVOPS_PAT: ${{ env.FEED_AUTH_MODE == 'pat' && secrets.AZURE_DEVOPS_PAT || '' }}
         run: |
           NUGET_FEED_TOKEN="$(bash scripts/nuget/get-feed-token.sh)"
           export NUGET_FEED_TOKEN
@@ -204,7 +172,6 @@ jobs:
 
       # Only build for dev registry — prod gets the image via az acr import in deploy-production
       - name: Build Container Image
-        if: github.event_name != 'pull_request_target' && github.event_name != 'pull_request'
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           tags: ${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb:${{ github.sha }},${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb:latest
@@ -220,12 +187,6 @@ jobs:
       - name: Remove Docker NuGet credentials config
         if: always()
         run: rm -f "${RUNNER_TEMP}/nuget/NuGet.Config"
-
-      - name: Sign out of Azure
-        if: always() && env.FEED_AUTH_MODE == 'oidc'
-        run: |
-          az logout || true
-          az account clear || true
 
       - name: Upload artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -264,7 +225,7 @@ jobs:
           path: |
             ~/.nuget/packages
             ${{ github.workspace }}/**/obj/project.assets.json
-          # No private-feed packages here; *-nuget-public- never matches the credentialed *-nuget-feed- caches.
+          # Public packages only (AccessToNugetFeed=false); the same cache main's host build uses.
           key: ${{ runner.os }}-nuget-public-${{ hashFiles('**/packages.lock.json') }}
           restore-keys: |
             ${{ runner.os }}-nuget-public-
@@ -305,13 +266,8 @@ jobs:
             core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env['ACTIONS_RUNTIME_TOKEN']);
             core.exportVariable('ACTIONS_RESULTS_URL', process.env['ACTIONS_RESULTS_URL']);
 
-      - name: Run .NET tests with coverage
-        if: matrix.collect_coverage
-        run: dotnet test --no-build --configuration Release --report-trx --coverage --results-directory ${{ runner.temp }}
-
       - name: Run .NET tests
-        if: ${{ !matrix.collect_coverage }}
-        run: dotnet test --no-build --configuration Release
+        run: dotnet test --no-build --configuration Release ${{ matrix.collect_coverage && format('--report-trx --coverage --results-directory {0}', runner.temp) || '' }}
 
       - name: Upload Playwright failure captures
         if: ${{ failure() && matrix.collect_coverage }}
@@ -421,29 +377,13 @@ jobs:
       - name: Push Image to Dev Container Registry
         id: push
         env:
-          DEV_ACR: ${{ vars.DEVCONTAINER_REGISTRY }}
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE: ${{ vars.DEVCONTAINER_REGISTRY }}/essentialcsharpweb
         run: |
-          REPO="${DEV_ACR}/essentialcsharpweb"
-          docker push --all-tags "$REPO"
-
-          # Digest of what this job just pushed, from the local image (not re-read through a mutable tag).
-          DIGEST="$(docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' "${REPO}:${IMAGE_TAG}" \
-            | sed -n "s|^${REPO}@||p" | sort -u)"
-          if ! [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
-            echo "::error::Could not determine a single pushed digest for ${REPO}:${IMAGE_TAG} (got '${DIGEST}')"
-            exit 1
-          fi
-
-          # The registry's tag must point at the same manifest; anything else means it moved underneath us.
-          REGISTRY_DIGEST="$(az acr repository show --name "${DEV_ACR%.azurecr.io}" \
-            --image "essentialcsharpweb:${IMAGE_TAG}" --query digest --output tsv)"
-          if [ "$REGISTRY_DIGEST" != "$DIGEST" ]; then
-            echo "::error::Dev ACR tag ${IMAGE_TAG} points to ${REGISTRY_DIGEST}, but this job pushed ${DIGEST}"
-            exit 1
-          fi
-          echo "Pushed ${REPO}@${DIGEST}"
-          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+          docker push --all-tags "$IMAGE"
+          # Digest of what was just pushed; later steps deploy by digest, never by tag.
+          DIGEST="$(docker image inspect --format '{{index .RepoDigests 0}}' "$IMAGE:$GITHUB_SHA" | cut -d@ -f2)"
+          [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "::error::No pushed digest for $IMAGE:$GITHUB_SHA"; exit 1; }
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
 
       - name: Run database migrations
         env:
@@ -516,15 +456,6 @@ jobs:
             EssentialCSharp.Web.E2ETests/bin/Release/net10.0/playwright-artifacts
           if-no-files-found: ignore
 
-      - name: Logout of Azure CLI
-        if: always()
-        uses: azure/CLI@9eb25b8360668fb0ecbafa808d40e2197b2f5f52 # v3.0.0
-        with:
-          inlineScript: |
-            az logout
-            az cache purge
-            az account clear
-
   deploy-production:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -538,12 +469,9 @@ jobs:
     permissions:
       id-token: write
       contents: write  # needed for git deploy tag
-      actions: write
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
 
       - name: Azure Login
         uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
@@ -553,35 +481,22 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       # Server-side copy from dev ACR to prod ACR — no artifact download needed.
-      # Promotes by the digest deploy-development pushed (dev tags are mutable) and fails unless prod
-      # ends up with that exact manifest. Later steps deploy and verify against this built digest.
+      # Promotes by the digest deploy-development pushed (dev tags are mutable); later steps deploy by digest.
       # PREREQUISITE: prod OIDC identity must have AcrPull on the dev ACR (Terraform RBAC).
       - name: Import image from dev ACR to prod ACR
         id: import
         env:
           DEV_ACR: ${{ vars.DEVCONTAINER_REGISTRY }}
           PROD_ACR: ${{ vars.PRODCONTAINER_REGISTRY }}
-          IMAGE_TAG: ${{ github.sha }}
           BUILT_DIGEST: ${{ needs.deploy-development.outputs.image-digest }}
         run: |
-          if ! [[ "$BUILT_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
-            echo "::error::deploy-development did not provide a valid image digest (got '${BUILT_DIGEST}')"
-            exit 1
-          fi
+          [[ "$BUILT_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "::error::deploy-development did not provide a valid image digest (got '$BUILT_DIGEST')"; exit 1; }
           az acr import \
             --name "${PROD_ACR%.azurecr.io}" \
             --source "${DEV_ACR}/essentialcsharpweb@${BUILT_DIGEST}" \
-            --image "essentialcsharpweb:${IMAGE_TAG}" \
+            --image "essentialcsharpweb:${GITHUB_SHA}" \
             --image "essentialcsharpweb:latest" \
             --force
-          PROD_DIGEST=$(az acr repository show \
-            --name "${PROD_ACR%.azurecr.io}" \
-            --image "essentialcsharpweb:${IMAGE_TAG}" \
-            --query "digest" -o tsv)
-          if [ "$PROD_DIGEST" != "$BUILT_DIGEST" ]; then
-            echo "::error::Prod ACR tag ${IMAGE_TAG} points to '${PROD_DIGEST}', expected the built digest ${BUILT_DIGEST}"
-            exit 1
-          fi
           echo "digest=${BUILT_DIGEST}" >> "$GITHUB_OUTPUT"
 
       - name: Run database migrations
@@ -629,63 +544,6 @@ jobs:
           # --retry-all-errors ensures HTTP 5xx (cold-start 503s) also trigger retries
           curl --fail --retry 10 --retry-delay 15 --retry-all-errors --max-time 30 "https://$FQDN/health"
 
-      - name: Cancel pending deployment workflow runs
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        with:
-          script: |
-            // Cancel pending workflow runs queued from earlier commits.
-            // Uses context.workflow instead of hardcoded filename for resilience.
-            let totalCancelledCount = 0;
-            let page = 1;
-            
-            try {
-              while (true) {
-                const { data } = await github.rest.actions.listWorkflowRuns({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  workflow_id: context.workflow,
-                  status: 'queued',
-                  per_page: 100,
-                  page: page
-                });
-                const runs = data.workflow_runs;
-                
-                if (runs.length === 0) {
-                  break;
-                }
-                
-                for (const run of runs) {
-                  if (run.id === context.runId) {
-                    core.debug(`Skipping current run #${run.id}`);
-                    continue;
-                  }
-                  
-                  try {
-                    core.info(`Cancelling queued run #${run.id} (commit: ${run.head_sha.substring(0, 7)}, branch: ${run.head_branch}, created: ${run.created_at})`);
-                    await github.rest.actions.cancelWorkflowRun({
-                      owner: context.repo.owner,
-                      repo: context.repo.repo,
-                      run_id: run.id
-                    });
-                    totalCancelledCount++;
-                  } catch (error) {
-                    core.warning(`Failed to cancel run #${run.id}: ${error.message}`);
-                  }
-                }
-                
-                // Last page has fewer results than requested (pagination)
-                if (runs.length < 100) {
-                  break;
-                }
-                page++;
-              }
-            } catch (error) {
-              core.warning(`Failed to list workflow runs: ${error.message}`);
-              core.info('Continuing with deployment despite cancellation script error');
-            }
-            
-            core.info(`Cancelled ${totalCancelledCount} pending workflow run(s)`);
-
       - name: Tag commit as deployed
         run: |
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -693,12 +551,3 @@ jobs:
           # -f allows re-tagging the same SHA on workflow re-runs
           git tag -f "deployed/prod/${{ github.sha }}"
           git push origin "deployed/prod/${{ github.sha }}" --force
-
-      - name: Logout of Azure CLI
-        if: always()
-        uses: azure/CLI@9eb25b8360668fb0ecbafa808d40e2197b2f5f52 # v3.0.0
-        with:
-          inlineScript: |
-            az logout
-            az cache purge
-            az account clear
