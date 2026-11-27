@@ -15,5 +15,14 @@ public class EssentialCSharpWebContext(DbContextOptions<EssentialCSharpWebContex
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+
+        // Identity checks RequireUniqueEmail with a SELECT before a separate INSERT, so concurrent registrations
+        // can both pass the check. Enforce uniqueness in the database too: a second row with the same
+        // NormalizedEmail would make every FindByEmailAsync for that address throw.
+        builder.Entity<EssentialCSharpWebUser>()
+            .HasIndex(u => u.NormalizedEmail)
+            .HasDatabaseName("EmailIndex")
+            .IsUnique()
+            .HasFilter("[NormalizedEmail] IS NOT NULL");
     }
 }

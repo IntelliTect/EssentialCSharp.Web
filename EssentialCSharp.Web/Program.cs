@@ -107,6 +107,7 @@ public partial class Program
             //options.Stores.ProtectPersonalData = true;
         })
             .AddEntityFrameworkStores<EssentialCSharpWebContext>()
+             .AddUserStore<UniqueEmailUserStore>()
              .AddPasswordValidator<UsernameOrEmailAsPasswordValidator<EssentialCSharpWebUser>>()
              .AddPasswordValidator<Top100000PasswordValidator<EssentialCSharpWebUser>>()
              .AddPasswordValidator<PwnedPasswordValidator<EssentialCSharpWebUser>>();
