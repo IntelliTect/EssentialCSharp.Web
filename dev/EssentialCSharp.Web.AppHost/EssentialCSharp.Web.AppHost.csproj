@@ -12,6 +12,7 @@
     <PackageReference Include="Aspire.Hosting.Dotnet" />
     <PackageReference Include="Aspire.Hosting.SqlServer" />
     <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+    <PackageReference Include="CommunityToolkit.Aspire.Hosting.MailPit" />
     <!-- Building the AppHost restores and builds Web before EF's no-build startup update. -->
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.Ollama" />
     <ProjectReference Include="..\..\EssentialCSharp.Web\EssentialCSharp.Web.csproj"

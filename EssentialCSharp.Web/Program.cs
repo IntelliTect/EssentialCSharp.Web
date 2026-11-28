@@ -174,7 +174,30 @@ public partial class Program
             options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
         });
 
-        builder.Services.AddMailjetEmailSender(builder.Configuration.GetSection(AuthMessageSenderOptions.AuthMessageSender), builder.Environment);
+        // In Development, a MailPit reference from the Aspire AppHost routes Identity email to that local SMTP
+        // catcher; without one, Identity's no-op sender applies. Every other environment uses Mailjet, unchanged.
+        IConfigurationSection authMessageSenderSection = builder.Configuration.GetSection(AuthMessageSenderOptions.AuthMessageSender);
+        string? mailPitConnectionString = builder.Configuration.GetConnectionString(SmtpEndpoint.ConnectionStringName);
+        SmtpEndpoint? smtpEndpoint = null;
+        if (builder.Environment.IsDevelopment())
+        {
+            if (SmtpEndpoint.TryParse(mailPitConnectionString, out smtpEndpoint))
+            {
+                // Unvalidated: no Mailjet keys are needed locally; only the optional From address is read.
+                builder.Services.Configure<AuthMessageSenderOptions>(authMessageSenderSection);
+                builder.Services.AddSingleton(smtpEndpoint);
+                builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(mailPitConnectionString))
+        {
+            // Fail closed: a stray setting must not divert real email to a plaintext local catcher.
+            throw new InvalidOperationException(
+                $"ConnectionStrings:{SmtpEndpoint.ConnectionStringName} is for local development only and must not be " +
+                "set in non-Development environments, which send email through Mailjet.");
+        }
+
+        builder.Services.AddMailjetEmailSender(authMessageSenderSection, builder.Environment);
         builder.Services.Configure<SiteSettings>(builder.Configuration.GetSection(SiteSettings.SectionName));
         builder.Services.Configure<ContentRateLimitOptions>(builder.Configuration.GetSection(ContentRateLimitOptions.SectionName));
 
@@ -343,6 +366,16 @@ public partial class Program
         }
 
         WebApplication app = builder.Build();
+
+        if (smtpEndpoint is not null)
+        {
+            // MailKit's SMTP span source always exists; its meters (experimental) must be created explicitly.
+            // Attributes are server, port, peer IP, operation and error type only; no addresses or content.
+            // Parameterless on purpose: MailKit caches the meter in a static (??=), so a meter from this host's
+            // IMeterFactory would be disposed with the host and reused by any later host in the same process.
+            MailKit.Telemetry.SmtpClient.Configure();
+            MailKit.Telemetry.Socket.Configure();
+        }
 
         if (profilerSkippedUnsupportedPlatform)
             LogSkippingUnsupportedAzureMonitorProfiler(

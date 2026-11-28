@@ -1,3 +1,4 @@
+using Aspire.Hosting.Utils;
 using EssentialCSharp.Web.Hosting;
 
 var builder = DistributedApplication.CreateBuilder(args);
@@ -11,16 +12,22 @@ bool ephemeralDatabases = bool.TryParse(builder.Configuration["EssentialCSharpWe
 var sqlServer = builder.AddSqlServer("sqlserver");
 var postgresServer = builder.AddPostgres("postgres")
     .WithImage("pgvector/pgvector", "pg17");
+// Catches Identity email (confirmation, password reset) locally; Web switches to SMTP when it sees this reference.
+var mailpit = builder.AddMailPit("mailpit");
 if (!ephemeralDatabases)
 {
     sqlServer.WithDataVolume().WithLifetime(ContainerLifetime.Persistent);
     postgresServer.WithDataVolume().WithLifetime(ContainerLifetime.Persistent);
+    // Unlike the database integrations, MailPit's WithDataVolume requires a name; generate the same style.
+    mailpit.WithDataVolume(VolumeNameGenerator.Generate(mailpit, "data")).WithLifetime(ContainerLifetime.Persistent);
 }
 
 var sql = sqlServer.AddDatabase("EssentialCSharpWebContextConnection");
 var postgres = postgresServer.AddDatabase("PostgresVectorStore");
 
 builder.AddEssentialCSharpWeb(webProjectPath, sql, postgres)
+    .WithReference(mailpit)
+    .WaitFor(mailpit)
     .WithEssentialCSharpLocalAI();
 
 builder.Build().Run();

@@ -44,6 +44,7 @@
     <PackageReference Include="HtmlAgilityPack" />
     <PackageReference Include="IntelliTect.Multitool" />
     <PackageReference Include="Mailjet.Api" />
+    <PackageReference Include="MailKit" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
