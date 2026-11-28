@@ -56,7 +56,8 @@ public class JourneyFixture : StandaloneWebFixture
     }
 
     /// <summary>
-    /// Creates a confirmed user directly; UI registration can't, because the confirmation link is only emailed.
+    /// Creates a confirmed user directly, skipping UI registration and the emailed confirmation link
+    /// (<see cref="IdentityEmailSmokeTests"/> covers that flow through MailPit).
     /// Use one user per test: chat rate limits are per user.
     /// </summary>
     public async Task<TestUser> CreateConfirmedUserAsync(string name)

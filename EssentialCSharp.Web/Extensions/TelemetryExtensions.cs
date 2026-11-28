@@ -48,8 +48,11 @@ internal static class TelemetryExtensions
         });
 
         var otel = builder.Services.AddOpenTelemetry()
-            .WithMetrics(metrics => metrics.AddRuntimeInstrumentation())
-            .WithTracing(tracing => tracing.AddSource(builder.Environment.ApplicationName));
+            // MailKit meters only emit after Telemetry.*.Configure (Development MailPit SMTP sender only; see Program).
+            .WithMetrics(metrics => metrics.AddRuntimeInstrumentation()
+                .AddMeter(MailKit.Telemetry.SmtpClient.MeterName, MailKit.Telemetry.Socket.MeterName))
+            .WithTracing(tracing => tracing.AddSource(builder.Environment.ApplicationName)
+                .AddSource(MailKit.Telemetry.SmtpClient.ActivitySourceName));
 
         if (useAzureMonitor)
         {

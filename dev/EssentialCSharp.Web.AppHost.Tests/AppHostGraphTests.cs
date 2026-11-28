@@ -24,7 +24,7 @@ public class AppHostGraphTests
             await Assert.That(names).Contains(expected);
         }
 
-        foreach (var container in builder.Resources.OfType<ContainerResource>().Where(r => r.Name is "sqlserver" or "postgres"))
+        foreach (var container in builder.Resources.OfType<ContainerResource>().Where(r => r.Name is "sqlserver" or "postgres" or "mailpit"))
         {
             await Assert.That(container.Annotations.OfType<ContainerMountAnnotation>().Any()).IsTrue();
             await Assert.That(container.Annotations.OfType<ContainerLifetimeAnnotation>().Single().Lifetime)
@@ -41,6 +41,7 @@ public class AppHostGraphTests
         await Assert.That(names).DoesNotContain("UseNugetContentFeed");
         await Assert.That(names).DoesNotContain("UseLocalAI");
         await Assert.That(env["AIOptions__UseLocalAI"]).IsEqualTo("false");
+        await Assert.That(((ConnectionStringReference)env["ConnectionStrings__mailpit"]).Resource.Name).IsEqualTo("mailpit");
     }
 
     [Test]
@@ -49,7 +50,7 @@ public class AppHostGraphTests
         await using var builder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.EssentialCSharp_Web_AppHost>(
             ["--AIOptions:UseLocalAI=false", "--EssentialCSharpWeb:EphemeralDatabases=true"]);
 
-        foreach (var container in builder.Resources.OfType<ContainerResource>().Where(r => r.Name is "sqlserver" or "postgres"))
+        foreach (var container in builder.Resources.OfType<ContainerResource>().Where(r => r.Name is "sqlserver" or "postgres" or "mailpit"))
         {
             await Assert.That(container.Annotations.OfType<ContainerMountAnnotation>().Any()).IsFalse();
             await Assert.That(container.Annotations.OfType<ContainerLifetimeAnnotation>()
